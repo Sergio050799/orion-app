@@ -1,0 +1,246 @@
+{
+  "docId": "7uvitp",
+  "createdAt": "2026-03-10T12:23:20.411Z",
+  "pageCount": 1,
+  "firstLines": [
+    "GOBIERNO",
+    "DE ESPARA",
+    "DGT",
+    "AUTORIZACIÓN PROVISIONAL DE CIRCULACIÓN",
+    "Fecha expedición:",
+    "16/01/2026 10:03",
+    "Matrícula:",
+    "Ref:",
+    "8215NJW",
+    "DATOS GENERALES"
+  ],
+  "usedModel": "prebuilt-read",
+  "detectedType": "PERMISO_V2",
+  "documentType": "PERMISO_V2",
+  "detectedTypeLocked": true,
+  "detectedTypeEvidence": {
+    "evidence": [
+      "EXACT_TITLE_V2"
+    ],
+    "scoreV1": 0,
+    "scoreV2": 0
+  },
+  "extractorUsed": "permisoExtractor.v2",
+  "classifierEvidence": {
+    "evidence": [
+      "EXACT_TITLE_V2"
+    ],
+    "scoreV1": 0,
+    "scoreV2": 0
+  },
+  "ocrQuality": {
+    "ocrChars": 1991,
+    "nonEmptyLines": 89,
+    "fieldsFoundCount": 4,
+    "quality": "medium"
+  },
+  "extractedFields": {
+    "identification": {
+      "license_plate": {
+        "value": null,
+        "confidence": 0.1,
+        "status_color": "rojo",
+        "source": "ocr"
+      },
+      "vin": {
+        "value": "VSSZZZKJ3TR554347",
+        "confidence": 0.9,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "first_registration_date": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo",
+        "source": "ocr"
+      },
+      "registration_date": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo",
+        "source": "ocr"
+      },
+      "issue_date": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo",
+        "source": "ocr"
+      },
+      "validity_until": {
+        "value": "16/04/2026",
+        "confidence": 0.9,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "issuing_authority": {
+        "value": "PROVINCIAL DE ASTURIAS",
+        "confidence": 0.8,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "ref": {
+        "value": "8215NJW",
+        "confidence": 0.8,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "nive": {
+        "value": "F1DF18348CA6429BB14BF60DE6924FE5",
+        "confidence": 0.8,
+        "status_color": "verde",
+        "source": "ocr"
+      }
+    },
+    "holder": {
+      "full_name": {
+        "value": "ALVEMACO RENTACAR SL",
+        "confidence": 0.8,
+        "status_color": "verde",
+        "source": "ocr"
+      }
+    },
+    "vehicleCommercial": {
+      "brand": {
+        "value": "SEAT",
+        "confidence": 0.8,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "model": {
+        "value": "IBIZA",
+        "confidence": 0.8,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "commercial_name": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo",
+        "source": "ocr"
+      },
+      "type": {
+        "value": "TURISMO",
+        "confidence": 0.8,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "variant": {
+        "value": "BDSGD",
+        "confidence": 0.8,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "version": {
+        "value": "FM5SFM5DF0104",
+        "confidence": 0.8,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "color": {
+        "value": "BLANCO",
+        "confidence": 0.8,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "service": {
+        "value": "PARTICULAR - SIN ESPECIFICAR",
+        "confidence": 0.8,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "renting": {
+        "value": "N",
+        "confidence": 0.8,
+        "status_color": "naranja",
+        "source": "ocr"
+      },
+      "procedencia": {
+        "value": "EEE",
+        "confidence": 0.8,
+        "status_color": "verde",
+        "source": "ocr"
+      }
+    },
+    "vehicleTechnical": {
+      "fuel_raw": {
+        "value": "GASOLINA",
+        "confidence": 0.8,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "engine_displacement_cc": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo",
+        "source": "ocr"
+      },
+      "power_kw": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo",
+        "source": "ocr"
+      },
+      "seats": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo",
+        "source": "ocr"
+      },
+      "max_mass_kg": {
+        "value": 1535,
+        "confidence": 0.9,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "homologation_code": {
+        "value": "E9*2007/46*3134*48",
+        "confidence": 0.8,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "max_mass_loaded_kg": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo",
+        "source": "ocr"
+      },
+      "mass_in_service_kg": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo",
+        "source": "ocr"
+      },
+      "co2_g_km": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo",
+        "source": "ocr"
+      },
+      "power_to_weight_ratio": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo",
+        "source": "ocr"
+      }
+    },
+    "meta": {
+      "document_version": "V2",
+      "detected_type": "PERMISO_V2",
+      "warnings": [
+        "Matrícula no encontrada."
+      ]
+    },
+    "next_itv": {
+      "value": "16/04/2026",
+      "confidence": 0.9,
+      "status_color": "verde",
+      "source": "ocr"
+    }
+  },
+  "decoded": {}
+}

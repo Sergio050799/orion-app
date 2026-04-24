@@ -1,0 +1,58 @@
+{
+  "docId": "50c73dec-1e2e-4b66-b64a-609dbaa41c3c",
+  "createdAt": "2026-02-24T11:25:36.253Z",
+  "pageCount": 1,
+  "firstLines": [
+    "Nº de serie: 3040211239",
+    "A",
+    "Región de Murcia",
+    "KK",
+    "Matricula",
+    "2635LTD",
+    "Certificado nº",
+    "Código",
+    "Descripción",
+    "Código"
+  ],
+  "usedModel": "prebuilt-layout",
+  "ocrQuality": {
+    "ocrChars": 1926,
+    "nonEmptyLines": 152,
+    "fieldsFoundCount": 12,
+    "quality": "high"
+  },
+  "extractedFields": {
+    "plate": "2635 LTD",
+    "CL": "1000 TURISMO SIN ESPECIFICAR",
+    "CI": null,
+    "CV": null,
+    "D1": ".",
+    "D3": "TRANSPORTER",
+    "E": "WV2ZZZ7HZ6H012958",
+    "J": "M1",
+    "J1": null,
+    "J2": null,
+    "J3": null,
+    "F2": "3200",
+    "F4": null,
+    "F5": null,
+    "F6": null,
+    "P3": null,
+    "P1": null,
+    "P2": null,
+    "S1": ".",
+    "observations": "CAFEDA \n ESPAÑAESPANAT SEARAESPAÑAES",
+    "homologationOptions": "Opciones incluidas en la homologación de tipo \n Certifica que el vehículo cuyas \n (2) Valor en punto de acoplamiento .: 100kg .- \n 09/08/2021. ITV 3040. Emisión de tarjeta en cumplimiento del art. 5.3b del Real Decreto \n 750/2010 .-",
+    "issueDateRaw": "09/08/2021",
+    "issueDateISO": "2021-08-09T00:00:00.000Z",
+    "powerCv": null
+  },
+  "decoded": {
+    "make": ".",
+    "model": "TRANSPORTER",
+    "vehicleClass": "1000 TURISMO SIN ESPECIFICAR",
+    "vehicleCategory": "Vehículo de pasajeros",
+    "bodyType": null,
+    "fuelType": null
+  }
+}

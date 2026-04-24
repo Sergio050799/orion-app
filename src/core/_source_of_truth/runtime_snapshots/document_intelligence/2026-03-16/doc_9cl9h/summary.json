@@ -1,0 +1,112 @@
+{
+  "docId": "9cl9h",
+  "createdAt": "2026-03-16T12:55:41.550Z",
+  "pageCount": 1,
+  "firstLines": [
+    "PERMISO DE CONDUCCIÓN REINO DE ESPAÑA",
+    "1. IQBAL",
+    "2. TAZHAR",
+    "3. 17-03-1990",
+    "PAKISTAN",
+    "4a.06-03-2017",
+    "4c. 28-00",
+    "4b.01-03-2027",
+    "5. Y3335495-A",
+    "7"
+  ],
+  "usedModel": "prebuilt-read",
+  "detectedType": "CARNET_CONDUCIR",
+  "documentType": "CARNET_CONDUCIR",
+  "detectedTypeLocked": true,
+  "detectedTypeEvidence": {
+    "evidence": [
+      "LOCKED_BY_USER"
+    ],
+    "scoreV1": 0,
+    "scoreV2": 0
+  },
+  "extractorUsed": "carnetExtractor.v1",
+  "classifierEvidence": {
+    "evidence": [
+      "LOCKED_BY_USER"
+    ],
+    "scoreV1": 0,
+    "scoreV2": 0
+  },
+  "ocrQuality": {
+    "ocrChars": 167,
+    "nonEmptyLines": 13,
+    "fieldsFoundCount": 7,
+    "quality": "high"
+  },
+  "extractedFields": {
+    "identification": {
+      "apellidos": {
+        "value": "IQBAL",
+        "confidence": 0.9,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "nombre": {
+        "value": "TAZHAR",
+        "confidence": 0.9,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "fecha_nacimiento": {
+        "value": "17-03-1990",
+        "confidence": 0.9,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "pais_nacimiento": {
+        "value": "PAKISTAN",
+        "confidence": 0.9,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "nif": {
+        "value": "Y3335495A",
+        "confidence": 0.9,
+        "status_color": "verde",
+        "source": "ocr"
+      }
+    },
+    "validity": {
+      "fecha_expedicion": {
+        "value": "06-03-2017",
+        "confidence": 0.9,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "fecha_caducidad": {
+        "value": "01-03-2027",
+        "confidence": 0.9,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "codigo_autoridad": {
+        "value": "28-00",
+        "confidence": 0.9,
+        "status_color": "verde",
+        "source": "ocr"
+      }
+    },
+    "categories": {
+      "lista": {
+        "value": [
+          "B"
+        ],
+        "confidence": 0.9,
+        "status_color": "verde",
+        "source": "ocr"
+      }
+    },
+    "meta": {
+      "document_version": "V1",
+      "detected_type": "CARNET_CONDUCIR",
+      "warnings": []
+    }
+  },
+  "decoded": {}
+}

@@ -1,0 +1,199 @@
+{
+  "docId": "hefez7-0",
+  "createdAt": "2026-03-16T15:20:49.024Z",
+  "isMixedPdf": true,
+  "pagesTotal": 2,
+  "pageMap": [
+    {
+      "pageIndex": 1,
+      "rotationApplied": 0,
+      "detectedType": "FICHA_TECNICA",
+      "confidence": 0.95
+    },
+    {
+      "pageIndex": 2,
+      "rotationApplied": 0.18403269350528717,
+      "detectedType": "FICHA_TECNICA",
+      "confidence": 0.95
+    }
+  ],
+  "segments": [
+    {
+      "id": "d0a86bb5-7e0d-4662-86fd-98f6c6001e63",
+      "type": "FICHA_TECNICA",
+      "pages": [
+        1,
+        2
+      ],
+      "extractionStatus": "done",
+      "extractedData": {
+        "plate": "8945 NKN",
+        "CL": "2400",
+        "CI": "F.3",
+        "CV": "1",
+        "D1": "TOYOTA",
+        "D3": "PROACE CITY",
+        "E": "YAREDYHT2RJ071736",
+        "J": "N1",
+        "J1": "BB",
+        "J2": "F.7",
+        "J3": "F.7.1",
+        "F2": "2370",
+        "F4": "1880",
+        "F5": "1848",
+        "F6": "4403",
+        "P3": "DIESEL",
+        "P1": "1499",
+        "P2": "75.0",
+        "S1": 2,
+        "observations": "Documento válido si acompaña ITV en vigor \n Próxima ITV: 17-02-2028 \n 00 \n TOYOTA MOTOR EUROPE NV/SA \n B \n Nº de Serie: \n e021100839 \n Matrícula \n Certificado Nº \n Código \n Descripción \n Código \n Descripción \n G \n 1463",
+        "homologationOptions": "Opciones incluidas en la homologación de tipo \n Certifica que el vehículo cuyas \n características se reseñan \n es completamente conforme con el \n número de homologación.",
+        "issueDateRaw": "22/11/2025",
+        "issueDateISO": "2025-11-22T00:00:00.000Z",
+        "powerCv": 102,
+        "_v2Debug": {
+          "invoked": true,
+          "bestSource": "content",
+          "fullTextLen": 2171,
+          "linesCount": 187,
+          "sampleFirst500": "A 8945NKN B ----- H I 17-02-2026 (I.1 17-02-2026 (I.2) ASTURIAS C.1.1 ALVEMACO RENTACAR SL C.1.2 C.1.3 C.4 A49C6A15A54F46F3B2CEBD621DE942A3 0 D.1 TOYOTA D.2 E/D/YHT2-52E4AN(1E) D.3 PROACE CITY (D.4) PARTICULAR - SIN ESPECIFICAR E YAREDYHT2RJ071736 F.1 2370 F.2 2370 G 1463 K E2*2007/46*0686*25 P.1 1499 P.2 75.0 P.3 DIESEL Q S.1 2 S.2 OBSERVACIONES: DOCUMENTO VÁLIDO SI ACOMPAÑA ITV EN VIGOR PRÓXIMA ITV: 17-02-2028 00 TOYOTA MOTOR EUROPE NV/SA B Nº DE SERIE: E021100839 MATRÍCULA CERTIFICADO Nº CÓDI",
+          "foundTokens": {
+            "D1": 1,
+            "D3": 1,
+            "E": 1,
+            "S1": 0
+          },
+          "attempts": [
+            {
+              "strategy": "codeLine",
+              "key": "plate",
+              "raw": "8945NKN",
+              "valid": true,
+              "reasonIfInvalid": ""
+            },
+            {
+              "strategy": "codeLine",
+              "key": "D1",
+              "raw": "TOYOTA",
+              "valid": true,
+              "reasonIfInvalid": ""
+            },
+            {
+              "strategy": "codeLine",
+              "key": "D2",
+              "raw": "E/D/YHT2-52E4AN(1E)",
+              "valid": true,
+              "reasonIfInvalid": ""
+            },
+            {
+              "strategy": "codeLine",
+              "key": "D3",
+              "raw": "PROACE CITY",
+              "valid": true,
+              "reasonIfInvalid": ""
+            },
+            {
+              "strategy": "codeLine",
+              "key": "P3",
+              "raw": "DIESEL",
+              "valid": true,
+              "reasonIfInvalid": ""
+            },
+            {
+              "strategy": "codeLine",
+              "key": "CL",
+              "raw": "2400",
+              "valid": true,
+              "reasonIfInvalid": ""
+            },
+            {
+              "strategy": "codeLine",
+              "key": "L2",
+              "raw": "205/60 R16 96H 6,5J16 ET47 C1 A",
+              "valid": true,
+              "reasonIfInvalid": ""
+            },
+            {
+              "strategy": "codeLine",
+              "key": "CV",
+              "raw": "1",
+              "valid": true,
+              "reasonIfInvalid": ""
+            },
+            {
+              "strategy": "codeLine",
+              "key": "P1",
+              "raw": ".1",
+              "valid": false,
+              "reasonIfInvalid": "invalidCC"
+            },
+            {
+              "strategy": "codeLine",
+              "key": "P2",
+              "raw": ".1",
+              "valid": false,
+              "reasonIfInvalid": "invalidKW"
+            },
+            {
+              "strategy": "codeLine",
+              "key": "J1",
+              "raw": "BB",
+              "valid": true,
+              "reasonIfInvalid": ""
+            },
+            {
+              "strategy": "codeLine",
+              "key": "J",
+              "raw": "OSÉ MANUEL MÉNDEZ SÁNCHEZ",
+              "valid": true,
+              "reasonIfInvalid": ""
+            },
+            {
+              "strategy": "codeLine",
+              "key": "E",
+              "raw": "YAREDYHT2RJ071736",
+              "valid": true,
+              "reasonIfInvalid": ""
+            },
+            {
+              "strategy": "globalSearch",
+              "key": "E",
+              "raw": "YAREDYHT2RJ071736",
+              "valid": true
+            }
+          ]
+        },
+        "D2": "E/D/YHT2-52E4AN(1E)",
+        "L2": "205/60 R16 96H 6,5J16 ET47 C1 A",
+        "_isCellPairFormat": true,
+        "G": 1463,
+        "L": "2/ 4",
+        "_v2Fallback": [
+          "D2",
+          "L2",
+          "_isCellPairFormat",
+          "G",
+          "L"
+        ]
+      }
+    }
+  ],
+  "vehicleGroups": [
+    {
+      "id": "fe892174-c772-48cb-b01c-8b61e8d3992e",
+      "matricula": "8945 NKN",
+      "bastidor": "YAREDYHT2RJ071736",
+      "documents": [
+        {
+          "segmentId": "d0a86bb5-7e0d-4662-86fd-98f6c6001e63",
+          "type": "FICHA_TECNICA",
+          "pages": [
+            1,
+            2
+          ],
+          "status": "done"
+        }
+      ]
+    }
+  ]
+}

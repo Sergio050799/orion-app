@@ -1,0 +1,203 @@
+{
+  "docId": "xspff",
+  "createdAt": "2026-03-15T14:41:37.398Z",
+  "pageCount": 1,
+  "firstLines": [
+    "Matricula",
+    "Certificado Nº",
+    "Código",
+    "Descripción",
+    "Código",
+    "Descripción",
+    "G",
+    "1530",
+    "M.1",
+    "2851 /"
+  ],
+  "usedModel": "prebuilt-layout",
+  "detectedType": "FICHA_TECNICA",
+  "documentType": "FICHA_TECNICA",
+  "detectedTypeLocked": true,
+  "detectedTypeEvidence": {
+    "evidence": [
+      "PERMISO_STRUCTURAL_MARKERS:5",
+      "FICHA_EXCLUSIVE_CODES:9",
+      "V2_KW:MATRICULA",
+      "STRONG_V1_CODES: D\\.1,D\\.2,D\\.3,F\\.1,P\\.1,P\\.2,P\\.3,S\\.1,S\\.2",
+      "V1_CODES: D\\.1,D\\.2,D\\.3,F\\.1,P\\.1,P\\.2,P\\.3,S\\.1,S\\.2",
+      "FICHA_EXCLUSIVE_STRONG:9",
+      "WINNER:FICHA_TECNICA"
+    ],
+    "scoreV1": -190,
+    "scoreV2": -200
+  },
+  "extractorUsed": "legacyFichaExtractor",
+  "classifierEvidence": {
+    "evidence": [
+      "PERMISO_STRUCTURAL_MARKERS:5",
+      "FICHA_EXCLUSIVE_CODES:9",
+      "V2_KW:MATRICULA",
+      "STRONG_V1_CODES: D\\.1,D\\.2,D\\.3,F\\.1,P\\.1,P\\.2,P\\.3,S\\.1,S\\.2",
+      "V1_CODES: D\\.1,D\\.2,D\\.3,F\\.1,P\\.1,P\\.2,P\\.3,S\\.1,S\\.2",
+      "FICHA_EXCLUSIVE_STRONG:9",
+      "WINNER:FICHA_TECNICA"
+    ],
+    "scoreV1": -190,
+    "scoreV2": -200
+  },
+  "ocrQuality": {
+    "ocrChars": 2005,
+    "nonEmptyLines": 134,
+    "fieldsFoundCount": 27,
+    "quality": "high"
+  },
+  "extractedFields": {
+    "plate": "5030 KWN",
+    "CL": "1000",
+    "CI": "BMW24939Y",
+    "CV": "44",
+    "D1": "BMW",
+    "D3": "320đ",
+    "E": "WBA5V51020AJ57684",
+    "J": "M1",
+    "J1": "AA",
+    "J2": "F.7",
+    "J3": "F.7.1",
+    "F2": "2085",
+    "F4": "1435",
+    "F5": "1827",
+    "F6": "4709",
+    "P3": "M/D",
+    "P1": "1995",
+    "P2": "140",
+    "S1": 5,
+    "observations": "Certifica que el vehiculo cuyas \n caracteristicas se reseñan \n es completamente conforme con el \n número de homologación.",
+    "homologationOptions": "Opciones incluidas en la homologación de tipo \n Olga Beatriz Gonzalez Humada \n ASIENTOS DEPORTIVOS DELANTEROS/SUSPENSION DEPORTIVA/PAQUETE \n AERODINAMICO/SPOILER TRASERO/ ... \n DD6D1F2E9458429BBE407CF106FB7E5D \n Tarjeta elTV expedida por DGT \n Primera expedición: \n 26/04/2019 19:25:56 \n Expedición: \n 13/08/2024 12.38.59",
+    "issueDateRaw": "04/04/2019",
+    "issueDateISO": "2019-04-04T00:00:00.000Z",
+    "powerCv": 190,
+    "_v2Debug": {
+      "invoked": true,
+      "bestSource": "pages.lines",
+      "fullTextLen": 2005,
+      "linesCount": 134,
+      "sampleFirst500": "MATRICULA CERTIFICADO Nº CÓDIGO DESCRIPCIÓN CÓDIGO DESCRIPCIÓN G 1530 M.1 2851 / 1- 5030KWN 5469338-19 F.1 2085 M.4 F.1.1 970 / 1180 / - L 2/4 F.1.5 L.0 - / ---- F.2 2085 L.1 1 / EJE 2 / CL 1000 F.2.1 970 / 1180 / - L.2 VER OBSERVACIONES C.I BMW24939Y F.3 3685 P.5.1 BMWAG C.V 44 F.3.1 3685 P.5 B47D20B A.1 BAYERISCHE MOTOREN WERKE AG 0.1 P.3 M/D A.2 DE-80788 MUENCHEN 0.1. P.1 1995 D.1 BMW O.1.2 P.1.1 4 / EN LINEA D.2 G3L / 5V51 / DAW50000 0.1.3 1600 P.2 140 D.3 320Đ O.1.4 750 P.2.1 13.29 E WBA5V5",
+      "foundTokens": {
+        "D1": 1,
+        "D3": 1,
+        "E": 1,
+        "S1": 0
+      },
+      "attempts": [
+        {
+          "strategy": "codeLine",
+          "key": "plate",
+          "raw": "5030KWN",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "CL",
+          "raw": "1000",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "L2",
+          "raw": "VER OBSERVACIONES",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "CI",
+          "raw": "BMW24939Y",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "CV",
+          "raw": "44",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "P3",
+          "raw": "M/D",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "D1",
+          "raw": "BMW",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "P1",
+          "raw": ".1",
+          "valid": false,
+          "reasonIfInvalid": "invalidCC"
+        },
+        {
+          "strategy": "codeLine",
+          "key": "D3",
+          "raw": "320Đ",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "P2",
+          "raw": ".1",
+          "valid": false,
+          "reasonIfInvalid": "invalidKW"
+        },
+        {
+          "strategy": "codeLine",
+          "key": "J1",
+          "raw": "AA",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "E",
+          "raw": "WBA5V51020AJ57684",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "globalSearch",
+          "key": "E",
+          "raw": "WBA5V51020AJ57684",
+          "valid": true
+        }
+      ]
+    },
+    "L2": "VER OBSERVACIONES",
+    "_isCellPairFormat": true,
+    "G": 1530,
+    "L": "2/4",
+    "_v2Fallback": [
+      "L2",
+      "_isCellPairFormat",
+      "G",
+      "L"
+    ]
+  },
+  "decoded": {
+    "make": "BMW",
+    "model": "320đ",
+    "vehicleClass": "Turismo",
+    "vehicleCategory": "Vehículo de pasajeros",
+    "bodyType": "AA",
+    "fuelType": "M/D"
+  }
+}

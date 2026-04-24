@@ -1,0 +1,158 @@
+{
+  "docId": "etoyug",
+  "createdAt": "2026-03-19T08:45:20.280Z",
+  "pageCount": 1,
+  "firstLines": [
+    "Matricula",
+    "Certificado Nº",
+    "Código",
+    "Descripción",
+    "Código",
+    "Descripción",
+    "Z",
+    "G",
+    "F.1",
+    "F.1.1"
+  ],
+  "usedModel": "prebuilt-read",
+  "detectedType": "FICHA_TECNICA",
+  "documentType": "FICHA_TECNICA",
+  "detectedTypeLocked": true,
+  "detectedTypeEvidence": {
+    "evidence": [
+      "PERMISO_STRUCTURAL_MARKERS:5",
+      "FICHA_EXCLUSIVE_CODES:8",
+      "V2_KW:MATRICULA",
+      "STRONG_V1_CODES: D\\.1,D\\.2,D\\.3,F\\.1,P\\.1,P\\.2,P\\.3,S\\.1,S\\.2",
+      "V1_CODES: D\\.1,D\\.2,D\\.3,F\\.1,P\\.1,P\\.2,P\\.3,S\\.1,S\\.2",
+      "FICHA_EXCLUSIVE_STRONG:8",
+      "WINNER:FICHA_TECNICA"
+    ],
+    "scoreV1": -40,
+    "scoreV2": -200
+  },
+  "extractorUsed": "legacyFichaExtractor",
+  "classifierEvidence": {
+    "evidence": [
+      "PERMISO_STRUCTURAL_MARKERS:5",
+      "FICHA_EXCLUSIVE_CODES:8",
+      "V2_KW:MATRICULA",
+      "STRONG_V1_CODES: D\\.1,D\\.2,D\\.3,F\\.1,P\\.1,P\\.2,P\\.3,S\\.1,S\\.2",
+      "V1_CODES: D\\.1,D\\.2,D\\.3,F\\.1,P\\.1,P\\.2,P\\.3,S\\.1,S\\.2",
+      "FICHA_EXCLUSIVE_STRONG:8",
+      "WINNER:FICHA_TECNICA"
+    ],
+    "scoreV1": -40,
+    "scoreV2": -200
+  },
+  "ocrQuality": {
+    "ocrChars": 1421,
+    "nonEmptyLines": 128,
+    "fieldsFoundCount": 15,
+    "quality": "high"
+  },
+  "extractedFields": {
+    "plate": "4865 JGC",
+    "CL": null,
+    "CI": null,
+    "CV": null,
+    "D1": "L.1",
+    "D3": null,
+    "E": "WBA3D11020J626243",
+    "J": "EURO 5",
+    "J1": null,
+    "J2": null,
+    "J3": "BMW",
+    "F2": "F.2.1",
+    "F4": null,
+    "F5": null,
+    "F6": "F.7",
+    "P3": "D.2",
+    "P1": "P.1.1",
+    "P2": "P.2.1",
+    "S1": 2,
+    "observations": "Emisión de tarjeta en cumplimiento del Art. 5.3 b) del Real Decreto 750/2010 .-",
+    "homologationOptions": "Opciones incluidas en la homologación de tipo",
+    "issueDateRaw": "05/06/2015",
+    "issueDateISO": "2015-06-05T00:00:00.000Z",
+    "powerCv": null,
+    "_v2Debug": {
+      "invoked": true,
+      "bestSource": "pages.lines",
+      "fullTextLen": 1421,
+      "linesCount": 128,
+      "sampleFirst500": "MATRICULA CERTIFICADO Nº CÓDIGO DESCRIPCIÓN CÓDIGO DESCRIPCIÓN Z G F.1 F.1.1 F.1.5 F.2 F.2.1 F.3 F.3.1 0.1 0.1.1 0.1.2 0.1.3 0.1.4 M.1 M.4 L L.O 2015/89M0552 4865JGC 626243 1000 - TURISMO PARTICULAR BAYERISCHE MOTOREN WERKE AG D-80788 MÜNCHEN --- 2810 2/4 1 TRAS. 205/60 R16 92V BAYER. MOT. WERKE AG N47D20C D C.L A.1 A.2 B.1 B.2 D.1 L.1 L.2 P.5.1 P.5 P.3 D.2 D.3 E J J.1 J.2 J.3 BMW 3U3D11/5H150000 318D WBA3D11020J626243 M1 MA - P.1 P.1.1 P.2 P.2.1 S.1 S.2 1995 4 L 105 13.3 5 F.4 F.5 F.6 F.7 F.7.1",
+      "foundTokens": {
+        "D1": 1,
+        "D3": 0,
+        "E": 1,
+        "S1": 0
+      },
+      "attempts": [
+        {
+          "strategy": "codeLine",
+          "key": "plate",
+          "raw": "4865JGC",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "D3",
+          "raw": "E",
+          "valid": false,
+          "reasonIfInvalid": "isGarbage (empty/symbols/<2 chars)"
+        },
+        {
+          "strategy": "codeLine",
+          "key": "J3",
+          "raw": "BMW",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "P1",
+          "raw": ".1",
+          "valid": false,
+          "reasonIfInvalid": "invalidCC"
+        },
+        {
+          "strategy": "codeLine",
+          "key": "P2",
+          "raw": ".1",
+          "valid": false,
+          "reasonIfInvalid": "invalidKW"
+        },
+        {
+          "strategy": "codeLine",
+          "key": "J",
+          "raw": "EURO 5",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "D1",
+          "raw": "NEUM. OPC. 225/50 R17 94W: 225/55 R16 95V: 225/45 R18 91Y",
+          "valid": true,
+          "reasonIfInvalid": ""
+        }
+      ]
+    },
+    "_isCellPairFormat": true,
+    "_v2Fallback": [
+      "J",
+      "_isCellPairFormat",
+      "E"
+    ]
+  },
+  "decoded": {
+    "make": "L.1",
+    "model": null,
+    "vehicleClass": null,
+    "vehicleCategory": "EURO 5",
+    "bodyType": null,
+    "fuelType": "D.2"
+  }
+}

@@ -1,0 +1,20 @@
+﻿{
+    "timestamp":  "2026-02-19T16:08:22.5686064+01:00",
+    "planned_deletions":  [
+                              "*.tsbuildinfo (deleted)",
+                              "**/__pycache__/ (deleted)",
+                              "src/app/orion/ (absent)",
+                              "src/components/orion/ (absent)",
+                              "src/lib/orion/ (absent)",
+                              "datasets/ (absent)",
+                              "data/ (absent)",
+                              "references_orion/ (absent)",
+                              "empty directories removed"
+                          ],
+    "planned_moves":  [
+                          {
+                              "to":  "src/core/_source_of_truth/runtime_snapshots/normativa_unificada.v1.json",
+                              "from":  "src/core/_source_of_truth/dictionaries/normativa_unificada.v1.json"
+                          }
+                      ]
+}

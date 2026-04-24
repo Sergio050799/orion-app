@@ -1,0 +1,240 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─────────────────────────────────────────
+   DESIGN TOKENS — ORION SAAS
+   Identidad: CosmosCore × Vercel Dashboard
+   ───────────────────────────────────────── */
+@layer base {
+  :root {
+    /* Backgrounds */
+    --orion-deep:        #020617;
+    --orion-navy:        #040d1a;
+    --orion-void:        #00030a;
+    --orion-violet:      #0d1b3e;
+    --orion-surface:     rgba(255, 255, 255, 0.03);
+    --orion-surface-2:   rgba(255, 255, 255, 0.05);
+    --orion-surface-3:   rgba(255, 255, 255, 0.08);
+
+    /* Borders */
+    --orion-border:      rgba(255, 255, 255, 0.06);
+    --orion-border-2:    rgba(255, 255, 255, 0.10);
+    --orion-border-3:    rgba(255, 255, 255, 0.18);
+
+    /* Brand accent */
+    --orion-accent:      #6366f1;
+    --orion-accent-dim:  rgba(99, 102, 241, 0.12);
+    --orion-accent-glow: rgba(99, 102, 241, 0.20);
+
+    /* Text */
+    --orion-text:        #F1F5F9;
+    --orion-text-2:      rgba(241, 245, 249, 0.70);
+    --orion-text-3:      rgba(241, 245, 249, 0.45);
+    --orion-text-4:      rgba(241, 245, 249, 0.25);
+
+    /* Semantic */
+    --orion-success:     #10B981;
+    --orion-danger:      #EF4444;
+    --orion-warning:     #F59E0B;
+
+    /* Legacy compat */
+    --background: var(--orion-deep);
+    --foreground: var(--orion-text);
+    --font-inter: 'Inter', sans-serif;
+  }
+
+  * {
+    border-color: var(--orion-border);
+  }
+
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    background: var(--orion-deep);
+    background-image: radial-gradient(circle at center, #1e1b4b 0%, #020617 100%);
+    background-attachment: fixed;
+    color: var(--orion-text);
+    font-family: var(--font-inter);
+    font-size: 13px;
+    @apply min-h-screen overflow-x-hidden antialiased;
+  }
+}
+
+/* ─────────────────────────────────────────
+   UTILITY CLASSES
+   ───────────────────────────────────────── */
+@layer components {
+
+  /* Glassmorphism card — base de todo el sistema */
+  .glass-card {
+    background: var(--orion-surface);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid var(--orion-border);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  }
+
+  .glass-card-2 {
+    background: var(--orion-surface-2);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--orion-border-2);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Panel más elevado */
+  .glass-panel {
+    background: var(--orion-surface-3);
+    backdrop-filter: blur(32px);
+    -webkit-backdrop-filter: blur(32px);
+    border: 1px solid var(--orion-border-2);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+  }
+
+  /* Blueprint grid — patrón de fondo decorativo */
+  .blueprint-grid {
+    background-image:
+      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  /* Accent glow spot (círculo difuso decorativo) */
+  .glow-spot {
+    position: absolute;
+    border-radius: 9999px;
+    background: var(--orion-accent-glow);
+    filter: blur(80px);
+    pointer-events: none;
+  }
+
+  /* Botón primario */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm
+           text-white active:scale-[0.97]
+           transition-all duration-150;
+    background: #6366f1;
+    box-shadow: 0 0 20px rgba(99,102,241,0.3);
+  }
+  .btn-primary:hover { background: #818cf8; }
+
+  /* Botón ghost */
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm
+           text-white/60 hover:text-white hover:bg-white/5 active:scale-[0.97]
+           border border-white/8 hover:border-white/15
+           transition-all duration-150;
+  }
+
+  /* Botón destructivo */
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-bold text-sm
+           text-red-400 hover:text-white hover:bg-red-500/20 active:scale-[0.97]
+           border border-red-500/20 hover:border-red-500/40
+           transition-all duration-150;
+  }
+
+  /* Input */
+  .orion-input {
+    @apply w-full border rounded-xl px-4 py-2.5 text-sm text-white
+           placeholder:text-white/25 focus:outline-none transition-all duration-150;
+    background: rgba(255,255,255,0.04);
+    border-color: rgba(255,255,255,0.08);
+  }
+
+  /* Tabla header cell */
+  .th {
+    @apply py-3 px-4 text-[10px] font-black text-white/30 uppercase tracking-widest;
+  }
+
+  /* Badge de estado */
+  .status-dot-green  { @apply w-1.5 h-1.5 rounded-full bg-emerald-400; }
+  .status-dot-amber  { @apply w-1.5 h-1.5 rounded-full bg-amber-400; }
+  .status-dot-red    { @apply w-1.5 h-1.5 rounded-full bg-red-400; }
+  .status-dot-indigo { @apply w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse; }
+
+  /* Scrollbar custom */
+  .custom-scrollbar::-webkit-scrollbar       { width: 4px; height: 4px; }
+  .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 9999px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(99, 102, 241, 0.5);
+  }
+}
+
+/* ─────────────────────────────────────────
+   SCROLLBAR GLOBAL
+   ───────────────────────────────────────── */
+::-webkit-scrollbar       { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.3);
+}
+
+/* ─────────────────────────────────────────
+   ANIMATE-IN UTILITIES (Tailwind compat)
+   ───────────────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes slideInFromBottom {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideInFromTop {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-in { animation-fill-mode: both; }
+.fade-in             { animation: fadeIn 0.35s ease-out; }
+.slide-in-from-right-8  { animation: slideInRight 0.3s ease-out; }
+.slide-in-from-bottom-4 { animation: slideInFromBottom 0.3s ease-out; }
+.slide-in-from-bottom-6 { animation: slideInFromBottom 0.4s ease-out; }
+.slide-in-from-top-4    { animation: slideInFromTop 0.25s ease-out; }
+.duration-200 { animation-duration: 0.2s; }
+.duration-300 { animation-duration: 0.3s; }
+.duration-500 { animation-duration: 0.5s; }
+.duration-700 { animation-duration: 0.7s; }
+.zoom-in-95 { animation: fadeIn 0.2s ease-out; }
+
+/* ─────────────────────────────────────────
+   LIGHT MODE — invert(1) hue-rotate(180deg)
+   Preserva hues (cyan, emerald, amber, red)
+   Invierte luminosidad: dark → light
+   ───────────────────────────────────────── */
+[data-theme="light"] #orion-app-root {
+  filter: invert(1) hue-rotate(180deg);
+  transition: filter 0.3s ease;
+}
+
+/* Re-invertir imágenes/videos para que se vean normales */
+[data-theme="light"] #orion-app-root img,
+[data-theme="light"] #orion-app-root video,
+[data-theme="light"] #orion-app-root canvas {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+[data-theme="dark"] #orion-app-root {
+  filter: none;
+  transition: filter 0.3s ease;
+}

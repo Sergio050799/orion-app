@@ -1,0 +1,42 @@
+
+import { NextResponse } from 'next/server';
+import fs from 'fs';
+import path from 'path';
+
+export const runtime = 'nodejs';
+
+export async function GET() {
+    try {
+        const dataPath = path.join(process.cwd(), 'src', 'core', 'data');
+        const normativaPath = path.join(dataPath, 'normativa_unificada.v1.json');
+        const dictPath = path.join(dataPath, 'itv_master_dictionary.v2.json');
+
+        console.log(`[API] Loading Core Data from: ${dataPath}`);
+
+        if (!fs.existsSync(normativaPath) || !fs.existsSync(dictPath)) {
+            console.error(`[API] Missing files in ${dataPath}`);
+            return NextResponse.json(
+                {
+                    error: "Core Data files not found",
+                    paths: { normativaPath, dictPath, cwd: process.cwd() }
+                },
+                { status: 500 }
+            );
+        }
+
+        const normativa = JSON.parse(fs.readFileSync(normativaPath, 'utf-8'));
+        const dictionary = JSON.parse(fs.readFileSync(dictPath, 'utf-8'));
+
+        return NextResponse.json({ normativa, dictionary }, {
+            headers: {
+                'Cache-Control': 'no-store, max-age=0'
+            }
+        });
+    } catch (error: any) {
+        console.error("[API] Failed to load Core Data", error);
+        return NextResponse.json(
+            { error: "Internal Server Error", details: error.message },
+            { status: 500 }
+        );
+    }
+}

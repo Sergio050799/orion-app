@@ -1,0 +1,95 @@
+"use client"
+
+import { Panel, Group, Separator } from "react-resizable-panels";
+
+import { IngestZone } from "./ingest-zone"
+import { VehicleGrid } from "./vehicle-grid"
+import { ValidationReport } from "./validation-report"
+import { useBatch } from "./batch-context"
+import { Download, LayoutPanelLeft, GripHorizontal, GripVertical } from "lucide-react"
+
+export function Workstation() {
+    const { vehicles, exportCSV, approveAll, batchId } = useBatch()
+    const allApproved = vehicles.length > 0 && vehicles.every(v => v.estado_operativo === 'APROBADO');
+
+    return (
+        <div className="h-full w-full flex flex-col font-sans bg-[#0B1020] text-slate-300">
+            {/* Local Toolbar for Panel 3 */}
+            <header className="bg-[#0B1020]/80 border-b border-[#ffffff10] px-6 py-3 flex justify-between items-center shadow-sm shrink-0 z-10 backdrop-blur-md">
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 text-white">
+                        <LayoutPanelLeft className="h-5 w-5 text-[#3CE0FF]" />
+                        <h2 className="text-lg font-semibold tracking-tight">Batch Workstation</h2>
+                    </div>
+                    <span className="bg-[#ffffff05] text-slate-400 px-2 py-0.5 rounded text-xs font-mono border border-[#ffffff05]">
+                        BATCH: {batchId?.substring(0, 8)}...
+                    </span>
+                </div>
+
+                <div className="flex items-center gap-3">
+                    <div className="mr-4 text-xs font-medium text-slate-500">
+                        {vehicles.length} DOCS
+                    </div>
+                    {vehicles.filter((v: any) => v.estado_coherencia === 'COHERENTE').length > 0 && (
+                        <button
+                            onClick={approveAll}
+                            className="text-sm text-[#16C784] hover:text-[#16C784]/80 font-medium px-3 py-1.5 hover:bg-[#16C784]/10 rounded transition-colors border border-transparent hover:border-[#16C784]/20"
+                        >
+                            Aprobar Todos
+                        </button>
+                    )}
+                    <button
+                        onClick={exportCSV}
+                        disabled={!allApproved}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all
+                            ${allApproved
+                                ? 'bg-[#3CE0FF] text-[#0B1020] hover:bg-[#3CE0FF]/90 shadow-[0_0_15px_rgba(60,224,255,0.3)]'
+                                : 'bg-[#ffffff05] text-slate-500 cursor-not-allowed border border-[#ffffff05]'}`}
+                    >
+                        <Download className="h-4 w-4" />
+                        Exportar CSV
+                    </button>
+                </div>
+            </header>
+
+            {/* Resizable Layout */}
+            <div className="flex-1 overflow-hidden p-2">
+                <Group orientation="horizontal">
+                    {/* Left Pane: Ingest + Grid */}
+                    <Panel defaultSize={60} minSize={30} className="flex flex-col rounded-lg border border-[#ffffff10] bg-[#0B1020]">
+                        <Group orientation="vertical">
+                            {/* Ingest Zone */}
+                            <Panel defaultSize={25} minSize={15} maxSize={40}>
+                                <div className="h-full p-2">
+                                    <IngestZone />
+                                </div>
+                            </Panel>
+
+                            <Separator className="h-2 bg-[#0B1020] hover:bg-[#3CE0FF]/20 transition-colors cursor-row-resize flex items-center justify-center group z-20">
+                                <div className="w-16 h-1 rounded-full bg-[#ffffff10] group-hover:bg-[#3CE0FF] transition-colors" />
+                            </Separator>
+
+                            {/* Grid Zone */}
+                            <Panel defaultSize={75} minSize={30}>
+                                <div className="h-full p-2">
+                                    <VehicleGrid />
+                                </div>
+                            </Panel>
+                        </Group>
+                    </Panel>
+
+                    <Separator className="w-2 bg-[#0B1020] hover:bg-[#3CE0FF]/20 transition-colors cursor-col-resize flex items-center justify-center group z-20">
+                        <div className="h-16 w-1 rounded-full bg-[#ffffff10] group-hover:bg-[#3CE0FF] transition-colors" />
+                    </Separator>
+
+                    {/* Right Pane: Report Inspector */}
+                    <Panel defaultSize={40} minSize={25} className="rounded-lg border border-[#ffffff10] bg-[#0B1020] ml-2">
+                        <div className="h-full overflow-hidden">
+                            <ValidationReport />
+                        </div>
+                    </Panel>
+                </Group>
+            </div>
+        </div>
+    )
+}

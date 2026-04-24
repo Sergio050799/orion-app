@@ -1,0 +1,7199 @@
+{
+  "apiVersion": "2024-02-29-preview",
+  "modelId": "prebuilt-read",
+  "stringIndexType": "textElements",
+  "content": "DGT\nAUTORIZACIÓN PROVISIONAL DE CIRCULACIÓN\nFecha expedición:\n16/01/2028 10:03\nDATOS GENERALES\nJefatura:\nJefatura Provincial de Asturias\nFecha Matriculación\n16/01/2026\nMatricula. Ret\n8215NJW\nTitular;\nALVEMACO RENTACAR SL\nMarca Base:\nMarca:\nSEAT\nIBIZA\nTixo: TURISMO Color: BLANCO Plazas: 5\nNive.\nModelo Bastidor: VSSZZZKJ3TR554347 F1DF18348CA64298814BF60DE6924FE5\nServicio: PARTICULAR - SIN ESPECIFICAR\nRenting.\nN\nPropulsión:\nCilindrada:\nGASOLINA\n999.0\nProcedencia: EEE\nMasa Máxima:\n1535.0\nNo. CVF: 7.82\nTipc\nBasc:\nTiac: KJ\nDATOS TÉCNICOS\nVanante\nBase:\nVariante: BDSGD\nVersión\nBase:\nVersión: FM5SFMSDF01C4\nContraseña Homolog. Base:\nContraseña Homologación:\n89'2007/46'3134*48\nMOM Base:\nMasa Máxima en Carga.\n1535.0\nMasa en circulación;\nRelación Potencia/Peso:\n0.0\n1111.C\nCO2:\nPlazas de pie:\n120.0\npresente cocu Tiênto combluye une autorizsoon provisional de ciro .. /noón del vehiculo, que tuft Uje a' permiso definitivo, surtiene sus mismos aledes con ina siguesalud conid chantes Terdra valdez do SC ciâu a part.' do la lecha de expedición. Sempre debe 's acompañado de a Tabela co inspección Técnica de Vehiculo en vigor, asi como de la restante documentación que. conforme a la normativa vigente. debe levar comingo el conductor. () El pretenle documento no ce válido pore restar lên des acministrat vod\nSi observa algún error en on colos generales_ techcon o en el servicio al que se destina e vehiculo. debe solicitar su rectificación ales de la expedición dul Parnito de CeCulación Cafritivo.\n* VÁLIDO HASTA 16/04/2026\nMOJUELC PCTemporalSALA.1.0\nMEESTERIO DEL. INTEFOOR DIRECCIÓN GENERAL DE TRÁFICO\nPolencia Neta Máxima:\n59.0",
+  "pages": [
+    {
+      "pageNumber": 1,
+      "angle": 0,
+      "width": 16.5278,
+      "height": 23.375,
+      "unit": "inch",
+      "words": [
+        {
+          "content": "DGT",
+          "polygon": [
+            4.6469,
+            1.258,
+            5.4178,
+            1.2681,
+            5.4101,
+            1.6535,
+            4.6469,
+            1.638
+          ],
+          "confidence": 0.968,
+          "span": {
+            "offset": 0,
+            "length": 3
+          }
+        },
+        {
+          "content": "AUTORIZACIÓN",
+          "polygon": [
+            6.2731,
+            1.1661,
+            8.6566,
+            1.1666,
+            8.6566,
+            1.5218,
+            6.2731,
+            1.5144
+          ],
+          "confidence": 0.967,
+          "span": {
+            "offset": 4,
+            "length": 12
+          }
+        },
+        {
+          "content": "PROVISIONAL",
+          "polygon": [
+            8.7743,
+            1.1664,
+            10.8341,
+            1.1597,
+            10.8341,
+            1.5218,
+            8.7743,
+            1.5218
+          ],
+          "confidence": 0.975,
+          "span": {
+            "offset": 17,
+            "length": 11
+          }
+        },
+        {
+          "content": "DE",
+          "polygon": [
+            10.9165,
+            1.1593,
+            11.3108,
+            1.1574,
+            11.3108,
+            1.5206,
+            10.9165,
+            1.5216
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 29,
+            "length": 2
+          }
+        },
+        {
+          "content": "CIRCULACIÓN",
+          "polygon": [
+            11.3991,
+            1.1569,
+            13.5753,
+            1.1411,
+            13.5753,
+            1.5098,
+            11.3991,
+            1.5204
+          ],
+          "confidence": 0.785,
+          "span": {
+            "offset": 32,
+            "length": 11
+          }
+        },
+        {
+          "content": "Fecha",
+          "polygon": [
+            8.6354,
+            2.0285,
+            9.3107,
+            2.0346,
+            9.3042,
+            2.3203,
+            8.6289,
+            2.3114
+          ],
+          "confidence": 0.957,
+          "span": {
+            "offset": 44,
+            "length": 5
+          }
+        },
+        {
+          "content": "expedición:",
+          "polygon": [
+            9.3842,
+            2.035,
+            10.562,
+            2.0304,
+            10.5584,
+            2.2981,
+            9.3777,
+            2.3207
+          ],
+          "confidence": 0.613,
+          "span": {
+            "offset": 50,
+            "length": 11
+          }
+        },
+        {
+          "content": "16/01/2028",
+          "polygon": [
+            10.9685,
+            2.0029,
+            12.3343,
+            1.9956,
+            12.3343,
+            2.3224,
+            10.9685,
+            2.3334
+          ],
+          "confidence": 0.732,
+          "span": {
+            "offset": 62,
+            "length": 10
+          }
+        },
+        {
+          "content": "10:03",
+          "polygon": [
+            12.4261,
+            1.9946,
+            13.1289,
+            1.9855,
+            13.1289,
+            2.3237,
+            12.4261,
+            2.3223
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 73,
+            "length": 5
+          }
+        },
+        {
+          "content": "DATOS",
+          "polygon": [
+            7.0086,
+            2.9838,
+            7.8194,
+            2.9845,
+            7.8172,
+            3.2515,
+            7.0086,
+            3.2567
+          ],
+          "confidence": 0.966,
+          "span": {
+            "offset": 79,
+            "length": 5
+          }
+        },
+        {
+          "content": "GENERALES",
+          "polygon": [
+            7.8992,
+            2.9842,
+            9.3444,
+            2.9663,
+            9.3413,
+            3.2433,
+            7.8967,
+            3.251
+          ],
+          "confidence": 0.972,
+          "span": {
+            "offset": 85,
+            "length": 9
+          }
+        },
+        {
+          "content": "Jefatura:",
+          "polygon": [
+            7.2131,
+            3.337,
+            8.1979,
+            3.3428,
+            8.1979,
+            3.5837,
+            7.213,
+            3.5915
+          ],
+          "confidence": 0.884,
+          "span": {
+            "offset": 95,
+            "length": 9
+          }
+        },
+        {
+          "content": "Jefatura",
+          "polygon": [
+            8.4867,
+            3.319,
+            9.3108,
+            3.319,
+            9.3108,
+            3.586,
+            8.4867,
+            3.5847
+          ],
+          "confidence": 0.963,
+          "span": {
+            "offset": 105,
+            "length": 8
+          }
+        },
+        {
+          "content": "Provincial",
+          "polygon": [
+            9.3937,
+            3.319,
+            10.3661,
+            3.3177,
+            10.3661,
+            3.5844,
+            9.3937,
+            3.586
+          ],
+          "confidence": 0.937,
+          "span": {
+            "offset": 114,
+            "length": 10
+          }
+        },
+        {
+          "content": "de",
+          "polygon": [
+            10.4359,
+            3.3176,
+            10.6801,
+            3.3171,
+            10.6801,
+            3.5834,
+            10.4359,
+            3.5842
+          ],
+          "confidence": 0.986,
+          "span": {
+            "offset": 125,
+            "length": 2
+          }
+        },
+        {
+          "content": "Asturias",
+          "polygon": [
+            10.7411,
+            3.3169,
+            11.607,
+            3.3143,
+            11.607,
+            3.5783,
+            10.7411,
+            3.5831
+          ],
+          "confidence": 0.924,
+          "span": {
+            "offset": 128,
+            "length": 8
+          }
+        },
+        {
+          "content": "Fecha",
+          "polygon": [
+            2.0984,
+            3.3554,
+            2.7383,
+            3.3608,
+            2.7408,
+            3.6046,
+            2.1049,
+            3.6118
+          ],
+          "confidence": 0.607,
+          "span": {
+            "offset": 137,
+            "length": 5
+          }
+        },
+        {
+          "content": "Matriculación",
+          "polygon": [
+            2.8252,
+            3.3613,
+            4.2106,
+            3.3643,
+            4.209,
+            3.597,
+            2.8272,
+            3.6038
+          ],
+          "confidence": 0.388,
+          "span": {
+            "offset": 143,
+            "length": 13
+          }
+        },
+        {
+          "content": "16/01/2026",
+          "polygon": [
+            4.5417,
+            3.3332,
+            5.7223,
+            3.3307,
+            5.7223,
+            3.5911,
+            4.5352,
+            3.5878
+          ],
+          "confidence": 0.968,
+          "span": {
+            "offset": 157,
+            "length": 10
+          }
+        },
+        {
+          "content": "Matricula.",
+          "polygon": [
+            2.1134,
+            2.0691,
+            3.1554,
+            2.0934,
+            3.1554,
+            2.3055,
+            2.1069,
+            2.3112
+          ],
+          "confidence": 0.604,
+          "span": {
+            "offset": 168,
+            "length": 10
+          }
+        },
+        {
+          "content": "Ret",
+          "polygon": [
+            2.1205,
+            2.4045,
+            2.5295,
+            2.4045,
+            2.5322,
+            2.6123,
+            2.1205,
+            2.6175
+          ],
+          "confidence": 0.737,
+          "span": {
+            "offset": 179,
+            "length": 3
+          }
+        },
+        {
+          "content": "8215NJW",
+          "polygon": [
+            4.3414,
+            2.0396,
+            5.5904,
+            2.0276,
+            5.5904,
+            2.3136,
+            4.3414,
+            2.3222
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 183,
+            "length": 7
+          }
+        },
+        {
+          "content": "Titular;",
+          "polygon": [
+            2.1006,
+            3.8156,
+            2.8307,
+            3.8161,
+            2.8307,
+            4.0439,
+            2.1006,
+            4.048
+          ],
+          "confidence": 0.612,
+          "span": {
+            "offset": 191,
+            "length": 8
+          }
+        },
+        {
+          "content": "ALVEMACO",
+          "polygon": [
+            4.5098,
+            3.7979,
+            5.8101,
+            3.78,
+            5.8065,
+            4.0427,
+            4.5034,
+            4.0459
+          ],
+          "confidence": 0.957,
+          "span": {
+            "offset": 200,
+            "length": 8
+          }
+        },
+        {
+          "content": "RENTACAR",
+          "polygon": [
+            5.8828,
+            3.7795,
+            7.102,
+            3.7741,
+            7.1012,
+            4.0409,
+            5.8794,
+            4.0426
+          ],
+          "confidence": 0.989,
+          "span": {
+            "offset": 209,
+            "length": 8
+          }
+        },
+        {
+          "content": "SL",
+          "polygon": [
+            7.1833,
+            3.7742,
+            7.4674,
+            3.7745,
+            7.4674,
+            4.0407,
+            7.1826,
+            4.0409
+          ],
+          "confidence": 0.989,
+          "span": {
+            "offset": 218,
+            "length": 2
+          }
+        },
+        {
+          "content": "Marca",
+          "polygon": [
+            2.1015,
+            4.2393,
+            2.7423,
+            4.245,
+            2.7358,
+            4.4843,
+            2.095,
+            4.4773
+          ],
+          "confidence": 0.989,
+          "span": {
+            "offset": 221,
+            "length": 5
+          }
+        },
+        {
+          "content": "Base:",
+          "polygon": [
+            2.8293,
+            4.2449,
+            3.4395,
+            4.2409,
+            3.4395,
+            4.4843,
+            2.8228,
+            4.4843
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 227,
+            "length": 5
+          }
+        },
+        {
+          "content": "Marca:",
+          "polygon": [
+            2.0984,
+            4.6959,
+            2.8307,
+            4.7065,
+            2.8307,
+            4.935,
+            2.0919,
+            4.939
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 233,
+            "length": 6
+          }
+        },
+        {
+          "content": "SEAT",
+          "polygon": [
+            3.2467,
+            4.6872,
+            3.8827,
+            4.677,
+            3.8863,
+            4.9002,
+            3.2467,
+            4.9103
+          ],
+          "confidence": 0.948,
+          "span": {
+            "offset": 240,
+            "length": 4
+          }
+        },
+        {
+          "content": "IBIZA",
+          "polygon": [
+            7.2341,
+            4.6669,
+            7.8408,
+            4.6669,
+            7.8408,
+            4.9002,
+            7.2341,
+            4.9002
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 245,
+            "length": 5
+          }
+        },
+        {
+          "content": "Tixo:",
+          "polygon": [
+            2.1002,
+            5.1234,
+            2.6481,
+            5.1335,
+            2.6464,
+            5.3567,
+            2.1002,
+            5.3462
+          ],
+          "confidence": 0.614,
+          "span": {
+            "offset": 251,
+            "length": 5
+          }
+        },
+        {
+          "content": "TURISMO",
+          "polygon": [
+            3.2413,
+            5.1061,
+            4.3425,
+            5.1072,
+            4.3379,
+            5.3551,
+            3.2348,
+            5.3496
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 257,
+            "length": 7
+          }
+        },
+        {
+          "content": "Color:",
+          "polygon": [
+            2.0901,
+            5.5495,
+            2.7698,
+            5.5495,
+            2.7698,
+            5.793,
+            2.0901,
+            5.793
+          ],
+          "confidence": 0.979,
+          "span": {
+            "offset": 265,
+            "length": 6
+          }
+        },
+        {
+          "content": "BLANCO",
+          "polygon": [
+            3.254,
+            5.551,
+            4.2309,
+            5.545,
+            4.2309,
+            5.7808,
+            3.2475,
+            5.7769
+          ],
+          "confidence": 0.996,
+          "span": {
+            "offset": 272,
+            "length": 6
+          }
+        },
+        {
+          "content": "Plazas:",
+          "polygon": [
+            2.1006,
+            5.9979,
+            2.8713,
+            6.0141,
+            2.8669,
+            6.2191,
+            2.1005,
+            6.2147
+          ],
+          "confidence": 0.622,
+          "span": {
+            "offset": 279,
+            "length": 7
+          }
+        },
+        {
+          "content": "5",
+          "polygon": [
+            3.2467,
+            5.9858,
+            3.4226,
+            5.9858,
+            3.4226,
+            6.1887,
+            3.2467,
+            6.1887
+          ],
+          "confidence": 0.996,
+          "span": {
+            "offset": 287,
+            "length": 1
+          }
+        },
+        {
+          "content": "Nive.",
+          "polygon": [
+            5.6174,
+            5.5497,
+            6.1584,
+            5.5596,
+            6.1547,
+            5.7625,
+            5.6137,
+            5.7525
+          ],
+          "confidence": 0.948,
+          "span": {
+            "offset": 289,
+            "length": 5
+          }
+        },
+        {
+          "content": "Modelo",
+          "polygon": [
+            5.612,
+            4.6823,
+            6.4417,
+            4.6959,
+            6.4353,
+            4.9144,
+            5.6055,
+            4.912
+          ],
+          "confidence": 0.595,
+          "span": {
+            "offset": 295,
+            "length": 6
+          }
+        },
+        {
+          "content": "Bastidor:",
+          "polygon": [
+            5.6186,
+            5.1219,
+            6.5442,
+            5.1285,
+            6.5442,
+            5.3435,
+            5.625,
+            5.3522
+          ],
+          "confidence": 0.603,
+          "span": {
+            "offset": 302,
+            "length": 9
+          }
+        },
+        {
+          "content": "VSSZZZKJ3TR554347",
+          "polygon": [
+            7.2431,
+            5.0921,
+            9.6285,
+            5.0873,
+            9.6285,
+            5.3365,
+            7.2431,
+            5.3365
+          ],
+          "confidence": 0.928,
+          "span": {
+            "offset": 312,
+            "length": 17
+          }
+        },
+        {
+          "content": "F1DF18348CA64298814BF60DE6924FE5",
+          "polygon": [
+            7.2303,
+            5.4925,
+            11.6679,
+            5.4893,
+            11.6679,
+            5.7404,
+            7.2239,
+            5.7581
+          ],
+          "confidence": 0.503,
+          "span": {
+            "offset": 330,
+            "length": 32
+          }
+        },
+        {
+          "content": "Servicio:",
+          "polygon": [
+            2.107,
+            6.4113,
+            2.9942,
+            6.3988,
+            2.993,
+            6.6598,
+            2.107,
+            6.6583
+          ],
+          "confidence": 0.951,
+          "span": {
+            "offset": 363,
+            "length": 9
+          }
+        },
+        {
+          "content": "PARTICULAR",
+          "polygon": [
+            3.2725,
+            6.3956,
+            4.7121,
+            6.3849,
+            4.7086,
+            6.6587,
+            3.2709,
+            6.66
+          ],
+          "confidence": 0.974,
+          "span": {
+            "offset": 373,
+            "length": 10
+          }
+        },
+        {
+          "content": "-",
+          "polygon": [
+            4.786,
+            6.3845,
+            4.8513,
+            6.3842,
+            4.8475,
+            6.6584,
+            4.7824,
+            6.6586
+          ],
+          "confidence": 0.957,
+          "span": {
+            "offset": 384,
+            "length": 1
+          }
+        },
+        {
+          "content": "SIN",
+          "polygon": [
+            4.9252,
+            6.3841,
+            5.2818,
+            6.3835,
+            5.2775,
+            6.6571,
+            4.9214,
+            6.6582
+          ],
+          "confidence": 0.948,
+          "span": {
+            "offset": 386,
+            "length": 3
+          }
+        },
+        {
+          "content": "ESPECIFICAR",
+          "polygon": [
+            5.3645,
+            6.3833,
+            6.8891,
+            6.3874,
+            6.8846,
+            6.6493,
+            5.3601,
+            6.6568
+          ],
+          "confidence": 0.961,
+          "span": {
+            "offset": 390,
+            "length": 11
+          }
+        },
+        {
+          "content": "Renting.",
+          "polygon": [
+            2.0856,
+            6.8445,
+            3.1655,
+            6.8637,
+            3.158,
+            7.1018,
+            2.0856,
+            7.0967
+          ],
+          "confidence": 0.6,
+          "span": {
+            "offset": 402,
+            "length": 8
+          }
+        },
+        {
+          "content": "N",
+          "polygon": [
+            3.2494,
+            6.8583,
+            3.4801,
+            6.8583,
+            3.4763,
+            7.0509,
+            3.245,
+            7.0457
+          ],
+          "confidence": 0.787,
+          "span": {
+            "offset": 411,
+            "length": 1
+          }
+        },
+        {
+          "content": "Propulsión:",
+          "polygon": [
+            5.61,
+            6.8319,
+            6.7877,
+            6.8501,
+            6.7827,
+            7.0758,
+            5.6035,
+            7.0717
+          ],
+          "confidence": 0.844,
+          "span": {
+            "offset": 413,
+            "length": 11
+          }
+        },
+        {
+          "content": "Cilindrada:",
+          "polygon": [
+            5.6246,
+            7.2607,
+            6.7268,
+            7.2727,
+            6.7268,
+            7.5025,
+            5.6244,
+            7.5147
+          ],
+          "confidence": 0.364,
+          "span": {
+            "offset": 425,
+            "length": 11
+          }
+        },
+        {
+          "content": "GASOLINA",
+          "polygon": [
+            7.2517,
+            6.8215,
+            8.4516,
+            6.8117,
+            8.4516,
+            7.0609,
+            7.2517,
+            7.0612
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 437,
+            "length": 8
+          }
+        },
+        {
+          "content": "999.0",
+          "polygon": [
+            7.2239,
+            7.254,
+            7.8339,
+            7.2638,
+            7.8282,
+            7.4869,
+            7.2239,
+            7.4714
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 446,
+            "length": 5
+          }
+        },
+        {
+          "content": "Procedencia:",
+          "polygon": [
+            9.776,
+            6.8216,
+            11.1301,
+            6.8541,
+            11.1301,
+            7.0512,
+            9.776,
+            7.0561
+          ],
+          "confidence": 0.506,
+          "span": {
+            "offset": 452,
+            "length": 12
+          }
+        },
+        {
+          "content": "EEE",
+          "polygon": [
+            11.536,
+            6.8177,
+            12.0394,
+            6.8177,
+            12.0417,
+            7.0356,
+            11.536,
+            7.0409
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 465,
+            "length": 3
+          }
+        },
+        {
+          "content": "Masa",
+          "polygon": [
+            9.7824,
+            7.2571,
+            10.3503,
+            7.2654,
+            10.3463,
+            7.4975,
+            9.7759,
+            7.4973
+          ],
+          "confidence": 0.989,
+          "span": {
+            "offset": 469,
+            "length": 4
+          }
+        },
+        {
+          "content": "Máxima:",
+          "polygon": [
+            10.4293,
+            7.2663,
+            11.2823,
+            7.2712,
+            11.2823,
+            7.4874,
+            10.4257,
+            7.4975
+          ],
+          "confidence": 0.349,
+          "span": {
+            "offset": 474,
+            "length": 7
+          }
+        },
+        {
+          "content": "1535.0",
+          "polygon": [
+            11.5584,
+            7.2561,
+            12.2868,
+            7.2488,
+            12.2826,
+            7.4754,
+            11.5584,
+            7.4713
+          ],
+          "confidence": 0.996,
+          "span": {
+            "offset": 482,
+            "length": 6
+          }
+        },
+        {
+          "content": "No.",
+          "polygon": [
+            2.092,
+            7.2733,
+            2.4627,
+            7.2686,
+            2.4547,
+            7.5122,
+            2.0855,
+            7.5178
+          ],
+          "confidence": 0.983,
+          "span": {
+            "offset": 489,
+            "length": 3
+          }
+        },
+        {
+          "content": "CVF:",
+          "polygon": [
+            2.5492,
+            7.2676,
+            3.0557,
+            7.2623,
+            3.0455,
+            7.5115,
+            2.5409,
+            7.5117
+          ],
+          "confidence": 0.981,
+          "span": {
+            "offset": 493,
+            "length": 4
+          }
+        },
+        {
+          "content": "7.82",
+          "polygon": [
+            3.274,
+            7.2604,
+            3.754,
+            7.2571,
+            3.7429,
+            7.5241,
+            3.2629,
+            7.5142
+          ],
+          "confidence": 0.979,
+          "span": {
+            "offset": 498,
+            "length": 4
+          }
+        },
+        {
+          "content": "Tipc",
+          "polygon": [
+            2.1307,
+            8.3598,
+            2.6068,
+            8.3598,
+            2.6068,
+            8.583,
+            2.1307,
+            8.583
+          ],
+          "confidence": 0.604,
+          "span": {
+            "offset": 503,
+            "length": 4
+          }
+        },
+        {
+          "content": "Basc:",
+          "polygon": [
+            2.1002,
+            8.6236,
+            2.7381,
+            8.6236,
+            2.7381,
+            8.8569,
+            2.1002,
+            8.8569
+          ],
+          "confidence": 0.894,
+          "span": {
+            "offset": 508,
+            "length": 5
+          }
+        },
+        {
+          "content": "Tiac:",
+          "polygon": [
+            2.1112,
+            8.9727,
+            2.6165,
+            8.9691,
+            2.6165,
+            9.2059,
+            2.1112,
+            9.2061
+          ],
+          "confidence": 0.616,
+          "span": {
+            "offset": 514,
+            "length": 5
+          }
+        },
+        {
+          "content": "KJ",
+          "polygon": [
+            2.9468,
+            8.9682,
+            3.2366,
+            8.9686,
+            3.2366,
+            9.2095,
+            2.9468,
+            9.2073
+          ],
+          "confidence": 0.989,
+          "span": {
+            "offset": 520,
+            "length": 2
+          }
+        },
+        {
+          "content": "DATOS",
+          "polygon": [
+            7.1429,
+            7.9291,
+            7.9339,
+            7.9261,
+            7.9299,
+            8.173,
+            7.1365,
+            8.1836
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 523,
+            "length": 5
+          }
+        },
+        {
+          "content": "TÉCNICOS",
+          "polygon": [
+            8.025,
+            7.9254,
+            9.2125,
+            7.9076,
+            9.2125,
+            8.1726,
+            8.0213,
+            8.1722
+          ],
+          "confidence": 0.77,
+          "span": {
+            "offset": 529,
+            "length": 8
+          }
+        },
+        {
+          "content": "Vanante",
+          "polygon": [
+            6.8807,
+            8.3535,
+            7.7718,
+            8.3687,
+            7.7718,
+            8.589,
+            6.8742,
+            8.5846
+          ],
+          "confidence": 0.684,
+          "span": {
+            "offset": 538,
+            "length": 7
+          }
+        },
+        {
+          "content": "Base:",
+          "polygon": [
+            6.887,
+            8.6136,
+            7.508,
+            8.6236,
+            7.508,
+            8.8366,
+            6.8836,
+            8.8266
+          ],
+          "confidence": 0.877,
+          "span": {
+            "offset": 546,
+            "length": 5
+          }
+        },
+        {
+          "content": "Variante:",
+          "polygon": [
+            6.8894,
+            8.971,
+            7.8047,
+            8.9581,
+            7.8017,
+            9.2019,
+            6.8893,
+            9.2019
+          ],
+          "confidence": 0.564,
+          "span": {
+            "offset": 552,
+            "length": 9
+          }
+        },
+        {
+          "content": "BDSGD",
+          "polygon": [
+            8.0915,
+            8.9557,
+            8.9165,
+            8.953,
+            8.91,
+            9.1888,
+            8.0876,
+            9.2001
+          ],
+          "confidence": 0.933,
+          "span": {
+            "offset": 562,
+            "length": 5
+          }
+        },
+        {
+          "content": "Versión",
+          "polygon": [
+            11.0254,
+            8.3429,
+            11.8469,
+            8.3457,
+            11.8404,
+            8.5657,
+            11.0189,
+            8.5634
+          ],
+          "confidence": 0.778,
+          "span": {
+            "offset": 568,
+            "length": 7
+          }
+        },
+        {
+          "content": "Base:",
+          "polygon": [
+            11.0185,
+            8.6033,
+            11.6435,
+            8.6033,
+            11.6435,
+            8.8265,
+            11.0185,
+            8.8265
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 576,
+            "length": 5
+          }
+        },
+        {
+          "content": "Versión:",
+          "polygon": [
+            11.021,
+            8.9646,
+            11.8594,
+            8.9201,
+            11.8641,
+            9.1612,
+            11.0274,
+            9.1911
+          ],
+          "confidence": 0.828,
+          "span": {
+            "offset": 582,
+            "length": 8
+          }
+        },
+        {
+          "content": "FM5SFMSDF01C4",
+          "polygon": [
+            12.1136,
+            8.9104,
+            14.0116,
+            8.883,
+            14.0116,
+            9.1409,
+            12.1177,
+            9.1549
+          ],
+          "confidence": 0.379,
+          "span": {
+            "offset": 591,
+            "length": 13
+          }
+        },
+        {
+          "content": "Contraseña",
+          "polygon": [
+            2.1134,
+            9.3684,
+            3.2992,
+            9.3786,
+            3.2927,
+            9.639,
+            2.1069,
+            9.6464
+          ],
+          "confidence": 0.435,
+          "span": {
+            "offset": 605,
+            "length": 10
+          }
+        },
+        {
+          "content": "Homolog.",
+          "polygon": [
+            3.3854,
+            9.3791,
+            4.3341,
+            9.3814,
+            4.3276,
+            9.6383,
+            3.3789,
+            9.6387
+          ],
+          "confidence": 0.935,
+          "span": {
+            "offset": 616,
+            "length": 8
+          }
+        },
+        {
+          "content": "Base:",
+          "polygon": [
+            4.4117,
+            9.3814,
+            5.0283,
+            9.3802,
+            5.0218,
+            9.6407,
+            4.4052,
+            9.6385
+          ],
+          "confidence": 0.602,
+          "span": {
+            "offset": 625,
+            "length": 5
+          }
+        },
+        {
+          "content": "Contraseña",
+          "polygon": [
+            2.0984,
+            9.7805,
+            3.2981,
+            9.7992,
+            3.2944,
+            10.0432,
+            2.0919,
+            10.0439
+          ],
+          "confidence": 0.594,
+          "span": {
+            "offset": 631,
+            "length": 10
+          }
+        },
+        {
+          "content": "Homologación:",
+          "polygon": [
+            3.3806,
+            9.7993,
+            4.9614,
+            9.7768,
+            4.9614,
+            10.0384,
+            3.377,
+            10.043
+          ],
+          "confidence": 0.895,
+          "span": {
+            "offset": 642,
+            "length": 13
+          }
+        },
+        {
+          "content": "89'2007/46'3134*48",
+          "polygon": [
+            5.2836,
+            9.7657,
+            7.4573,
+            9.7554,
+            7.4573,
+            10.025,
+            5.2836,
+            10.0338
+          ],
+          "confidence": 0.555,
+          "span": {
+            "offset": 656,
+            "length": 18
+          }
+        },
+        {
+          "content": "MOM",
+          "polygon": [
+            2.0856,
+            10.1879,
+            2.6694,
+            10.1938,
+            2.666,
+            10.4396,
+            2.0792,
+            10.4352
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 675,
+            "length": 3
+          }
+        },
+        {
+          "content": "Base:",
+          "polygon": [
+            2.7568,
+            10.1949,
+            3.3482,
+            10.2037,
+            3.3482,
+            10.4341,
+            2.7538,
+            10.4396
+          ],
+          "confidence": 0.614,
+          "span": {
+            "offset": 679,
+            "length": 5
+          }
+        },
+        {
+          "content": "Masa",
+          "polygon": [
+            2.0856,
+            10.6022,
+            2.6712,
+            10.6017,
+            2.6647,
+            10.8565,
+            2.0792,
+            10.8483
+          ],
+          "confidence": 0.596,
+          "span": {
+            "offset": 685,
+            "length": 4
+          }
+        },
+        {
+          "content": "Máxima",
+          "polygon": [
+            2.7555,
+            10.6017,
+            3.5475,
+            10.6027,
+            3.541,
+            10.864,
+            2.749,
+            10.8575
+          ],
+          "confidence": 0.691,
+          "span": {
+            "offset": 690,
+            "length": 6
+          }
+        },
+        {
+          "content": "en",
+          "polygon": [
+            3.6191,
+            10.6029,
+            3.8677,
+            10.6036,
+            3.8612,
+            10.8652,
+            3.6126,
+            10.8643
+          ],
+          "confidence": 0.988,
+          "span": {
+            "offset": 697,
+            "length": 2
+          }
+        },
+        {
+          "content": "Carga.",
+          "polygon": [
+            3.9351,
+            10.6038,
+            4.5961,
+            10.6066,
+            4.5961,
+            10.8649,
+            3.9286,
+            10.8653
+          ],
+          "confidence": 0.906,
+          "span": {
+            "offset": 700,
+            "length": 6
+          }
+        },
+        {
+          "content": "1535.0",
+          "polygon": [
+            5.3114,
+            10.5905,
+            6.0571,
+            10.5885,
+            6.0571,
+            10.8329,
+            5.3177,
+            10.825
+          ],
+          "confidence": 0.937,
+          "span": {
+            "offset": 707,
+            "length": 6
+          }
+        },
+        {
+          "content": "Masa",
+          "polygon": [
+            6.9062,
+            10.589,
+            7.5003,
+            10.5904,
+            7.5021,
+            10.8404,
+            6.9063,
+            10.8415
+          ],
+          "confidence": 0.965,
+          "span": {
+            "offset": 714,
+            "length": 4
+          }
+        },
+        {
+          "content": "en",
+          "polygon": [
+            7.5726,
+            10.5905,
+            7.8094,
+            10.5907,
+            7.8121,
+            10.8386,
+            7.5746,
+            10.84
+          ],
+          "confidence": 0.874,
+          "span": {
+            "offset": 719,
+            "length": 2
+          }
+        },
+        {
+          "content": "circulación;",
+          "polygon": [
+            7.8776,
+            10.5908,
+            9.0899,
+            10.5889,
+            9.0908,
+            10.8221,
+            7.8806,
+            10.8381
+          ],
+          "confidence": 0.608,
+          "span": {
+            "offset": 722,
+            "length": 12
+          }
+        },
+        {
+          "content": "Relación",
+          "polygon": [
+            6.9254,
+            10.9988,
+            7.8222,
+            10.9943,
+            7.8158,
+            11.2481,
+            6.9189,
+            11.2462
+          ],
+          "confidence": 0.857,
+          "span": {
+            "offset": 735,
+            "length": 8
+          }
+        },
+        {
+          "content": "Potencia/Peso:",
+          "polygon": [
+            7.8963,
+            10.9942,
+            9.4763,
+            10.9982,
+            9.4763,
+            11.2438,
+            7.8898,
+            11.2481
+          ],
+          "confidence": 0.796,
+          "span": {
+            "offset": 744,
+            "length": 14
+          }
+        },
+        {
+          "content": "0.0",
+          "polygon": [
+            9.8923,
+            10.9773,
+            10.2779,
+            10.9773,
+            10.2777,
+            11.2309,
+            9.8923,
+            11.2255
+          ],
+          "confidence": 0.594,
+          "span": {
+            "offset": 759,
+            "length": 3
+          }
+        },
+        {
+          "content": "1111.C",
+          "polygon": [
+            9.9231,
+            10.5789,
+            10.6431,
+            10.5826,
+            10.6431,
+            10.8022,
+            9.9166,
+            10.8013
+          ],
+          "confidence": 0.88,
+          "span": {
+            "offset": 763,
+            "length": 6
+          }
+        },
+        {
+          "content": "CO2:",
+          "polygon": [
+            11.0408,
+            10.5715,
+            11.5948,
+            10.5715,
+            11.5929,
+            10.7845,
+            11.039,
+            10.7796
+          ],
+          "confidence": 0.772,
+          "span": {
+            "offset": 770,
+            "length": 4
+          }
+        },
+        {
+          "content": "Plazas",
+          "polygon": [
+            11.0382,
+            10.9906,
+            11.7273,
+            10.9982,
+            11.7242,
+            11.2411,
+            11.0382,
+            11.2352
+          ],
+          "confidence": 0.957,
+          "span": {
+            "offset": 775,
+            "length": 6
+          }
+        },
+        {
+          "content": "de",
+          "polygon": [
+            11.7878,
+            10.9983,
+            12.0296,
+            10.998,
+            12.0251,
+            11.2411,
+            11.7843,
+            11.2411
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 782,
+            "length": 2
+          }
+        },
+        {
+          "content": "pie:",
+          "polygon": [
+            12.1061,
+            10.9978,
+            12.4795,
+            10.9944,
+            12.4795,
+            11.2411,
+            12.1013,
+            11.2411
+          ],
+          "confidence": 0.895,
+          "span": {
+            "offset": 785,
+            "length": 4
+          }
+        },
+        {
+          "content": "120.0",
+          "polygon": [
+            12.6926,
+            10.5614,
+            13.3115,
+            10.5614,
+            13.3115,
+            10.7947,
+            12.6926,
+            10.7894
+          ],
+          "confidence": 0.987,
+          "span": {
+            "offset": 790,
+            "length": 5
+          }
+        },
+        {
+          "content": "presente",
+          "polygon": [
+            2.3565,
+            14.1386,
+            3.1127,
+            14.1351,
+            3.1123,
+            14.3374,
+            2.3564,
+            14.339
+          ],
+          "confidence": 0.594,
+          "span": {
+            "offset": 796,
+            "length": 8
+          }
+        },
+        {
+          "content": "cocu",
+          "polygon": [
+            3.1585,
+            14.1349,
+            3.5348,
+            14.1332,
+            3.5341,
+            14.3365,
+            3.158,
+            14.3373
+          ],
+          "confidence": 0.29,
+          "span": {
+            "offset": 805,
+            "length": 4
+          }
+        },
+        {
+          "content": "Tiênto",
+          "polygon": [
+            3.5806,
+            14.1329,
+            4.0449,
+            14.1308,
+            4.0439,
+            14.3356,
+            3.5798,
+            14.3365
+          ],
+          "confidence": 0.123,
+          "span": {
+            "offset": 810,
+            "length": 6
+          }
+        },
+        {
+          "content": "combluye",
+          "polygon": [
+            4.0871,
+            14.1306,
+            4.9313,
+            14.127,
+            4.9298,
+            14.334,
+            4.0861,
+            14.3355
+          ],
+          "confidence": 0.54,
+          "span": {
+            "offset": 817,
+            "length": 8
+          }
+        },
+        {
+          "content": "une",
+          "polygon": [
+            4.9946,
+            14.1267,
+            5.2795,
+            14.1255,
+            5.2778,
+            14.3334,
+            4.9931,
+            14.3339
+          ],
+          "confidence": 0.741,
+          "span": {
+            "offset": 826,
+            "length": 3
+          }
+        },
+        {
+          "content": "autorizsoon",
+          "polygon": [
+            5.3428,
+            14.1252,
+            6.3207,
+            14.1212,
+            6.3184,
+            14.3318,
+            5.3411,
+            14.3333
+          ],
+          "confidence": 0.3,
+          "span": {
+            "offset": 830,
+            "length": 11
+          }
+        },
+        {
+          "content": "provisional",
+          "polygon": [
+            6.3805,
+            14.1209,
+            7.2388,
+            14.1175,
+            7.2359,
+            14.3305,
+            6.3782,
+            14.3317
+          ],
+          "confidence": 0.202,
+          "span": {
+            "offset": 842,
+            "length": 11
+          }
+        },
+        {
+          "content": "de",
+          "polygon": [
+            7.288,
+            14.1173,
+            7.4885,
+            14.1165,
+            7.4855,
+            14.3302,
+            7.2852,
+            14.3304
+          ],
+          "confidence": 0.928,
+          "span": {
+            "offset": 854,
+            "length": 2
+          }
+        },
+        {
+          "content": "ciro",
+          "polygon": [
+            7.5343,
+            14.1164,
+            7.7735,
+            14.1155,
+            7.7703,
+            14.3298,
+            7.5312,
+            14.3301
+          ],
+          "confidence": 0.759,
+          "span": {
+            "offset": 857,
+            "length": 4
+          }
+        },
+        {
+          "content": "..",
+          "polygon": [
+            7.8157,
+            14.1153,
+            7.8297,
+            14.1152,
+            7.8265,
+            14.3298,
+            7.8125,
+            14.3298
+          ],
+          "confidence": 0.115,
+          "span": {
+            "offset": 862,
+            "length": 2
+          }
+        },
+        {
+          "content": "/noón",
+          "polygon": [
+            7.872,
+            14.1151,
+            8.389,
+            14.1131,
+            8.3855,
+            14.3291,
+            7.8687,
+            14.3297
+          ],
+          "confidence": 0.159,
+          "span": {
+            "offset": 865,
+            "length": 5
+          }
+        },
+        {
+          "content": "del",
+          "polygon": [
+            8.4488,
+            14.1129,
+            8.6986,
+            14.112,
+            8.6949,
+            14.3287,
+            8.4453,
+            14.329
+          ],
+          "confidence": 0.474,
+          "span": {
+            "offset": 871,
+            "length": 3
+          }
+        },
+        {
+          "content": "vehiculo,",
+          "polygon": [
+            8.7478,
+            14.1118,
+            9.4795,
+            14.1093,
+            9.4753,
+            14.328,
+            8.7441,
+            14.3287
+          ],
+          "confidence": 0.133,
+          "span": {
+            "offset": 875,
+            "length": 9
+          }
+        },
+        {
+          "content": "que",
+          "polygon": [
+            9.5358,
+            14.1091,
+            9.8383,
+            14.108,
+            9.8339,
+            14.3276,
+            9.5316,
+            14.3279
+          ],
+          "confidence": 0.187,
+          "span": {
+            "offset": 885,
+            "length": 3
+          }
+        },
+        {
+          "content": "tuft",
+          "polygon": [
+            9.8981,
+            14.1078,
+            10.2182,
+            14.1067,
+            10.2136,
+            14.3272,
+            9.8937,
+            14.3275
+          ],
+          "confidence": 0.146,
+          "span": {
+            "offset": 889,
+            "length": 4
+          }
+        },
+        {
+          "content": "Uje",
+          "polygon": [
+            10.2709,
+            14.1065,
+            10.6016,
+            14.1055,
+            10.5968,
+            14.327,
+            10.2663,
+            14.3272
+          ],
+          "confidence": 0.108,
+          "span": {
+            "offset": 894,
+            "length": 3
+          }
+        },
+        {
+          "content": "a'",
+          "polygon": [
+            10.6614,
+            14.1053,
+            10.795,
+            14.1048,
+            10.7901,
+            14.3269,
+            10.6565,
+            14.327
+          ],
+          "confidence": 0.413,
+          "span": {
+            "offset": 898,
+            "length": 2
+          }
+        },
+        {
+          "content": "permiso",
+          "polygon": [
+            10.8548,
+            14.1047,
+            11.495,
+            14.1026,
+            11.4897,
+            14.3264,
+            10.8499,
+            14.3268
+          ],
+          "confidence": 0.599,
+          "span": {
+            "offset": 901,
+            "length": 7
+          }
+        },
+        {
+          "content": "definitivo,",
+          "polygon": [
+            11.5372,
+            14.1025,
+            12.3111,
+            14.1001,
+            12.3053,
+            14.326,
+            11.5319,
+            14.3263
+          ],
+          "confidence": 0.261,
+          "span": {
+            "offset": 909,
+            "length": 11
+          }
+        },
+        {
+          "content": "surtiene",
+          "polygon": [
+            12.3568,
+            14.1,
+            13.099,
+            14.0979,
+            13.0928,
+            14.3256,
+            12.351,
+            14.3259
+          ],
+          "confidence": 0.204,
+          "span": {
+            "offset": 921,
+            "length": 8
+          }
+        },
+        {
+          "content": "sus",
+          "polygon": [
+            13.1448,
+            14.0977,
+            13.4637,
+            14.0968,
+            13.4637,
+            14.3254,
+            13.1385,
+            14.3256
+          ],
+          "confidence": 0.877,
+          "span": {
+            "offset": 930,
+            "length": 3
+          }
+        },
+        {
+          "content": "mismos",
+          "polygon": [
+            2.3756,
+            14.3659,
+            3.0322,
+            14.3582,
+            3.0268,
+            14.5384,
+            2.3691,
+            14.5374
+          ],
+          "confidence": 0.877,
+          "span": {
+            "offset": 934,
+            "length": 6
+          }
+        },
+        {
+          "content": "aledes",
+          "polygon": [
+            3.0797,
+            14.3578,
+            3.671,
+            14.3525,
+            3.6667,
+            14.5384,
+            3.0744,
+            14.5384
+          ],
+          "confidence": 0.089,
+          "span": {
+            "offset": 941,
+            "length": 6
+          }
+        },
+        {
+          "content": "con",
+          "polygon": [
+            3.7304,
+            14.352,
+            4.0037,
+            14.35,
+            4,
+            14.5384,
+            3.7262,
+            14.5384
+          ],
+          "confidence": 0.789,
+          "span": {
+            "offset": 948,
+            "length": 3
+          }
+        },
+        {
+          "content": "ina",
+          "polygon": [
+            4.0453,
+            14.3498,
+            4.3127,
+            14.3484,
+            4.3095,
+            14.5381,
+            4.0417,
+            14.5384
+          ],
+          "confidence": 0.014,
+          "span": {
+            "offset": 952,
+            "length": 3
+          }
+        },
+        {
+          "content": "siguesalud",
+          "polygon": [
+            4.3633,
+            14.3482,
+            5.1833,
+            14.3456,
+            5.1816,
+            14.5302,
+            4.3601,
+            14.5378
+          ],
+          "confidence": 0.11,
+          "span": {
+            "offset": 956,
+            "length": 10
+          }
+        },
+        {
+          "content": "conid",
+          "polygon": [
+            5.2279,
+            14.3456,
+            5.6439,
+            14.3454,
+            5.6429,
+            14.5241,
+            5.2262,
+            14.5296
+          ],
+          "confidence": 0.33,
+          "span": {
+            "offset": 967,
+            "length": 5
+          }
+        },
+        {
+          "content": "chantes",
+          "polygon": [
+            5.6854,
+            14.3455,
+            6.2296,
+            14.3461,
+            6.2296,
+            14.5136,
+            5.6846,
+            14.5233
+          ],
+          "confidence": 0.123,
+          "span": {
+            "offset": 973,
+            "length": 7
+          }
+        },
+        {
+          "content": "Terdra",
+          "polygon": [
+            3.3351,
+            14.5587,
+            3.8939,
+            14.5509,
+            3.8881,
+            14.7358,
+            3.3286,
+            14.7325
+          ],
+          "confidence": 0.615,
+          "span": {
+            "offset": 981,
+            "length": 6
+          }
+        },
+        {
+          "content": "valdez",
+          "polygon": [
+            3.9517,
+            14.55,
+            4.5073,
+            14.544,
+            4.5024,
+            14.7387,
+            3.946,
+            14.7361
+          ],
+          "confidence": 0.657,
+          "span": {
+            "offset": 988,
+            "length": 6
+          }
+        },
+        {
+          "content": "do",
+          "polygon": [
+            4.578,
+            14.5432,
+            4.7707,
+            14.5414,
+            4.7661,
+            14.7398,
+            4.5731,
+            14.739
+          ],
+          "confidence": 0.425,
+          "span": {
+            "offset": 995,
+            "length": 2
+          }
+        },
+        {
+          "content": "SC",
+          "polygon": [
+            4.8285,
+            14.541,
+            5.0308,
+            14.5396,
+            5.0266,
+            14.7403,
+            4.824,
+            14.7399
+          ],
+          "confidence": 0.196,
+          "span": {
+            "offset": 998,
+            "length": 2
+          }
+        },
+        {
+          "content": "ciâu",
+          "polygon": [
+            5.079,
+            14.5393,
+            5.4195,
+            14.5369,
+            5.4158,
+            14.7411,
+            5.0749,
+            14.7404
+          ],
+          "confidence": 0.333,
+          "span": {
+            "offset": 1001,
+            "length": 4
+          }
+        },
+        {
+          "content": "a",
+          "polygon": [
+            5.4773,
+            14.5367,
+            5.5737,
+            14.5364,
+            5.5702,
+            14.7412,
+            5.4737,
+            14.7412
+          ],
+          "confidence": 0.936,
+          "span": {
+            "offset": 1006,
+            "length": 1
+          }
+        },
+        {
+          "content": "part.'",
+          "polygon": [
+            5.6315,
+            14.5362,
+            6.049,
+            14.5348,
+            6.0461,
+            14.7413,
+            5.628,
+            14.7412
+          ],
+          "confidence": 0.141,
+          "span": {
+            "offset": 1008,
+            "length": 6
+          }
+        },
+        {
+          "content": "do",
+          "polygon": [
+            6.0908,
+            14.5347,
+            6.2931,
+            14.5346,
+            6.2906,
+            14.7411,
+            6.088,
+            14.7413
+          ],
+          "confidence": 0.212,
+          "span": {
+            "offset": 1015,
+            "length": 2
+          }
+        },
+        {
+          "content": "la",
+          "polygon": [
+            6.3574,
+            14.5347,
+            6.489,
+            14.5347,
+            6.4868,
+            14.7408,
+            6.3549,
+            14.741
+          ],
+          "confidence": 0.588,
+          "span": {
+            "offset": 1018,
+            "length": 2
+          }
+        },
+        {
+          "content": "lecha",
+          "polygon": [
+            6.5469,
+            14.5347,
+            6.9741,
+            14.5354,
+            6.9724,
+            14.7396,
+            6.5447,
+            14.7407
+          ],
+          "confidence": 0.704,
+          "span": {
+            "offset": 1021,
+            "length": 5
+          }
+        },
+        {
+          "content": "de",
+          "polygon": [
+            7.0447,
+            14.5356,
+            7.2374,
+            14.5364,
+            7.2361,
+            14.7387,
+            7.0432,
+            14.7394
+          ],
+          "confidence": 0.713,
+          "span": {
+            "offset": 1027,
+            "length": 2
+          }
+        },
+        {
+          "content": "expedición.",
+          "polygon": [
+            7.2888,
+            14.5366,
+            8.2171,
+            14.5425,
+            8.2171,
+            14.7339,
+            7.2876,
+            14.7386
+          ],
+          "confidence": 0.346,
+          "span": {
+            "offset": 1030,
+            "length": 11
+          }
+        },
+        {
+          "content": "Sempre",
+          "polygon": [
+            3.3009,
+            14.7488,
+            3.9869,
+            14.7463,
+            3.9869,
+            14.9503,
+            3.3009,
+            14.95
+          ],
+          "confidence": 0.19,
+          "span": {
+            "offset": 1042,
+            "length": 6
+          }
+        },
+        {
+          "content": "debe",
+          "polygon": [
+            4.0338,
+            14.7462,
+            4.3918,
+            14.7449,
+            4.3918,
+            14.9504,
+            4.0338,
+            14.9503
+          ],
+          "confidence": 0.489,
+          "span": {
+            "offset": 1049,
+            "length": 4
+          }
+        },
+        {
+          "content": "'s",
+          "polygon": [
+            4.432,
+            14.7448,
+            4.5993,
+            14.7442,
+            4.5993,
+            14.9505,
+            4.432,
+            14.9505
+          ],
+          "confidence": 0.296,
+          "span": {
+            "offset": 1054,
+            "length": 2
+          }
+        },
+        {
+          "content": "acompañado",
+          "polygon": [
+            4.6461,
+            14.744,
+            5.7069,
+            14.7409,
+            5.7069,
+            14.9501,
+            4.6461,
+            14.9505
+          ],
+          "confidence": 0.655,
+          "span": {
+            "offset": 1057,
+            "length": 10
+          }
+        },
+        {
+          "content": "de",
+          "polygon": [
+            5.7571,
+            14.7408,
+            5.9613,
+            14.7402,
+            5.9613,
+            14.9499,
+            5.7571,
+            14.95
+          ],
+          "confidence": 0.535,
+          "span": {
+            "offset": 1068,
+            "length": 2
+          }
+        },
+        {
+          "content": "a",
+          "polygon": [
+            6.0315,
+            14.74,
+            6.1386,
+            14.7397,
+            6.1386,
+            14.9498,
+            6.0315,
+            14.9499
+          ],
+          "confidence": 0.143,
+          "span": {
+            "offset": 1071,
+            "length": 1
+          }
+        },
+        {
+          "content": "Tabela",
+          "polygon": [
+            6.2122,
+            14.7395,
+            6.7644,
+            14.7383,
+            6.7644,
+            14.949,
+            6.2122,
+            14.9498
+          ],
+          "confidence": 0.69,
+          "span": {
+            "offset": 1073,
+            "length": 6
+          }
+        },
+        {
+          "content": "co",
+          "polygon": [
+            6.8146,
+            14.7382,
+            6.9886,
+            14.7378,
+            6.9886,
+            14.9486,
+            6.8146,
+            14.9489
+          ],
+          "confidence": 0.718,
+          "span": {
+            "offset": 1080,
+            "length": 2
+          }
+        },
+        {
+          "content": "inspección",
+          "polygon": [
+            7.0287,
+            14.7377,
+            7.9323,
+            14.7358,
+            7.9323,
+            14.9469,
+            7.0287,
+            14.9485
+          ],
+          "confidence": 0.352,
+          "span": {
+            "offset": 1083,
+            "length": 10
+          }
+        },
+        {
+          "content": "Técnica",
+          "polygon": [
+            7.9925,
+            14.7358,
+            8.6249,
+            14.7348,
+            8.6249,
+            14.9451,
+            7.9925,
+            14.9467
+          ],
+          "confidence": 0.735,
+          "span": {
+            "offset": 1094,
+            "length": 7
+          }
+        },
+        {
+          "content": "de",
+          "polygon": [
+            8.6751,
+            14.7347,
+            8.8759,
+            14.7344,
+            8.8759,
+            14.9444,
+            8.6751,
+            14.9449
+          ],
+          "confidence": 0.613,
+          "span": {
+            "offset": 1102,
+            "length": 2
+          }
+        },
+        {
+          "content": "Vehiculo",
+          "polygon": [
+            8.9663,
+            14.7343,
+            9.6958,
+            14.7335,
+            9.6958,
+            14.9418,
+            8.9663,
+            14.9442
+          ],
+          "confidence": 0.569,
+          "span": {
+            "offset": 1105,
+            "length": 8
+          }
+        },
+        {
+          "content": "en",
+          "polygon": [
+            9.7426,
+            14.7335,
+            9.9334,
+            14.7333,
+            9.9334,
+            14.9409,
+            9.7426,
+            14.9416
+          ],
+          "confidence": 0.881,
+          "span": {
+            "offset": 1114,
+            "length": 2
+          }
+        },
+        {
+          "content": "vigor,",
+          "polygon": [
+            9.9936,
+            14.7333,
+            10.432,
+            14.7329,
+            10.432,
+            14.9391,
+            9.9936,
+            14.9407
+          ],
+          "confidence": 0.405,
+          "span": {
+            "offset": 1117,
+            "length": 6
+          }
+        },
+        {
+          "content": "asi",
+          "polygon": [
+            10.4889,
+            14.7328,
+            10.7231,
+            14.7326,
+            10.7231,
+            14.9379,
+            10.4889,
+            14.9389
+          ],
+          "confidence": 0.127,
+          "span": {
+            "offset": 1124,
+            "length": 3
+          }
+        },
+        {
+          "content": "como",
+          "polygon": [
+            10.7867,
+            14.7326,
+            11.2217,
+            14.7326,
+            11.2217,
+            14.9357,
+            10.7867,
+            14.9377
+          ],
+          "confidence": 0.578,
+          "span": {
+            "offset": 1128,
+            "length": 4
+          }
+        },
+        {
+          "content": "de",
+          "polygon": [
+            11.2686,
+            14.7326,
+            11.4593,
+            14.7325,
+            11.4593,
+            14.9346,
+            11.2686,
+            14.9354
+          ],
+          "confidence": 0.534,
+          "span": {
+            "offset": 1133,
+            "length": 2
+          }
+        },
+        {
+          "content": "la",
+          "polygon": [
+            11.4995,
+            14.7325,
+            11.6467,
+            14.7325,
+            11.6467,
+            14.9337,
+            11.4995,
+            14.9344
+          ],
+          "confidence": 0.422,
+          "span": {
+            "offset": 1136,
+            "length": 2
+          }
+        },
+        {
+          "content": "restante",
+          "polygon": [
+            11.6868,
+            14.7325,
+            12.3729,
+            14.7325,
+            12.3729,
+            14.93,
+            11.6869,
+            14.9335
+          ],
+          "confidence": 0.428,
+          "span": {
+            "offset": 1139,
+            "length": 8
+          }
+        },
+        {
+          "content": "documentación",
+          "polygon": [
+            12.423,
+            14.7325,
+            13.6768,
+            14.733,
+            13.6768,
+            14.9227,
+            12.423,
+            14.9298
+          ],
+          "confidence": 0.265,
+          "span": {
+            "offset": 1148,
+            "length": 13
+          }
+        },
+        {
+          "content": "que.",
+          "polygon": [
+            2.3565,
+            14.9849,
+            2.7494,
+            14.9781,
+            2.7489,
+            15.1628,
+            2.3564,
+            15.1618
+          ],
+          "confidence": 0.617,
+          "span": {
+            "offset": 1162,
+            "length": 4
+          }
+        },
+        {
+          "content": "conforme",
+          "polygon": [
+            2.8105,
+            14.977,
+            3.5706,
+            14.9657,
+            3.5692,
+            15.1645,
+            2.81,
+            15.163
+          ],
+          "confidence": 0.183,
+          "span": {
+            "offset": 1167,
+            "length": 8
+          }
+        },
+        {
+          "content": "a",
+          "polygon": [
+            3.6221,
+            14.9651,
+            3.7252,
+            14.9638,
+            3.7237,
+            15.1646,
+            3.6207,
+            15.1645
+          ],
+          "confidence": 0.96,
+          "span": {
+            "offset": 1176,
+            "length": 1
+          }
+        },
+        {
+          "content": "la",
+          "polygon": [
+            3.7864,
+            14.963,
+            3.9184,
+            14.9614,
+            3.9167,
+            15.1648,
+            3.7848,
+            15.1647
+          ],
+          "confidence": 0.717,
+          "span": {
+            "offset": 1178,
+            "length": 2
+          }
+        },
+        {
+          "content": "normativa",
+          "polygon": [
+            3.9635,
+            14.9609,
+            4.7784,
+            14.9547,
+            4.7757,
+            15.1646,
+            3.9617,
+            15.1648
+          ],
+          "confidence": 0.461,
+          "span": {
+            "offset": 1181,
+            "length": 9
+          }
+        },
+        {
+          "content": "vigente.",
+          "polygon": [
+            4.8235,
+            14.9544,
+            5.4613,
+            14.9529,
+            5.4578,
+            15.1634,
+            4.8208,
+            15.1646
+          ],
+          "confidence": 0.221,
+          "span": {
+            "offset": 1191,
+            "length": 8
+          }
+        },
+        {
+          "content": "debe",
+          "polygon": [
+            5.5192,
+            14.9528,
+            5.9219,
+            14.9531,
+            5.9179,
+            15.162,
+            5.5157,
+            15.1632
+          ],
+          "confidence": 0.6,
+          "span": {
+            "offset": 1200,
+            "length": 4
+          }
+        },
+        {
+          "content": "levar",
+          "polygon": [
+            6.0217,
+            14.9534,
+            6.4082,
+            14.9546,
+            6.4037,
+            15.1603,
+            6.0176,
+            15.1617
+          ],
+          "confidence": 0.643,
+          "span": {
+            "offset": 1205,
+            "length": 5
+          }
+        },
+        {
+          "content": "comingo",
+          "polygon": [
+            6.4662,
+            14.9548,
+            7.075,
+            14.9594,
+            7.0697,
+            15.157,
+            6.4616,
+            15.1601
+          ],
+          "confidence": 0.33,
+          "span": {
+            "offset": 1211,
+            "length": 7
+          }
+        },
+        {
+          "content": "el",
+          "polygon": [
+            7.1297,
+            14.9599,
+            7.2811,
+            14.9611,
+            7.2756,
+            15.156,
+            7.1244,
+            15.1567
+          ],
+          "confidence": 0.599,
+          "span": {
+            "offset": 1219,
+            "length": 2
+          }
+        },
+        {
+          "content": "conductor.",
+          "polygon": [
+            7.3262,
+            14.9615,
+            8.1979,
+            14.9727,
+            8.1979,
+            15.1498,
+            7.3207,
+            15.1557
+          ],
+          "confidence": 0.599,
+          "span": {
+            "offset": 1222,
+            "length": 10
+          }
+        },
+        {
+          "content": "()",
+          "polygon": [
+            2.364,
+            15.1877,
+            2.5832,
+            15.1877,
+            2.5832,
+            15.3703,
+            2.364,
+            15.3703
+          ],
+          "confidence": 0.682,
+          "span": {
+            "offset": 1233,
+            "length": 2
+          }
+        },
+        {
+          "content": "El",
+          "polygon": [
+            3.3033,
+            15.1709,
+            3.487,
+            15.1703,
+            3.487,
+            15.3703,
+            3.3033,
+            15.3703
+          ],
+          "confidence": 0.999,
+          "span": {
+            "offset": 1236,
+            "length": 2
+          }
+        },
+        {
+          "content": "pretenle",
+          "polygon": [
+            3.5353,
+            15.1701,
+            4.2375,
+            15.1678,
+            4.2375,
+            15.3703,
+            3.5353,
+            15.3703
+          ],
+          "confidence": 0.267,
+          "span": {
+            "offset": 1239,
+            "length": 8
+          }
+        },
+        {
+          "content": "documento",
+          "polygon": [
+            4.2859,
+            15.1677,
+            5.1975,
+            15.1661,
+            5.1975,
+            15.3703,
+            4.2859,
+            15.3703
+          ],
+          "confidence": 0.987,
+          "span": {
+            "offset": 1248,
+            "length": 9
+          }
+        },
+        {
+          "content": "no",
+          "polygon": [
+            5.2458,
+            15.1661,
+            5.4585,
+            15.1659,
+            5.4585,
+            15.3703,
+            5.2458,
+            15.3703
+          ],
+          "confidence": 0.999,
+          "span": {
+            "offset": 1258,
+            "length": 2
+          }
+        },
+        {
+          "content": "ce",
+          "polygon": [
+            5.5036,
+            15.1659,
+            5.6968,
+            15.1657,
+            5.6968,
+            15.3703,
+            5.5036,
+            15.3703
+          ],
+          "confidence": 0.864,
+          "span": {
+            "offset": 1261,
+            "length": 2
+          }
+        },
+        {
+          "content": "válido",
+          "polygon": [
+            5.7548,
+            15.1657,
+            6.2252,
+            15.1658,
+            6.2252,
+            15.3689,
+            5.7548,
+            15.3703
+          ],
+          "confidence": 0.855,
+          "span": {
+            "offset": 1264,
+            "length": 6
+          }
+        },
+        {
+          "content": "pore",
+          "polygon": [
+            6.2864,
+            15.1658,
+            6.6375,
+            15.1661,
+            6.6375,
+            15.3672,
+            6.2864,
+            15.3686
+          ],
+          "confidence": 0.775,
+          "span": {
+            "offset": 1271,
+            "length": 4
+          }
+        },
+        {
+          "content": "restar",
+          "polygon": [
+            6.6826,
+            15.1661,
+            7.2786,
+            15.1672,
+            7.2786,
+            15.3637,
+            6.6826,
+            15.3671
+          ],
+          "confidence": 0.43,
+          "span": {
+            "offset": 1276,
+            "length": 6
+          }
+        },
+        {
+          "content": "lên",
+          "polygon": [
+            7.3398,
+            15.1673,
+            7.6716,
+            15.1681,
+            7.6716,
+            15.3613,
+            7.3398,
+            15.3634
+          ],
+          "confidence": 0.245,
+          "span": {
+            "offset": 1283,
+            "length": 3
+          }
+        },
+        {
+          "content": "des",
+          "polygon": [
+            7.7102,
+            15.1682,
+            7.984,
+            15.1691,
+            7.984,
+            15.3591,
+            7.7102,
+            15.361
+          ],
+          "confidence": 0.588,
+          "span": {
+            "offset": 1287,
+            "length": 3
+          }
+        },
+        {
+          "content": "acministrat",
+          "polygon": [
+            8.0324,
+            15.1692,
+            8.9215,
+            15.1728,
+            8.9215,
+            15.3516,
+            8.0324,
+            15.3588
+          ],
+          "confidence": 0.193,
+          "span": {
+            "offset": 1291,
+            "length": 11
+          }
+        },
+        {
+          "content": "vod",
+          "polygon": [
+            8.9601,
+            15.173,
+            9.3209,
+            15.1746,
+            9.3209,
+            15.3482,
+            8.9601,
+            15.3513
+          ],
+          "confidence": 0.691,
+          "span": {
+            "offset": 1303,
+            "length": 3
+          }
+        },
+        {
+          "content": "Si",
+          "polygon": [
+            2.4035,
+            15.5887,
+            2.5271,
+            15.5882,
+            2.5208,
+            15.7924,
+            2.3971,
+            15.7924
+          ],
+          "confidence": 0.956,
+          "span": {
+            "offset": 1307,
+            "length": 2
+          }
+        },
+        {
+          "content": "observa",
+          "polygon": [
+            2.5682,
+            15.5881,
+            3.2683,
+            15.5852,
+            3.2629,
+            15.7927,
+            2.562,
+            15.7924
+          ],
+          "confidence": 0.558,
+          "span": {
+            "offset": 1310,
+            "length": 7
+          }
+        },
+        {
+          "content": "algún",
+          "polygon": [
+            3.3267,
+            15.585,
+            3.7694,
+            15.5832,
+            3.7644,
+            15.7928,
+            3.3213,
+            15.7927
+          ],
+          "confidence": 0.39,
+          "span": {
+            "offset": 1318,
+            "length": 5
+          }
+        },
+        {
+          "content": "error",
+          "polygon": [
+            3.8277,
+            15.583,
+            4.188,
+            15.5816,
+            4.1836,
+            15.7928,
+            3.8229,
+            15.7929
+          ],
+          "confidence": 0.251,
+          "span": {
+            "offset": 1324,
+            "length": 5
+          }
+        },
+        {
+          "content": "en",
+          "polygon": [
+            4.2567,
+            15.5813,
+            4.4626,
+            15.5806,
+            4.4585,
+            15.7926,
+            4.2523,
+            15.7928
+          ],
+          "confidence": 0.591,
+          "span": {
+            "offset": 1330,
+            "length": 2
+          }
+        },
+        {
+          "content": "on",
+          "polygon": [
+            4.5037,
+            15.5804,
+            4.7405,
+            15.5796,
+            4.7367,
+            15.7924,
+            4.4997,
+            15.7926
+          ],
+          "confidence": 0.017,
+          "span": {
+            "offset": 1333,
+            "length": 2
+          }
+        },
+        {
+          "content": "colos",
+          "polygon": [
+            4.7954,
+            15.5794,
+            5.2381,
+            15.5778,
+            5.2349,
+            15.7919,
+            4.7917,
+            15.7923
+          ],
+          "confidence": 0.162,
+          "span": {
+            "offset": 1336,
+            "length": 5
+          }
+        },
+        {
+          "content": "generales_",
+          "polygon": [
+            5.2862,
+            15.5776,
+            6.1235,
+            15.5749,
+            6.1213,
+            15.7906,
+            5.283,
+            15.7919
+          ],
+          "confidence": 0.396,
+          "span": {
+            "offset": 1342,
+            "length": 10
+          }
+        },
+        {
+          "content": "techcon",
+          "polygon": [
+            6.1647,
+            15.5747,
+            6.8648,
+            15.5726,
+            6.8634,
+            15.7891,
+            6.1625,
+            15.7905
+          ],
+          "confidence": 0.431,
+          "span": {
+            "offset": 1353,
+            "length": 7
+          }
+        },
+        {
+          "content": "o",
+          "polygon": [
+            6.906,
+            15.5725,
+            7.0192,
+            15.5721,
+            7.018,
+            15.7888,
+            6.9046,
+            15.789
+          ],
+          "confidence": 0.916,
+          "span": {
+            "offset": 1361,
+            "length": 1
+          }
+        },
+        {
+          "content": "en",
+          "polygon": [
+            7.0638,
+            15.572,
+            7.2663,
+            15.5713,
+            7.2653,
+            15.7883,
+            7.0626,
+            15.7887
+          ],
+          "confidence": 0.782,
+          "span": {
+            "offset": 1363,
+            "length": 2
+          }
+        },
+        {
+          "content": "el",
+          "polygon": [
+            7.3246,
+            15.5712,
+            7.4413,
+            15.5709,
+            7.4406,
+            15.7877,
+            7.3238,
+            15.7881
+          ],
+          "confidence": 0.678,
+          "span": {
+            "offset": 1366,
+            "length": 2
+          }
+        },
+        {
+          "content": "servicio",
+          "polygon": [
+            7.4825,
+            15.5708,
+            8.1379,
+            15.5691,
+            8.138,
+            15.7854,
+            7.4818,
+            15.7876
+          ],
+          "confidence": 0.345,
+          "span": {
+            "offset": 1369,
+            "length": 8
+          }
+        },
+        {
+          "content": "al",
+          "polygon": [
+            8.1826,
+            15.5689,
+            8.3198,
+            15.5686,
+            8.3201,
+            15.7848,
+            8.1826,
+            15.7853
+          ],
+          "confidence": 0.955,
+          "span": {
+            "offset": 1378,
+            "length": 2
+          }
+        },
+        {
+          "content": "que",
+          "polygon": [
+            8.3816,
+            15.5684,
+            8.6836,
+            15.5676,
+            8.6842,
+            15.7837,
+            8.3819,
+            15.7846
+          ],
+          "confidence": 0.778,
+          "span": {
+            "offset": 1381,
+            "length": 3
+          }
+        },
+        {
+          "content": "se",
+          "polygon": [
+            8.7316,
+            15.5675,
+            8.9272,
+            15.567,
+            8.9282,
+            15.7829,
+            8.7323,
+            15.7835
+          ],
+          "confidence": 0.725,
+          "span": {
+            "offset": 1385,
+            "length": 2
+          }
+        },
+        {
+          "content": "destina",
+          "polygon": [
+            8.9753,
+            15.5669,
+            9.5656,
+            15.5656,
+            9.5672,
+            15.78,
+            8.9763,
+            15.7826
+          ],
+          "confidence": 0.212,
+          "span": {
+            "offset": 1388,
+            "length": 7
+          }
+        },
+        {
+          "content": "e",
+          "polygon": [
+            9.6308,
+            15.5655,
+            9.7715,
+            15.5652,
+            9.7733,
+            15.779,
+            9.6325,
+            15.7797
+          ],
+          "confidence": 0.192,
+          "span": {
+            "offset": 1396,
+            "length": 1
+          }
+        },
+        {
+          "content": "vehiculo.",
+          "polygon": [
+            9.8264,
+            15.5651,
+            10.5573,
+            15.5636,
+            10.5601,
+            15.7755,
+            9.8283,
+            15.7788
+          ],
+          "confidence": 0.542,
+          "span": {
+            "offset": 1398,
+            "length": 9
+          }
+        },
+        {
+          "content": "debe",
+          "polygon": [
+            10.6019,
+            15.5635,
+            11.0137,
+            15.5628,
+            11.017,
+            15.7729,
+            10.6048,
+            15.7752
+          ],
+          "confidence": 0.3,
+          "span": {
+            "offset": 1408,
+            "length": 4
+          }
+        },
+        {
+          "content": "solicitar",
+          "polygon": [
+            11.0618,
+            15.5627,
+            11.6658,
+            15.5617,
+            11.6698,
+            15.7692,
+            11.0651,
+            15.7726
+          ],
+          "confidence": 0.665,
+          "span": {
+            "offset": 1413,
+            "length": 9
+          }
+        },
+        {
+          "content": "su",
+          "polygon": [
+            11.7241,
+            15.5616,
+            11.8888,
+            15.5614,
+            11.8931,
+            15.7679,
+            11.7282,
+            15.7688
+          ],
+          "confidence": 0.721,
+          "span": {
+            "offset": 1423,
+            "length": 2
+          }
+        },
+        {
+          "content": "rectificación",
+          "polygon": [
+            11.93,
+            15.5613,
+            12.9287,
+            15.56,
+            12.9341,
+            15.761,
+            11.9343,
+            15.7677
+          ],
+          "confidence": 0.297,
+          "span": {
+            "offset": 1426,
+            "length": 13
+          }
+        },
+        {
+          "content": "ales",
+          "polygon": [
+            12.9733,
+            15.56,
+            13.416,
+            15.5595,
+            13.4219,
+            15.7577,
+            12.9788,
+            15.7607
+          ],
+          "confidence": 0.049,
+          "span": {
+            "offset": 1440,
+            "length": 4
+          }
+        },
+        {
+          "content": "de",
+          "polygon": [
+            13.464,
+            15.5594,
+            13.6631,
+            15.5592,
+            13.6693,
+            15.756,
+            13.47,
+            15.7573
+          ],
+          "confidence": 0.05,
+          "span": {
+            "offset": 1445,
+            "length": 2
+          }
+        },
+        {
+          "content": "la",
+          "polygon": [
+            13.7248,
+            15.5591,
+            13.8898,
+            15.5588,
+            13.8898,
+            15.7544,
+            13.7311,
+            15.7556
+          ],
+          "confidence": 0.803,
+          "span": {
+            "offset": 1448,
+            "length": 2
+          }
+        },
+        {
+          "content": "expedición",
+          "polygon": [
+            2.3628,
+            15.7977,
+            3.2773,
+            15.7909,
+            3.2788,
+            16.0022,
+            2.3628,
+            16.0077
+          ],
+          "confidence": 0.307,
+          "span": {
+            "offset": 1451,
+            "length": 10
+          }
+        },
+        {
+          "content": "dul",
+          "polygon": [
+            3.3253,
+            15.7906,
+            3.5684,
+            15.7892,
+            3.5704,
+            16.0007,
+            3.3268,
+            16.0019
+          ],
+          "confidence": 0.643,
+          "span": {
+            "offset": 1462,
+            "length": 3
+          }
+        },
+        {
+          "content": "Parnito",
+          "polygon": [
+            3.6301,
+            15.789,
+            4.2911,
+            15.787,
+            4.2943,
+            15.9978,
+            3.6322,
+            16.0004
+          ],
+          "confidence": 0.511,
+          "span": {
+            "offset": 1466,
+            "length": 7
+          }
+        },
+        {
+          "content": "de",
+          "polygon": [
+            4.3528,
+            15.7869,
+            4.5549,
+            15.7867,
+            4.5584,
+            15.997,
+            4.356,
+            15.9976
+          ],
+          "confidence": 0.878,
+          "span": {
+            "offset": 1474,
+            "length": 2
+          }
+        },
+        {
+          "content": "CeCulación",
+          "polygon": [
+            4.6028,
+            15.7866,
+            5.5139,
+            15.788,
+            5.519,
+            15.9952,
+            4.6065,
+            15.9969
+          ],
+          "confidence": 0.39,
+          "span": {
+            "offset": 1477,
+            "length": 10
+          }
+        },
+        {
+          "content": "Cafritivo.",
+          "polygon": [
+            5.5619,
+            15.7881,
+            6.3717,
+            15.792,
+            6.3717,
+            15.9951,
+            5.567,
+            15.9952
+          ],
+          "confidence": 0.375,
+          "span": {
+            "offset": 1488,
+            "length": 10
+          }
+        },
+        {
+          "content": "*",
+          "polygon": [
+            4.3843,
+            16.7768,
+            4.6308,
+            16.776,
+            4.6308,
+            17.3253,
+            4.3843,
+            17.3217
+          ],
+          "confidence": 0.969,
+          "span": {
+            "offset": 1499,
+            "length": 1
+          }
+        },
+        {
+          "content": "VÁLIDO",
+          "polygon": [
+            4.786,
+            16.7755,
+            6.7759,
+            16.7743,
+            6.7759,
+            17.3486,
+            4.786,
+            17.3276
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 1501,
+            "length": 6
+          }
+        },
+        {
+          "content": "HASTA",
+          "polygon": [
+            6.9676,
+            16.7749,
+            8.7749,
+            16.7846,
+            8.7749,
+            17.3486,
+            6.9676,
+            17.3486
+          ],
+          "confidence": 0.996,
+          "span": {
+            "offset": 1508,
+            "length": 5
+          }
+        },
+        {
+          "content": "16/04/2026",
+          "polygon": [
+            8.9666,
+            16.7864,
+            11.6044,
+            16.8194,
+            11.6044,
+            17.3392,
+            8.9666,
+            17.3486
+          ],
+          "confidence": 0.988,
+          "span": {
+            "offset": 1514,
+            "length": 10
+          }
+        },
+        {
+          "content": "MOJUELC",
+          "polygon": [
+            2.3764,
+            22.0907,
+            3.0934,
+            22.097,
+            3.0914,
+            22.3025,
+            2.3763,
+            22.3062
+          ],
+          "confidence": 0.17,
+          "span": {
+            "offset": 1525,
+            "length": 7
+          }
+        },
+        {
+          "content": "PCTemporalSALA.1.0",
+          "polygon": [
+            3.1441,
+            22.0972,
+            4.7788,
+            22.087,
+            4.778,
+            22.2944,
+            3.142,
+            22.3023
+          ],
+          "confidence": 0.153,
+          "span": {
+            "offset": 1533,
+            "length": 18
+          }
+        },
+        {
+          "content": "MEESTERIO",
+          "polygon": [
+            11.2876,
+            21.9649,
+            12.2308,
+            21.9628,
+            12.2315,
+            22.1741,
+            11.2941,
+            22.1677
+          ],
+          "confidence": 0.393,
+          "span": {
+            "offset": 1552,
+            "length": 9
+          }
+        },
+        {
+          "content": "DEL.",
+          "polygon": [
+            12.2718,
+            21.9627,
+            12.5725,
+            21.9618,
+            12.5711,
+            22.1733,
+            12.2723,
+            22.174
+          ],
+          "confidence": 0.269,
+          "span": {
+            "offset": 1562,
+            "length": 4
+          }
+        },
+        {
+          "content": "INTEFOOR",
+          "polygon": [
+            12.6135,
+            21.9617,
+            13.4231,
+            21.9584,
+            13.4231,
+            22.1642,
+            12.6119,
+            22.173
+          ],
+          "confidence": 0.561,
+          "span": {
+            "offset": 1567,
+            "length": 8
+          }
+        },
+        {
+          "content": "DIRECCIÓN",
+          "polygon": [
+            11.2899,
+            22.2056,
+            12.2096,
+            22.2025,
+            12.2096,
+            22.4209,
+            11.2899,
+            22.4209
+          ],
+          "confidence": 0.307,
+          "span": {
+            "offset": 1576,
+            "length": 9
+          }
+        },
+        {
+          "content": "GENERAL",
+          "polygon": [
+            12.254,
+            22.2023,
+            13.0075,
+            22.1997,
+            13.0075,
+            22.4262,
+            12.254,
+            22.4211
+          ],
+          "confidence": 0.336,
+          "span": {
+            "offset": 1586,
+            "length": 7
+          }
+        },
+        {
+          "content": "DE",
+          "polygon": [
+            13.0629,
+            22.1995,
+            13.2513,
+            22.1988,
+            13.2513,
+            22.4287,
+            13.0629,
+            22.4267
+          ],
+          "confidence": 0.152,
+          "span": {
+            "offset": 1594,
+            "length": 2
+          }
+        },
+        {
+          "content": "TRÁFICO",
+          "polygon": [
+            13.3141,
+            22.1986,
+            14.0319,
+            22.1961,
+            14.0319,
+            22.4402,
+            13.3141,
+            22.4295
+          ],
+          "confidence": 0.501,
+          "span": {
+            "offset": 1597,
+            "length": 7
+          }
+        },
+        {
+          "content": "Polencia",
+          "polygon": [
+            2.092,
+            11.0011,
+            3.0059,
+            11.0037,
+            3.0018,
+            11.2629,
+            2.0856,
+            11.2662
+          ],
+          "confidence": 0.754,
+          "span": {
+            "offset": 1605,
+            "length": 8
+          }
+        },
+        {
+          "content": "Neta",
+          "polygon": [
+            3.0778,
+            11.0037,
+            3.5601,
+            11.003,
+            3.5576,
+            11.2593,
+            3.074,
+            11.2625
+          ],
+          "confidence": 0.97,
+          "span": {
+            "offset": 1614,
+            "length": 4
+          }
+        },
+        {
+          "content": "Máxima:",
+          "polygon": [
+            3.632,
+            11.0028,
+            4.5048,
+            10.998,
+            4.5048,
+            11.2505,
+            3.6297,
+            11.2587
+          ],
+          "confidence": 0.755,
+          "span": {
+            "offset": 1619,
+            "length": 7
+          }
+        },
+        {
+          "content": "59.0",
+          "polygon": [
+            5.2962,
+            10.9976,
+            5.8021,
+            10.9976,
+            5.8021,
+            11.2208,
+            5.2962,
+            11.2208
+          ],
+          "confidence": 0.984,
+          "span": {
+            "offset": 1627,
+            "length": 4
+          }
+        }
+      ],
+      "lines": [
+        {
+          "content": "DGT",
+          "polygon": [
+            4.6469,
+            1.258,
+            5.4078,
+            1.2783,
+            5.3977,
+            1.6537,
+            4.6469,
+            1.6436
+          ],
+          "spans": [
+            {
+              "offset": 0,
+              "length": 3
+            }
+          ]
+        },
+        {
+          "content": "AUTORIZACIÓN PROVISIONAL DE CIRCULACIÓN",
+          "polygon": [
+            6.2702,
+            1.1464,
+            13.5652,
+            1.1363,
+            13.5652,
+            1.5015,
+            6.2702,
+            1.5218
+          ],
+          "spans": [
+            {
+              "offset": 4,
+              "length": 39
+            }
+          ]
+        },
+        {
+          "content": "Fecha expedición:",
+          "polygon": [
+            8.6241,
+            2.0189,
+            10.5518,
+            2.0189,
+            10.5518,
+            2.303,
+            8.6241,
+            2.3132
+          ],
+          "spans": [
+            {
+              "offset": 44,
+              "length": 17
+            }
+          ]
+        },
+        {
+          "content": "16/01/2028 10:03",
+          "polygon": [
+            10.9171,
+            1.9986,
+            13.1187,
+            1.9784,
+            13.1187,
+            2.3132,
+            10.9171,
+            2.3233
+          ],
+          "spans": [
+            {
+              "offset": 62,
+              "length": 16
+            }
+          ]
+        },
+        {
+          "content": "DATOS GENERALES",
+          "polygon": [
+            7.0007,
+            2.9827,
+            9.3343,
+            2.9625,
+            9.3343,
+            3.2364,
+            7.0007,
+            3.2465
+          ],
+          "spans": [
+            {
+              "offset": 79,
+              "length": 15
+            }
+          ]
+        },
+        {
+          "content": "Jefatura:",
+          "polygon": [
+            7.2036,
+            3.3277,
+            8.1878,
+            3.3277,
+            8.1878,
+            3.5813,
+            7.2036,
+            3.5813
+          ],
+          "spans": [
+            {
+              "offset": 95,
+              "length": 9
+            }
+          ]
+        },
+        {
+          "content": "Jefatura Provincial de Asturias",
+          "polygon": [
+            8.3603,
+            3.3175,
+            11.5968,
+            3.3074,
+            11.5968,
+            3.5712,
+            8.3603,
+            3.5813
+          ],
+          "spans": [
+            {
+              "offset": 105,
+              "length": 31
+            }
+          ]
+        },
+        {
+          "content": "Fecha Matriculación",
+          "polygon": [
+            2.0901,
+            3.348,
+            4.2004,
+            3.348,
+            4.2004,
+            3.6016,
+            2.0901,
+            3.6016
+          ],
+          "spans": [
+            {
+              "offset": 137,
+              "length": 19
+            }
+          ]
+        },
+        {
+          "content": "16/01/2026",
+          "polygon": [
+            4.5352,
+            3.3277,
+            5.7122,
+            3.3277,
+            5.7122,
+            3.5813,
+            4.5352,
+            3.5813
+          ],
+          "spans": [
+            {
+              "offset": 157,
+              "length": 10
+            }
+          ]
+        },
+        {
+          "content": "Matricula.",
+          "polygon": [
+            2.1002,
+            2.0595,
+            3.1453,
+            2.0697,
+            3.1453,
+            2.3132,
+            2.1002,
+            2.303
+          ],
+          "spans": [
+            {
+              "offset": 168,
+              "length": 10
+            }
+          ]
+        },
+        {
+          "content": "Ret",
+          "polygon": [
+            2.1307,
+            2.4045,
+            2.5263,
+            2.4045,
+            2.5263,
+            2.6074,
+            2.1205,
+            2.6175
+          ],
+          "spans": [
+            {
+              "offset": 179,
+              "length": 3
+            }
+          ]
+        },
+        {
+          "content": "8215NJW",
+          "polygon": [
+            4.3323,
+            2.0392,
+            5.5803,
+            2.0189,
+            5.5904,
+            2.303,
+            4.3323,
+            2.3132
+          ],
+          "spans": [
+            {
+              "offset": 183,
+              "length": 7
+            }
+          ]
+        },
+        {
+          "content": "Titular;",
+          "polygon": [
+            2.1002,
+            3.8147,
+            2.8206,
+            3.8147,
+            2.8206,
+            4.0379,
+            2.1002,
+            4.0379
+          ],
+          "spans": [
+            {
+              "offset": 191,
+              "length": 8
+            }
+          ]
+        },
+        {
+          "content": "ALVEMACO RENTACAR SL",
+          "polygon": [
+            4.4947,
+            3.7842,
+            7.4573,
+            3.7639,
+            7.4573,
+            4.0277,
+            4.4947,
+            4.048
+          ],
+          "spans": [
+            {
+              "offset": 200,
+              "length": 20
+            }
+          ]
+        },
+        {
+          "content": "Marca Base:",
+          "polygon": [
+            2.0698,
+            4.2306,
+            3.4293,
+            4.2408,
+            3.4293,
+            4.4741,
+            2.0698,
+            4.4741
+          ],
+          "spans": [
+            {
+              "offset": 221,
+              "length": 11
+            }
+          ]
+        },
+        {
+          "content": "Marca:",
+          "polygon": [
+            2.0901,
+            4.6872,
+            2.8206,
+            4.6872,
+            2.8206,
+            4.9307,
+            2.0901,
+            4.9307
+          ],
+          "spans": [
+            {
+              "offset": 233,
+              "length": 6
+            }
+          ]
+        },
+        {
+          "content": "SEAT",
+          "polygon": [
+            3.2467,
+            4.6872,
+            3.8859,
+            4.677,
+            3.8859,
+            4.9002,
+            3.2467,
+            4.9104
+          ],
+          "spans": [
+            {
+              "offset": 240,
+              "length": 4
+            }
+          ]
+        },
+        {
+          "content": "IBIZA",
+          "polygon": [
+            7.2341,
+            4.6669,
+            7.8327,
+            4.6669,
+            7.8327,
+            4.9002,
+            7.2341,
+            4.9002
+          ],
+          "spans": [
+            {
+              "offset": 245,
+              "length": 5
+            }
+          ]
+        },
+        {
+          "content": "Tixo:",
+          "polygon": [
+            2.1104,
+            5.1234,
+            2.638,
+            5.1336,
+            2.638,
+            5.3568,
+            2.1002,
+            5.3466
+          ],
+          "spans": [
+            {
+              "offset": 251,
+              "length": 5
+            }
+          ]
+        },
+        {
+          "content": "TURISMO",
+          "polygon": [
+            3.2264,
+            5.1031,
+            4.3323,
+            5.1031,
+            4.3323,
+            5.3466,
+            3.2264,
+            5.3466
+          ],
+          "spans": [
+            {
+              "offset": 257,
+              "length": 7
+            }
+          ]
+        },
+        {
+          "content": "Color:",
+          "polygon": [
+            2.1002,
+            5.5495,
+            2.7597,
+            5.5597,
+            2.7496,
+            5.7829,
+            2.0901,
+            5.793
+          ],
+          "spans": [
+            {
+              "offset": 265,
+              "length": 6
+            }
+          ]
+        },
+        {
+          "content": "BLANCO",
+          "polygon": [
+            3.2467,
+            5.5394,
+            4.2207,
+            5.5394,
+            4.2207,
+            5.7727,
+            3.2467,
+            5.7727
+          ],
+          "spans": [
+            {
+              "offset": 272,
+              "length": 6
+            }
+          ]
+        },
+        {
+          "content": "Plazas:",
+          "polygon": [
+            2.1002,
+            5.9959,
+            2.8612,
+            6.0061,
+            2.851,
+            6.2191,
+            2.1002,
+            6.209
+          ],
+          "spans": [
+            {
+              "offset": 279,
+              "length": 7
+            }
+          ]
+        },
+        {
+          "content": "5",
+          "polygon": [
+            3.267,
+            5.9858,
+            3.4192,
+            5.9858,
+            3.4192,
+            6.1887,
+            3.2467,
+            6.1887
+          ],
+          "spans": [
+            {
+              "offset": 287,
+              "length": 1
+            }
+          ]
+        },
+        {
+          "content": "Nive.",
+          "polygon": [
+            5.6006,
+            5.5495,
+            6.1485,
+            5.5597,
+            6.1485,
+            5.7626,
+            5.5904,
+            5.7524
+          ],
+          "spans": [
+            {
+              "offset": 289,
+              "length": 5
+            }
+          ]
+        },
+        {
+          "content": "Modelo",
+          "polygon": [
+            5.5904,
+            4.677,
+            6.4325,
+            4.6872,
+            6.4224,
+            4.9104,
+            5.5904,
+            4.9002
+          ],
+          "spans": [
+            {
+              "offset": 295,
+              "length": 6
+            }
+          ]
+        },
+        {
+          "content": "Bastidor:",
+          "polygon": [
+            5.6107,
+            5.1133,
+            6.534,
+            5.1133,
+            6.534,
+            5.3466,
+            5.6107,
+            5.3466
+          ],
+          "spans": [
+            {
+              "offset": 302,
+              "length": 9
+            }
+          ]
+        },
+        {
+          "content": "VSSZZZKJ3TR554347",
+          "polygon": [
+            7.2341,
+            5.0828,
+            9.6184,
+            5.0828,
+            9.6184,
+            5.3263,
+            7.2341,
+            5.3365
+          ],
+          "spans": [
+            {
+              "offset": 312,
+              "length": 17
+            }
+          ]
+        },
+        {
+          "content": "F1DF18348CA64298814BF60DE6924FE5",
+          "polygon": [
+            7.2239,
+            5.4785,
+            11.6577,
+            5.4785,
+            11.6577,
+            5.7423,
+            7.2239,
+            5.7524
+          ],
+          "spans": [
+            {
+              "offset": 330,
+              "length": 32
+            }
+          ]
+        },
+        {
+          "content": "Servicio: PARTICULAR - SIN ESPECIFICAR",
+          "polygon": [
+            2.1002,
+            6.3916,
+            6.879,
+            6.3815,
+            6.879,
+            6.6452,
+            2.1002,
+            6.6554
+          ],
+          "spans": [
+            {
+              "offset": 363,
+              "length": 38
+            }
+          ]
+        },
+        {
+          "content": "Renting.",
+          "polygon": [
+            2.0799,
+            6.838,
+            3.1554,
+            6.8481,
+            3.1554,
+            7.1018,
+            2.0799,
+            7.0916
+          ],
+          "spans": [
+            {
+              "offset": 402,
+              "length": 8
+            }
+          ]
+        },
+        {
+          "content": "N",
+          "polygon": [
+            3.2467,
+            6.8583,
+            3.4699,
+            6.8583,
+            3.4598,
+            7.0511,
+            3.2366,
+            7.0409
+          ],
+          "spans": [
+            {
+              "offset": 411,
+              "length": 1
+            }
+          ]
+        },
+        {
+          "content": "Propulsión:",
+          "polygon": [
+            5.6006,
+            6.8279,
+            6.7775,
+            6.838,
+            6.7775,
+            7.0815,
+            5.6006,
+            7.0713
+          ],
+          "spans": [
+            {
+              "offset": 413,
+              "length": 11
+            }
+          ]
+        },
+        {
+          "content": "Cilindrada:",
+          "polygon": [
+            5.5904,
+            7.254,
+            6.7166,
+            7.254,
+            6.7166,
+            7.5076,
+            5.5904,
+            7.5076
+          ],
+          "spans": [
+            {
+              "offset": 425,
+              "length": 11
+            }
+          ]
+        },
+        {
+          "content": "GASOLINA",
+          "polygon": [
+            7.2442,
+            6.8177,
+            8.4414,
+            6.8076,
+            8.4414,
+            7.0511,
+            7.2442,
+            7.0612
+          ],
+          "spans": [
+            {
+              "offset": 437,
+              "length": 8
+            }
+          ]
+        },
+        {
+          "content": "999.0",
+          "polygon": [
+            7.2341,
+            7.254,
+            7.8327,
+            7.2641,
+            7.8225,
+            7.4873,
+            7.2239,
+            7.467
+          ],
+          "spans": [
+            {
+              "offset": 446,
+              "length": 5
+            }
+          ]
+        },
+        {
+          "content": "Procedencia:",
+          "polygon": [
+            9.7706,
+            6.8177,
+            11.12,
+            6.8279,
+            11.12,
+            7.0612,
+            9.7706,
+            7.0511
+          ],
+          "spans": [
+            {
+              "offset": 452,
+              "length": 12
+            }
+          ]
+        },
+        {
+          "content": "EEE",
+          "polygon": [
+            11.536,
+            6.8177,
+            12.0331,
+            6.8177,
+            12.023,
+            7.0308,
+            11.536,
+            7.0409
+          ],
+          "spans": [
+            {
+              "offset": 465,
+              "length": 3
+            }
+          ]
+        },
+        {
+          "content": "Masa Máxima:",
+          "polygon": [
+            9.7706,
+            7.254,
+            11.2722,
+            7.254,
+            11.2722,
+            7.4873,
+            9.7706,
+            7.4873
+          ],
+          "spans": [
+            {
+              "offset": 469,
+              "length": 12
+            }
+          ]
+        },
+        {
+          "content": "1535.0",
+          "polygon": [
+            11.5563,
+            7.2438,
+            12.2766,
+            7.2438,
+            12.2766,
+            7.467,
+            11.5563,
+            7.467
+          ],
+          "spans": [
+            {
+              "offset": 482,
+              "length": 6
+            }
+          ]
+        },
+        {
+          "content": "No. CVF: 7.82",
+          "polygon": [
+            2.0799,
+            7.2641,
+            3.7439,
+            7.254,
+            3.7439,
+            7.5177,
+            2.0799,
+            7.5279
+          ],
+          "spans": [
+            {
+              "offset": 489,
+              "length": 13
+            }
+          ]
+        },
+        {
+          "content": "Tipc",
+          "polygon": [
+            2.1307,
+            8.3598,
+            2.5974,
+            8.3598,
+            2.5872,
+            8.583,
+            2.1307,
+            8.583
+          ],
+          "spans": [
+            {
+              "offset": 503,
+              "length": 4
+            }
+          ]
+        },
+        {
+          "content": "Basc:",
+          "polygon": [
+            2.1104,
+            8.6236,
+            2.7293,
+            8.6236,
+            2.7191,
+            8.8569,
+            2.1002,
+            8.8569
+          ],
+          "spans": [
+            {
+              "offset": 508,
+              "length": 5
+            }
+          ]
+        },
+        {
+          "content": "Tiac: KJ",
+          "polygon": [
+            2.1104,
+            8.9584,
+            3.2264,
+            8.9584,
+            3.2264,
+            9.2019,
+            2.1104,
+            9.2019
+          ],
+          "spans": [
+            {
+              "offset": 514,
+              "length": 8
+            }
+          ]
+        },
+        {
+          "content": "DATOS TÉCNICOS",
+          "polygon": [
+            7.1326,
+            7.9236,
+            9.2024,
+            7.9033,
+            9.2024,
+            8.167,
+            7.1326,
+            8.1772
+          ],
+          "spans": [
+            {
+              "offset": 523,
+              "length": 14
+            }
+          ]
+        },
+        {
+          "content": "Vanante",
+          "polygon": [
+            6.8688,
+            8.3497,
+            7.7617,
+            8.3598,
+            7.7617,
+            8.583,
+            6.8688,
+            8.5729
+          ],
+          "spans": [
+            {
+              "offset": 538,
+              "length": 7
+            }
+          ]
+        },
+        {
+          "content": "Base:",
+          "polygon": [
+            6.8688,
+            8.6134,
+            7.4979,
+            8.6236,
+            7.4979,
+            8.8366,
+            6.8587,
+            8.8265
+          ],
+          "spans": [
+            {
+              "offset": 546,
+              "length": 5
+            }
+          ]
+        },
+        {
+          "content": "Variante: BDSGD",
+          "polygon": [
+            6.8891,
+            8.9584,
+            8.9082,
+            8.9482,
+            8.9082,
+            9.1816,
+            6.8891,
+            9.2019
+          ],
+          "spans": [
+            {
+              "offset": 552,
+              "length": 15
+            }
+          ]
+        },
+        {
+          "content": "Versión",
+          "polygon": [
+            11.0185,
+            8.3395,
+            11.8403,
+            8.3395,
+            11.8403,
+            8.5627,
+            11.0185,
+            8.5627
+          ],
+          "spans": [
+            {
+              "offset": 568,
+              "length": 7
+            }
+          ]
+        },
+        {
+          "content": "Base:",
+          "polygon": [
+            11.0185,
+            8.6033,
+            11.6374,
+            8.6033,
+            11.6374,
+            8.8265,
+            11.0185,
+            8.8265
+          ],
+          "spans": [
+            {
+              "offset": 576,
+              "length": 5
+            }
+          ]
+        },
+        {
+          "content": "Versión: FM5SFMSDF01C4",
+          "polygon": [
+            11.0185,
+            8.928,
+            14.0014,
+            8.8772,
+            14.0014,
+            9.1309,
+            11.0185,
+            9.1917
+          ],
+          "spans": [
+            {
+              "offset": 582,
+              "length": 22
+            }
+          ]
+        },
+        {
+          "content": "Contraseña Homolog. Base:",
+          "polygon": [
+            2.1002,
+            9.3642,
+            5.0223,
+            9.3642,
+            5.0223,
+            9.6381,
+            2.1002,
+            9.6381
+          ],
+          "spans": [
+            {
+              "offset": 605,
+              "length": 25
+            }
+          ]
+        },
+        {
+          "content": "Contraseña Homologación:",
+          "polygon": [
+            2.0901,
+            9.7802,
+            4.9512,
+            9.77,
+            4.9512,
+            10.0338,
+            2.0901,
+            10.0338
+          ],
+          "spans": [
+            {
+              "offset": 631,
+              "length": 24
+            }
+          ]
+        },
+        {
+          "content": "89'2007/46'3134*48",
+          "polygon": [
+            5.2759,
+            9.7599,
+            7.4471,
+            9.7497,
+            7.4471,
+            10.0135,
+            5.2759,
+            10.0237
+          ],
+          "spans": [
+            {
+              "offset": 656,
+              "length": 18
+            }
+          ]
+        },
+        {
+          "content": "MOM Base:",
+          "polygon": [
+            2.0799,
+            10.186,
+            3.338,
+            10.186,
+            3.338,
+            10.4396,
+            2.0698,
+            10.4295
+          ],
+          "spans": [
+            {
+              "offset": 675,
+              "length": 9
+            }
+          ]
+        },
+        {
+          "content": "Masa Máxima en Carga.",
+          "polygon": [
+            2.0799,
+            10.5918,
+            4.586,
+            10.6019,
+            4.586,
+            10.8556,
+            2.0698,
+            10.8454
+          ],
+          "spans": [
+            {
+              "offset": 685,
+              "length": 21
+            }
+          ]
+        },
+        {
+          "content": "1535.0",
+          "polygon": [
+            5.3063,
+            10.5817,
+            6.047,
+            10.5817,
+            6.047,
+            10.8251,
+            5.3063,
+            10.8251
+          ],
+          "spans": [
+            {
+              "offset": 707,
+              "length": 6
+            }
+          ]
+        },
+        {
+          "content": "Masa en circulación;",
+          "polygon": [
+            6.8993,
+            10.5817,
+            9.0705,
+            10.5817,
+            9.0806,
+            10.8251,
+            6.8993,
+            10.8353
+          ],
+          "spans": [
+            {
+              "offset": 714,
+              "length": 20
+            }
+          ]
+        },
+        {
+          "content": "Relación Potencia/Peso:",
+          "polygon": [
+            6.9094,
+            10.9875,
+            9.4662,
+            10.9875,
+            9.4662,
+            11.2411,
+            6.9094,
+            11.2411
+          ],
+          "spans": [
+            {
+              "offset": 735,
+              "length": 23
+            }
+          ]
+        },
+        {
+          "content": "0.0",
+          "polygon": [
+            9.8923,
+            10.9773,
+            10.2677,
+            10.9773,
+            10.2576,
+            11.231,
+            9.8923,
+            11.2208
+          ],
+          "spans": [
+            {
+              "offset": 759,
+              "length": 3
+            }
+          ]
+        },
+        {
+          "content": "1111.C",
+          "polygon": [
+            9.9126,
+            10.5715,
+            10.633,
+            10.5715,
+            10.633,
+            10.7947,
+            9.9126,
+            10.7947
+          ],
+          "spans": [
+            {
+              "offset": 763,
+              "length": 6
+            }
+          ]
+        },
+        {
+          "content": "CO2:",
+          "polygon": [
+            11.0084,
+            10.5715,
+            11.5867,
+            10.5817,
+            11.5766,
+            10.7846,
+            10.9982,
+            10.7846
+          ],
+          "spans": [
+            {
+              "offset": 770,
+              "length": 4
+            }
+          ]
+        },
+        {
+          "content": "Plazas de pie:",
+          "polygon": [
+            11.0287,
+            10.9875,
+            12.4694,
+            10.9875,
+            12.4694,
+            11.2411,
+            11.0287,
+            11.231
+          ],
+          "spans": [
+            {
+              "offset": 775,
+              "length": 14
+            }
+          ]
+        },
+        {
+          "content": "120.0",
+          "polygon": [
+            12.6926,
+            10.5614,
+            13.3014,
+            10.5614,
+            13.2912,
+            10.7947,
+            12.6926,
+            10.7846
+          ],
+          "spans": [
+            {
+              "offset": 790,
+              "length": 5
+            }
+          ]
+        },
+        {
+          "content": "presente cocu Tiênto combluye une autorizsoon provisional de ciro .. /noón del vehiculo, que tuft Uje a' permiso definitivo, surtiene sus",
+          "polygon": [
+            2.3539,
+            14.1224,
+            13.4536,
+            14.092,
+            13.4536,
+            14.3152,
+            2.3539,
+            14.3456
+          ],
+          "spans": [
+            {
+              "offset": 796,
+              "length": 137
+            }
+          ]
+        },
+        {
+          "content": "mismos aledes con ina siguesalud conid chantes",
+          "polygon": [
+            2.364,
+            14.3557,
+            6.2195,
+            14.3355,
+            6.2195,
+            14.5181,
+            2.364,
+            14.5384
+          ],
+          "spans": [
+            {
+              "offset": 934,
+              "length": 46
+            }
+          ]
+        },
+        {
+          "content": "Terdra valdez do SC ciâu a part.' do la lecha de expedición.",
+          "polygon": [
+            3.3279,
+            14.5384,
+            8.2081,
+            14.5282,
+            8.2081,
+            14.7311,
+            3.3279,
+            14.7413
+          ],
+          "spans": [
+            {
+              "offset": 981,
+              "length": 60
+            }
+          ]
+        },
+        {
+          "content": "Sempre debe 's acompañado de a Tabela co inspección Técnica de Vehiculo en vigor, asi como de la restante documentación",
+          "polygon": [
+            3.2974,
+            14.7413,
+            13.6666,
+            14.7311,
+            13.6666,
+            14.9239,
+            3.2974,
+            14.9442
+          ],
+          "spans": [
+            {
+              "offset": 1042,
+              "length": 119
+            }
+          ]
+        },
+        {
+          "content": "que. conforme a la normativa vigente. debe levar comingo el conductor.",
+          "polygon": [
+            2.3539,
+            14.9543,
+            8.1878,
+            14.9442,
+            8.1878,
+            15.1471,
+            2.3539,
+            15.1572
+          ],
+          "spans": [
+            {
+              "offset": 1162,
+              "length": 70
+            }
+          ]
+        },
+        {
+          "content": "()",
+          "polygon": [
+            2.3742,
+            15.1877,
+            2.5771,
+            15.1877,
+            2.5771,
+            15.3703,
+            2.364,
+            15.3703
+          ],
+          "spans": [
+            {
+              "offset": 1233,
+              "length": 2
+            }
+          ]
+        },
+        {
+          "content": "El pretenle documento no ce válido pore restar lên des acministrat vod",
+          "polygon": [
+            3.2467,
+            15.1674,
+            9.314,
+            15.1572,
+            9.314,
+            15.3601,
+            3.2467,
+            15.3703
+          ],
+          "spans": [
+            {
+              "offset": 1236,
+              "length": 70
+            }
+          ]
+        },
+        {
+          "content": "Si observa algún error en on colos generales_ techcon o en el servicio al que se destina e vehiculo. debe solicitar su rectificación ales de la",
+          "polygon": [
+            2.3539,
+            15.5833,
+            13.8797,
+            15.5529,
+            13.8797,
+            15.7558,
+            2.3539,
+            15.7964
+          ],
+          "spans": [
+            {
+              "offset": 1307,
+              "length": 143
+            }
+          ]
+        },
+        {
+          "content": "expedición dul Parnito de CeCulación Cafritivo.",
+          "polygon": [
+            2.3539,
+            15.7862,
+            6.3615,
+            15.7862,
+            6.3615,
+            15.9892,
+            2.3539,
+            15.9993
+          ],
+          "spans": [
+            {
+              "offset": 1451,
+              "length": 47
+            }
+          ]
+        },
+        {
+          "content": "* VÁLIDO HASTA 16/04/2026",
+          "polygon": [
+            4.3831,
+            16.7703,
+            11.8099,
+            16.7906,
+            11.8099,
+            17.3486,
+            4.3831,
+            17.3283
+          ],
+          "spans": [
+            {
+              "offset": 1499,
+              "length": 25
+            }
+          ]
+        },
+        {
+          "content": "MOJUELC PCTemporalSALA.1.0",
+          "polygon": [
+            2.3539,
+            22.0865,
+            4.7686,
+            22.0865,
+            4.7686,
+            22.2894,
+            2.3539,
+            22.2996
+          ],
+          "spans": [
+            {
+              "offset": 1525,
+              "length": 26
+            }
+          ]
+        },
+        {
+          "content": "MEESTERIO DEL. INTEFOOR",
+          "polygon": [
+            11.2823,
+            21.9546,
+            13.413,
+            21.9546,
+            13.413,
+            22.1677,
+            11.2823,
+            22.1677
+          ],
+          "spans": [
+            {
+              "offset": 1552,
+              "length": 23
+            }
+          ]
+        },
+        {
+          "content": "DIRECCIÓN GENERAL DE TRÁFICO",
+          "polygon": [
+            11.2823,
+            22.188,
+            14.0217,
+            22.188,
+            14.0217,
+            22.4315,
+            11.2823,
+            22.4213
+          ],
+          "spans": [
+            {
+              "offset": 1576,
+              "length": 28
+            }
+          ]
+        },
+        {
+          "content": "Polencia Neta Máxima:",
+          "polygon": [
+            2.0799,
+            10.9976,
+            4.4947,
+            10.9976,
+            4.4947,
+            11.2512,
+            2.0799,
+            11.2614
+          ],
+          "spans": [
+            {
+              "offset": 1605,
+              "length": 21
+            }
+          ]
+        },
+        {
+          "content": "59.0",
+          "polygon": [
+            5.2962,
+            10.9976,
+            5.7933,
+            10.9976,
+            5.7933,
+            11.2208,
+            5.2962,
+            11.2208
+          ],
+          "spans": [
+            {
+              "offset": 1627,
+              "length": 4
+            }
+          ]
+        }
+      ],
+      "spans": [
+        {
+          "offset": 0,
+          "length": 1631
+        }
+      ]
+    }
+  ],
+  "paragraphs": [
+    {
+      "spans": [
+        {
+          "offset": 0,
+          "length": 3
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            4.6469,
+            1.258,
+            5.4078,
+            1.2783,
+            5.3975,
+            1.6636,
+            4.6366,
+            1.6433
+          ]
+        }
+      ],
+      "content": "DGT"
+    },
+    {
+      "spans": [
+        {
+          "offset": 4,
+          "length": 39
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            6.2697,
+            1.1464,
+            13.5652,
+            1.1363,
+            13.5657,
+            1.5117,
+            6.2702,
+            1.5218
+          ]
+        }
+      ],
+      "content": "AUTORIZACIÓN PROVISIONAL DE CIRCULACIÓN"
+    },
+    {
+      "spans": [
+        {
+          "offset": 44,
+          "length": 17
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            8.6241,
+            2.0189,
+            10.5518,
+            2.0189,
+            10.5518,
+            2.303,
+            8.6241,
+            2.3132
+          ]
+        }
+      ],
+      "content": "Fecha expedición:"
+    },
+    {
+      "spans": [
+        {
+          "offset": 62,
+          "length": 16
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            10.9171,
+            1.9986,
+            13.1187,
+            1.9784,
+            13.1187,
+            2.3132,
+            10.9171,
+            2.3233
+          ]
+        }
+      ],
+      "content": "16/01/2028 10:03"
+    },
+    {
+      "spans": [
+        {
+          "offset": 79,
+          "length": 15
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            7.0007,
+            2.9827,
+            9.3343,
+            2.9625,
+            9.3343,
+            3.2364,
+            7.0007,
+            3.2465
+          ]
+        }
+      ],
+      "content": "DATOS GENERALES"
+    },
+    {
+      "spans": [
+        {
+          "offset": 95,
+          "length": 9
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            7.2036,
+            3.3277,
+            8.1878,
+            3.3277,
+            8.1878,
+            3.5813,
+            7.2036,
+            3.5813
+          ]
+        }
+      ],
+      "content": "Jefatura:"
+    },
+    {
+      "spans": [
+        {
+          "offset": 105,
+          "length": 31
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            8.3603,
+            3.3175,
+            11.5968,
+            3.3074,
+            11.5968,
+            3.5712,
+            8.3603,
+            3.5813
+          ]
+        }
+      ],
+      "content": "Jefatura Provincial de Asturias"
+    },
+    {
+      "spans": [
+        {
+          "offset": 137,
+          "length": 19
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            2.0901,
+            3.348,
+            4.2004,
+            3.348,
+            4.2004,
+            3.6016,
+            2.0901,
+            3.6016
+          ]
+        }
+      ],
+      "content": "Fecha Matriculación"
+    },
+    {
+      "spans": [
+        {
+          "offset": 157,
+          "length": 10
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            4.5352,
+            3.3277,
+            5.7122,
+            3.3277,
+            5.7122,
+            3.5813,
+            4.5352,
+            3.5813
+          ]
+        }
+      ],
+      "content": "16/01/2026"
+    },
+    {
+      "spans": [
+        {
+          "offset": 168,
+          "length": 14
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            2.1002,
+            2.0595,
+            3.1452,
+            2.0595,
+            3.1452,
+            2.6175,
+            2.1002,
+            2.6175
+          ]
+        }
+      ],
+      "content": "Matricula. Ret"
+    },
+    {
+      "spans": [
+        {
+          "offset": 183,
+          "length": 7
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            4.33,
+            2.029,
+            5.5881,
+            2.0189,
+            5.5904,
+            2.303,
+            4.3323,
+            2.3132
+          ]
+        }
+      ],
+      "content": "8215NJW"
+    },
+    {
+      "spans": [
+        {
+          "offset": 191,
+          "length": 8
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            2.1002,
+            3.8147,
+            2.8206,
+            3.8147,
+            2.8206,
+            4.0379,
+            2.1002,
+            4.0379
+          ]
+        }
+      ],
+      "content": "Titular;"
+    },
+    {
+      "spans": [
+        {
+          "offset": 200,
+          "length": 20
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            4.4947,
+            3.7842,
+            7.4573,
+            3.7639,
+            7.4573,
+            4.0277,
+            4.4947,
+            4.048
+          ]
+        }
+      ],
+      "content": "ALVEMACO RENTACAR SL"
+    },
+    {
+      "spans": [
+        {
+          "offset": 221,
+          "length": 11
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            2.0698,
+            4.2306,
+            3.4293,
+            4.2306,
+            3.4293,
+            4.4741,
+            2.0698,
+            4.4741
+          ]
+        }
+      ],
+      "content": "Marca Base:"
+    },
+    {
+      "spans": [
+        {
+          "offset": 233,
+          "length": 6
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            2.0901,
+            4.6872,
+            2.8206,
+            4.6872,
+            2.8206,
+            4.9307,
+            2.0901,
+            4.9307
+          ]
+        }
+      ],
+      "content": "Marca:"
+    },
+    {
+      "spans": [
+        {
+          "offset": 240,
+          "length": 4
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            3.2467,
+            4.6872,
+            3.8859,
+            4.677,
+            3.8859,
+            4.9002,
+            3.2467,
+            4.9104
+          ]
+        }
+      ],
+      "content": "SEAT"
+    },
+    {
+      "spans": [
+        {
+          "offset": 245,
+          "length": 5
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            7.2341,
+            4.6669,
+            7.8327,
+            4.6669,
+            7.8327,
+            4.9002,
+            7.2341,
+            4.9002
+          ]
+        }
+      ],
+      "content": "IBIZA"
+    },
+    {
+      "spans": [
+        {
+          "offset": 251,
+          "length": 37
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            2.0779,
+            5.124,
+            4.332,
+            5.083,
+            4.3521,
+            6.1918,
+            2.0981,
+            6.2328
+          ]
+        }
+      ],
+      "content": "Tixo: TURISMO Color: BLANCO Plazas: 5"
+    },
+    {
+      "spans": [
+        {
+          "offset": 289,
+          "length": 5
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            5.5941,
+            5.5494,
+            6.1521,
+            5.5596,
+            6.1485,
+            5.7626,
+            5.5904,
+            5.7524
+          ]
+        }
+      ],
+      "content": "Nive."
+    },
+    {
+      "spans": [
+        {
+          "offset": 295,
+          "length": 67
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            5.602,
+            4.584,
+            11.7074,
+            5.3423,
+            11.5892,
+            6.2946,
+            5.4837,
+            5.5363
+          ]
+        }
+      ],
+      "content": "Modelo Bastidor: VSSZZZKJ3TR554347 F1DF18348CA64298814BF60DE6924FE5"
+    },
+    {
+      "spans": [
+        {
+          "offset": 363,
+          "length": 38
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            2.1002,
+            6.3916,
+            6.879,
+            6.3815,
+            6.879,
+            6.6452,
+            2.1002,
+            6.6554
+          ]
+        }
+      ],
+      "content": "Servicio: PARTICULAR - SIN ESPECIFICAR"
+    },
+    {
+      "spans": [
+        {
+          "offset": 402,
+          "length": 8
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            2.0799,
+            6.838,
+            3.1554,
+            6.8481,
+            3.1554,
+            7.1018,
+            2.0799,
+            7.0916
+          ]
+        }
+      ],
+      "content": "Renting."
+    },
+    {
+      "spans": [
+        {
+          "offset": 411,
+          "length": 1
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            3.2467,
+            6.8583,
+            3.4699,
+            6.8583,
+            3.4598,
+            7.0511,
+            3.2366,
+            7.0409
+          ]
+        }
+      ],
+      "content": "N"
+    },
+    {
+      "spans": [
+        {
+          "offset": 413,
+          "length": 11
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            5.6006,
+            6.8279,
+            6.7775,
+            6.838,
+            6.7775,
+            7.0815,
+            5.6006,
+            7.0713
+          ]
+        }
+      ],
+      "content": "Propulsión:"
+    },
+    {
+      "spans": [
+        {
+          "offset": 425,
+          "length": 11
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            5.5904,
+            7.254,
+            6.7166,
+            7.254,
+            6.7166,
+            7.5076,
+            5.5904,
+            7.5076
+          ]
+        }
+      ],
+      "content": "Cilindrada:"
+    },
+    {
+      "spans": [
+        {
+          "offset": 437,
+          "length": 8
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            7.2442,
+            6.8177,
+            8.4414,
+            6.8076,
+            8.4414,
+            7.0511,
+            7.2442,
+            7.0612
+          ]
+        }
+      ],
+      "content": "GASOLINA"
+    },
+    {
+      "spans": [
+        {
+          "offset": 446,
+          "length": 5
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            7.2341,
+            7.254,
+            7.8327,
+            7.2641,
+            7.8225,
+            7.4873,
+            7.2239,
+            7.467
+          ]
+        }
+      ],
+      "content": "999.0"
+    },
+    {
+      "spans": [
+        {
+          "offset": 452,
+          "length": 16
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            9.7706,
+            6.8177,
+            12.0331,
+            6.8177,
+            12.0331,
+            7.0612,
+            9.7706,
+            7.0612
+          ]
+        }
+      ],
+      "content": "Procedencia: EEE"
+    },
+    {
+      "spans": [
+        {
+          "offset": 469,
+          "length": 12
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            9.7706,
+            7.254,
+            11.2722,
+            7.254,
+            11.2722,
+            7.4873,
+            9.7706,
+            7.4873
+          ]
+        }
+      ],
+      "content": "Masa Máxima:"
+    },
+    {
+      "spans": [
+        {
+          "offset": 482,
+          "length": 6
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            11.5563,
+            7.2438,
+            12.2766,
+            7.2438,
+            12.2766,
+            7.467,
+            11.5563,
+            7.467
+          ]
+        }
+      ],
+      "content": "1535.0"
+    },
+    {
+      "spans": [
+        {
+          "offset": 489,
+          "length": 13
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            2.0799,
+            7.2641,
+            3.7439,
+            7.254,
+            3.7439,
+            7.5177,
+            2.0799,
+            7.5279
+          ]
+        }
+      ],
+      "content": "No. CVF: 7.82"
+    },
+    {
+      "spans": [
+        {
+          "offset": 503,
+          "length": 4
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            2.1307,
+            8.3598,
+            2.5974,
+            8.3598,
+            2.5872,
+            8.583,
+            2.1307,
+            8.583
+          ]
+        }
+      ],
+      "content": "Tipc"
+    },
+    {
+      "spans": [
+        {
+          "offset": 508,
+          "length": 5
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            2.1104,
+            8.6236,
+            2.7293,
+            8.6236,
+            2.7191,
+            8.8569,
+            2.1002,
+            8.8569
+          ]
+        }
+      ],
+      "content": "Basc:"
+    },
+    {
+      "spans": [
+        {
+          "offset": 514,
+          "length": 8
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            2.1104,
+            8.9584,
+            3.2264,
+            8.9584,
+            3.2264,
+            9.2019,
+            2.1104,
+            9.2019
+          ]
+        }
+      ],
+      "content": "Tiac: KJ"
+    },
+    {
+      "spans": [
+        {
+          "offset": 523,
+          "length": 14
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            7.1313,
+            7.9134,
+            9.2024,
+            7.9033,
+            9.2037,
+            8.167,
+            7.1326,
+            8.1772
+          ]
+        }
+      ],
+      "content": "DATOS TÉCNICOS"
+    },
+    {
+      "spans": [
+        {
+          "offset": 538,
+          "length": 7
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            6.8688,
+            8.3497,
+            7.7617,
+            8.3598,
+            7.7617,
+            8.583,
+            6.8688,
+            8.5729
+          ]
+        }
+      ],
+      "content": "Vanante"
+    },
+    {
+      "spans": [
+        {
+          "offset": 546,
+          "length": 5
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            6.8688,
+            8.6134,
+            7.4979,
+            8.6236,
+            7.4979,
+            8.8366,
+            6.8587,
+            8.8265
+          ]
+        }
+      ],
+      "content": "Base:"
+    },
+    {
+      "spans": [
+        {
+          "offset": 552,
+          "length": 15
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            6.8891,
+            8.9584,
+            8.9082,
+            8.9482,
+            8.9082,
+            9.1816,
+            6.8891,
+            9.2019
+          ]
+        }
+      ],
+      "content": "Variante: BDSGD"
+    },
+    {
+      "spans": [
+        {
+          "offset": 568,
+          "length": 7
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            11.0185,
+            8.3395,
+            11.8403,
+            8.3395,
+            11.8403,
+            8.5627,
+            11.0185,
+            8.5627
+          ]
+        }
+      ],
+      "content": "Versión"
+    },
+    {
+      "spans": [
+        {
+          "offset": 576,
+          "length": 5
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            11.0185,
+            8.6033,
+            11.6374,
+            8.6033,
+            11.6374,
+            8.8265,
+            11.0185,
+            8.8265
+          ]
+        }
+      ],
+      "content": "Base:"
+    },
+    {
+      "spans": [
+        {
+          "offset": 582,
+          "length": 22
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            11.0185,
+            8.928,
+            14.0014,
+            8.8772,
+            14.0014,
+            9.1309,
+            11.0185,
+            9.1917
+          ]
+        }
+      ],
+      "content": "Versión: FM5SFMSDF01C4"
+    },
+    {
+      "spans": [
+        {
+          "offset": 605,
+          "length": 25
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            2.1002,
+            9.3642,
+            5.0223,
+            9.3642,
+            5.0223,
+            9.6381,
+            2.1002,
+            9.6381
+          ]
+        }
+      ],
+      "content": "Contraseña Homolog. Base:"
+    },
+    {
+      "spans": [
+        {
+          "offset": 631,
+          "length": 24
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            2.0901,
+            9.7802,
+            4.9512,
+            9.77,
+            4.9512,
+            10.0338,
+            2.0901,
+            10.0338
+          ]
+        }
+      ],
+      "content": "Contraseña Homologación:"
+    },
+    {
+      "spans": [
+        {
+          "offset": 656,
+          "length": 18
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            5.2759,
+            9.7599,
+            7.4471,
+            9.7497,
+            7.4471,
+            10.0135,
+            5.2759,
+            10.0237
+          ]
+        }
+      ],
+      "content": "89'2007/46'3134*48"
+    },
+    {
+      "spans": [
+        {
+          "offset": 675,
+          "length": 9
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            2.0799,
+            10.186,
+            3.338,
+            10.186,
+            3.338,
+            10.4396,
+            2.0698,
+            10.4295
+          ]
+        }
+      ],
+      "content": "MOM Base:"
+    },
+    {
+      "spans": [
+        {
+          "offset": 685,
+          "length": 21
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            2.0799,
+            10.5918,
+            4.586,
+            10.6019,
+            4.586,
+            10.8556,
+            2.0698,
+            10.8454
+          ]
+        }
+      ],
+      "content": "Masa Máxima en Carga."
+    },
+    {
+      "spans": [
+        {
+          "offset": 707,
+          "length": 6
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            5.3063,
+            10.5817,
+            6.047,
+            10.5817,
+            6.047,
+            10.8251,
+            5.3063,
+            10.8251
+          ]
+        }
+      ],
+      "content": "1535.0"
+    },
+    {
+      "spans": [
+        {
+          "offset": 714,
+          "length": 20
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            6.8993,
+            10.5817,
+            9.0705,
+            10.5817,
+            9.0806,
+            10.8251,
+            6.8993,
+            10.8353
+          ]
+        }
+      ],
+      "content": "Masa en circulación;"
+    },
+    {
+      "spans": [
+        {
+          "offset": 735,
+          "length": 23
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            6.9094,
+            10.9875,
+            9.4662,
+            10.9875,
+            9.4662,
+            11.2411,
+            6.9094,
+            11.2411
+          ]
+        }
+      ],
+      "content": "Relación Potencia/Peso:"
+    },
+    {
+      "spans": [
+        {
+          "offset": 759,
+          "length": 3
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            9.8923,
+            10.9773,
+            10.2677,
+            10.9773,
+            10.2576,
+            11.231,
+            9.8923,
+            11.2208
+          ]
+        }
+      ],
+      "content": "0.0"
+    },
+    {
+      "spans": [
+        {
+          "offset": 763,
+          "length": 6
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            9.9126,
+            10.5715,
+            10.633,
+            10.5715,
+            10.633,
+            10.7947,
+            9.9126,
+            10.7947
+          ]
+        }
+      ],
+      "content": "1111.C"
+    },
+    {
+      "spans": [
+        {
+          "offset": 770,
+          "length": 4
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            11.0084,
+            10.5715,
+            11.5867,
+            10.5817,
+            11.5766,
+            10.7846,
+            10.9982,
+            10.7846
+          ]
+        }
+      ],
+      "content": "CO2:"
+    },
+    {
+      "spans": [
+        {
+          "offset": 775,
+          "length": 14
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            11.0287,
+            10.9875,
+            12.4694,
+            10.9875,
+            12.4694,
+            11.2411,
+            11.0287,
+            11.231
+          ]
+        }
+      ],
+      "content": "Plazas de pie:"
+    },
+    {
+      "spans": [
+        {
+          "offset": 790,
+          "length": 5
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            12.6926,
+            10.5614,
+            13.3014,
+            10.5614,
+            13.2912,
+            10.7947,
+            12.6926,
+            10.7846
+          ]
+        }
+      ],
+      "content": "120.0"
+    },
+    {
+      "spans": [
+        {
+          "offset": 796,
+          "length": 510
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            2.351,
+            14.1224,
+            13.6649,
+            14.0914,
+            13.6683,
+            15.3482,
+            2.3545,
+            15.3792
+          ]
+        }
+      ],
+      "content": "presente cocu Tiênto combluye une autorizsoon provisional de ciro .. /noón del vehiculo, que tuft Uje a' permiso definitivo, surtiene sus mismos aledes con ina siguesalud conid chantes Terdra valdez do SC ciâu a part.' do la lecha de expedición. Sempre debe 's acompañado de a Tabela co inspección Técnica de Vehiculo en vigor, asi como de la restante documentación que. conforme a la normativa vigente. debe levar comingo el conductor. () El pretenle documento no ce válido pore restar lên des acministrat vod"
+    },
+    {
+      "spans": [
+        {
+          "offset": 1307,
+          "length": 191
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            2.3528,
+            15.5833,
+            13.8797,
+            15.5529,
+            13.8808,
+            15.9693,
+            2.3539,
+            15.9997
+          ]
+        }
+      ],
+      "content": "Si observa algún error en on colos generales_ techcon o en el servicio al que se destina e vehiculo. debe solicitar su rectificación ales de la expedición dul Parnito de CeCulación Cafritivo."
+    },
+    {
+      "spans": [
+        {
+          "offset": 1499,
+          "length": 25
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            4.3831,
+            16.7703,
+            11.8114,
+            16.7906,
+            11.8099,
+            17.3486,
+            4.3815,
+            17.3283
+          ]
+        }
+      ],
+      "content": "* VÁLIDO HASTA 16/04/2026"
+    },
+    {
+      "spans": [
+        {
+          "offset": 1525,
+          "length": 26
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            2.3539,
+            22.0865,
+            4.7686,
+            22.0865,
+            4.7686,
+            22.2996,
+            2.3539,
+            22.2996
+          ]
+        }
+      ],
+      "content": "MOJUELC PCTemporalSALA.1.0"
+    },
+    {
+      "spans": [
+        {
+          "offset": 1552,
+          "length": 52
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            11.2823,
+            21.9468,
+            14.0235,
+            21.9569,
+            14.0217,
+            22.4315,
+            11.2806,
+            22.4213
+          ]
+        }
+      ],
+      "content": "MEESTERIO DEL. INTEFOOR DIRECCIÓN GENERAL DE TRÁFICO"
+    },
+    {
+      "spans": [
+        {
+          "offset": 1605,
+          "length": 21
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            2.0799,
+            10.9976,
+            4.4947,
+            10.9976,
+            4.4947,
+            11.2512,
+            2.0799,
+            11.2614
+          ]
+        }
+      ],
+      "content": "Polencia Neta Máxima:"
+    },
+    {
+      "spans": [
+        {
+          "offset": 1627,
+          "length": 4
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            5.2962,
+            10.9976,
+            5.7933,
+            10.9976,
+            5.7933,
+            11.2208,
+            5.2962,
+            11.2208
+          ]
+        }
+      ],
+      "content": "59.0"
+    }
+  ],
+  "styles": [
+    {
+      "confidence": 0.7,
+      "spans": [
+        {
+          "offset": 1233,
+          "length": 2
+        }
+      ],
+      "isHandwritten": true
+    }
+  ],
+  "contentFormat": "text"
+}

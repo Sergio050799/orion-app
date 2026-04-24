@@ -1,0 +1,196 @@
+{
+  "docId": "3mr1da",
+  "createdAt": "2026-03-14T12:53:36.265Z",
+  "pageCount": 1,
+  "firstLines": [
+    "Región de Murcia",
+    "RA",
+    "Matrícula",
+    "2635LTD",
+    "Certificado nº",
+    "Código",
+    "Descripción",
+    "Código",
+    "Descripción",
+    "3040202101490"
+  ],
+  "usedModel": "prebuilt-layout",
+  "detectedType": "FICHA_TECNICA",
+  "documentType": "FICHA_TECNICA",
+  "detectedTypeLocked": true,
+  "detectedTypeEvidence": {
+    "evidence": [
+      "PERMISO_STRUCTURAL_MARKERS:5",
+      "FICHA_EXCLUSIVE_CODES:9",
+      "V2_KW:MATRICULA",
+      "STRONG_V1_CODES: D\\.1,D\\.2,D\\.3,F\\.1,P\\.1,P\\.2,P\\.3,S\\.1,S\\.2",
+      "V1_CODES: D\\.1,D\\.2,D\\.3,F\\.1,P\\.1,P\\.2,P\\.3,S\\.1,S\\.2",
+      "FICHA_EXCLUSIVE_STRONG:9",
+      "WINNER:FICHA_TECNICA"
+    ],
+    "scoreV1": -240,
+    "scoreV2": -250
+  },
+  "extractorUsed": "legacyFichaExtractor",
+  "classifierEvidence": {
+    "evidence": [
+      "PERMISO_STRUCTURAL_MARKERS:5",
+      "FICHA_EXCLUSIVE_CODES:9",
+      "V2_KW:MATRICULA",
+      "STRONG_V1_CODES: D\\.1,D\\.2,D\\.3,F\\.1,P\\.1,P\\.2,P\\.3,S\\.1,S\\.2",
+      "V1_CODES: D\\.1,D\\.2,D\\.3,F\\.1,P\\.1,P\\.2,P\\.3,S\\.1,S\\.2",
+      "FICHA_EXCLUSIVE_STRONG:9",
+      "WINNER:FICHA_TECNICA"
+    ],
+    "scoreV1": -240,
+    "scoreV2": -250
+  },
+  "ocrQuality": {
+    "ocrChars": 1725,
+    "nonEmptyLines": 136,
+    "fieldsFoundCount": 8,
+    "quality": "high"
+  },
+  "extractedFields": {
+    "plate": "2635 LTD",
+    "CL": "1000 TURISMO SIN ESPECIFICAR",
+    "CI": null,
+    "CV": null,
+    "D1": "SPOSITIVO DE ACOPLAMIENTO CON CH .: E13",
+    "D3": null,
+    "E": "WV2ZZZ7HZ6H012958",
+    "J": "M1",
+    "J1": null,
+    "J2": null,
+    "J3": null,
+    "F2": null,
+    "F4": null,
+    "F5": null,
+    "F6": null,
+    "P3": null,
+    "P1": null,
+    "P2": null,
+    "S1": null,
+    "observations": null,
+    "homologationOptions": "Opciones incluidas en la homologación de tipo \n Certifica que el vehículo cuyas \n características se reseñan es apto para su \n matriculación o puesta en circulación. \n (2) Valor en punto de acoplamiento .: 100kg .- \n 09/08/2021. ITV 3040. Emisión de tarjeta en cumplimiento del art. 5.3b del Real Decreto \n 750/2010 .- \n Incorpora dispositivo de acoplamiento con CH .: e13 \n 00-1087 .- \n itv \n 3 \n RCA CE \n noroestely \n 2021",
+    "issueDateRaw": "09/08/2021",
+    "issueDateISO": "2021-08-09T00:00:00.000Z",
+    "powerCv": null,
+    "_v2Debug": {
+      "invoked": true,
+      "bestSource": "pages.lines",
+      "fullTextLen": 1725,
+      "linesCount": 136,
+      "sampleFirst500": "REGIÓN DE MURCIA RA MATRÍCULA 2635LTD CERTIFICADO Nº CÓDIGO DESCRIPCIÓN CÓDIGO DESCRIPCIÓN 3040202101490 Z M.1. 3000 G 1949 M.4. F.1. 3200 L 2/4 F.1.1. 1640 / 1720 L.O. F.1.5. -/(2) L.1. 1 / DEL / MECANICA CL 1000 TURISMO SIN ESPECIFICAR F.2. 3200 L.2. 4 - 215/65 R16C 106T A.1. VOLKSWAGEN AG F.2.1. 1640 / 1720 P.5.1. VOLKSWAGEN AG A.2. D-38346 WOLFSBURG, ALEMANIA F.3. 5200 P.5. AXD B.1. F.3.1. 5200 P.3. D B.2. O.1. P.1. 2461 D.1. VOLKSWAGEN 0.1.1 P.1.1. 4 EN LINEA D.2. 7HC / AXDBNX0 / LS300FM6A5",
+      "foundTokens": {
+        "D1": 1,
+        "D3": 0,
+        "E": 1,
+        "S1": 0
+      },
+      "attempts": [
+        {
+          "strategy": "codeLine",
+          "key": "plate",
+          "raw": "2635LTD",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "F1",
+          "raw": ".1.",
+          "valid": false,
+          "reasonIfInvalid": "invalidMMA"
+        },
+        {
+          "strategy": "codeLine",
+          "key": "F1",
+          "raw": ".5.",
+          "valid": false,
+          "reasonIfInvalid": "invalidMMA"
+        },
+        {
+          "strategy": "codeLine",
+          "key": "CL",
+          "raw": "1000 TURISMO SIN ESPECIFICAR",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "F2",
+          "raw": ".1.",
+          "valid": false,
+          "reasonIfInvalid": "invalidMMA"
+        },
+        {
+          "strategy": "codeLine",
+          "key": "D3",
+          "raw": "8346 WOLFSBURG, ALEMANIA",
+          "valid": false,
+          "reasonIfInvalid": "looksLikeAddress"
+        },
+        {
+          "strategy": "codeLine",
+          "key": "P1",
+          "raw": ".",
+          "valid": false,
+          "reasonIfInvalid": "isGarbage (empty/symbols/<2 chars)"
+        },
+        {
+          "strategy": "codeLine",
+          "key": "P1",
+          "raw": ".1.",
+          "valid": false,
+          "reasonIfInvalid": "invalidCC"
+        },
+        {
+          "strategy": "codeLine",
+          "key": "P2",
+          "raw": ".",
+          "valid": false,
+          "reasonIfInvalid": "isGarbage (empty/symbols/<2 chars)"
+        },
+        {
+          "strategy": "codeLine",
+          "key": "P2",
+          "raw": ".1.",
+          "valid": false,
+          "reasonIfInvalid": "invalidKW"
+        },
+        {
+          "strategy": "codeLine",
+          "key": "D1",
+          "raw": "SPOSITIVO DE ACOPLAMIENTO CON CH .: E13",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "E",
+          "raw": "WV2ZZZ7HZ6H012958",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "globalSearch",
+          "key": "E",
+          "raw": "WV2ZZZ7HZ6H012958",
+          "valid": true
+        }
+      ]
+    },
+    "_v2Fallback": [
+      "D1"
+    ]
+  },
+  "decoded": {
+    "make": "SPOSITIVO DE ACOPLAMIENTO CON CH .: E13",
+    "model": null,
+    "vehicleClass": "1000 TURISMO SIN ESPECIFICAR",
+    "vehicleCategory": "Vehículo de pasajeros",
+    "bodyType": null,
+    "fuelType": null
+  }
+}

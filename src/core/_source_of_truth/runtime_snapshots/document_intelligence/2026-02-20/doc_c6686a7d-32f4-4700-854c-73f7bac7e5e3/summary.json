@@ -1,0 +1,38 @@
+{
+  "docId": "c6686a7d-32f4-4700-854c-73f7bac7e5e3",
+  "createdAt": "2026-02-20T17:59:29.060Z",
+  "pageCount": 1,
+  "firstLines": [
+    "B",
+    "Nº de Serle:",
+    "e018468964",
+    "Código",
+    "Descripción",
+    "Código",
+    "Descripción",
+    "Matricula",
+    "0102NKN",
+    "Certificado Nº"
+  ],
+  "usedModel": "prebuilt-read",
+  "ocrQuality": {
+    "ocrChars": 2020,
+    "nonEmptyLines": 139,
+    "fieldsFoundCount": 5,
+    "quality": "high"
+  },
+  "vehiclePreview": {
+    "plate": "0102 NKN",
+    "make": "RENAULT",
+    "model": "D.3",
+    "seats": 5,
+    "powerCv": 101,
+    "firstLines": [
+      "B",
+      "Nº de Serle:",
+      "e018468964",
+      "Código",
+      "Descripción"
+    ]
+  }
+}

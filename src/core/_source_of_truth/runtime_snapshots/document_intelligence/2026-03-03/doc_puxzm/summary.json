@@ -1,0 +1,103 @@
+{
+  "docId": "puxzm",
+  "createdAt": "2026-03-03T14:53:47.202Z",
+  "isMixedPdf": false,
+  "pagesTotal": 1,
+  "pageMap": [
+    {
+      "pageIndex": 1,
+      "rotationApplied": 0,
+      "detectedType": "FICHA_TECNICA",
+      "confidence": 0.95
+    }
+  ],
+  "segments": [
+    {
+      "id": "a0a71df3-0a5b-4a36-82dd-e7669225b3e3",
+      "type": "FICHA_TECNICA",
+      "pages": [
+        1
+      ],
+      "extractionStatus": "done",
+      "extractedData": {
+        "plate": "0078 NKN",
+        "CL": null,
+        "CI": null,
+        "CV": null,
+        "D1": "BASE:",
+        "D3": "CLIO",
+        "E": "VF1RJA00375377315",
+        "J": "EF",
+        "J1": null,
+        "J2": null,
+        "J3": null,
+        "F2": null,
+        "F4": null,
+        "F5": null,
+        "F6": null,
+        "P3": null,
+        "P1": null,
+        "P2": null,
+        "S1": 5,
+        "observations": null,
+        "homologationOptions": null,
+        "issueDateRaw": "13/02/2026",
+        "issueDateISO": "2026-02-13T00:00:00.000Z",
+        "powerCv": null,
+        "_v2Debug": {
+          "invoked": true,
+          "bestSource": "content",
+          "fullTextLen": 2257,
+          "linesCount": 96,
+          "sampleFirst500": "GOWERNO DE ESPAÑA :DGT MATRÍCULA: 0078NKN REF: SIGA.8575857 AUTORIZACIÓN PROVISIONAL DE CIRCULACIÓN FECHA EXPEDICIÓN: 13/02/2026 11:55 FECHA MATRICULACIÓN: 13/02/2026 TITULAR: DATOS GENERALES JEFATURA: JEFATURA PROVINCIAL DE ASTURIAS ALVEMACO RENTACAR SL MARCA BASE: MARCA: RENAULT MODELO: CLIO TIPO: TURISMO BASTIDOR: VF1RJA00375377315 COLOR: BLANCO NIVE: 640AAC67BB514AFDB1370A0C1B7B8E6E PLAZAS: 5 SERVICIO: PARTICULAR - SIN ESPECIFICAR RENTING: N PROPULSIÓN: DIESEL PROCEDENCIA: IMPORTADO NO. CVF:",
+          "foundTokens": {
+            "D1": 1,
+            "D3": 0,
+            "E": 0,
+            "S1": 0
+          },
+          "attempts": [
+            {
+              "strategy": "codeLine",
+              "key": "plate",
+              "raw": "0078NKN",
+              "valid": true,
+              "reasonIfInvalid": ""
+            },
+            {
+              "strategy": "codeLine",
+              "key": "J",
+              "raw": "EFATURA:",
+              "valid": true,
+              "reasonIfInvalid": ""
+            },
+            {
+              "strategy": "codeLine",
+              "key": "D1",
+              "raw": "ESEL",
+              "valid": true,
+              "reasonIfInvalid": ""
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "vehicleGroups": [
+    {
+      "id": "a30edf53-b92e-4ac1-9917-8b424d6676cb",
+      "matricula": "0078 NKN",
+      "bastidor": "VF1RJA00375377315",
+      "documents": [
+        {
+          "segmentId": "a0a71df3-0a5b-4a36-82dd-e7669225b3e3",
+          "type": "FICHA_TECNICA",
+          "pages": [
+            1
+          ],
+          "status": "done"
+        }
+      ]
+    }
+  ]
+}

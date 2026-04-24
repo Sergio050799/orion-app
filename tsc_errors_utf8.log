@@ -1,0 +1,41 @@
+﻿.next/dev/types/validator.ts(153,31): error TS2344: Type 'typeof import("C:/Users/garci/Desktop/Proyecto_Cosmos/03_Cosmos_Constelaciones/01_ORION/src/app/api/orion/documents/[id]/download/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/orion/documents/[id]/download">'.
+  Types of property 'GET' are incompatible.
+    Type '(req: NextRequest, { params }: { params: { id: string; }; }) => Promise<NextResponse<unknown>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ id: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ id: string; }>; }' is not assignable to type '{ params: { id: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'id' is missing in type 'Promise<{ id: string; }>' but required in type '{ id: string; }'.
+.next/types/validator.ts(153,31): error TS2344: Type 'typeof import("C:/Users/garci/Desktop/Proyecto_Cosmos/03_Cosmos_Constelaciones/01_ORION/src/app/api/orion/documents/[id]/download/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/orion/documents/[id]/download">'.
+  Types of property 'GET' are incompatible.
+    Type '(req: NextRequest, { params }: { params: { id: string; }; }) => Promise<NextResponse<unknown>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ id: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ id: string; }>; }' is not assignable to type '{ params: { id: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'id' is missing in type 'Promise<{ id: string; }>' but required in type '{ id: string; }'.
+BACKUPS/ORION_STABLE_2026-03-03/memorias_del_proyecto/cleanup_backup/2026-02-19_15-52/backup_antigravity/src_app_actions/analyze-document.ts(4,36): error TS2307: Cannot find module '@google/generative-ai' or its corresponding type declarations.
+BACKUPS/ORION_STABLE_2026-03-03/memorias_del_proyecto/cleanup_backup/2026-02-19_15-52/backup_antigravity/src_app_actions/analyze-document.ts(5,36): error TS2307: Cannot find module '@/core/utils/pdf-renderer' or its corresponding type declarations.
+BACKUPS/ORION_STABLE_2026-03-03/memorias_del_proyecto/cleanup_backup/2026-02-19_15-52/backup_antigravity/src_core_utils/geminiOcr.ts(2,55): error TS2307: Cannot find module '@/app/actions/analyze-document' or its corresponding type declarations.
+BACKUPS/ORION_STABLE_2026-03-03/memorias_del_proyecto/cleanup_backup/2026-02-19_15-52/backup_antigravity/src_core_utils/pdf-renderer.ts(1,24): error TS2307: Cannot find module 'pdfjs-dist/legacy/build/pdf.mjs' or its corresponding type declarations.
+BACKUPS/ORION_STABLE_2026-03-03/memorias_del_proyecto/cleanup_backup/2026-02-19_15-52/backup_antigravity/src_core_utils/pdf-renderer.ts(2,30): error TS2307: Cannot find module '@napi-rs/canvas' or its corresponding type declarations.
+BACKUPS/ORION_STABLE_2026-03-03/memorias_del_proyecto/releases/orion-v1-stable-2026-02-22/route.ts(2,42): error TS2307: Cannot find module '@/core/services/azure-doc-int' or its corresponding type declarations.
+BACKUPS/ORION_STABLE_2026-03-03/memorias_del_proyecto/snapshots/ORION_V1_FUNCIONANDO_2026-02-22/orion/src/app/api/orion/document-intelligence/analyze/route.ts(2,42): error TS2307: Cannot find module '@/core/services/azure-doc-int' or its corresponding type declarations.
+BACKUPS/ORION_STABLE_2026-03-03/src/app/(dashboard)/analysis/ocr/components/OcrReportPreview.tsx(3,44): error TS2307: Cannot find module '@/core/data/dictionary-decoder' or its corresponding type declarations.
+BACKUPS/ORION_STABLE_2026-03-03/src/app/api/orion/document-intelligence/analyze-mixed/route.ts(2,38): error TS2307: Cannot find module '@/core/services/azure-mixed-pipeline' or its corresponding type declarations.
+BACKUPS/ORION_STABLE_2026-03-03/src/app/api/orion/document-intelligence/analyze/route.ts(2,42): error TS2307: Cannot find module '@/core/services/azure-doc-int' or its corresponding type declarations.
+BACKUPS/ORION_STABLE_2026-03-03/src/app/api/orion/document-intelligence/analyze/route.ts(3,34): error TS2307: Cannot find module '@/core/utils/azureInputOptimizer' or its corresponding type declarations.
+BACKUPS/ORION_STABLE_2026-03-03/src/app/api/orion/document-intelligence/invoice/route.ts(6,34): error TS2307: Cannot find module '@/core/utils/azureInputOptimizer' or its corresponding type declarations.
+BACKUPS/ORION_STABLE_2026-03-03/src/components/saas/VehicleManualDetectionForm.tsx(5,44): error TS2307: Cannot find module '@/core/data/dictionary-decoder' or its corresponding type declarations.
+BACKUPS/ORION_STABLE_2026-03-03/src/components/saas/VehicleManualDetectionForm.tsx(76,27): error TS18047: 'ueCategoryLabel' is possibly 'null'.
+BACKUPS/ORION_STABLE_2026-03-03/src/components/saas/VehicleManualDetectionForm.tsx(76,69): error TS18047: 'ueCategoryLabel' is possibly 'null'.
+BACKUPS/ORION_STABLE_2026-03-03/src/core/services/azure-doc-int.ts(4,26): error TS2307: Cannot find module '@/core/data/dictionary-decoder' or its corresponding type declarations.
+BACKUPS/ORION_STABLE_2026-03-03/src/core/utils/exportToCsv.ts(2,44): error TS2307: Cannot find module '@/core/data/dictionary-decoder' or its corresponding type declarations.
+src/app/api/orion/document-intelligence/analyze/route.ts(45,21): error TS2322: Type 'Buffer<ArrayBufferLike>' is not assignable to type 'Buffer<ArrayBuffer>'.
+  Type 'ArrayBufferLike' is not assignable to type 'ArrayBuffer'.
+    Type 'SharedArrayBuffer' is missing the following properties from type 'ArrayBuffer': resizable, resize, detached, transfer, transferToFixedLength
+src/app/api/orion/document-intelligence/invoice/route.ts(448,21): error TS2322: Type 'Buffer<ArrayBufferLike>' is not assignable to type 'Buffer<ArrayBuffer>'.
+  Type 'ArrayBufferLike' is not assignable to type 'ArrayBuffer'.
+    Type 'SharedArrayBuffer' is missing the following properties from type 'ArrayBuffer': resizable, resize, detached, transfer, transferToFixedLength
+test_v1.ts(1,34): error TS2307: Cannot find module './src/core/extractors/permisoExtractor.v1' or its corresponding type declarations.
+tmp_test_both.ts(1,34): error TS2307: Cannot find module './src/core/documentClassifier' or its corresponding type declarations.
+tmp_test_both.ts(2,34): error TS2307: Cannot find module './src/core/extractors/permisoExtractor.v1' or its corresponding type declarations.
+tmp_test_both.ts(3,34): error TS2307: Cannot find module './src/core/extractors/permisoExtractor.v2' or its corresponding type declarations.

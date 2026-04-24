@@ -1,0 +1,196 @@
+
+import {
+    VehicleNormalized,
+    ValidationReport,
+    NormativaV1,
+    MasterDictionaryV2,
+    RuleResult,
+    CoreData,
+    TechnicalField
+} from '@/core/types';
+
+export function normalizeVehicle(raw: any, core: CoreData): VehicleNormalized {
+    const { normativa } = core;
+    const id = raw.id || crypto.randomUUID();
+
+    const getValue = (key: string) => raw[key] || raw[key.replace('.', '')] || null;
+    const getNum = (key: string) => {
+        const v = getValue(key);
+        if (v === null || v === undefined) return null;
+        const n = parseFloat(String(v).replace(',', '.').replace(/[^0-9.-]/g, ''));
+        return isNaN(n) ? null : n;
+    };
+
+    // --- Decoders (V2) ---
+    const decodeFuel = (code: string | null) => {
+        if (!code) return "Desconocido";
+        const map: Record<string, string> = {
+            'D': 'Diésel', 'G': 'Gasolina', 'M': 'Mezcla', 'L': 'GLP', 'E': 'Eléctrico',
+            'O': 'Otros', 'H': 'Híbrido'
+        };
+        return map[code] || code; // Retorna el código si no está en el mapa (seguridad)
+    };
+
+    const decodeDate = (date: string | null) => {
+        if (!date || date === '1900-01-01') return "No detectada";
+        return date; // Asumimos YYYY-MM-DD del sistema
+    };
+
+    // --- 1. Basic Identifiers ---
+    const matricula = getValue('matricula') || getValue('A') || "SIN MATRICULA";
+    const vin = getValue('E') || getValue('bastidor') || null;
+    const marca = getValue('D.1') || getValue('marca') || "DESCONOCIDO";
+    const modelo = getValue('D.3') || getValue('modelo') || "DESCONOCIDO";
+    const tipo_var_ver = getValue('D.2') || "";
+    const fecha_mat = getValue('I') || getValue('fecha_matriculacion') || "1900-01-01";
+
+    // --- 2. Technical Data Extraction & Normalization ---
+    const technical_fields: TechnicalField[] = [];
+
+    const addField = (key: string, label: string, value: any, confidence = 0.95, is_derived = false) => {
+        if (value !== null && value !== undefined && value !== "") {
+            technical_fields.push({
+                field: key,
+                label,
+                value: String(value),
+                source_key: is_derived ? 'Calculado' : key,
+                confidence,
+                is_derived
+            });
+        }
+    };
+
+    // Add Raw Fields
+    addField('E', 'Número de Bastidor (VIN)', vin);
+    addField('D.1', 'Marca', marca);
+    addField('D.3', 'Denominación Comercial', modelo);
+    addField('D.2', 'Tipo / Variante / Versión', tipo_var_ver);
+    addField('K', 'Contraseña de Homologación', getValue('K'));
+    addField('F.1', 'Masa Máxima Autorizada (MMA)', getValue('F.1'));
+    addField('G', 'Masa en servicio (MOM)', getValue('G'));
+
+    // Engine
+    const p2_kw = getNum('P.2');
+    let p2_cv: number | null = null;
+    if (p2_kw !== null) {
+        p2_cv = Math.round(p2_kw * 1.35962);
+        addField('P.2', 'Potencia Neta (kW)', p2_kw);
+        addField('P.2_cv', 'Potencia Fiscal (CV)', p2_cv, 1.0, true);
+    }
+
+    const p1_cc = getNum('P.1');
+    let p1_l: number | null = null;
+    if (p1_cc !== null) {
+        p1_l = parseFloat((p1_cc / 1000).toFixed(1));
+        addField('P.1', 'Cilindrada (cm3)', p1_cc);
+        addField('P.1_l', 'Cilindrada (L)', p1_l, 1.0, true);
+    }
+
+    const combustible = getValue('P.3');
+    const fuelCode = combustible || "D";
+    const combustible_texto = decodeFuel(combustible);
+    addField('P.3', 'Combustible / Energía', combustible);
+
+    const plazas = getNum('S.1');
+    addField('S.1', 'Nº de Plazas de Asiento', plazas);
+
+    // Classification
+    const cl_code = getValue('C.L') || getValue('clasificacion') || "";
+    const constr_code = cl_code.length >= 2 ? cl_code.substring(0, 2) : "";
+    const use_code = cl_code.length >= 4 ? cl_code.substring(2, 4) : "";
+
+    const constr_text = normativa.clasificacion_construccion[constr_code]?.label || "Sin especificar";
+    const use_text = normativa.clasificacion_uso[use_code]?.label || "Sin especificar";
+
+    // Human View Logic: "Turismo - Sin especificar" instead of codes
+    const clasificacion_texto = (constr_code && use_code)
+        ? `${constr_text} - ${use_text}`
+        : "No detectada";
+
+    if (cl_code) addField('C.L', 'Clasificación (Constr. + Uso)', cl_code);
+
+    // Category
+    const cat_eu_code = getValue('J') || "";
+    const cat_eu_label = normativa.categorias_ue[cat_eu_code]?.label || "Desconocido";
+    // Human View: "M1 - Vehículos para transporte..."
+    const cat_eu_text = cat_eu_code ? `${cat_eu_code} - ${cat_eu_label}` : "No detectada";
+
+    if (cat_eu_code) addField('J', 'Categoría UE', cat_eu_code);
+
+    const body_code = getValue('J.1') || "";
+    const body_label = normativa.carrocerias[body_code]?.label || "Desconocido";
+    const body_text = body_code ? `${body_code} - ${body_label}` : "No detectada";
+
+    if (body_code) addField('J.1', 'Carrocería', body_code);
+
+    // --- 3. Coherence Rules ---
+    const rules: RuleResult[] = [];
+    let coherence: 'COHERENTE' | 'REVISAR' = 'COHERENTE';
+
+    const mandatory = [
+        { key: 'matricula', label: 'Matrícula' },
+        { key: 'D.1', label: 'Marca' }, // mapped to marca
+        { key: 'C.L', label: 'Clasificación (C.L)' },
+        { key: 'P.2', label: 'Potencia (P.2)' },
+        { key: 'P.3', label: 'Combustible (P.3)' },
+        { key: 'S.1', label: 'Plazas (S.1)' }
+    ];
+
+    mandatory.forEach(item => {
+        // Check either the raw key or the normalized variable
+        let exists = false;
+        if (item.key === 'matricula' && matricula && matricula !== "SIN MATRICULA") exists = true;
+        else if (item.key === 'D.1' && marca && marca !== "DESCONOCIDO") exists = true;
+        else if (item.key === 'P.2' && p2_kw !== null) exists = true;
+        else if (item.key === 'P.3' && combustible) exists = true;
+        else if (item.key === 'S.1' && plazas !== null) exists = true;
+        else if (item.key === 'C.L' && cl_code) exists = true;
+
+        if (!exists) {
+            rules.push({ rule: `Campo Obligatorio: ${item.label}`, status: 'ERROR', message: `No se ha detectado ${item.label} en el documento.` });
+            coherence = 'REVISAR';
+        } else {
+            rules.push({ rule: `Campo Obligatorio: ${item.label}`, status: 'OK', message: 'Correcto' });
+        }
+    });
+
+    if (cat_eu_code === 'M1' && plazas && plazas > 9) {
+        rules.push({ rule: 'Regla M1 vs Plazas', status: 'ERROR', message: `Un M1 no puede tener ${plazas} plazas (máx 9).` });
+        coherence = 'REVISAR';
+    } else if (cat_eu_code === 'M1') {
+        rules.push({ rule: 'Regla M1 vs Plazas', status: 'OK' });
+    }
+
+    // --- 4. Report Construction ---
+    const report: ValidationReport = {
+        coherence_rules: rules,
+        technical_fields: technical_fields.sort((a, b) => a.field.localeCompare(b.field)),
+        observations: rules.filter(r => r.status !== 'OK').map(r => r.message || r.rule)
+    };
+
+    return {
+        id,
+        matricula,
+        vin,
+        marca,
+        modelo,
+        tipo_var_ver,
+        fecha_primera_matriculacion: decodeDate(fecha_mat),
+        combustible: decodeFuel(combustible),
+        potencia_kw: p2_kw,
+        potencia_cv: p2_cv,
+        cilindrada_cc: p1_cc,
+        cilindrada_l: p1_l,
+        plazas,
+        categoria_codigo: cat_eu_code,
+        categoria_texto: cat_eu_text,
+        clasificacion_codigo: cl_code,
+        clasificacion_texto,
+        carroceria_codigo: body_code,
+        carroceria_texto: body_text,
+        confianza_media: 0.95, // Mock for V1, would come from Azure
+        estado_coherencia: coherence,
+        estado_operativo: 'PENDIENTE',
+        informe: report
+    };
+}

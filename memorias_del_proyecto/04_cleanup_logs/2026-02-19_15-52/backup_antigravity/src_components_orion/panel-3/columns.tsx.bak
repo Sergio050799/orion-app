@@ -1,0 +1,150 @@
+
+"use client"
+
+import { ColumnDef } from "@tanstack/react-table"
+import { VehicleNormalized } from "@/core/types"
+import { AlertTriangle, CheckCircle2 } from "lucide-react"
+
+export const columns: ColumnDef<VehicleNormalized>[] = [
+    {
+        accessorKey: "estado_coherencia",
+        header: "Estado",
+        size: 80,
+        minSize: 80,
+        cell: ({ row }) => {
+            const status = (row.getValue("estado_coherencia") as string) || "";
+            return (
+                <div className="flex items-center justify-center" title={status}>
+                    {status === "COHERENTE" ? (
+                        <CheckCircle2 className="h-5 w-5 text-green-500" />
+                    ) : (
+                        <AlertTriangle className="h-5 w-5 text-amber-500" />
+                    )}
+                </div>
+            )
+        },
+    },
+    {
+        accessorKey: "matricula",
+        header: "Matrícula",
+        size: 100,
+        minSize: 100,
+        cell: ({ row }) => <span className="font-mono font-bold text-white select-all">{(row.getValue("matricula") as string) || ""}</span>
+    },
+    {
+        accessorKey: "marca",
+        header: "Marca",
+        size: 120,
+        minSize: 100,
+        cell: ({ row }) => {
+            const val = (row.getValue("marca") as string) || "";
+            return (
+                <div className="truncate" title={val}>
+                    {val}
+                </div>
+            )
+        }
+    },
+    {
+        accessorKey: "modelo",
+        header: "Modelo",
+        size: 180,
+        minSize: 140,
+        cell: ({ row }) => {
+            const val = (row.getValue("modelo") as string) || "";
+            return (
+                <div className="truncate text-slate-300" title={val}>
+                    {val}
+                </div>
+            )
+        }
+    },
+    {
+        accessorKey: "fecha_primera_matriculacion",
+        header: "Año",
+        size: 80,
+        minSize: 80,
+        cell: ({ row }) => {
+            const d = (row.getValue("fecha_primera_matriculacion") as string) || "";
+            // Assuming format YYYY-MM-DD from decoder
+            return <span className="font-mono text-slate-400">{d && d.length >= 4 ? d.substring(0, 4) : "-"}</span>;
+        }
+    },
+    {
+        accessorKey: "combustible",
+        header: "Comb.",
+        size: 100,
+        minSize: 90,
+        cell: ({ row }) => {
+            const val = (row.getValue("combustible") as string) || "";
+            return (
+                <div className="truncate" title={val}>
+                    {val}
+                </div>
+            )
+        }
+    },
+    {
+        accessorKey: "potencia_cv",
+        header: "Potencia",
+        size: 90,
+        minSize: 80,
+        cell: ({ row }) => {
+            const val = row.getValue("potencia_cv") as number | null;
+            return val ? <span className="font-mono">{val} CV</span> : "-"
+        }
+    },
+    {
+        accessorKey: "plazas",
+        header: "Plazas",
+        size: 70,
+        minSize: 60,
+        cell: ({ row }) => {
+            const val = row.getValue("plazas") as number | null;
+            return <div className="text-center">{val || "-"}</div>
+        }
+    },
+    {
+        accessorKey: "confianza_media",
+        header: "Confianza",
+        size: 110,
+        minSize: 100,
+        cell: ({ row }) => {
+            const val = (row.getValue("confianza_media") as number) || 0;
+            const percentage = Math.round(val * 100);
+            let colorClass = 'bg-red-500';
+            if (val > 0.8) colorClass = 'bg-[#16C784]';
+            else if (val > 0.6) colorClass = 'bg-[#FFB020]';
+
+            return (
+                <div className="flex items-center gap-2" title={`Confianza: ${percentage}%`}>
+                    <div className="h-1.5 w-14 bg-[#ffffff10] rounded-full overflow-hidden">
+                        <div
+                            className={`h-full ${colorClass}`}
+                            style={{ width: `${percentage}%` }}
+                        />
+                    </div>
+                    <span className="text-[10px] text-slate-500 font-mono">{percentage}%</span>
+                </div>
+            )
+        }
+    },
+    {
+        accessorKey: "estado_operativo",
+        header: "Operativo",
+        size: 110,
+        minSize: 100,
+        cell: ({ row }) => {
+            const val = (row.getValue("estado_operativo") as string) || "";
+            const isApproved = val === 'APROBADO';
+            return (
+                <span className={`px-2 py-0.5 rounded text-[10px] font-bold border
+                ${isApproved
+                        ? 'bg-[#3CE0FF]/10 text-[#3CE0FF] border-[#3CE0FF]/30'
+                        : 'bg-[#ffffff05] text-slate-500 border-[#ffffff10]'}`}>
+                    {val}
+                </span>
+            )
+        }
+    }
+]

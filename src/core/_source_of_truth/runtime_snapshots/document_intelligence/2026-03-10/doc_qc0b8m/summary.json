@@ -1,0 +1,122 @@
+{
+  "docId": "qc0b8m",
+  "createdAt": "2026-03-10T16:59:10.116Z",
+  "pageCount": 1,
+  "firstLines": [
+    "N& SERIE",
+    "44892317",
+    "B",
+    "VOLVO CAR ESPAHA, S.L.",
+    "PASEO DE LA CASTELLANA ,130",
+    "MADRID 28046",
+    "VOLVO",
+    "0585GYT 151042",
+    "KEFANALS",
+    "Número de identificación:"
+  ],
+  "usedModel": "prebuilt-read",
+  "detectedType": "FICHA_TECNICA",
+  "documentType": "FICHA_TECNICA",
+  "detectedTypeLocked": true,
+  "detectedTypeEvidence": {
+    "evidence": [
+      "WINNER:FICHA_TECNICA"
+    ],
+    "scoreV1": -1198,
+    "scoreV2": -1150
+  },
+  "extractorUsed": "legacyFichaExtractor",
+  "classifierEvidence": {
+    "evidence": [
+      "WINNER:FICHA_TECNICA"
+    ],
+    "scoreV1": -1198,
+    "scoreV2": -1150
+  },
+  "ocrQuality": {
+    "ocrChars": 1846,
+    "nonEmptyLines": 89,
+    "fieldsFoundCount": 20,
+    "quality": "high"
+  },
+  "extractedFields": {
+    "plate": "0585 GYT",
+    "CL": "1033 TURISMO TODO TERRENO",
+    "CI": null,
+    "CV": "VOVDZ678",
+    "D1": "VOLVO",
+    "D3": "XC60 ",
+    "E": "YV1DZ7056B2151042",
+    "J": "EM",
+    "J1": null,
+    "J2": null,
+    "J3": null,
+    "F2": 1754,
+    "F4": 1713,
+    "F5": 1891,
+    "F6": 4627,
+    "P3": "D",
+    "P1": 2400,
+    "P2": 151,
+    "S1": 5,
+    "observations": "Vehiculo procedente de la C.E. \n C02-184 \n VOLVO CAR ESPAMA, S.L. \n certifica que \n el vehiculo carrozado cuyas características se reseñan es completamente conforme con el tipo homologado \n con la contraseña",
+    "homologationOptions": "Opciones incluidas en la homologación de tipo: \n EJEMPLAR PARA EL USUARIO \n Por las piezas de origen extranjero incorporadas a este vehiculo se han satisfecho los correspondientes \n derechos de Aduanas. \n El abajo firmante, legalmente autorizado por \n 235/60R18 101V:235/55R19 101V;255/45R20 101V \n ENGANCHE DE REMOLQUE: e11 00-6692; el1 00-6693 \n VERSION:DZ7056 \n Observaciones \n Vehiculo procedente de la C.E. \n C02-184 \n VOLVO CAR ESPAMA, S.L. \n certifica que \n el vehiculo carrozado cuyas características se reseñan es completamente conforme con el tipo homologado \n con la contraseña",
+    "issueDateRaw": null,
+    "issueDateISO": null,
+    "powerCv": 205,
+    "_v2Debug": {
+      "invoked": true,
+      "bestSource": "pages.lines",
+      "fullTextLen": 1846,
+      "linesCount": 89,
+      "sampleFirst500": "N& SERIE 44892317 B VOLVO CAR ESPAHA, S.L. PASEO DE LA CASTELLANA ,130 MADRID 28046 VOLVO 0585GYT 151042 KEFANALS NÚMERO DE IDENTIFICACIÓN: YVIDZ7056B2151042 CLASIFICACIÓN DEL VEHÍCULO: VOVDZ678 1 0 3 3 TURISMO TODO TERRENO 1005844 MARCA VOLVO TIPO D VARIANTE: DZ70 DENOMINACIÓN COMERCIAL: XC60 TARA IKGL: 1754 MTMA/MMA (KG): 2505/ 2505 MTMA/MMA 1º E (KG) 1280/ 1280 MTMA/MMA 2ª E ( KG): 1275/ 1275 MTMA MMA 3'E (KG): MTMA/MMA 4º E (KG) MMR S/F, C/F (KG) 750,2000 NEUMÁTICOS: 4/235/65 R17 101V Nº DE ",
+      "foundTokens": {
+        "D1": 1,
+        "D3": 1,
+        "E": 1,
+        "S1": 1
+      },
+      "attempts": [
+        {
+          "strategy": "codeLine",
+          "key": "plate",
+          "raw": "0585GYT",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "D1",
+          "raw": "STANCIA EJE 1º/2\" (MM):",
+          "valid": true,
+          "reasonIfInvalid": ""
+        }
+      ]
+    },
+    "D2": "DZ70",
+    "trackWidth": "/POSTERIOR (MM):",
+    "_v2Fallback": [
+      "E",
+      "D2",
+      "CL",
+      "F2",
+      "S1",
+      "F4",
+      "F5",
+      "F6",
+      "trackWidth",
+      "P1",
+      "P2",
+      "P3",
+      "CV"
+    ]
+  },
+  "decoded": {
+    "make": "VOLVO",
+    "model": "XC60 ",
+    "vehicleClass": "1033 TURISMO TODO TERRENO",
+    "vehicleCategory": "EM",
+    "bodyType": null,
+    "fuelType": "Diésel"
+  }
+}

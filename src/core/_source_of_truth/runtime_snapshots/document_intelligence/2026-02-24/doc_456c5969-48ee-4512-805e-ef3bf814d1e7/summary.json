@@ -1,0 +1,88 @@
+{
+  "docId": "456c5969-48ee-4512-805e-ef3bf814d1e7",
+  "createdAt": "2026-02-24T11:52:26.309Z",
+  "pageCount": 1,
+  "firstLines": [
+    "AR",
+    "Región de Murcia",
+    "A",
+    "Nº de serie: 3040211239",
+    "Matrícula",
+    "Certificado nº",
+    "Código",
+    "Descripción",
+    "Código",
+    "Descripción"
+  ],
+  "usedModel": "prebuilt-read",
+  "ocrQuality": {
+    "ocrChars": 1909,
+    "nonEmptyLines": 188,
+    "fieldsFoundCount": 22,
+    "quality": "high"
+  },
+  "extractedFields": {
+    "plate": "2635 LTD",
+    "CL": "A.1.",
+    "CI": null,
+    "CV": null,
+    "D1": ".",
+    "D3": "8346 WOLFSBURG, ALEMANIA",
+    "E": "WV2ZZZ7HZ6H012958",
+    "J": "J.1.",
+    "J1": ".",
+    "J2": ".",
+    "J3": ".",
+    "F2": ".1.",
+    "F4": null,
+    "F5": null,
+    "F6": null,
+    "P3": ".",
+    "P1": ".",
+    "P2": ".",
+    "S1": ".",
+    "observations": null,
+    "homologationOptions": "Opciones incluidas en la homologación de tipo \n Certifica que el vehículo cuyas \n características se reseñan es, apto para su \n matriculación o puesta en circulación. \n (2) Valor en punto de acoplamiento .: 100kg .- \n 09/08/2021. ITV 3040. Emisión de tarjeta en cumplimiento del art. 5.3b del Real Decreto \n 750/2010 .-",
+    "issueDateRaw": "09/08/2021",
+    "issueDateISO": "2021-08-09T00:00:00.000Z",
+    "powerCv": null,
+    "_v2Debug": {
+      "invoked": true,
+      "bestSource": "pages.lines",
+      "fullTextLen": 1909,
+      "linesCount": 188,
+      "sampleFirst500": "AR REGIÓN DE MURCIA A Nº DE SERIE: 3040211239 MATRÍCULA CERTIFICADO Nº CÓDIGO DESCRIPCIÓN CÓDIGO DESCRIPCIÓN 2635LTD 3040202101490 Z 3000 G F.1. 1949 3200 M.1. M.4. L F.1.1. F.1.5. L.0. L.1. L.2. P.5.1. P.5. P.3. D 2/ 4 - 1 / DEL / MECANICA 4 - 215/65 R16C 106T VOLKSWAGEN AG AXD 1640 / 1720 -/(2) 1000 TURISMO SIN ESPECIFICAR VOLKSWAGEN AG D-38346 WOLFSBURG, ALEMANIA CL A.1. A.2. B.1. B.2. D.1. VOLKSWAGEN 7HC / AXDBNX0 / LS300FM6A503U27GG TRANSPORTER F.2. F.2.1. F.3. 3200 1640 / 1720 5200 F.3.1. ",
+      "foundTokens": {
+        "D1": 1,
+        "D3": 1,
+        "E": 1,
+        "S1": 0
+      }
+    },
+    "F1": ".1.",
+    "L2": ".",
+    "D2": ".",
+    "_v2Fallback": [
+      "F1",
+      "L2",
+      "P3",
+      "D3",
+      "D1",
+      "F2",
+      "P1",
+      "D2",
+      "P2",
+      "J1",
+      "J2",
+      "J3"
+    ]
+  },
+  "decoded": {
+    "make": ".",
+    "model": "8346 WOLFSBURG, ALEMANIA",
+    "vehicleClass": "A.1.",
+    "vehicleCategory": "J.1.",
+    "bodyType": ".",
+    "fuelType": "."
+  }
+}

@@ -1,0 +1,97 @@
+{
+  "docId": "w6x5bn",
+  "createdAt": "2026-02-24T11:54:11.213Z",
+  "isMixedPdf": false,
+  "pagesTotal": 1,
+  "pageMap": [
+    {
+      "pageIndex": 1,
+      "rotationApplied": 0,
+      "detectedType": "FICHA_TECNICA",
+      "confidence": 0.95
+    }
+  ],
+  "segments": [
+    {
+      "id": "1df0551a-f3fd-483d-be1e-5e707345e2f5",
+      "type": "FICHA_TECNICA",
+      "pages": [
+        1
+      ],
+      "extractionStatus": "done",
+      "extractedData": {
+        "plate": "2635 LTD",
+        "CL": "1000 TURISMO SIN ESPECIFICAR",
+        "CI": null,
+        "CV": null,
+        "D1": ".",
+        "D3": "8346 WOLFSBURG, ALEMANIA",
+        "E": "WV2ZZZ7HZ6H012958",
+        "J": "M1",
+        "J1": ".",
+        "J2": ".",
+        "J3": ".",
+        "F2": ".1.",
+        "F4": null,
+        "F5": null,
+        "F6": null,
+        "P3": ".",
+        "P1": ".",
+        "P2": ".",
+        "S1": ".",
+        "observations": null,
+        "homologationOptions": "Opciones incluidas en la homologación de tipo \n Certifica que el vehículo cuyas \n características se reseñan es apto para su \n matriculación o puesta en circulación. \n CE \n CA \n 01 \n >noroesteny \n 2021 \n (2) Valor en punto de acoplamiento .: 100kg .- \n 09/08/2021. ITV 3040. Emisión de tarjeta en cumplimiento del art. 5.3b del Real Decreto \n 750/2010 .- \n Incorpora dispositivo de acoplamiento con CH .: e13 \n 00-1087.",
+        "issueDateRaw": "09/08/2021",
+        "issueDateISO": "2021-08-09T00:00:00.000Z",
+        "powerCv": null,
+        "_v2Debug": {
+          "invoked": true,
+          "bestSource": "content",
+          "fullTextLen": 1912,
+          "linesCount": 184,
+          "sampleFirst500": "REGIÓN DE MURCIA A Nº DE SERIE: 3040211239 MATRÍCULA 2635LTD CERTIFICADO Nº CÓDIGO DESCRIPCIÓN CÓDIGO DESCRIPCIÓN 3040202101490 Z ------- M.1. 3000 G 1949 M.4. --- F.1. 3200 L 2 / 4 F.1.1. 1640 / 1720 L.0. - F.1.5. -/(2) L.1. 1 / DEL / MECANICA CL 1000 TURISMO SIN ESPECIFICAR F.2. 3200 L.2. 4 - 215/65 R16C 106T A.1. VOLKSWAGEN AG F.2.1. 1640 / 1720 P.5.1. VOLKSWAGEN AG A.2. D-38346 WOLFSBURG, ALEMANIA F.3. 5200 P.5. AXD B.1. F.3.1. 5200 P.3. D B.2. - 0.1. ------- P.1. 2461 D.1. VOLKSWAGEN 0.1.1.",
+          "foundTokens": {
+            "D1": 1,
+            "D3": 1,
+            "E": 1,
+            "S1": 0
+          }
+        },
+        "F1": ".1.",
+        "L2": ".",
+        "D2": ".",
+        "_v2Fallback": [
+          "F1",
+          "L2",
+          "F2",
+          "D3",
+          "P3",
+          "P1",
+          "D1",
+          "D2",
+          "P2",
+          "J1",
+          "J2",
+          "J3"
+        ]
+      }
+    }
+  ],
+  "vehicleGroups": [
+    {
+      "id": "315adf8c-ebd5-4936-97c8-973ed0f25974",
+      "matricula": "2635 LTD",
+      "bastidor": "WV2ZZZ7HZ6H012958",
+      "documents": [
+        {
+          "segmentId": "1df0551a-f3fd-483d-be1e-5e707345e2f5",
+          "type": "FICHA_TECNICA",
+          "pages": [
+            1
+          ],
+          "status": "done"
+        }
+      ]
+    }
+  ]
+}

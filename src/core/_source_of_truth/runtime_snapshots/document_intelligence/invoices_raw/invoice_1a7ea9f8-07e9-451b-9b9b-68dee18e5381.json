@@ -1,0 +1,4714 @@
+{
+  "apiVersion": "2024-02-29-preview",
+  "modelId": "prebuilt-invoice",
+  "stringIndexType": "textElements",
+  "content": "G\nBORCELLE\nDATOS DEL CLIENTE\nDATOS DE LA EMPRESA\nNombre: Alejandro Torres\nDirección: Calle Cualquiera 123,\nNombre: Belén Castillo\nCualquier Lugar\nDirección: Calle Cualquiera\nMail: Hola@unsitiogenial.es\n123, Cualquier Lugar\nTeléfono: 911-234-5678\nMail: Hola@unsitiogenial.es\nTeléfono: 911-234-5678\nFecha: 15/08/2030\nConcepto\nCantidad\nPrecio\nTotal\nDiseño web\n1\n100 €\n100 €\nPublicidad\n1\n100 €\n100 €\nMarketing\n1\n100 €\n100 €\nAsistencia web\n1\n100 €\n100 €\nForma de pago: Transferencia\nSubtotal\n500€\nNota: El servicio tiene una validez\nIVA 21 %\n105 €\nde 30 días.\nIRPF 7%\n35 €\nTotal\n500 €\nCristina Gallego",
+  "pages": [
+    {
+      "pageNumber": 1,
+      "angle": 0,
+      "width": 1131,
+      "height": 1600,
+      "unit": "pixel",
+      "words": [
+        {
+          "content": "G",
+          "polygon": [
+            890,
+            55,
+            935,
+            54,
+            937,
+            135,
+            890,
+            136
+          ],
+          "confidence": 0.949,
+          "span": {
+            "offset": 0,
+            "length": 1
+          }
+        },
+        {
+          "content": "BORCELLE",
+          "polygon": [
+            849,
+            150,
+            993,
+            150,
+            992,
+            175,
+            849,
+            176
+          ],
+          "confidence": 0.992,
+          "span": {
+            "offset": 2,
+            "length": 8
+          }
+        },
+        {
+          "content": "DATOS",
+          "polygon": [
+            112,
+            320,
+            197,
+            320,
+            197,
+            345,
+            112,
+            346
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 11,
+            "length": 5
+          }
+        },
+        {
+          "content": "DEL",
+          "polygon": [
+            205,
+            320,
+            253,
+            320,
+            253,
+            345,
+            205,
+            345
+          ],
+          "confidence": 0.982,
+          "span": {
+            "offset": 17,
+            "length": 3
+          }
+        },
+        {
+          "content": "CLIENTE",
+          "polygon": [
+            261,
+            320,
+            361,
+            320,
+            361,
+            345,
+            261,
+            345
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 21,
+            "length": 7
+          }
+        },
+        {
+          "content": "DATOS",
+          "polygon": [
+            726,
+            328,
+            810,
+            328,
+            810,
+            353,
+            725,
+            353
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 29,
+            "length": 5
+          }
+        },
+        {
+          "content": "DE",
+          "polygon": [
+            817,
+            328,
+            850,
+            328,
+            850,
+            353,
+            817,
+            353
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 35,
+            "length": 2
+          }
+        },
+        {
+          "content": "LA",
+          "polygon": [
+            859,
+            327,
+            887,
+            327,
+            887,
+            353,
+            859,
+            353
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 38,
+            "length": 2
+          }
+        },
+        {
+          "content": "EMPRESA",
+          "polygon": [
+            899,
+            327,
+            1015,
+            327,
+            1016,
+            353,
+            899,
+            353
+          ],
+          "confidence": 0.994,
+          "span": {
+            "offset": 41,
+            "length": 7
+          }
+        },
+        {
+          "content": "Nombre:",
+          "polygon": [
+            110,
+            355,
+            205,
+            355,
+            205,
+            377,
+            111,
+            377
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 49,
+            "length": 7
+          }
+        },
+        {
+          "content": "Alejandro",
+          "polygon": [
+            209,
+            355,
+            309,
+            355,
+            310,
+            377,
+            209,
+            377
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 57,
+            "length": 9
+          }
+        },
+        {
+          "content": "Torres",
+          "polygon": [
+            319,
+            355,
+            384,
+            356,
+            385,
+            376,
+            320,
+            377
+          ],
+          "confidence": 0.994,
+          "span": {
+            "offset": 67,
+            "length": 6
+          }
+        },
+        {
+          "content": "Dirección:",
+          "polygon": [
+            111,
+            379,
+            220,
+            379,
+            221,
+            400,
+            111,
+            400
+          ],
+          "confidence": 0.964,
+          "span": {
+            "offset": 74,
+            "length": 10
+          }
+        },
+        {
+          "content": "Calle",
+          "polygon": [
+            225,
+            379,
+            275,
+            379,
+            276,
+            400,
+            225,
+            400
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 85,
+            "length": 5
+          }
+        },
+        {
+          "content": "Cualquiera",
+          "polygon": [
+            284,
+            379,
+            398,
+            379,
+            398,
+            401,
+            284,
+            400
+          ],
+          "confidence": 0.99,
+          "span": {
+            "offset": 91,
+            "length": 10
+          }
+        },
+        {
+          "content": "123,",
+          "polygon": [
+            405,
+            379,
+            446,
+            379,
+            446,
+            401,
+            405,
+            401
+          ],
+          "confidence": 0.972,
+          "span": {
+            "offset": 102,
+            "length": 4
+          }
+        },
+        {
+          "content": "Nombre:",
+          "polygon": [
+            759,
+            365,
+            858,
+            365,
+            858,
+            386,
+            760,
+            386
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 107,
+            "length": 7
+          }
+        },
+        {
+          "content": "Belén",
+          "polygon": [
+            862,
+            365,
+            923,
+            365,
+            923,
+            387,
+            863,
+            387
+          ],
+          "confidence": 0.812,
+          "span": {
+            "offset": 115,
+            "length": 5
+          }
+        },
+        {
+          "content": "Castillo",
+          "polygon": [
+            935,
+            365,
+            1015,
+            364,
+            1015,
+            387,
+            935,
+            387
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 121,
+            "length": 8
+          }
+        },
+        {
+          "content": "Cualquier",
+          "polygon": [
+            112,
+            403,
+            215,
+            404,
+            215,
+            426,
+            112,
+            426
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 130,
+            "length": 9
+          }
+        },
+        {
+          "content": "Lugar",
+          "polygon": [
+            221,
+            405,
+            283,
+            405,
+            283,
+            426,
+            221,
+            426
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 140,
+            "length": 5
+          }
+        },
+        {
+          "content": "Dirección:",
+          "polygon": [
+            714,
+            391,
+            830,
+            391,
+            829,
+            414,
+            713,
+            414
+          ],
+          "confidence": 0.93,
+          "span": {
+            "offset": 146,
+            "length": 10
+          }
+        },
+        {
+          "content": "Calle",
+          "polygon": [
+            834,
+            391,
+            888,
+            391,
+            888,
+            414,
+            834,
+            414
+          ],
+          "confidence": 0.994,
+          "span": {
+            "offset": 157,
+            "length": 5
+          }
+        },
+        {
+          "content": "Cualquiera",
+          "polygon": [
+            896,
+            391,
+            1018,
+            391,
+            1018,
+            415,
+            896,
+            414
+          ],
+          "confidence": 0.979,
+          "span": {
+            "offset": 163,
+            "length": 10
+          }
+        },
+        {
+          "content": "Mail:",
+          "polygon": [
+            111,
+            429,
+            162,
+            428,
+            162,
+            450,
+            111,
+            450
+          ],
+          "confidence": 0.994,
+          "span": {
+            "offset": 174,
+            "length": 5
+          }
+        },
+        {
+          "content": "Hola@unsitiogenial.es",
+          "polygon": [
+            167,
+            428,
+            404,
+            429,
+            404,
+            449,
+            167,
+            450
+          ],
+          "confidence": 0.945,
+          "span": {
+            "offset": 180,
+            "length": 21
+          }
+        },
+        {
+          "content": "123,",
+          "polygon": [
+            790,
+            418,
+            833,
+            418,
+            833,
+            439,
+            791,
+            438
+          ],
+          "confidence": 0.983,
+          "span": {
+            "offset": 202,
+            "length": 4
+          }
+        },
+        {
+          "content": "Cualquier",
+          "polygon": [
+            837,
+            418,
+            947,
+            417,
+            947,
+            440,
+            837,
+            439
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 207,
+            "length": 9
+          }
+        },
+        {
+          "content": "Lugar",
+          "polygon": [
+            953,
+            417,
+            1019,
+            418,
+            1018,
+            440,
+            952,
+            440
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 217,
+            "length": 5
+          }
+        },
+        {
+          "content": "Teléfono:",
+          "polygon": [
+            112,
+            452,
+            211,
+            452,
+            211,
+            472,
+            112,
+            473
+          ],
+          "confidence": 0.961,
+          "span": {
+            "offset": 223,
+            "length": 9
+          }
+        },
+        {
+          "content": "911-234-5678",
+          "polygon": [
+            215,
+            452,
+            347,
+            452,
+            347,
+            472,
+            215,
+            472
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 233,
+            "length": 12
+          }
+        },
+        {
+          "content": "Mail:",
+          "polygon": [
+            708,
+            443,
+            762,
+            443,
+            762,
+            465,
+            708,
+            464
+          ],
+          "confidence": 0.985,
+          "span": {
+            "offset": 246,
+            "length": 5
+          }
+        },
+        {
+          "content": "Hola@unsitiogenial.es",
+          "polygon": [
+            766,
+            443,
+            1018,
+            442,
+            1018,
+            465,
+            766,
+            465
+          ],
+          "confidence": 0.961,
+          "span": {
+            "offset": 252,
+            "length": 21
+          }
+        },
+        {
+          "content": "Teléfono:",
+          "polygon": [
+            767,
+            468,
+            872,
+            468,
+            872,
+            488,
+            767,
+            488
+          ],
+          "confidence": 0.991,
+          "span": {
+            "offset": 274,
+            "length": 9
+          }
+        },
+        {
+          "content": "911-234-5678",
+          "polygon": [
+            876,
+            468,
+            1016,
+            467,
+            1016,
+            490,
+            876,
+            488
+          ],
+          "confidence": 0.985,
+          "span": {
+            "offset": 284,
+            "length": 12
+          }
+        },
+        {
+          "content": "Fecha:",
+          "polygon": [
+            112,
+            542,
+            191,
+            542,
+            191,
+            567,
+            112,
+            568
+          ],
+          "confidence": 0.982,
+          "span": {
+            "offset": 297,
+            "length": 6
+          }
+        },
+        {
+          "content": "15/08/2030",
+          "polygon": [
+            196,
+            542,
+            324,
+            541,
+            325,
+            567,
+            196,
+            567
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 304,
+            "length": 10
+          }
+        },
+        {
+          "content": "Concepto",
+          "polygon": [
+            261,
+            597,
+            363,
+            598,
+            363,
+            621,
+            262,
+            620
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 315,
+            "length": 8
+          }
+        },
+        {
+          "content": "Cantidad",
+          "polygon": [
+            561,
+            596,
+            654,
+            596,
+            654,
+            617,
+            561,
+            616
+          ],
+          "confidence": 0.994,
+          "span": {
+            "offset": 324,
+            "length": 8
+          }
+        },
+        {
+          "content": "Precio",
+          "polygon": [
+            748,
+            595,
+            815,
+            595,
+            815,
+            619,
+            748,
+            618
+          ],
+          "confidence": 0.991,
+          "span": {
+            "offset": 333,
+            "length": 6
+          }
+        },
+        {
+          "content": "Total",
+          "polygon": [
+            916,
+            594,
+            968,
+            594,
+            968,
+            618,
+            916,
+            618
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 340,
+            "length": 5
+          }
+        },
+        {
+          "content": "Diseño",
+          "polygon": [
+            116,
+            646,
+            193,
+            646,
+            193,
+            670,
+            116,
+            671
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 346,
+            "length": 6
+          }
+        },
+        {
+          "content": "web",
+          "polygon": [
+            199,
+            646,
+            247,
+            646,
+            247,
+            670,
+            199,
+            670
+          ],
+          "confidence": 0.996,
+          "span": {
+            "offset": 353,
+            "length": 3
+          }
+        },
+        {
+          "content": "1",
+          "polygon": [
+            605,
+            647,
+            613,
+            647,
+            613,
+            667,
+            605,
+            667
+          ],
+          "confidence": 0.782,
+          "span": {
+            "offset": 357,
+            "length": 1
+          }
+        },
+        {
+          "content": "100",
+          "polygon": [
+            750,
+            647,
+            784,
+            647,
+            784,
+            669,
+            750,
+            668
+          ],
+          "confidence": 0.996,
+          "span": {
+            "offset": 359,
+            "length": 3
+          }
+        },
+        {
+          "content": "€",
+          "polygon": [
+            796,
+            647,
+            807,
+            647,
+            807,
+            669,
+            796,
+            669
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 363,
+            "length": 1
+          }
+        },
+        {
+          "content": "100",
+          "polygon": [
+            911,
+            647,
+            946,
+            647,
+            946,
+            669,
+            911,
+            668
+          ],
+          "confidence": 0.996,
+          "span": {
+            "offset": 365,
+            "length": 3
+          }
+        },
+        {
+          "content": "€",
+          "polygon": [
+            957,
+            647,
+            968,
+            646,
+            969,
+            669,
+            957,
+            669
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 369,
+            "length": 1
+          }
+        },
+        {
+          "content": "Publicidad",
+          "polygon": [
+            114,
+            701,
+            233,
+            701,
+            233,
+            723,
+            115,
+            724
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 371,
+            "length": 10
+          }
+        },
+        {
+          "content": "1",
+          "polygon": [
+            603,
+            702,
+            611,
+            702,
+            611,
+            721,
+            603,
+            721
+          ],
+          "confidence": 0.86,
+          "span": {
+            "offset": 382,
+            "length": 1
+          }
+        },
+        {
+          "content": "100",
+          "polygon": [
+            747,
+            700,
+            784,
+            700,
+            784,
+            724,
+            747,
+            724
+          ],
+          "confidence": 0.996,
+          "span": {
+            "offset": 384,
+            "length": 3
+          }
+        },
+        {
+          "content": "€",
+          "polygon": [
+            794,
+            700,
+            806,
+            700,
+            806,
+            724,
+            794,
+            724
+          ],
+          "confidence": 0.994,
+          "span": {
+            "offset": 388,
+            "length": 1
+          }
+        },
+        {
+          "content": "100",
+          "polygon": [
+            909,
+            702,
+            945,
+            702,
+            945,
+            723,
+            910,
+            723
+          ],
+          "confidence": 0.996,
+          "span": {
+            "offset": 390,
+            "length": 3
+          }
+        },
+        {
+          "content": "€",
+          "polygon": [
+            956,
+            701,
+            968,
+            701,
+            968,
+            723,
+            956,
+            723
+          ],
+          "confidence": 0.994,
+          "span": {
+            "offset": 394,
+            "length": 1
+          }
+        },
+        {
+          "content": "Marketing",
+          "polygon": [
+            115,
+            757,
+            231,
+            757,
+            231,
+            782,
+            115,
+            781
+          ],
+          "confidence": 0.994,
+          "span": {
+            "offset": 396,
+            "length": 9
+          }
+        },
+        {
+          "content": "1",
+          "polygon": [
+            604,
+            757,
+            612,
+            757,
+            611,
+            777,
+            603,
+            776
+          ],
+          "confidence": 0.878,
+          "span": {
+            "offset": 406,
+            "length": 1
+          }
+        },
+        {
+          "content": "100",
+          "polygon": [
+            748,
+            756,
+            784,
+            756,
+            784,
+            778,
+            748,
+            778
+          ],
+          "confidence": 0.994,
+          "span": {
+            "offset": 408,
+            "length": 3
+          }
+        },
+        {
+          "content": "€",
+          "polygon": [
+            794,
+            756,
+            806,
+            756,
+            806,
+            778,
+            794,
+            778
+          ],
+          "confidence": 0.994,
+          "span": {
+            "offset": 412,
+            "length": 1
+          }
+        },
+        {
+          "content": "100",
+          "polygon": [
+            910,
+            756,
+            945,
+            756,
+            945,
+            778,
+            910,
+            778
+          ],
+          "confidence": 0.996,
+          "span": {
+            "offset": 414,
+            "length": 3
+          }
+        },
+        {
+          "content": "€",
+          "polygon": [
+            957,
+            756,
+            968,
+            756,
+            968,
+            778,
+            957,
+            778
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 418,
+            "length": 1
+          }
+        },
+        {
+          "content": "Asistencia",
+          "polygon": [
+            115,
+            809,
+            229,
+            809,
+            229,
+            832,
+            115,
+            833
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 420,
+            "length": 10
+          }
+        },
+        {
+          "content": "web",
+          "polygon": [
+            237,
+            809,
+            282,
+            809,
+            282,
+            832,
+            237,
+            832
+          ],
+          "confidence": 0.996,
+          "span": {
+            "offset": 431,
+            "length": 3
+          }
+        },
+        {
+          "content": "1",
+          "polygon": [
+            604,
+            809,
+            611,
+            809,
+            612,
+            829,
+            605,
+            829
+          ],
+          "confidence": 0.621,
+          "span": {
+            "offset": 435,
+            "length": 1
+          }
+        },
+        {
+          "content": "100",
+          "polygon": [
+            750,
+            809,
+            784,
+            809,
+            785,
+            832,
+            750,
+            831
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 437,
+            "length": 3
+          }
+        },
+        {
+          "content": "€",
+          "polygon": [
+            795,
+            809,
+            807,
+            809,
+            808,
+            832,
+            795,
+            832
+          ],
+          "confidence": 0.949,
+          "span": {
+            "offset": 441,
+            "length": 1
+          }
+        },
+        {
+          "content": "100",
+          "polygon": [
+            911,
+            810,
+            947,
+            809,
+            947,
+            831,
+            911,
+            831
+          ],
+          "confidence": 0.996,
+          "span": {
+            "offset": 443,
+            "length": 3
+          }
+        },
+        {
+          "content": "€",
+          "polygon": [
+            957,
+            809,
+            970,
+            809,
+            970,
+            832,
+            957,
+            832
+          ],
+          "confidence": 0.949,
+          "span": {
+            "offset": 447,
+            "length": 1
+          }
+        },
+        {
+          "content": "Forma",
+          "polygon": [
+            114,
+            865,
+            186,
+            865,
+            186,
+            890,
+            114,
+            889
+          ],
+          "confidence": 0.979,
+          "span": {
+            "offset": 449,
+            "length": 5
+          }
+        },
+        {
+          "content": "de",
+          "polygon": [
+            193,
+            864,
+            221,
+            864,
+            221,
+            890,
+            193,
+            890
+          ],
+          "confidence": 0.997,
+          "span": {
+            "offset": 455,
+            "length": 2
+          }
+        },
+        {
+          "content": "pago:",
+          "polygon": [
+            228,
+            864,
+            294,
+            864,
+            294,
+            890,
+            228,
+            890
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 458,
+            "length": 5
+          }
+        },
+        {
+          "content": "Transferencia",
+          "polygon": [
+            299,
+            864,
+            452,
+            863,
+            452,
+            889,
+            299,
+            890
+          ],
+          "confidence": 0.986,
+          "span": {
+            "offset": 464,
+            "length": 13
+          }
+        },
+        {
+          "content": "Subtotal",
+          "polygon": [
+            740,
+            865,
+            836,
+            865,
+            837,
+            886,
+            740,
+            886
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 478,
+            "length": 8
+          }
+        },
+        {
+          "content": "500€",
+          "polygon": [
+            911,
+            865,
+            969,
+            864,
+            969,
+            887,
+            911,
+            886
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 487,
+            "length": 4
+          }
+        },
+        {
+          "content": "Nota:",
+          "polygon": [
+            113,
+            906,
+            173,
+            905,
+            173,
+            929,
+            113,
+            929
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 492,
+            "length": 5
+          }
+        },
+        {
+          "content": "El",
+          "polygon": [
+            178,
+            905,
+            201,
+            905,
+            201,
+            929,
+            178,
+            929
+          ],
+          "confidence": 0.906,
+          "span": {
+            "offset": 498,
+            "length": 2
+          }
+        },
+        {
+          "content": "servicio",
+          "polygon": [
+            206,
+            905,
+            291,
+            904,
+            291,
+            930,
+            206,
+            929
+          ],
+          "confidence": 0.962,
+          "span": {
+            "offset": 501,
+            "length": 8
+          }
+        },
+        {
+          "content": "tiene",
+          "polygon": [
+            296,
+            904,
+            355,
+            904,
+            355,
+            930,
+            296,
+            930
+          ],
+          "confidence": 0.994,
+          "span": {
+            "offset": 510,
+            "length": 5
+          }
+        },
+        {
+          "content": "una",
+          "polygon": [
+            362,
+            904,
+            406,
+            904,
+            406,
+            930,
+            362,
+            930
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 516,
+            "length": 3
+          }
+        },
+        {
+          "content": "validez",
+          "polygon": [
+            413,
+            904,
+            493,
+            905,
+            493,
+            930,
+            413,
+            930
+          ],
+          "confidence": 0.99,
+          "span": {
+            "offset": 520,
+            "length": 7
+          }
+        },
+        {
+          "content": "IVA",
+          "polygon": [
+            744,
+            907,
+            779,
+            907,
+            779,
+            928,
+            745,
+            928
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 528,
+            "length": 3
+          }
+        },
+        {
+          "content": "21",
+          "polygon": [
+            790,
+            907,
+            813,
+            907,
+            813,
+            928,
+            790,
+            928
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 532,
+            "length": 2
+          }
+        },
+        {
+          "content": "%",
+          "polygon": [
+            824,
+            907,
+            836,
+            907,
+            836,
+            928,
+            824,
+            928
+          ],
+          "confidence": 0.951,
+          "span": {
+            "offset": 535,
+            "length": 1
+          }
+        },
+        {
+          "content": "105",
+          "polygon": [
+            911,
+            907,
+            945,
+            907,
+            945,
+            929,
+            911,
+            928
+          ],
+          "confidence": 0.996,
+          "span": {
+            "offset": 537,
+            "length": 3
+          }
+        },
+        {
+          "content": "€",
+          "polygon": [
+            955,
+            907,
+            967,
+            907,
+            967,
+            929,
+            955,
+            929
+          ],
+          "confidence": 0.994,
+          "span": {
+            "offset": 541,
+            "length": 1
+          }
+        },
+        {
+          "content": "de",
+          "polygon": [
+            112,
+            937,
+            140,
+            937,
+            140,
+            961,
+            111,
+            961
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 543,
+            "length": 2
+          }
+        },
+        {
+          "content": "30",
+          "polygon": [
+            148,
+            937,
+            173,
+            937,
+            173,
+            961,
+            147,
+            961
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 546,
+            "length": 2
+          }
+        },
+        {
+          "content": "días.",
+          "polygon": [
+            181,
+            937,
+            234,
+            937,
+            234,
+            961,
+            181,
+            961
+          ],
+          "confidence": 0.989,
+          "span": {
+            "offset": 549,
+            "length": 5
+          }
+        },
+        {
+          "content": "IRPF",
+          "polygon": [
+            744,
+            948,
+            794,
+            948,
+            793,
+            972,
+            743,
+            972
+          ],
+          "confidence": 0.977,
+          "span": {
+            "offset": 555,
+            "length": 4
+          }
+        },
+        {
+          "content": "7%",
+          "polygon": [
+            805,
+            948,
+            836,
+            948,
+            835,
+            972,
+            804,
+            972
+          ],
+          "confidence": 0.971,
+          "span": {
+            "offset": 560,
+            "length": 2
+          }
+        },
+        {
+          "content": "35",
+          "polygon": [
+            916,
+            947,
+            940,
+            947,
+            940,
+            971,
+            916,
+            971
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 563,
+            "length": 2
+          }
+        },
+        {
+          "content": "€",
+          "polygon": [
+            948,
+            947,
+            961,
+            947,
+            961,
+            971,
+            948,
+            971
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 566,
+            "length": 1
+          }
+        },
+        {
+          "content": "Total",
+          "polygon": [
+            771,
+            991,
+            834,
+            991,
+            834,
+            1015,
+            771,
+            1015
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 568,
+            "length": 5
+          }
+        },
+        {
+          "content": "500",
+          "polygon": [
+            902,
+            991,
+            949,
+            991,
+            948,
+            1017,
+            901,
+            1016
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 574,
+            "length": 3
+          }
+        },
+        {
+          "content": "€",
+          "polygon": [
+            960,
+            991,
+            973,
+            991,
+            974,
+            1017,
+            960,
+            1017
+          ],
+          "confidence": 0.973,
+          "span": {
+            "offset": 578,
+            "length": 1
+          }
+        },
+        {
+          "content": "Cristina",
+          "polygon": [
+            734,
+            1245,
+            821,
+            1245,
+            821,
+            1272,
+            733,
+            1271
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 580,
+            "length": 8
+          }
+        },
+        {
+          "content": "Gallego",
+          "polygon": [
+            828,
+            1245,
+            916,
+            1245,
+            916,
+            1272,
+            828,
+            1272
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 589,
+            "length": 7
+          }
+        }
+      ],
+      "lines": [
+        {
+          "content": "G",
+          "polygon": [
+            893,
+            57,
+            958,
+            54,
+            958,
+            135,
+            890,
+            135
+          ],
+          "spans": [
+            {
+              "offset": 0,
+              "length": 1
+            }
+          ]
+        },
+        {
+          "content": "BORCELLE",
+          "polygon": [
+            849,
+            149,
+            995,
+            149,
+            995,
+            175,
+            849,
+            175
+          ],
+          "spans": [
+            {
+              "offset": 2,
+              "length": 8
+            }
+          ]
+        },
+        {
+          "content": "DATOS DEL CLIENTE",
+          "polygon": [
+            111,
+            320,
+            365,
+            320,
+            365,
+            344,
+            111,
+            345
+          ],
+          "spans": [
+            {
+              "offset": 11,
+              "length": 17
+            }
+          ]
+        },
+        {
+          "content": "DATOS DE LA EMPRESA",
+          "polygon": [
+            725,
+            327,
+            1021,
+            327,
+            1021,
+            352,
+            725,
+            353
+          ],
+          "spans": [
+            {
+              "offset": 29,
+              "length": 19
+            }
+          ]
+        },
+        {
+          "content": "Nombre: Alejandro Torres",
+          "polygon": [
+            110,
+            354,
+            385,
+            355,
+            384,
+            377,
+            110,
+            376
+          ],
+          "spans": [
+            {
+              "offset": 49,
+              "length": 24
+            }
+          ]
+        },
+        {
+          "content": "Dirección: Calle Cualquiera 123,",
+          "polygon": [
+            110,
+            378,
+            446,
+            379,
+            446,
+            400,
+            110,
+            400
+          ],
+          "spans": [
+            {
+              "offset": 74,
+              "length": 32
+            }
+          ]
+        },
+        {
+          "content": "Nombre: Belén Castillo",
+          "polygon": [
+            759,
+            364,
+            1018,
+            364,
+            1018,
+            386,
+            759,
+            386
+          ],
+          "spans": [
+            {
+              "offset": 107,
+              "length": 22
+            }
+          ]
+        },
+        {
+          "content": "Cualquier Lugar",
+          "polygon": [
+            110,
+            403,
+            283,
+            403,
+            283,
+            426,
+            110,
+            425
+          ],
+          "spans": [
+            {
+              "offset": 130,
+              "length": 15
+            }
+          ]
+        },
+        {
+          "content": "Dirección: Calle Cualquiera",
+          "polygon": [
+            713,
+            390,
+            1018,
+            390,
+            1018,
+            414,
+            713,
+            414
+          ],
+          "spans": [
+            {
+              "offset": 146,
+              "length": 27
+            }
+          ]
+        },
+        {
+          "content": "Mail: Hola@unsitiogenial.es",
+          "polygon": [
+            111,
+            428,
+            404,
+            428,
+            404,
+            449,
+            111,
+            449
+          ],
+          "spans": [
+            {
+              "offset": 174,
+              "length": 27
+            }
+          ]
+        },
+        {
+          "content": "123, Cualquier Lugar",
+          "polygon": [
+            790,
+            417,
+            1019,
+            417,
+            1019,
+            439,
+            790,
+            439
+          ],
+          "spans": [
+            {
+              "offset": 202,
+              "length": 20
+            }
+          ]
+        },
+        {
+          "content": "Teléfono: 911-234-5678",
+          "polygon": [
+            110,
+            451,
+            348,
+            451,
+            348,
+            472,
+            110,
+            472
+          ],
+          "spans": [
+            {
+              "offset": 223,
+              "length": 22
+            }
+          ]
+        },
+        {
+          "content": "Mail: Hola@unsitiogenial.es",
+          "polygon": [
+            708,
+            442,
+            1018,
+            442,
+            1018,
+            464,
+            708,
+            464
+          ],
+          "spans": [
+            {
+              "offset": 246,
+              "length": 27
+            }
+          ]
+        },
+        {
+          "content": "Teléfono: 911-234-5678",
+          "polygon": [
+            766,
+            467,
+            1018,
+            467,
+            1018,
+            489,
+            766,
+            488
+          ],
+          "spans": [
+            {
+              "offset": 274,
+              "length": 22
+            }
+          ]
+        },
+        {
+          "content": "Fecha: 15/08/2030",
+          "polygon": [
+            111,
+            541,
+            327,
+            540,
+            327,
+            566,
+            111,
+            567
+          ],
+          "spans": [
+            {
+              "offset": 297,
+              "length": 17
+            }
+          ]
+        },
+        {
+          "content": "Concepto",
+          "polygon": [
+            260,
+            597,
+            365,
+            597,
+            365,
+            621,
+            260,
+            619
+          ],
+          "spans": [
+            {
+              "offset": 315,
+              "length": 8
+            }
+          ]
+        },
+        {
+          "content": "Cantidad",
+          "polygon": [
+            559,
+            595,
+            659,
+            595,
+            659,
+            616,
+            559,
+            616
+          ],
+          "spans": [
+            {
+              "offset": 324,
+              "length": 8
+            }
+          ]
+        },
+        {
+          "content": "Precio",
+          "polygon": [
+            748,
+            595,
+            816,
+            595,
+            816,
+            619,
+            748,
+            618
+          ],
+          "spans": [
+            {
+              "offset": 333,
+              "length": 6
+            }
+          ]
+        },
+        {
+          "content": "Total",
+          "polygon": [
+            912,
+            594,
+            968,
+            594,
+            968,
+            618,
+            912,
+            617
+          ],
+          "spans": [
+            {
+              "offset": 340,
+              "length": 5
+            }
+          ]
+        },
+        {
+          "content": "Diseño web",
+          "polygon": [
+            115,
+            646,
+            251,
+            646,
+            251,
+            670,
+            115,
+            670
+          ],
+          "spans": [
+            {
+              "offset": 346,
+              "length": 10
+            }
+          ]
+        },
+        {
+          "content": "1",
+          "polygon": [
+            604,
+            648,
+            614,
+            647,
+            614,
+            667,
+            604,
+            666
+          ],
+          "spans": [
+            {
+              "offset": 357,
+              "length": 1
+            }
+          ]
+        },
+        {
+          "content": "100 €",
+          "polygon": [
+            749,
+            646,
+            813,
+            646,
+            813,
+            668,
+            749,
+            668
+          ],
+          "spans": [
+            {
+              "offset": 359,
+              "length": 5
+            }
+          ]
+        },
+        {
+          "content": "100 €",
+          "polygon": [
+            910,
+            646,
+            974,
+            646,
+            975,
+            668,
+            910,
+            668
+          ],
+          "spans": [
+            {
+              "offset": 365,
+              "length": 5
+            }
+          ]
+        },
+        {
+          "content": "Publicidad",
+          "polygon": [
+            114,
+            701,
+            236,
+            701,
+            236,
+            723,
+            114,
+            723
+          ],
+          "spans": [
+            {
+              "offset": 371,
+              "length": 10
+            }
+          ]
+        },
+        {
+          "content": "1",
+          "polygon": [
+            602,
+            702,
+            612,
+            702,
+            612,
+            721,
+            602,
+            721
+          ],
+          "spans": [
+            {
+              "offset": 382,
+              "length": 1
+            }
+          ]
+        },
+        {
+          "content": "100 €",
+          "polygon": [
+            746,
+            700,
+            813,
+            700,
+            814,
+            724,
+            746,
+            724
+          ],
+          "spans": [
+            {
+              "offset": 384,
+              "length": 5
+            }
+          ]
+        },
+        {
+          "content": "100 €",
+          "polygon": [
+            908,
+            700,
+            973,
+            700,
+            973,
+            723,
+            908,
+            723
+          ],
+          "spans": [
+            {
+              "offset": 390,
+              "length": 5
+            }
+          ]
+        },
+        {
+          "content": "Marketing",
+          "polygon": [
+            114,
+            756,
+            233,
+            757,
+            232,
+            781,
+            114,
+            780
+          ],
+          "spans": [
+            {
+              "offset": 396,
+              "length": 9
+            }
+          ]
+        },
+        {
+          "content": "1",
+          "polygon": [
+            603,
+            757,
+            612,
+            757,
+            612,
+            777,
+            603,
+            776
+          ],
+          "spans": [
+            {
+              "offset": 406,
+              "length": 1
+            }
+          ]
+        },
+        {
+          "content": "100 €",
+          "polygon": [
+            747,
+            756,
+            813,
+            756,
+            812,
+            778,
+            747,
+            777
+          ],
+          "spans": [
+            {
+              "offset": 408,
+              "length": 5
+            }
+          ]
+        },
+        {
+          "content": "100 €",
+          "polygon": [
+            909,
+            755,
+            974,
+            755,
+            974,
+            777,
+            909,
+            778
+          ],
+          "spans": [
+            {
+              "offset": 414,
+              "length": 5
+            }
+          ]
+        },
+        {
+          "content": "Asistencia web",
+          "polygon": [
+            113,
+            809,
+            287,
+            809,
+            287,
+            832,
+            113,
+            832
+          ],
+          "spans": [
+            {
+              "offset": 420,
+              "length": 14
+            }
+          ]
+        },
+        {
+          "content": "1",
+          "polygon": [
+            604,
+            810,
+            613,
+            809,
+            613,
+            829,
+            604,
+            829
+          ],
+          "spans": [
+            {
+              "offset": 435,
+              "length": 1
+            }
+          ]
+        },
+        {
+          "content": "100 €",
+          "polygon": [
+            749,
+            809,
+            813,
+            809,
+            813,
+            831,
+            749,
+            830
+          ],
+          "spans": [
+            {
+              "offset": 437,
+              "length": 5
+            }
+          ]
+        },
+        {
+          "content": "100 €",
+          "polygon": [
+            909,
+            808,
+            975,
+            808,
+            975,
+            831,
+            909,
+            831
+          ],
+          "spans": [
+            {
+              "offset": 443,
+              "length": 5
+            }
+          ]
+        },
+        {
+          "content": "Forma de pago: Transferencia",
+          "polygon": [
+            113,
+            864,
+            453,
+            863,
+            453,
+            889,
+            113,
+            890
+          ],
+          "spans": [
+            {
+              "offset": 449,
+              "length": 28
+            }
+          ]
+        },
+        {
+          "content": "Subtotal",
+          "polygon": [
+            738,
+            864,
+            837,
+            864,
+            837,
+            886,
+            738,
+            886
+          ],
+          "spans": [
+            {
+              "offset": 478,
+              "length": 8
+            }
+          ]
+        },
+        {
+          "content": "500€",
+          "polygon": [
+            910,
+            864,
+            974,
+            864,
+            974,
+            886,
+            910,
+            885
+          ],
+          "spans": [
+            {
+              "offset": 487,
+              "length": 4
+            }
+          ]
+        },
+        {
+          "content": "Nota: El servicio tiene una validez",
+          "polygon": [
+            112,
+            903,
+            493,
+            903,
+            493,
+            929,
+            112,
+            929
+          ],
+          "spans": [
+            {
+              "offset": 492,
+              "length": 35
+            }
+          ]
+        },
+        {
+          "content": "IVA 21 %",
+          "polygon": [
+            744,
+            907,
+            836,
+            906,
+            836,
+            927,
+            744,
+            928
+          ],
+          "spans": [
+            {
+              "offset": 528,
+              "length": 8
+            }
+          ]
+        },
+        {
+          "content": "105 €",
+          "polygon": [
+            909,
+            906,
+            972,
+            906,
+            972,
+            928,
+            909,
+            928
+          ],
+          "spans": [
+            {
+              "offset": 537,
+              "length": 5
+            }
+          ]
+        },
+        {
+          "content": "de 30 días.",
+          "polygon": [
+            111,
+            936,
+            234,
+            936,
+            234,
+            960,
+            111,
+            960
+          ],
+          "spans": [
+            {
+              "offset": 543,
+              "length": 11
+            }
+          ]
+        },
+        {
+          "content": "IRPF 7%",
+          "polygon": [
+            743,
+            947,
+            837,
+            947,
+            837,
+            971,
+            743,
+            971
+          ],
+          "spans": [
+            {
+              "offset": 555,
+              "length": 7
+            }
+          ]
+        },
+        {
+          "content": "35 €",
+          "polygon": [
+            913,
+            947,
+            971,
+            947,
+            971,
+            971,
+            912,
+            971
+          ],
+          "spans": [
+            {
+              "offset": 563,
+              "length": 4
+            }
+          ]
+        },
+        {
+          "content": "Total",
+          "polygon": [
+            768,
+            992,
+            834,
+            991,
+            834,
+            1015,
+            768,
+            1014
+          ],
+          "spans": [
+            {
+              "offset": 568,
+              "length": 5
+            }
+          ]
+        },
+        {
+          "content": "500 €",
+          "polygon": [
+            899,
+            990,
+            981,
+            991,
+            981,
+            1016,
+            899,
+            1016
+          ],
+          "spans": [
+            {
+              "offset": 574,
+              "length": 5
+            }
+          ]
+        },
+        {
+          "content": "Cristina Gallego",
+          "polygon": [
+            732,
+            1244,
+            917,
+            1245,
+            917,
+            1271,
+            732,
+            1271
+          ],
+          "spans": [
+            {
+              "offset": 580,
+              "length": 16
+            }
+          ]
+        }
+      ],
+      "spans": [
+        {
+          "offset": 0,
+          "length": 596
+        }
+      ]
+    }
+  ],
+  "tables": [
+    {
+      "rowCount": 9,
+      "columnCount": 4,
+      "cells": [
+        {
+          "kind": "columnHeader",
+          "rowIndex": 0,
+          "columnIndex": 0,
+          "content": "Concepto",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                106,
+                585,
+                525,
+                585,
+                525,
+                628,
+                105,
+                628
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 315,
+              "length": 8
+            }
+          ]
+        },
+        {
+          "kind": "columnHeader",
+          "rowIndex": 0,
+          "columnIndex": 1,
+          "content": "Cantidad",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                525,
+                585,
+                697,
+                584,
+                697,
+                628,
+                525,
+                628
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 324,
+              "length": 8
+            }
+          ]
+        },
+        {
+          "kind": "columnHeader",
+          "rowIndex": 0,
+          "columnIndex": 2,
+          "content": "Precio",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                697,
+                584,
+                868,
+                584,
+                868,
+                628,
+                697,
+                628
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 333,
+              "length": 6
+            }
+          ]
+        },
+        {
+          "kind": "columnHeader",
+          "rowIndex": 0,
+          "columnIndex": 3,
+          "content": "Total",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                868,
+                584,
+                1006,
+                584,
+                1006,
+                628,
+                868,
+                628
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 340,
+              "length": 5
+            }
+          ]
+        },
+        {
+          "rowIndex": 1,
+          "columnIndex": 0,
+          "content": "Diseño web",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                105,
+                628,
+                525,
+                628,
+                525,
+                688,
+                105,
+                688
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 346,
+              "length": 10
+            }
+          ]
+        },
+        {
+          "rowIndex": 1,
+          "columnIndex": 1,
+          "content": "1",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                525,
+                628,
+                697,
+                628,
+                698,
+                688,
+                525,
+                688
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 357,
+              "length": 1
+            }
+          ]
+        },
+        {
+          "rowIndex": 1,
+          "columnIndex": 2,
+          "content": "100 €",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                697,
+                628,
+                868,
+                628,
+                868,
+                688,
+                698,
+                688
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 359,
+              "length": 5
+            }
+          ]
+        },
+        {
+          "rowIndex": 1,
+          "columnIndex": 3,
+          "content": "100 €",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                868,
+                628,
+                1006,
+                628,
+                1006,
+                687,
+                868,
+                688
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 365,
+              "length": 5
+            }
+          ]
+        },
+        {
+          "rowIndex": 2,
+          "columnIndex": 0,
+          "content": "Publicidad",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                105,
+                688,
+                525,
+                688,
+                525,
+                741,
+                104,
+                740
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 371,
+              "length": 10
+            }
+          ]
+        },
+        {
+          "rowIndex": 2,
+          "columnIndex": 1,
+          "content": "1",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                525,
+                688,
+                698,
+                688,
+                698,
+                741,
+                525,
+                741
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 382,
+              "length": 1
+            }
+          ]
+        },
+        {
+          "rowIndex": 2,
+          "columnIndex": 2,
+          "content": "100 €",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                698,
+                688,
+                868,
+                688,
+                868,
+                741,
+                698,
+                741
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 384,
+              "length": 5
+            }
+          ]
+        },
+        {
+          "rowIndex": 2,
+          "columnIndex": 3,
+          "content": "100 €",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                868,
+                688,
+                1006,
+                687,
+                1006,
+                741,
+                868,
+                741
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 390,
+              "length": 5
+            }
+          ]
+        },
+        {
+          "rowIndex": 3,
+          "columnIndex": 0,
+          "content": "Marketing",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                104,
+                740,
+                525,
+                741,
+                525,
+                797,
+                103,
+                797
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 396,
+              "length": 9
+            }
+          ]
+        },
+        {
+          "rowIndex": 3,
+          "columnIndex": 1,
+          "content": "1",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                525,
+                741,
+                698,
+                741,
+                698,
+                797,
+                525,
+                797
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 406,
+              "length": 1
+            }
+          ]
+        },
+        {
+          "rowIndex": 3,
+          "columnIndex": 2,
+          "content": "100 €",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                698,
+                741,
+                868,
+                741,
+                868,
+                796,
+                698,
+                797
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 408,
+              "length": 5
+            }
+          ]
+        },
+        {
+          "rowIndex": 3,
+          "columnIndex": 3,
+          "content": "100 €",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                868,
+                741,
+                1006,
+                741,
+                1006,
+                796,
+                868,
+                796
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 414,
+              "length": 5
+            }
+          ]
+        },
+        {
+          "rowIndex": 4,
+          "columnIndex": 0,
+          "content": "Asistencia web",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                103,
+                797,
+                525,
+                797,
+                525,
+                850,
+                103,
+                850
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 420,
+              "length": 14
+            }
+          ]
+        },
+        {
+          "rowIndex": 4,
+          "columnIndex": 1,
+          "content": "1",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                525,
+                797,
+                698,
+                797,
+                698,
+                850,
+                525,
+                850
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 435,
+              "length": 1
+            }
+          ]
+        },
+        {
+          "rowIndex": 4,
+          "columnIndex": 2,
+          "content": "100 €",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                698,
+                797,
+                868,
+                796,
+                868,
+                850,
+                698,
+                850
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 437,
+              "length": 5
+            }
+          ]
+        },
+        {
+          "rowIndex": 4,
+          "columnIndex": 3,
+          "content": "100 €",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                868,
+                796,
+                1006,
+                796,
+                1006,
+                850,
+                868,
+                850
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 443,
+              "length": 5
+            }
+          ]
+        },
+        {
+          "rowIndex": 5,
+          "columnIndex": 0,
+          "content": "Forma de pago: Transferencia",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                103,
+                850,
+                525,
+                850,
+                525,
+                897,
+                102,
+                897
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 449,
+              "length": 28
+            }
+          ]
+        },
+        {
+          "rowIndex": 5,
+          "columnIndex": 1,
+          "content": "",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                525,
+                850,
+                698,
+                850,
+                698,
+                897,
+                525,
+                897
+              ]
+            }
+          ],
+          "spans": []
+        },
+        {
+          "rowIndex": 5,
+          "columnIndex": 2,
+          "content": "Subtotal",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                698,
+                850,
+                868,
+                850,
+                868,
+                896,
+                698,
+                897
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 478,
+              "length": 8
+            }
+          ]
+        },
+        {
+          "rowIndex": 5,
+          "columnIndex": 3,
+          "content": "500€",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                868,
+                850,
+                1006,
+                850,
+                1006,
+                896,
+                868,
+                896
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 487,
+              "length": 4
+            }
+          ]
+        },
+        {
+          "rowIndex": 6,
+          "columnIndex": 0,
+          "content": "Nota: El servicio tiene una validez",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                102,
+                897,
+                525,
+                897,
+                525,
+                936,
+                101,
+                935
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 492,
+              "length": 35
+            }
+          ]
+        },
+        {
+          "rowIndex": 6,
+          "columnIndex": 1,
+          "content": "",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                525,
+                897,
+                698,
+                897,
+                698,
+                936,
+                525,
+                936
+              ]
+            }
+          ],
+          "spans": []
+        },
+        {
+          "rowIndex": 6,
+          "columnIndex": 2,
+          "content": "IVA 21 %",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                698,
+                897,
+                868,
+                896,
+                868,
+                936,
+                698,
+                936
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 528,
+              "length": 8
+            }
+          ]
+        },
+        {
+          "rowIndex": 6,
+          "columnIndex": 3,
+          "content": "105 €",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                868,
+                896,
+                1006,
+                896,
+                1006,
+                936,
+                868,
+                936
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 537,
+              "length": 5
+            }
+          ]
+        },
+        {
+          "rowIndex": 7,
+          "columnIndex": 0,
+          "content": "de 30 días.",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                101,
+                935,
+                525,
+                936,
+                525,
+                980,
+                101,
+                980
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 543,
+              "length": 11
+            }
+          ]
+        },
+        {
+          "rowIndex": 7,
+          "columnIndex": 1,
+          "content": "",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                525,
+                936,
+                698,
+                936,
+                698,
+                980,
+                525,
+                980
+              ]
+            }
+          ],
+          "spans": []
+        },
+        {
+          "rowIndex": 7,
+          "columnIndex": 2,
+          "content": "IRPF 7%",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                698,
+                936,
+                868,
+                936,
+                868,
+                980,
+                698,
+                980
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 555,
+              "length": 7
+            }
+          ]
+        },
+        {
+          "rowIndex": 7,
+          "columnIndex": 3,
+          "content": "35 €",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                868,
+                936,
+                1006,
+                936,
+                1006,
+                980,
+                868,
+                980
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 563,
+              "length": 4
+            }
+          ]
+        },
+        {
+          "rowIndex": 8,
+          "columnIndex": 0,
+          "content": "",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                101,
+                980,
+                525,
+                980,
+                525,
+                1024,
+                100,
+                1024
+              ]
+            }
+          ],
+          "spans": []
+        },
+        {
+          "rowIndex": 8,
+          "columnIndex": 1,
+          "content": "",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                525,
+                980,
+                698,
+                980,
+                698,
+                1025,
+                525,
+                1024
+              ]
+            }
+          ],
+          "spans": []
+        },
+        {
+          "rowIndex": 8,
+          "columnIndex": 2,
+          "content": "Total",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                698,
+                980,
+                868,
+                980,
+                868,
+                1024,
+                698,
+                1025
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 568,
+              "length": 5
+            }
+          ]
+        },
+        {
+          "rowIndex": 8,
+          "columnIndex": 3,
+          "content": "500 €",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                868,
+                980,
+                1006,
+                980,
+                1006,
+                1024,
+                868,
+                1024
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 574,
+              "length": 5
+            }
+          ]
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            108,
+            585,
+            1022,
+            583,
+            1022,
+            1011,
+            108,
+            1013
+          ]
+        }
+      ],
+      "spans": [
+        {
+          "offset": 315,
+          "length": 264
+        }
+      ]
+    }
+  ],
+  "styles": [
+    {
+      "confidence": 0.3,
+      "spans": [
+        {
+          "offset": 435,
+          "length": 1
+        }
+      ],
+      "isHandwritten": true
+    }
+  ],
+  "documents": [
+    {
+      "docType": "invoice",
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            0,
+            0,
+            1131,
+            0,
+            1131,
+            1600,
+            0,
+            1600
+          ]
+        }
+      ],
+      "fields": {
+        "CustomerAddress": {
+          "type": "address",
+          "content": "Calle Cualquiera 123,\nCualquier Lugar",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                112,
+                379,
+                446,
+                379,
+                446,
+                426,
+                112,
+                426
+              ]
+            }
+          ],
+          "confidence": 0.893,
+          "spans": [
+            {
+              "offset": 85,
+              "length": 21
+            },
+            {
+              "offset": 130,
+              "length": 15
+            }
+          ],
+          "valueAddress": {
+            "houseNumber": "123",
+            "road": "Calle Cualquiera",
+            "streetAddress": "123 Calle Cualquiera"
+          }
+        },
+        "CustomerAddressRecipient": {
+          "type": "string",
+          "valueString": "Alejandro Torres",
+          "content": "Alejandro Torres",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                209,
+                355,
+                385,
+                355,
+                385,
+                377,
+                209,
+                377
+              ]
+            }
+          ],
+          "confidence": 0.938,
+          "spans": [
+            {
+              "offset": 57,
+              "length": 16
+            }
+          ]
+        },
+        "CustomerName": {
+          "type": "string",
+          "valueString": "Alejandro Torres",
+          "content": "Alejandro Torres",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                209,
+                355,
+                385,
+                355,
+                385,
+                377,
+                209,
+                377
+              ]
+            }
+          ],
+          "confidence": 0.938,
+          "spans": [
+            {
+              "offset": 57,
+              "length": 16
+            }
+          ]
+        },
+        "InvoiceDate": {
+          "type": "date",
+          "content": "15/08/2030",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                196,
+                542,
+                324,
+                541,
+                325,
+                567,
+                196,
+                567
+              ]
+            }
+          ],
+          "confidence": 0.968,
+          "spans": [
+            {
+              "offset": 304,
+              "length": 10
+            }
+          ]
+        },
+        "InvoiceTotal": {
+          "type": "currency",
+          "valueCurrency": {
+            "currencySymbol": "€",
+            "amount": 500,
+            "currencyCode": "EUR"
+          },
+          "content": "500 €",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                901,
+                990,
+                974,
+                991,
+                974,
+                1017,
+                901,
+                1016
+              ]
+            }
+          ],
+          "confidence": 0.94,
+          "spans": [
+            {
+              "offset": 574,
+              "length": 5
+            }
+          ]
+        },
+        "Items": {
+          "type": "array",
+          "valueArray": [
+            {
+              "type": "object",
+              "valueObject": {
+                "Amount": {
+                  "type": "currency",
+                  "valueCurrency": {
+                    "currencySymbol": "€",
+                    "amount": 100,
+                    "currencyCode": "EUR"
+                  },
+                  "content": "100 €",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        911,
+                        645,
+                        969,
+                        646,
+                        969,
+                        669,
+                        911,
+                        668
+                      ]
+                    }
+                  ],
+                  "confidence": 0.944,
+                  "spans": [
+                    {
+                      "offset": 365,
+                      "length": 5
+                    }
+                  ]
+                },
+                "Description": {
+                  "type": "string",
+                  "valueString": "Diseño web",
+                  "content": "Diseño web",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        116,
+                        646,
+                        247,
+                        646,
+                        247,
+                        671,
+                        116,
+                        671
+                      ]
+                    }
+                  ],
+                  "confidence": 0.944,
+                  "spans": [
+                    {
+                      "offset": 346,
+                      "length": 10
+                    }
+                  ]
+                },
+                "Quantity": {
+                  "type": "number",
+                  "valueNumber": 1,
+                  "content": "1",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        605,
+                        647,
+                        613,
+                        647,
+                        613,
+                        667,
+                        605,
+                        667
+                      ]
+                    }
+                  ],
+                  "confidence": 0.959,
+                  "spans": [
+                    {
+                      "offset": 357,
+                      "length": 1
+                    }
+                  ]
+                },
+                "UnitPrice": {
+                  "type": "currency",
+                  "valueCurrency": {
+                    "currencySymbol": "€",
+                    "amount": 100,
+                    "currencyCode": "EUR"
+                  },
+                  "content": "100 €",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        750,
+                        646,
+                        807,
+                        647,
+                        807,
+                        669,
+                        750,
+                        668
+                      ]
+                    }
+                  ],
+                  "confidence": 0.944,
+                  "spans": [
+                    {
+                      "offset": 359,
+                      "length": 5
+                    }
+                  ]
+                }
+              },
+              "content": "Diseño web\n1\n100 €\n100 €",
+              "boundingRegions": [
+                {
+                  "pageNumber": 1,
+                  "polygon": [
+                    116,
+                    646,
+                    969,
+                    646,
+                    969,
+                    671,
+                    116,
+                    671
+                  ]
+                }
+              ],
+              "confidence": 0.924,
+              "spans": [
+                {
+                  "offset": 346,
+                  "length": 24
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "valueObject": {
+                "Amount": {
+                  "type": "currency",
+                  "valueCurrency": {
+                    "currencySymbol": "€",
+                    "amount": 100,
+                    "currencyCode": "EUR"
+                  },
+                  "content": "100 €",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        909,
+                        701,
+                        968,
+                        701,
+                        968,
+                        723,
+                        909,
+                        723
+                      ]
+                    }
+                  ],
+                  "confidence": 0.944,
+                  "spans": [
+                    {
+                      "offset": 390,
+                      "length": 5
+                    }
+                  ]
+                },
+                "Description": {
+                  "type": "string",
+                  "valueString": "Publicidad",
+                  "content": "Publicidad",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        114,
+                        701,
+                        233,
+                        701,
+                        233,
+                        723,
+                        115,
+                        724
+                      ]
+                    }
+                  ],
+                  "confidence": 0.952,
+                  "spans": [
+                    {
+                      "offset": 371,
+                      "length": 10
+                    }
+                  ]
+                },
+                "Quantity": {
+                  "type": "number",
+                  "valueNumber": 1,
+                  "content": "1",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        603,
+                        702,
+                        611,
+                        702,
+                        611,
+                        721,
+                        603,
+                        721
+                      ]
+                    }
+                  ],
+                  "confidence": 0.958,
+                  "spans": [
+                    {
+                      "offset": 382,
+                      "length": 1
+                    }
+                  ]
+                },
+                "UnitPrice": {
+                  "type": "currency",
+                  "valueCurrency": {
+                    "currencySymbol": "€",
+                    "amount": 100,
+                    "currencyCode": "EUR"
+                  },
+                  "content": "100 €",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        747,
+                        700,
+                        806,
+                        700,
+                        806,
+                        724,
+                        747,
+                        724
+                      ]
+                    }
+                  ],
+                  "confidence": 0.944,
+                  "spans": [
+                    {
+                      "offset": 384,
+                      "length": 5
+                    }
+                  ]
+                }
+              },
+              "content": "Publicidad\n1\n100 €\n100 €",
+              "boundingRegions": [
+                {
+                  "pageNumber": 1,
+                  "polygon": [
+                    114,
+                    700,
+                    968,
+                    700,
+                    968,
+                    724,
+                    114,
+                    724
+                  ]
+                }
+              ],
+              "confidence": 0.923,
+              "spans": [
+                {
+                  "offset": 371,
+                  "length": 24
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "valueObject": {
+                "Amount": {
+                  "type": "currency",
+                  "valueCurrency": {
+                    "currencySymbol": "€",
+                    "amount": 100,
+                    "currencyCode": "EUR"
+                  },
+                  "content": "100 €",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        910,
+                        756,
+                        968,
+                        756,
+                        968,
+                        778,
+                        910,
+                        778
+                      ]
+                    }
+                  ],
+                  "confidence": 0.944,
+                  "spans": [
+                    {
+                      "offset": 414,
+                      "length": 5
+                    }
+                  ]
+                },
+                "Description": {
+                  "type": "string",
+                  "valueString": "Marketing",
+                  "content": "Marketing",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        115,
+                        757,
+                        231,
+                        757,
+                        231,
+                        782,
+                        115,
+                        781
+                      ]
+                    }
+                  ],
+                  "confidence": 0.952,
+                  "spans": [
+                    {
+                      "offset": 396,
+                      "length": 9
+                    }
+                  ]
+                },
+                "Quantity": {
+                  "type": "number",
+                  "valueNumber": 1,
+                  "content": "1",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        604,
+                        757,
+                        612,
+                        757,
+                        611,
+                        777,
+                        603,
+                        776
+                      ]
+                    }
+                  ],
+                  "confidence": 0.957,
+                  "spans": [
+                    {
+                      "offset": 406,
+                      "length": 1
+                    }
+                  ]
+                },
+                "UnitPrice": {
+                  "type": "currency",
+                  "valueCurrency": {
+                    "currencySymbol": "€",
+                    "amount": 100,
+                    "currencyCode": "EUR"
+                  },
+                  "content": "100 €",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        748,
+                        756,
+                        806,
+                        756,
+                        806,
+                        778,
+                        748,
+                        778
+                      ]
+                    }
+                  ],
+                  "confidence": 0.944,
+                  "spans": [
+                    {
+                      "offset": 408,
+                      "length": 5
+                    }
+                  ]
+                }
+              },
+              "content": "Marketing\n1\n100 €\n100 €",
+              "boundingRegions": [
+                {
+                  "pageNumber": 1,
+                  "polygon": [
+                    115,
+                    756,
+                    968,
+                    756,
+                    968,
+                    782,
+                    115,
+                    782
+                  ]
+                }
+              ],
+              "confidence": 0.923,
+              "spans": [
+                {
+                  "offset": 396,
+                  "length": 23
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "valueObject": {
+                "Amount": {
+                  "type": "currency",
+                  "valueCurrency": {
+                    "currencySymbol": "€",
+                    "amount": 100,
+                    "currencyCode": "EUR"
+                  },
+                  "content": "100 €",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        911,
+                        809,
+                        970,
+                        809,
+                        970,
+                        832,
+                        911,
+                        832
+                      ]
+                    }
+                  ],
+                  "confidence": 0.946,
+                  "spans": [
+                    {
+                      "offset": 443,
+                      "length": 5
+                    }
+                  ]
+                },
+                "Description": {
+                  "type": "string",
+                  "valueString": "Asistencia web",
+                  "content": "Asistencia web",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        115,
+                        809,
+                        282,
+                        809,
+                        282,
+                        833,
+                        115,
+                        833
+                      ]
+                    }
+                  ],
+                  "confidence": 0.944,
+                  "spans": [
+                    {
+                      "offset": 420,
+                      "length": 14
+                    }
+                  ]
+                },
+                "Quantity": {
+                  "type": "number",
+                  "valueNumber": 1,
+                  "content": "1",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        604,
+                        809,
+                        611,
+                        809,
+                        612,
+                        829,
+                        605,
+                        829
+                      ]
+                    }
+                  ],
+                  "confidence": 0.966,
+                  "spans": [
+                    {
+                      "offset": 435,
+                      "length": 1
+                    }
+                  ]
+                },
+                "UnitPrice": {
+                  "type": "currency",
+                  "valueCurrency": {
+                    "currencySymbol": "€",
+                    "amount": 100,
+                    "currencyCode": "EUR"
+                  },
+                  "content": "100 €",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        750,
+                        808,
+                        808,
+                        809,
+                        808,
+                        832,
+                        750,
+                        831
+                      ]
+                    }
+                  ],
+                  "confidence": 0.945,
+                  "spans": [
+                    {
+                      "offset": 437,
+                      "length": 5
+                    }
+                  ]
+                }
+              },
+              "content": "Asistencia web\n1\n100 €\n100 €",
+              "boundingRegions": [
+                {
+                  "pageNumber": 1,
+                  "polygon": [
+                    115,
+                    809,
+                    970,
+                    809,
+                    970,
+                    833,
+                    115,
+                    833
+                  ]
+                }
+              ],
+              "confidence": 0.923,
+              "spans": [
+                {
+                  "offset": 420,
+                  "length": 28
+                }
+              ]
+            }
+          ]
+        },
+        "PaymentTerm": {
+          "type": "string",
+          "valueString": "Transferencia",
+          "content": "Transferencia",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                299,
+                864,
+                452,
+                863,
+                452,
+                889,
+                299,
+                890
+              ]
+            }
+          ],
+          "confidence": 0.813,
+          "spans": [
+            {
+              "offset": 464,
+              "length": 13
+            }
+          ]
+        },
+        "SubTotal": {
+          "type": "currency",
+          "valueCurrency": {
+            "currencySymbol": "€",
+            "amount": 500,
+            "currencyCode": "EUR"
+          },
+          "content": "500€",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                911,
+                865,
+                969,
+                864,
+                969,
+                887,
+                911,
+                886
+              ]
+            }
+          ],
+          "confidence": 0.971,
+          "spans": [
+            {
+              "offset": 487,
+              "length": 4
+            }
+          ]
+        },
+        "TaxDetails": {
+          "type": "array",
+          "valueArray": [
+            {
+              "type": "object",
+              "valueObject": {
+                "Amount": {
+                  "type": "currency",
+                  "valueCurrency": {
+                    "currencySymbol": "€",
+                    "amount": 105,
+                    "currencyCode": "EUR"
+                  },
+                  "content": "105 €",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        911,
+                        906,
+                        967,
+                        907,
+                        967,
+                        929,
+                        911,
+                        928
+                      ]
+                    }
+                  ],
+                  "confidence": 0.943,
+                  "spans": [
+                    {
+                      "offset": 537,
+                      "length": 5
+                    }
+                  ]
+                },
+                "Rate": {
+                  "type": "string",
+                  "valueString": "21 %",
+                  "content": "21 %",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        790,
+                        907,
+                        836,
+                        907,
+                        836,
+                        928,
+                        790,
+                        928
+                      ]
+                    }
+                  ],
+                  "confidence": 0.945,
+                  "spans": [
+                    {
+                      "offset": 532,
+                      "length": 4
+                    }
+                  ]
+                }
+              },
+              "content": "IVA 21 %\n105 €",
+              "boundingRegions": [
+                {
+                  "pageNumber": 1,
+                  "polygon": [
+                    744,
+                    907,
+                    967,
+                    907,
+                    967,
+                    929,
+                    744,
+                    929
+                  ]
+                }
+              ],
+              "confidence": 0.923,
+              "spans": [
+                {
+                  "offset": 528,
+                  "length": 14
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "valueObject": {
+                "Amount": {
+                  "type": "currency",
+                  "valueCurrency": {
+                    "currencySymbol": "€",
+                    "amount": 35,
+                    "currencyCode": "EUR"
+                  },
+                  "content": "35 €",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        916,
+                        947,
+                        961,
+                        947,
+                        961,
+                        971,
+                        916,
+                        971
+                      ]
+                    }
+                  ],
+                  "confidence": 0.943,
+                  "spans": [
+                    {
+                      "offset": 563,
+                      "length": 4
+                    }
+                  ]
+                },
+                "Rate": {
+                  "type": "string",
+                  "valueString": "7%",
+                  "content": "7%",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        805,
+                        948,
+                        836,
+                        948,
+                        835,
+                        972,
+                        804,
+                        972
+                      ]
+                    }
+                  ],
+                  "confidence": 0.953,
+                  "spans": [
+                    {
+                      "offset": 560,
+                      "length": 2
+                    }
+                  ]
+                }
+              },
+              "content": "IRPF 7%\n35 €",
+              "boundingRegions": [
+                {
+                  "pageNumber": 1,
+                  "polygon": [
+                    743,
+                    947,
+                    961,
+                    947,
+                    961,
+                    972,
+                    743,
+                    972
+                  ]
+                }
+              ],
+              "confidence": 0.9,
+              "spans": [
+                {
+                  "offset": 555,
+                  "length": 12
+                }
+              ]
+            }
+          ]
+        },
+        "TotalTax": {
+          "type": "currency",
+          "valueCurrency": {
+            "currencySymbol": "€",
+            "amount": 105,
+            "currencyCode": "EUR"
+          },
+          "content": "105 €",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                911,
+                906,
+                967,
+                907,
+                967,
+                929,
+                911,
+                928
+              ]
+            }
+          ],
+          "confidence": 0.925,
+          "spans": [
+            {
+              "offset": 537,
+              "length": 5
+            }
+          ]
+        },
+        "VendorAddress": {
+          "type": "address",
+          "content": "Calle Cualquiera\n123, Cualquier Lugar",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                790,
+                390,
+                1019,
+                391,
+                1019,
+                440,
+                790,
+                439
+              ]
+            }
+          ],
+          "confidence": 0.47,
+          "spans": [
+            {
+              "offset": 157,
+              "length": 16
+            },
+            {
+              "offset": 202,
+              "length": 20
+            }
+          ],
+          "valueAddress": {
+            "houseNumber": "123",
+            "road": "Calle Cualquiera",
+            "streetAddress": "123 Calle Cualquiera"
+          }
+        },
+        "VendorAddressRecipient": {
+          "type": "string",
+          "valueString": "Belén Castillo",
+          "content": "Belén Castillo",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                862,
+                364,
+                1015,
+                364,
+                1015,
+                387,
+                862,
+                387
+              ]
+            }
+          ],
+          "confidence": 0.555,
+          "spans": [
+            {
+              "offset": 115,
+              "length": 14
+            }
+          ]
+        },
+        "VendorName": {
+          "type": "string",
+          "valueString": "G\nBORCELLE",
+          "content": "G\nBORCELLE",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                849,
+                54,
+                993,
+                54,
+                993,
+                175,
+                849,
+                176
+              ]
+            }
+          ],
+          "confidence": 0.447,
+          "spans": [
+            {
+              "offset": 0,
+              "length": 10
+            }
+          ]
+        }
+      },
+      "confidence": 1,
+      "spans": [
+        {
+          "offset": 0,
+          "length": 596
+        }
+      ]
+    }
+  ],
+  "contentFormat": "text"
+}

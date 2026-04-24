@@ -1,0 +1,130 @@
+{
+  "plate": "8945 NKN",
+  "CL": "2400",
+  "CI": "F.3",
+  "CV": "1",
+  "D1": "TOYOTA",
+  "D3": "Proace City",
+  "E": "YAREDYHT2RJ071736",
+  "J": "N1",
+  "J1": "BB",
+  "J2": "F.7",
+  "J3": "F.7.1",
+  "F2": "2370",
+  "F4": "1880",
+  "F5": "1848",
+  "F6": "4403",
+  "P3": "M/D",
+  "P1": "1499",
+  "P2": "75",
+  "S1": 2,
+  "observations": "Masa Real:01524",
+  "homologationOptions": "Opciones incluidas en la homologación de tipo \n Certifica que el vehículo cuyas \n características se reseñan \n es completamente conforme con el \n número de homologación.",
+  "issueDateRaw": "22/11/2025",
+  "issueDateISO": "2025-11-22T00:00:00.000Z",
+  "powerCv": 102,
+  "_v2Debug": {
+    "invoked": true,
+    "bestSource": "content",
+    "fullTextLen": 1652,
+    "linesCount": 137,
+    "sampleFirst500": "TOYOTA MOTOR EUROPE NV/SA B Nº DE SERIE: E021100839 MATRÍCULA CERTIFICADO Nº CÓDIGO DESCRIPCIÓN CÓDIGO DESCRIPCIÓN G 1463 M.1 2785 / -- / --------------- 8945NKN E021100839- 20251122 F.1 2370 M.4 1 F.1.1 1200 / 1400 / ---------- / -------.... L 2/ 4 F.1.5 74 L.0 N / ------ F.2 2370 L.1 1 / DEL / NA CL 2400 F.2.1 1200 / 1400 / ---------- / -========= L.2 205/60 R16 96H 6,5J16 ET47 C1 A C.I F.3 3370 P.5.1 STELLANTIS AUTO SA C.V 1 F.3.1 3370 P.5 YH01 A.1 TOYOTA MOTOR EUROPE NV/SA 0.1 P.3 M/D A.2 AV",
+    "foundTokens": {
+      "D1": 1,
+      "D3": 1,
+      "E": 1,
+      "S1": 0
+    },
+    "attempts": [
+      {
+        "strategy": "codeLine",
+        "key": "plate",
+        "raw": "8945NKN",
+        "valid": true,
+        "reasonIfInvalid": ""
+      },
+      {
+        "strategy": "codeLine",
+        "key": "L2",
+        "raw": "205/60 R16 96H 6,5J16 ET47 C1 A",
+        "valid": true,
+        "reasonIfInvalid": ""
+      },
+      {
+        "strategy": "codeLine",
+        "key": "P3",
+        "raw": "M/D",
+        "valid": true,
+        "reasonIfInvalid": ""
+      },
+      {
+        "strategy": "codeLine",
+        "key": "D1",
+        "raw": "TOYOTA",
+        "valid": true,
+        "reasonIfInvalid": ""
+      },
+      {
+        "strategy": "codeLine",
+        "key": "P1",
+        "raw": ".1",
+        "valid": false,
+        "reasonIfInvalid": "invalidCC"
+      },
+      {
+        "strategy": "codeLine",
+        "key": "D2",
+        "raw": "E/D/YHT2-52E4AN(1E)",
+        "valid": true,
+        "reasonIfInvalid": ""
+      },
+      {
+        "strategy": "codeLine",
+        "key": "D3",
+        "raw": "PROACE CITY",
+        "valid": true,
+        "reasonIfInvalid": ""
+      },
+      {
+        "strategy": "codeLine",
+        "key": "P2",
+        "raw": ".1",
+        "valid": false,
+        "reasonIfInvalid": "invalidKW"
+      },
+      {
+        "strategy": "codeLine",
+        "key": "J1",
+        "raw": "BB",
+        "valid": true,
+        "reasonIfInvalid": ""
+      },
+      {
+        "strategy": "codeLine",
+        "key": "J",
+        "raw": "OSÉ MANUEL MÉNDEZ SÁNCHEZ",
+        "valid": true,
+        "reasonIfInvalid": ""
+      },
+      {
+        "strategy": "codeLine",
+        "key": "E",
+        "raw": "YAREDYHT2RJ071736",
+        "valid": true,
+        "reasonIfInvalid": ""
+      },
+      {
+        "strategy": "globalSearch",
+        "key": "E",
+        "raw": "YAREDYHT2RJ071736",
+        "valid": true
+      }
+    ]
+  },
+  "L2": "205/60 R16 96H 6,5J16 ET47 C1 A",
+  "D2": "E/D/YHT2-52E4AN(1E)",
+  "_v2Fallback": [
+    "L2",
+    "D2"
+  ]
+}

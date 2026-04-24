@@ -1,0 +1,52 @@
+
+"use client"
+
+import React, { useRef } from 'react';
+import { useBatch } from './batch-context';
+import { UploadCloud, Loader2 } from 'lucide-react';
+
+export function IngestZone() {
+    const { uploadFiles, processing } = useBatch();
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files.length > 0) {
+            uploadFiles(Array.from(e.target.files));
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+    };
+
+    return (
+        <div className="h-full w-full p-4 flex flex-col bg-[#0B1020]">
+            <div
+                className={`flex-1 border-2 border-dashed rounded-lg flex flex-col items-center justify-center text-center cursor-pointer transition-colors
+          ${processing
+                        ? 'bg-[#ffffff05] border-slate-500'
+                        : 'hover:bg-[#ffffff02] hover:border-[#3CE0FF] border-[#ffffff10] bg-[#ffffff01]'}`}
+                onClick={() => !processing && fileInputRef.current?.click()}
+            >
+                <input
+                    type="file"
+                    multiple
+                    accept=".pdf"
+                    className="hidden"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                />
+
+                {processing ? (
+                    <>
+                        <Loader2 className="h-8 w-8 text-[#3CE0FF] animate-spin mb-2" />
+                        <p className="text-xs font-medium text-slate-400">Procesando...</p>
+                    </>
+                ) : (
+                    <>
+                        <UploadCloud className="h-10 w-10 text-slate-600 mb-4 group-hover:text-[#3CE0FF] transition-colors" />
+                        <h3 className="text-sm font-semibold text-slate-300">Subir Fichas Técnicas</h3>
+                        <p className="text-xs text-slate-500 mt-2">Arrastra PDFs aquí o haz click</p>
+                    </>
+                )}
+            </div>
+        </div>
+    );
+}

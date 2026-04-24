@@ -1,0 +1,25 @@
+{
+  "apiVersion": "2024-02-29-preview",
+  "modelId": "prebuilt-read",
+  "stringIndexType": "textElements",
+  "content": "",
+  "pages": [
+    {
+      "pageNumber": 1,
+      "angle": 0,
+      "width": 4.6667,
+      "height": 3.3056,
+      "unit": "inch",
+      "words": [],
+      "lines": [],
+      "spans": [
+        {
+          "offset": 0,
+          "length": 0
+        }
+      ]
+    }
+  ],
+  "styles": [],
+  "contentFormat": "text"
+}

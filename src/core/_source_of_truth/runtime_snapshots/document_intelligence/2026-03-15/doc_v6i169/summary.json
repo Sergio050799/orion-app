@@ -1,0 +1,190 @@
+{
+  "docId": "v6i169",
+  "createdAt": "2026-03-15T13:12:42.621Z",
+  "pageCount": 1,
+  "firstLines": [
+    "D",
+    "Castilla La Mancha",
+    "CASTILLA LA MANCHA",
+    "A",
+    "N.º de Serie",
+    "1623859",
+    "Matricula",
+    "Certificado N.º",
+    "Código",
+    "Descripción"
+  ],
+  "usedModel": "prebuilt-layout",
+  "detectedType": "FICHA_TECNICA",
+  "documentType": "FICHA_TECNICA",
+  "detectedTypeLocked": true,
+  "detectedTypeEvidence": {
+    "evidence": [
+      "PERMISO_STRUCTURAL_MARKERS:5",
+      "FICHA_EXCLUSIVE_CODES:8",
+      "V2_KW:MATRICULA",
+      "STRONG_V1_CODES: D\\.1,D\\.2,D\\.3,F\\.1,P\\.1,P\\.2,P\\.3,S\\.2",
+      "V1_CODES: D\\.1,D\\.2,D\\.3,F\\.1,P\\.1,P\\.2,P\\.3,S\\.2",
+      "FICHA_EXCLUSIVE_STRONG:8",
+      "WINNER:FICHA_TECNICA"
+    ],
+    "scoreV1": -130,
+    "scoreV2": -250
+  },
+  "extractorUsed": "legacyFichaExtractor",
+  "classifierEvidence": {
+    "evidence": [
+      "PERMISO_STRUCTURAL_MARKERS:5",
+      "FICHA_EXCLUSIVE_CODES:8",
+      "V2_KW:MATRICULA",
+      "STRONG_V1_CODES: D\\.1,D\\.2,D\\.3,F\\.1,P\\.1,P\\.2,P\\.3,S\\.2",
+      "V1_CODES: D\\.1,D\\.2,D\\.3,F\\.1,P\\.1,P\\.2,P\\.3,S\\.2",
+      "FICHA_EXCLUSIVE_STRONG:8",
+      "WINNER:FICHA_TECNICA"
+    ],
+    "scoreV1": -130,
+    "scoreV2": -250
+  },
+  "ocrQuality": {
+    "ocrChars": 2006,
+    "nonEmptyLines": 142,
+    "fieldsFoundCount": 23,
+    "quality": "high"
+  },
+  "extractedFields": {
+    "plate": "2390 MBK",
+    "CL": "1033 TURISMO TODOTERRENO",
+    "CI": null,
+    "CV": null,
+    "D1": "BMW",
+    "D3": "X6 xDRIVE 40d",
+    "E": "WBATC610709J88997",
+    "J": "M1G",
+    "J1": null,
+    "J2": "AA",
+    "J3": null,
+    "F2": "2950",
+    "F4": "1696",
+    "F5": "2004",
+    "F6": "4935",
+    "P3": "M-D ·",
+    "P1": "2993",
+    "P2": "250,0",
+    "S1": 5,
+    "observations": "ITV 4510 \n Certifica que el vehículo cuyas \n características se reseñan es \n apto para su matriculación o' \n puesta ed-circulación. \n 4510",
+    "homologationOptions": "Opciones incluidas en la homologación de tipo \n (2) 1678; (3) 1688 \n MIPLAR PARA EL USUARIO \n Centro de Publicaciones, Ministerio de Industria, Energía \n Mod. TATV/A S. RCMIN",
+    "issueDateRaw": "__ 85/08/2022",
+    "issueDateISO": "2022-08-85T00:00:00.000Z",
+    "powerCv": 340,
+    "_v2Debug": {
+      "invoked": true,
+      "bestSource": "pages.lines",
+      "fullTextLen": 2006,
+      "linesCount": 142,
+      "sampleFirst500": "D CASTILLA LA MANCHA CASTILLA LA MANCHA A N.º DE SERIE 1623859 MATRICULA CERTIFICADO N.º CÓDIGO DESCRIPCIÓN CÓDIGO DESCRIPCIÓN 4510202200810 Z M.1 2975 / --- / G 2290 M.4 F.1 2950 L 2/4 2390MBK J88997 F.1.1 1375 / 1635 (1) / --- / ... L.0 F.1.5 140 L.1 2/EJE1Y2. CAJA DE TRANSFERENCIA C.L 1033 TURISMO TODOTERRENO F.2 2950 L.2 4;DEL .: 275/40R21 107Y (4) A.1 BAYERISCHE MOTOREN WERKE AG. F.2.1 1375 / 1635 (1) / --- / ··· P.5.1 BAYER. MOT. WERKE AG A.2 DE -80788 MÜNCHEN F.3 5650 P.5 B57D30B B. 1 - F",
+      "foundTokens": {
+        "D1": 1,
+        "D3": 0,
+        "E": 1,
+        "S1": 0
+      },
+      "attempts": [
+        {
+          "strategy": "codeLine",
+          "key": "J",
+          "raw": "88997",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "plate",
+          "raw": "2390MBK",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "CL",
+          "raw": "1033 TURISMO TODOTERRENO",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "L2",
+          "raw": "4;DEL .: 275/40R21 107Y (4)",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "P3",
+          "raw": "M-D",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "D1",
+          "raw": "BMW",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "P1",
+          "raw": ".1",
+          "valid": false,
+          "reasonIfInvalid": "invalidCC"
+        },
+        {
+          "strategy": "codeLine",
+          "key": "P2",
+          "raw": ".1",
+          "valid": false,
+          "reasonIfInvalid": "invalidKW"
+        },
+        {
+          "strategy": "codeLine",
+          "key": "J2",
+          "raw": "AA",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "E",
+          "raw": "WBATC610709J88997",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "globalSearch",
+          "key": "E",
+          "raw": "WBATC610709J88997",
+          "valid": true
+        }
+      ]
+    },
+    "L2": "4;DEL .: 275/40R21 107Y (4)",
+    "_isCellPairFormat": true,
+    "G": 2290,
+    "L": "2/4",
+    "_v2Fallback": [
+      "CL",
+      "L2",
+      "_isCellPairFormat",
+      "G",
+      "L"
+    ]
+  },
+  "decoded": {
+    "make": "BMW",
+    "model": "X6 xDRIVE 40d",
+    "vehicleClass": "1033 TURISMO TODOTERRENO",
+    "vehicleCategory": "M1G",
+    "bodyType": null,
+    "fuelType": "M-D ·"
+  }
+}

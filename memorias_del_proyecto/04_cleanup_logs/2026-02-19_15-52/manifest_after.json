@@ -1,0 +1,40 @@
+﻿{
+    "timestamp":  "2026-02-19T15:57:33.4980558+01:00",
+    "planned_deletions":  [
+                              "src/memorias_del_proyecto/ (deleted after migration)",
+                              "src/app/orion/panel-3/ (deleted)",
+                              "src/app/orion/ (deleted, was empty)",
+                              "memorias_del_proyecto/backup_antigravity/ (moved into cleanup backup snapshot)",
+                              "datasets/ (deleted)",
+                              "data/history.json (deleted)",
+                              "data/ (deleted, became empty)",
+                              "src/core/_source_of_truth/plates/__pycache__/ (deleted)",
+                              "references_orion/ (deleted, became empty)"
+                          ],
+    "planned_moves":  [
+                          {
+                              "to":  "memorias_del_proyecto/memorias/do_not_repeat.md",
+                              "from":  "src/memorias_del_proyecto/memorias/do_not_repeat.md"
+                          },
+                          {
+                              "to":  "memorias_del_proyecto/memorias/files_of_truth.md",
+                              "from":  "src/memorias_del_proyecto/memorias/files_of_truth.md"
+                          },
+                          {
+                              "to":  "memorias_del_proyecto/memorias/what_was_done.md",
+                              "from":  "src/memorias_del_proyecto/memorias/what_was_done.md"
+                          },
+                          {
+                              "to":  "memorias_del_proyecto/cleanup_backup/2026-02-19_13-57/*",
+                              "from":  "src/memorias_del_proyecto/cleanup_backup/2026-02-19_13-57/*"
+                          },
+                          {
+                              "to":  "src/core/_source_of_truth/references/References_Orion_V1.png",
+                              "from":  "references_orion/References_Orion_V1.png"
+                          },
+                          {
+                              "to":  "memorias_del_proyecto/cleanup_backup/2026-02-19_15-52/backup_antigravity/",
+                              "from":  "memorias_del_proyecto/backup_antigravity/"
+                          }
+                      ]
+}

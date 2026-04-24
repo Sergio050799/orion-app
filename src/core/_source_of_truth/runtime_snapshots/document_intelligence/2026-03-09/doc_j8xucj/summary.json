@@ -1,0 +1,206 @@
+{
+  "docId": "j8xucj",
+  "createdAt": "2026-03-09T17:44:35.530Z",
+  "pageCount": 1,
+  "firstLines": [
+    "B",
+    "Nº de Serle:",
+    "e018468964",
+    "Matricula",
+    "Certificado Nº",
+    "Código",
+    "Descripción",
+    "Código",
+    "Descripción",
+    "G"
+  ],
+  "usedModel": "prebuilt-layout",
+  "detectedType": "FICHA_TECNICA",
+  "documentType": "FICHA_TECNICA",
+  "detectedTypeLocked": true,
+  "detectedTypeEvidence": {
+    "evidence": [
+      "PERMISO_STRUCTURAL_MARKERS:5",
+      "FICHA_EXCLUSIVE_CODES:9",
+      "V2_KW:MATRICULA",
+      "STRONG_V1_CODES: D\\.1,D\\.2,D\\.3,F\\.1,P\\.1,P\\.2,P\\.3,S\\.1,S\\.2",
+      "V1_CODES: D\\.1,D\\.2,D\\.3,F\\.1,P\\.1,P\\.2,P\\.3,S\\.1,S\\.2",
+      "FICHA_EXCLUSIVE_STRONG:9",
+      "WINNER:FICHA_TECNICA"
+    ],
+    "scoreV1": -190,
+    "scoreV2": -200
+  },
+  "extractorUsed": "legacyFichaExtractor",
+  "classifierEvidence": {
+    "evidence": [
+      "PERMISO_STRUCTURAL_MARKERS:5",
+      "FICHA_EXCLUSIVE_CODES:9",
+      "V2_KW:MATRICULA",
+      "STRONG_V1_CODES: D\\.1,D\\.2,D\\.3,F\\.1,P\\.1,P\\.2,P\\.3,S\\.1,S\\.2",
+      "V1_CODES: D\\.1,D\\.2,D\\.3,F\\.1,P\\.1,P\\.2,P\\.3,S\\.1,S\\.2",
+      "FICHA_EXCLUSIVE_STRONG:9",
+      "WINNER:FICHA_TECNICA"
+    ],
+    "scoreV1": -190,
+    "scoreV2": -200
+  },
+  "ocrQuality": {
+    "ocrChars": 2020,
+    "nonEmptyLines": 139,
+    "fieldsFoundCount": 25,
+    "quality": "high"
+  },
+  "extractedFields": {
+    "plate": "0102 NKN",
+    "CL": "1000",
+    "CI": "F.3",
+    "CV": "28",
+    "D1": "RENAULT",
+    "D3": "CLIO",
+    "E": "VF1RJA00875377309",
+    "J": "M1",
+    "J1": "AB",
+    "J2": "F.7",
+    "J3": "F.7.1",
+    "F2": "1685",
+    "F4": "1437",
+    "F5": "1728",
+    "F6": "4047",
+    "P3": "M/D",
+    "P1": "1461",
+    "P2": "74",
+    "S1": 5,
+    "observations": null,
+    "homologationOptions": "Opciones incluidas en la homologación de tipo \n José Luis García Sanz \n MIAS: 1518 MM / 1506 MM; ALTURA 1457 MM CON ANTENA DE TIBURON",
+    "issueDateRaw": "12/09/2025",
+    "issueDateISO": "2025-09-12T00:00:00.000Z",
+    "powerCv": 101,
+    "_v2Debug": {
+      "invoked": true,
+      "bestSource": "pages.lines",
+      "fullTextLen": 2020,
+      "linesCount": 139,
+      "sampleFirst500": "B Nº DE SERLE: E018468964 MATRICULA CERTIFICADO Nº CÓDIGO DESCRIPCIÓN CÓDIGO DESCRIPCIÓN G 1270 M.1 2583 / --- -1 0102NKN 75377309 F.1 1685 M.4 F.1.1 940 / 890 / ---------- / ========== L 2/4 F.1.5 63 L.0 F.2 1685 L.1 1 / DELANTERO / DELANTERO CL 1000 F.2.1 940 / 890 / -========= / ====== L.2 4 - (1) C.I F.3 2585 P.5.1 RENAULT C.V 28 F.3.1 2585 P.5 K9K U8 A.1 RENAULT, S.A.S. 0.1 P.3 M/D A.2 122-122 BIS AVENUE DU GENERAL LECLERC / 92100 BOULOGNE- 0.1.1 ----- P.1 1461 D.1 RENAULT 0.1.2 P.1.1 4 / E",
+      "foundTokens": {
+        "D1": 1,
+        "D3": 1,
+        "E": 1,
+        "S1": 0
+      },
+      "attempts": [
+        {
+          "strategy": "codeLine",
+          "key": "plate",
+          "raw": "0102NKN",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "CL",
+          "raw": "1000",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "L2",
+          "raw": "4 - (1)",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "CV",
+          "raw": "28",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "P3",
+          "raw": "M/D",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "D1",
+          "raw": "RENAULT",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "P1",
+          "raw": ".1",
+          "valid": false,
+          "reasonIfInvalid": "invalidCC"
+        },
+        {
+          "strategy": "codeLine",
+          "key": "D2",
+          "raw": "RJA / BD2 / AC6WA2SA500B",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "D3",
+          "raw": "CLIO",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "P2",
+          "raw": ".1",
+          "valid": false,
+          "reasonIfInvalid": "invalidKW"
+        },
+        {
+          "strategy": "codeLine",
+          "key": "J1",
+          "raw": "AB",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "J",
+          "raw": "OSÉ LUIS GARCÍA SANZ",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "E",
+          "raw": "VF1RJA00875377309",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "globalSearch",
+          "key": "E",
+          "raw": "VF1RJA00875377309",
+          "valid": true
+        }
+      ]
+    },
+    "L2": "4 - (1)",
+    "D2": "RJA / BD2 / AC6WA2SA500B",
+    "_v2Fallback": [
+      "L2",
+      "D2"
+    ]
+  },
+  "decoded": {
+    "make": "RENAULT",
+    "model": "CLIO",
+    "vehicleClass": "Turismo",
+    "vehicleCategory": "Vehículo de pasajeros",
+    "bodyType": "AB",
+    "fuelType": "M/D"
+  }
+}

@@ -1,0 +1,116 @@
+{
+  "docId": "4m3kc",
+  "createdAt": "2026-03-14T12:18:10.554Z",
+  "pageCount": 1,
+  "firstLines": [
+    "PERMISO DE CONDUCCIÓN REINO DE ESPAÑA",
+    "1. GONCALVES",
+    "DE GONCALVES",
+    "2. JOAO HELDER",
+    "3. 11-03-1982",
+    "4a.17 - 12 - 2021",
+    "4b.17-12-2031",
+    "5. Y4318700-G",
+    "7.",
+    "VENEZUELA"
+  ],
+  "usedModel": "prebuilt-read",
+  "detectedType": "CARNET_CONDUCIR",
+  "documentType": "CARNET_CONDUCIR",
+  "detectedTypeLocked": true,
+  "detectedTypeEvidence": {
+    "evidence": [
+      "EXACT_TITLE_CARNET"
+    ],
+    "scoreV1": 0,
+    "scoreV2": 0
+  },
+  "extractorUsed": "carnetExtractor.v1",
+  "classifierEvidence": {
+    "evidence": [
+      "EXACT_TITLE_CARNET"
+    ],
+    "scoreV1": 0,
+    "scoreV2": 0
+  },
+  "ocrQuality": {
+    "ocrChars": 219,
+    "nonEmptyLines": 16,
+    "fieldsFoundCount": 7,
+    "quality": "high"
+  },
+  "extractedFields": {
+    "identification": {
+      "apellidos": {
+        "value": "GONCALVES DE GONCALVES",
+        "confidence": 0.9,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "nombre": {
+        "value": "JOAO HELDER",
+        "confidence": 0.9,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "fecha_nacimiento": {
+        "value": "11-03-1982",
+        "confidence": 0.9,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "pais_nacimiento": {
+        "value": "VENEZUELA",
+        "confidence": 0.9,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "nif": {
+        "value": "Y4318700-G",
+        "confidence": 0.9,
+        "status_color": "verde",
+        "source": "ocr"
+      }
+    },
+    "validity": {
+      "fecha_expedicion": {
+        "value": "17-12-2021",
+        "confidence": 0.9,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "fecha_caducidad": {
+        "value": "17-12-2031",
+        "confidence": 0.9,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "codigo_autoridad": {
+        "value": "28-02",
+        "confidence": 0.9,
+        "status_color": "verde",
+        "source": "ocr"
+      }
+    },
+    "categories": {
+      "lista": {
+        "value": [
+          "AM",
+          "A1",
+          "A2",
+          "A",
+          "B"
+        ],
+        "confidence": 0.9,
+        "status_color": "verde",
+        "source": "ocr"
+      }
+    },
+    "meta": {
+      "document_version": "V1",
+      "detected_type": "CARNET_CONDUCIR",
+      "warnings": []
+    }
+  },
+  "decoded": {}
+}

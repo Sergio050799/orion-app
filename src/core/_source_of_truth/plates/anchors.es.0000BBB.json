@@ -1,0 +1,17 @@
+{
+  "meta": {
+    "country": "ES",
+    "system": "0000-BBB",
+    "letters_alphabet": ["B","C","D","F","G","H","J","K","L","M","N","P","R","S","T","V","W","X","Y","Z"],
+    "notes": [
+      "Anclas mensuales: última serie a fin de mes (month_end).",
+      "Anclas intra-mes: última serie observada en una fecha concreta (observed).",
+      "Este nodo estima fecha aproximada. Si existe fecha oficial en ficha técnica/permisos, esa prevalece."
+    ]
+  },
+  "anchors": [
+    { "kind": "month_end", "date": "2025-12-31", "series": "NJS", "source": "monthly_table_tracker" },
+    { "kind": "month_end", "date": "2026-01-31", "series": "NKF", "source": "monthly_table_tracker" },
+    { "kind": "observed", "date": "2026-02-12", "series": "NKM", "source": "tracker_last_seen" }
+  ]
+}

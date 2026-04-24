@@ -1,0 +1,4478 @@
+{
+  "apiVersion": "2024-02-29-preview",
+  "modelId": "prebuilt-invoice",
+  "stringIndexType": "textElements",
+  "content": "FACTURA\nLOGO\nRojo Polo Paella Inc.\nCarretera Muelle 38\n37531 Ávila, Ávila\nFACTURAR A\nENVIAR A\nNº DE FACTURA\nES-001\nLeda Villareal\nLeda Villareal\nFECHA\n29/01/2019\nVirgen Blanca 63\nCercas Bajas 68\n08759 Burgos, Burgos\n47300 Cádiz, Cádiz\nNº DE PEDIDO\n1730/2019\nFECHA VENCIMIENTO\n29/01/2019\nCANT.\nDESCRIPCIÓN\nPRECIO UNITARIO\nIMPORTE\n1\nTalla pequeña traje de luces en rojo\n100.00\n100.00\n2\nMui grande churrolito\n25.00\n50.00\n3\nEquipaje de Fútbol\n5.00\n15.00\nSubtotal\n165.00\nIVA 21.0%\n34.65\nTOTAL\n199.65 €\n0\nLaura García\nCONDICIONES Y FORMA DE PAGO\nEl pago se realizará en un plazo de 15 días\nGracias\nBanco Santander\nIBAN: ES12 3456 7891\nSWIFT/BIC: ABCDESM1XXX",
+  "pages": [
+    {
+      "pageNumber": 1,
+      "angle": 0,
+      "width": 750,
+      "height": 1061,
+      "unit": "pixel",
+      "words": [
+        {
+          "content": "FACTURA",
+          "polygon": [
+            49,
+            47,
+            256,
+            43,
+            260,
+            104,
+            49,
+            105
+          ],
+          "confidence": 0.994,
+          "span": {
+            "offset": 0,
+            "length": 7
+          }
+        },
+        {
+          "content": "LOGO",
+          "polygon": [
+            617,
+            78,
+            684,
+            78,
+            684,
+            105,
+            617,
+            105
+          ],
+          "confidence": 0.99,
+          "span": {
+            "offset": 8,
+            "length": 4
+          }
+        },
+        {
+          "content": "Rojo",
+          "polygon": [
+            53,
+            128,
+            81,
+            128,
+            82,
+            143,
+            54,
+            143
+          ],
+          "confidence": 0.992,
+          "span": {
+            "offset": 13,
+            "length": 4
+          }
+        },
+        {
+          "content": "Polo",
+          "polygon": [
+            84,
+            128,
+            112,
+            128,
+            113,
+            143,
+            85,
+            143
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 18,
+            "length": 4
+          }
+        },
+        {
+          "content": "Paella",
+          "polygon": [
+            115,
+            128,
+            152,
+            128,
+            152,
+            143,
+            116,
+            143
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 23,
+            "length": 6
+          }
+        },
+        {
+          "content": "Inc.",
+          "polygon": [
+            155,
+            128,
+            179,
+            128,
+            179,
+            143,
+            155,
+            143
+          ],
+          "confidence": 0.975,
+          "span": {
+            "offset": 30,
+            "length": 4
+          }
+        },
+        {
+          "content": "Carretera",
+          "polygon": [
+            53,
+            149,
+            106,
+            150,
+            106,
+            164,
+            54,
+            164
+          ],
+          "confidence": 0.986,
+          "span": {
+            "offset": 35,
+            "length": 9
+          }
+        },
+        {
+          "content": "Muelle",
+          "polygon": [
+            109,
+            150,
+            147,
+            150,
+            148,
+            164,
+            109,
+            164
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 45,
+            "length": 6
+          }
+        },
+        {
+          "content": "38",
+          "polygon": [
+            151,
+            150,
+            166,
+            149,
+            166,
+            164,
+            151,
+            164
+          ],
+          "confidence": 0.996,
+          "span": {
+            "offset": 52,
+            "length": 2
+          }
+        },
+        {
+          "content": "37531",
+          "polygon": [
+            53,
+            167,
+            89,
+            167,
+            89,
+            183,
+            54,
+            182
+          ],
+          "confidence": 0.994,
+          "span": {
+            "offset": 55,
+            "length": 5
+          }
+        },
+        {
+          "content": "Ávila,",
+          "polygon": [
+            92,
+            167,
+            124,
+            167,
+            124,
+            183,
+            92,
+            183
+          ],
+          "confidence": 0.961,
+          "span": {
+            "offset": 61,
+            "length": 6
+          }
+        },
+        {
+          "content": "Ávila",
+          "polygon": [
+            127,
+            167,
+            155,
+            167,
+            155,
+            182,
+            127,
+            183
+          ],
+          "confidence": 0.974,
+          "span": {
+            "offset": 68,
+            "length": 5
+          }
+        },
+        {
+          "content": "FACTURAR",
+          "polygon": [
+            53,
+            206,
+            113,
+            206,
+            113,
+            227,
+            53,
+            227
+          ],
+          "confidence": 0.994,
+          "span": {
+            "offset": 74,
+            "length": 8
+          }
+        },
+        {
+          "content": "A",
+          "polygon": [
+            117,
+            206,
+            128,
+            206,
+            128,
+            227,
+            117,
+            227
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 83,
+            "length": 1
+          }
+        },
+        {
+          "content": "ENVIAR",
+          "polygon": [
+            261,
+            206,
+            305,
+            206,
+            305,
+            226,
+            261,
+            225
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 85,
+            "length": 6
+          }
+        },
+        {
+          "content": "A",
+          "polygon": [
+            309,
+            206,
+            319,
+            206,
+            318,
+            226,
+            309,
+            226
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 92,
+            "length": 1
+          }
+        },
+        {
+          "content": "Nº",
+          "polygon": [
+            459,
+            205,
+            471,
+            205,
+            471,
+            227,
+            459,
+            227
+          ],
+          "confidence": 0.541,
+          "span": {
+            "offset": 94,
+            "length": 2
+          }
+        },
+        {
+          "content": "DE",
+          "polygon": [
+            475,
+            205,
+            490,
+            205,
+            490,
+            227,
+            475,
+            227
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 97,
+            "length": 2
+          }
+        },
+        {
+          "content": "FACTURA",
+          "polygon": [
+            495,
+            205,
+            554,
+            205,
+            554,
+            227,
+            495,
+            227
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 100,
+            "length": 7
+          }
+        },
+        {
+          "content": "ES-001",
+          "polygon": [
+            653,
+            212,
+            696,
+            212,
+            696,
+            227,
+            653,
+            226
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 108,
+            "length": 6
+          }
+        },
+        {
+          "content": "Leda",
+          "polygon": [
+            52,
+            234,
+            82,
+            234,
+            82,
+            249,
+            53,
+            249
+          ],
+          "confidence": 0.992,
+          "span": {
+            "offset": 115,
+            "length": 4
+          }
+        },
+        {
+          "content": "Villareal",
+          "polygon": [
+            85,
+            234,
+            132,
+            234,
+            133,
+            249,
+            85,
+            249
+          ],
+          "confidence": 0.992,
+          "span": {
+            "offset": 120,
+            "length": 9
+          }
+        },
+        {
+          "content": "Leda",
+          "polygon": [
+            261,
+            235,
+            290,
+            234,
+            290,
+            248,
+            261,
+            248
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 130,
+            "length": 4
+          }
+        },
+        {
+          "content": "Villareal",
+          "polygon": [
+            293,
+            234,
+            340,
+            234,
+            340,
+            249,
+            293,
+            249
+          ],
+          "confidence": 0.99,
+          "span": {
+            "offset": 135,
+            "length": 9
+          }
+        },
+        {
+          "content": "FECHA",
+          "polygon": [
+            460,
+            231,
+            501,
+            230,
+            501,
+            252,
+            460,
+            253
+          ],
+          "confidence": 0.994,
+          "span": {
+            "offset": 145,
+            "length": 5
+          }
+        },
+        {
+          "content": "29/01/2019",
+          "polygon": [
+            632,
+            237,
+            696,
+            238,
+            696,
+            253,
+            632,
+            252
+          ],
+          "confidence": 0.994,
+          "span": {
+            "offset": 151,
+            "length": 10
+          }
+        },
+        {
+          "content": "Virgen",
+          "polygon": [
+            53,
+            252,
+            90,
+            252,
+            90,
+            268,
+            53,
+            268
+          ],
+          "confidence": 0.994,
+          "span": {
+            "offset": 162,
+            "length": 6
+          }
+        },
+        {
+          "content": "Blanca",
+          "polygon": [
+            93,
+            252,
+            132,
+            252,
+            132,
+            267,
+            93,
+            268
+          ],
+          "confidence": 0.994,
+          "span": {
+            "offset": 169,
+            "length": 6
+          }
+        },
+        {
+          "content": "63",
+          "polygon": [
+            135,
+            253,
+            151,
+            253,
+            151,
+            267,
+            135,
+            267
+          ],
+          "confidence": 0.996,
+          "span": {
+            "offset": 176,
+            "length": 2
+          }
+        },
+        {
+          "content": "Cercas",
+          "polygon": [
+            261,
+            252,
+            301,
+            252,
+            301,
+            268,
+            262,
+            268
+          ],
+          "confidence": 0.994,
+          "span": {
+            "offset": 179,
+            "length": 6
+          }
+        },
+        {
+          "content": "Bajas",
+          "polygon": [
+            304,
+            252,
+            336,
+            252,
+            337,
+            268,
+            304,
+            268
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 186,
+            "length": 5
+          }
+        },
+        {
+          "content": "68",
+          "polygon": [
+            339,
+            252,
+            355,
+            252,
+            355,
+            268,
+            340,
+            268
+          ],
+          "confidence": 0.996,
+          "span": {
+            "offset": 192,
+            "length": 2
+          }
+        },
+        {
+          "content": "08759",
+          "polygon": [
+            53,
+            270,
+            88,
+            270,
+            88,
+            286,
+            53,
+            285
+          ],
+          "confidence": 0.994,
+          "span": {
+            "offset": 195,
+            "length": 5
+          }
+        },
+        {
+          "content": "Burgos,",
+          "polygon": [
+            91,
+            270,
+            135,
+            271,
+            136,
+            287,
+            92,
+            286
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 201,
+            "length": 7
+          }
+        },
+        {
+          "content": "Burgos",
+          "polygon": [
+            138,
+            271,
+            180,
+            271,
+            180,
+            287,
+            139,
+            287
+          ],
+          "confidence": 0.994,
+          "span": {
+            "offset": 209,
+            "length": 6
+          }
+        },
+        {
+          "content": "47300",
+          "polygon": [
+            261,
+            270,
+            297,
+            270,
+            297,
+            285,
+            262,
+            285
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 216,
+            "length": 5
+          }
+        },
+        {
+          "content": "Cádiz,",
+          "polygon": [
+            300,
+            270,
+            336,
+            270,
+            336,
+            285,
+            300,
+            285
+          ],
+          "confidence": 0.989,
+          "span": {
+            "offset": 222,
+            "length": 6
+          }
+        },
+        {
+          "content": "Cádiz",
+          "polygon": [
+            339,
+            270,
+            373,
+            270,
+            373,
+            285,
+            339,
+            285
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 229,
+            "length": 5
+          }
+        },
+        {
+          "content": "Nº",
+          "polygon": [
+            459,
+            258,
+            473,
+            258,
+            473,
+            278,
+            460,
+            278
+          ],
+          "confidence": 0.55,
+          "span": {
+            "offset": 235,
+            "length": 2
+          }
+        },
+        {
+          "content": "DE",
+          "polygon": [
+            477,
+            258,
+            492,
+            259,
+            492,
+            278,
+            477,
+            278
+          ],
+          "confidence": 0.996,
+          "span": {
+            "offset": 238,
+            "length": 2
+          }
+        },
+        {
+          "content": "PEDIDO",
+          "polygon": [
+            495,
+            259,
+            541,
+            259,
+            541,
+            278,
+            496,
+            278
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 241,
+            "length": 6
+          }
+        },
+        {
+          "content": "1730/2019",
+          "polygon": [
+            637,
+            263,
+            696,
+            264,
+            696,
+            278,
+            637,
+            278
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 248,
+            "length": 9
+          }
+        },
+        {
+          "content": "FECHA",
+          "polygon": [
+            459,
+            283,
+            498,
+            283,
+            498,
+            305,
+            459,
+            305
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 258,
+            "length": 5
+          }
+        },
+        {
+          "content": "VENCIMIENTO",
+          "polygon": [
+            502,
+            283,
+            587,
+            283,
+            587,
+            306,
+            502,
+            305
+          ],
+          "confidence": 0.973,
+          "span": {
+            "offset": 264,
+            "length": 11
+          }
+        },
+        {
+          "content": "29/01/2019",
+          "polygon": [
+            632,
+            289,
+            696,
+            290,
+            696,
+            304,
+            632,
+            305
+          ],
+          "confidence": 0.994,
+          "span": {
+            "offset": 276,
+            "length": 10
+          }
+        },
+        {
+          "content": "CANT.",
+          "polygon": [
+            67,
+            346,
+            104,
+            346,
+            104,
+            365,
+            67,
+            365
+          ],
+          "confidence": 0.974,
+          "span": {
+            "offset": 287,
+            "length": 5
+          }
+        },
+        {
+          "content": "DESCRIPCIÓN",
+          "polygon": [
+            223,
+            345,
+            304,
+            344,
+            304,
+            366,
+            223,
+            366
+          ],
+          "confidence": 0.962,
+          "span": {
+            "offset": 293,
+            "length": 11
+          }
+        },
+        {
+          "content": "PRECIO",
+          "polygon": [
+            420,
+            346,
+            460,
+            346,
+            460,
+            366,
+            420,
+            366
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 305,
+            "length": 6
+          }
+        },
+        {
+          "content": "UNITARIO",
+          "polygon": [
+            464,
+            346,
+            522,
+            346,
+            522,
+            366,
+            464,
+            366
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 312,
+            "length": 8
+          }
+        },
+        {
+          "content": "IMPORTE",
+          "polygon": [
+            630,
+            346,
+            686,
+            347,
+            686,
+            366,
+            630,
+            365
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 321,
+            "length": 7
+          }
+        },
+        {
+          "content": "1",
+          "polygon": [
+            82,
+            383,
+            89,
+            383,
+            89,
+            396,
+            82,
+            396
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 329,
+            "length": 1
+          }
+        },
+        {
+          "content": "Talla",
+          "polygon": [
+            127,
+            383,
+            154,
+            383,
+            154,
+            399,
+            128,
+            399
+          ],
+          "confidence": 0.994,
+          "span": {
+            "offset": 331,
+            "length": 5
+          }
+        },
+        {
+          "content": "pequeña",
+          "polygon": [
+            157,
+            383,
+            206,
+            383,
+            207,
+            399,
+            157,
+            399
+          ],
+          "confidence": 0.931,
+          "span": {
+            "offset": 337,
+            "length": 7
+          }
+        },
+        {
+          "content": "traje",
+          "polygon": [
+            209,
+            383,
+            235,
+            383,
+            235,
+            399,
+            210,
+            399
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 345,
+            "length": 5
+          }
+        },
+        {
+          "content": "de",
+          "polygon": [
+            238,
+            383,
+            251,
+            383,
+            252,
+            399,
+            238,
+            399
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 351,
+            "length": 2
+          }
+        },
+        {
+          "content": "luces",
+          "polygon": [
+            254,
+            383,
+            285,
+            383,
+            285,
+            400,
+            255,
+            399
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 354,
+            "length": 5
+          }
+        },
+        {
+          "content": "en",
+          "polygon": [
+            288,
+            383,
+            302,
+            383,
+            302,
+            400,
+            288,
+            400
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 360,
+            "length": 2
+          }
+        },
+        {
+          "content": "rojo",
+          "polygon": [
+            305,
+            383,
+            329,
+            384,
+            329,
+            400,
+            305,
+            400
+          ],
+          "confidence": 0.991,
+          "span": {
+            "offset": 363,
+            "length": 4
+          }
+        },
+        {
+          "content": "100.00",
+          "polygon": [
+            484,
+            383,
+            521,
+            383,
+            521,
+            397,
+            484,
+            397
+          ],
+          "confidence": 0.975,
+          "span": {
+            "offset": 368,
+            "length": 6
+          }
+        },
+        {
+          "content": "100.00",
+          "polygon": [
+            648,
+            383,
+            686,
+            383,
+            686,
+            397,
+            648,
+            397
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 375,
+            "length": 6
+          }
+        },
+        {
+          "content": "2",
+          "polygon": [
+            83,
+            416,
+            90,
+            416,
+            90,
+            430,
+            83,
+            430
+          ],
+          "confidence": 0.997,
+          "span": {
+            "offset": 382,
+            "length": 1
+          }
+        },
+        {
+          "content": "Mui",
+          "polygon": [
+            126,
+            416,
+            147,
+            416,
+            148,
+            432,
+            126,
+            431
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 384,
+            "length": 3
+          }
+        },
+        {
+          "content": "grande",
+          "polygon": [
+            150,
+            416,
+            190,
+            416,
+            190,
+            432,
+            151,
+            432
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 388,
+            "length": 6
+          }
+        },
+        {
+          "content": "churrolito",
+          "polygon": [
+            193,
+            416,
+            247,
+            416,
+            247,
+            432,
+            193,
+            432
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 395,
+            "length": 10
+          }
+        },
+        {
+          "content": "25.00",
+          "polygon": [
+            491,
+            415,
+            522,
+            415,
+            522,
+            429,
+            491,
+            430
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 406,
+            "length": 5
+          }
+        },
+        {
+          "content": "50.00",
+          "polygon": [
+            654,
+            416,
+            685,
+            416,
+            685,
+            429,
+            654,
+            429
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 412,
+            "length": 5
+          }
+        },
+        {
+          "content": "3",
+          "polygon": [
+            83,
+            448,
+            89,
+            448,
+            89,
+            461,
+            83,
+            461
+          ],
+          "confidence": 0.997,
+          "span": {
+            "offset": 418,
+            "length": 1
+          }
+        },
+        {
+          "content": "Equipaje",
+          "polygon": [
+            126,
+            448,
+            175,
+            448,
+            175,
+            465,
+            126,
+            465
+          ],
+          "confidence": 0.994,
+          "span": {
+            "offset": 420,
+            "length": 8
+          }
+        },
+        {
+          "content": "de",
+          "polygon": [
+            178,
+            448,
+            193,
+            448,
+            193,
+            465,
+            178,
+            465
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 429,
+            "length": 2
+          }
+        },
+        {
+          "content": "Fútbol",
+          "polygon": [
+            197,
+            448,
+            235,
+            448,
+            234,
+            465,
+            197,
+            465
+          ],
+          "confidence": 0.72,
+          "span": {
+            "offset": 432,
+            "length": 6
+          }
+        },
+        {
+          "content": "5.00",
+          "polygon": [
+            497,
+            449,
+            522,
+            449,
+            522,
+            463,
+            496,
+            462
+          ],
+          "confidence": 0.994,
+          "span": {
+            "offset": 439,
+            "length": 4
+          }
+        },
+        {
+          "content": "15.00",
+          "polygon": [
+            654,
+            448,
+            685,
+            448,
+            685,
+            462,
+            655,
+            462
+          ],
+          "confidence": 0.994,
+          "span": {
+            "offset": 444,
+            "length": 5
+          }
+        },
+        {
+          "content": "Subtotal",
+          "polygon": [
+            475,
+            493,
+            523,
+            492,
+            523,
+            507,
+            475,
+            506
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 450,
+            "length": 8
+          }
+        },
+        {
+          "content": "165.00",
+          "polygon": [
+            648,
+            492,
+            685,
+            492,
+            685,
+            506,
+            648,
+            506
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 459,
+            "length": 6
+          }
+        },
+        {
+          "content": "IVA",
+          "polygon": [
+            461,
+            525,
+            481,
+            525,
+            481,
+            539,
+            461,
+            538
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 466,
+            "length": 3
+          }
+        },
+        {
+          "content": "21.0%",
+          "polygon": [
+            486,
+            525,
+            522,
+            525,
+            522,
+            540,
+            486,
+            539
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 470,
+            "length": 5
+          }
+        },
+        {
+          "content": "34.65",
+          "polygon": [
+            654,
+            524,
+            686,
+            524,
+            686,
+            539,
+            654,
+            539
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 476,
+            "length": 5
+          }
+        },
+        {
+          "content": "TOTAL",
+          "polygon": [
+            480,
+            554,
+            523,
+            554,
+            523,
+            575,
+            480,
+            575
+          ],
+          "confidence": 0.994,
+          "span": {
+            "offset": 482,
+            "length": 5
+          }
+        },
+        {
+          "content": "199.65",
+          "polygon": [
+            624,
+            555,
+            671,
+            554,
+            671,
+            576,
+            624,
+            575
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 488,
+            "length": 6
+          }
+        },
+        {
+          "content": "€",
+          "polygon": [
+            675,
+            554,
+            687,
+            554,
+            687,
+            576,
+            675,
+            576
+          ],
+          "confidence": 0.994,
+          "span": {
+            "offset": 495,
+            "length": 1
+          }
+        },
+        {
+          "content": "0",
+          "polygon": [
+            563,
+            619,
+            590,
+            621,
+            586,
+            670,
+            559,
+            668
+          ],
+          "confidence": 0.417,
+          "span": {
+            "offset": 497,
+            "length": 1
+          }
+        },
+        {
+          "content": "Laura",
+          "polygon": [
+            534,
+            667,
+            605,
+            662,
+            606,
+            710,
+            536,
+            716
+          ],
+          "confidence": 0.633,
+          "span": {
+            "offset": 499,
+            "length": 5
+          }
+        },
+        {
+          "content": "García",
+          "polygon": [
+            614,
+            662,
+            693,
+            662,
+            692,
+            707,
+            615,
+            709
+          ],
+          "confidence": 0.304,
+          "span": {
+            "offset": 505,
+            "length": 6
+          }
+        },
+        {
+          "content": "CONDICIONES",
+          "polygon": [
+            388,
+            871,
+            466,
+            872,
+            466,
+            892,
+            388,
+            892
+          ],
+          "confidence": 0.99,
+          "span": {
+            "offset": 512,
+            "length": 11
+          }
+        },
+        {
+          "content": "Y",
+          "polygon": [
+            470,
+            872,
+            477,
+            872,
+            477,
+            892,
+            470,
+            892
+          ],
+          "confidence": 0.948,
+          "span": {
+            "offset": 524,
+            "length": 1
+          }
+        },
+        {
+          "content": "FORMA",
+          "polygon": [
+            481,
+            872,
+            522,
+            871,
+            522,
+            892,
+            481,
+            892
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 526,
+            "length": 5
+          }
+        },
+        {
+          "content": "DE",
+          "polygon": [
+            526,
+            871,
+            541,
+            871,
+            541,
+            892,
+            526,
+            892
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 532,
+            "length": 2
+          }
+        },
+        {
+          "content": "PAGO",
+          "polygon": [
+            546,
+            871,
+            579,
+            871,
+            579,
+            893,
+            546,
+            892
+          ],
+          "confidence": 0.99,
+          "span": {
+            "offset": 535,
+            "length": 4
+          }
+        },
+        {
+          "content": "El",
+          "polygon": [
+            388,
+            920,
+            399,
+            920,
+            399,
+            937,
+            388,
+            937
+          ],
+          "confidence": 0.878,
+          "span": {
+            "offset": 540,
+            "length": 2
+          }
+        },
+        {
+          "content": "pago",
+          "polygon": [
+            402,
+            920,
+            431,
+            920,
+            431,
+            937,
+            402,
+            937
+          ],
+          "confidence": 0.986,
+          "span": {
+            "offset": 543,
+            "length": 4
+          }
+        },
+        {
+          "content": "se",
+          "polygon": [
+            434,
+            920,
+            446,
+            920,
+            447,
+            937,
+            434,
+            937
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 548,
+            "length": 2
+          }
+        },
+        {
+          "content": "realizará",
+          "polygon": [
+            450,
+            920,
+            500,
+            920,
+            500,
+            937,
+            450,
+            937
+          ],
+          "confidence": 0.969,
+          "span": {
+            "offset": 551,
+            "length": 9
+          }
+        },
+        {
+          "content": "en",
+          "polygon": [
+            503,
+            920,
+            517,
+            920,
+            518,
+            937,
+            503,
+            937
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 561,
+            "length": 2
+          }
+        },
+        {
+          "content": "un",
+          "polygon": [
+            521,
+            920,
+            534,
+            920,
+            534,
+            937,
+            521,
+            937
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 564,
+            "length": 2
+          }
+        },
+        {
+          "content": "plazo",
+          "polygon": [
+            537,
+            920,
+            568,
+            920,
+            569,
+            937,
+            537,
+            937
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 567,
+            "length": 5
+          }
+        },
+        {
+          "content": "de",
+          "polygon": [
+            572,
+            920,
+            587,
+            920,
+            587,
+            936,
+            572,
+            936
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 573,
+            "length": 2
+          }
+        },
+        {
+          "content": "15",
+          "polygon": [
+            591,
+            920,
+            603,
+            920,
+            603,
+            936,
+            591,
+            936
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 576,
+            "length": 2
+          }
+        },
+        {
+          "content": "días",
+          "polygon": [
+            606,
+            919,
+            633,
+            919,
+            633,
+            936,
+            606,
+            936
+          ],
+          "confidence": 0.883,
+          "span": {
+            "offset": 579,
+            "length": 4
+          }
+        },
+        {
+          "content": "Gracias",
+          "polygon": [
+            204,
+            955,
+            371,
+            954,
+            372,
+            1017,
+            205,
+            1019
+          ],
+          "confidence": 0.864,
+          "span": {
+            "offset": 584,
+            "length": 7
+          }
+        },
+        {
+          "content": "Banco",
+          "polygon": [
+            389,
+            956,
+            424,
+            957,
+            424,
+            971,
+            389,
+            971
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 592,
+            "length": 5
+          }
+        },
+        {
+          "content": "Santander",
+          "polygon": [
+            428,
+            957,
+            488,
+            957,
+            488,
+            971,
+            428,
+            971
+          ],
+          "confidence": 0.99,
+          "span": {
+            "offset": 598,
+            "length": 9
+          }
+        },
+        {
+          "content": "IBAN:",
+          "polygon": [
+            390,
+            975,
+            422,
+            974,
+            422,
+            990,
+            390,
+            989
+          ],
+          "confidence": 0.875,
+          "span": {
+            "offset": 608,
+            "length": 5
+          }
+        },
+        {
+          "content": "ES12",
+          "polygon": [
+            425,
+            974,
+            457,
+            974,
+            457,
+            990,
+            425,
+            990
+          ],
+          "confidence": 0.99,
+          "span": {
+            "offset": 614,
+            "length": 4
+          }
+        },
+        {
+          "content": "3456",
+          "polygon": [
+            460,
+            974,
+            489,
+            974,
+            489,
+            990,
+            460,
+            990
+          ],
+          "confidence": 0.969,
+          "span": {
+            "offset": 619,
+            "length": 4
+          }
+        },
+        {
+          "content": "7891",
+          "polygon": [
+            492,
+            974,
+            520,
+            974,
+            520,
+            989,
+            492,
+            990
+          ],
+          "confidence": 0.981,
+          "span": {
+            "offset": 624,
+            "length": 4
+          }
+        },
+        {
+          "content": "SWIFT/BIC:",
+          "polygon": [
+            390,
+            992,
+            456,
+            992,
+            456,
+            1007,
+            390,
+            1007
+          ],
+          "confidence": 0.977,
+          "span": {
+            "offset": 629,
+            "length": 10
+          }
+        },
+        {
+          "content": "ABCDESM1XXX",
+          "polygon": [
+            459,
+            992,
+            555,
+            992,
+            555,
+            1008,
+            459,
+            1007
+          ],
+          "confidence": 0.986,
+          "span": {
+            "offset": 640,
+            "length": 11
+          }
+        }
+      ],
+      "lines": [
+        {
+          "content": "FACTURA",
+          "polygon": [
+            49,
+            45,
+            259,
+            43,
+            260,
+            103,
+            49,
+            105
+          ],
+          "spans": [
+            {
+              "offset": 0,
+              "length": 7
+            }
+          ]
+        },
+        {
+          "content": "LOGO",
+          "polygon": [
+            616,
+            79,
+            687,
+            78,
+            687,
+            105,
+            617,
+            105
+          ],
+          "spans": [
+            {
+              "offset": 8,
+              "length": 4
+            }
+          ]
+        },
+        {
+          "content": "Rojo Polo Paella Inc.",
+          "polygon": [
+            52,
+            127,
+            179,
+            127,
+            179,
+            143,
+            52,
+            142
+          ],
+          "spans": [
+            {
+              "offset": 13,
+              "length": 21
+            }
+          ]
+        },
+        {
+          "content": "Carretera Muelle 38",
+          "polygon": [
+            52,
+            148,
+            166,
+            148,
+            166,
+            164,
+            52,
+            164
+          ],
+          "spans": [
+            {
+              "offset": 35,
+              "length": 19
+            }
+          ]
+        },
+        {
+          "content": "37531 Ávila, Ávila",
+          "polygon": [
+            52,
+            167,
+            154,
+            166,
+            154,
+            182,
+            52,
+            182
+          ],
+          "spans": [
+            {
+              "offset": 55,
+              "length": 18
+            }
+          ]
+        },
+        {
+          "content": "FACTURAR A",
+          "polygon": [
+            52,
+            205,
+            130,
+            205,
+            130,
+            226,
+            52,
+            226
+          ],
+          "spans": [
+            {
+              "offset": 74,
+              "length": 10
+            }
+          ]
+        },
+        {
+          "content": "ENVIAR A",
+          "polygon": [
+            260,
+            206,
+            319,
+            206,
+            319,
+            226,
+            260,
+            225
+          ],
+          "spans": [
+            {
+              "offset": 85,
+              "length": 8
+            }
+          ]
+        },
+        {
+          "content": "Nº DE FACTURA",
+          "polygon": [
+            457,
+            204,
+            554,
+            204,
+            554,
+            227,
+            457,
+            227
+          ],
+          "spans": [
+            {
+              "offset": 94,
+              "length": 13
+            }
+          ]
+        },
+        {
+          "content": "ES-001",
+          "polygon": [
+            651,
+            211,
+            696,
+            211,
+            696,
+            226,
+            651,
+            225
+          ],
+          "spans": [
+            {
+              "offset": 108,
+              "length": 6
+            }
+          ]
+        },
+        {
+          "content": "Leda Villareal",
+          "polygon": [
+            52,
+            233,
+            132,
+            233,
+            132,
+            248,
+            52,
+            248
+          ],
+          "spans": [
+            {
+              "offset": 115,
+              "length": 14
+            }
+          ]
+        },
+        {
+          "content": "Leda Villareal",
+          "polygon": [
+            260,
+            233,
+            339,
+            233,
+            339,
+            248,
+            260,
+            248
+          ],
+          "spans": [
+            {
+              "offset": 130,
+              "length": 14
+            }
+          ]
+        },
+        {
+          "content": "FECHA",
+          "polygon": [
+            459,
+            231,
+            503,
+            230,
+            503,
+            252,
+            459,
+            253
+          ],
+          "spans": [
+            {
+              "offset": 145,
+              "length": 5
+            }
+          ]
+        },
+        {
+          "content": "29/01/2019",
+          "polygon": [
+            631,
+            237,
+            697,
+            237,
+            697,
+            252,
+            631,
+            251
+          ],
+          "spans": [
+            {
+              "offset": 151,
+              "length": 10
+            }
+          ]
+        },
+        {
+          "content": "Virgen Blanca 63",
+          "polygon": [
+            52,
+            252,
+            151,
+            252,
+            151,
+            267,
+            52,
+            267
+          ],
+          "spans": [
+            {
+              "offset": 162,
+              "length": 16
+            }
+          ]
+        },
+        {
+          "content": "Cercas Bajas 68",
+          "polygon": [
+            260,
+            251,
+            356,
+            252,
+            355,
+            267,
+            260,
+            267
+          ],
+          "spans": [
+            {
+              "offset": 179,
+              "length": 15
+            }
+          ]
+        },
+        {
+          "content": "08759 Burgos, Burgos",
+          "polygon": [
+            52,
+            269,
+            180,
+            270,
+            180,
+            286,
+            52,
+            285
+          ],
+          "spans": [
+            {
+              "offset": 195,
+              "length": 20
+            }
+          ]
+        },
+        {
+          "content": "47300 Cádiz, Cádiz",
+          "polygon": [
+            261,
+            269,
+            373,
+            269,
+            373,
+            285,
+            261,
+            284
+          ],
+          "spans": [
+            {
+              "offset": 216,
+              "length": 18
+            }
+          ]
+        },
+        {
+          "content": "Nº DE PEDIDO",
+          "polygon": [
+            459,
+            258,
+            541,
+            258,
+            541,
+            277,
+            459,
+            277
+          ],
+          "spans": [
+            {
+              "offset": 235,
+              "length": 12
+            }
+          ]
+        },
+        {
+          "content": "1730/2019",
+          "polygon": [
+            635,
+            263,
+            697,
+            263,
+            697,
+            278,
+            635,
+            278
+          ],
+          "spans": [
+            {
+              "offset": 248,
+              "length": 9
+            }
+          ]
+        },
+        {
+          "content": "FECHA VENCIMIENTO",
+          "polygon": [
+            459,
+            282,
+            587,
+            282,
+            587,
+            305,
+            459,
+            305
+          ],
+          "spans": [
+            {
+              "offset": 258,
+              "length": 17
+            }
+          ]
+        },
+        {
+          "content": "29/01/2019",
+          "polygon": [
+            631,
+            289,
+            696,
+            289,
+            696,
+            304,
+            631,
+            304
+          ],
+          "spans": [
+            {
+              "offset": 276,
+              "length": 10
+            }
+          ]
+        },
+        {
+          "content": "CANT.",
+          "polygon": [
+            66,
+            347,
+            104,
+            346,
+            104,
+            365,
+            66,
+            364
+          ],
+          "spans": [
+            {
+              "offset": 287,
+              "length": 5
+            }
+          ]
+        },
+        {
+          "content": "DESCRIPCIÓN",
+          "polygon": [
+            222,
+            344,
+            304,
+            343,
+            304,
+            365,
+            223,
+            366
+          ],
+          "spans": [
+            {
+              "offset": 293,
+              "length": 11
+            }
+          ]
+        },
+        {
+          "content": "PRECIO UNITARIO",
+          "polygon": [
+            420,
+            345,
+            522,
+            346,
+            522,
+            365,
+            420,
+            365
+          ],
+          "spans": [
+            {
+              "offset": 305,
+              "length": 15
+            }
+          ]
+        },
+        {
+          "content": "IMPORTE",
+          "polygon": [
+            629,
+            346,
+            687,
+            346,
+            687,
+            365,
+            629,
+            365
+          ],
+          "spans": [
+            {
+              "offset": 321,
+              "length": 7
+            }
+          ]
+        },
+        {
+          "content": "1",
+          "polygon": [
+            82,
+            383,
+            89,
+            383,
+            90,
+            396,
+            82,
+            396
+          ],
+          "spans": [
+            {
+              "offset": 329,
+              "length": 1
+            }
+          ]
+        },
+        {
+          "content": "Talla pequeña traje de luces en rojo",
+          "polygon": [
+            125,
+            383,
+            329,
+            383,
+            329,
+            399,
+            125,
+            398
+          ],
+          "spans": [
+            {
+              "offset": 331,
+              "length": 36
+            }
+          ]
+        },
+        {
+          "content": "100.00",
+          "polygon": [
+            482,
+            383,
+            521,
+            383,
+            522,
+            397,
+            482,
+            397
+          ],
+          "spans": [
+            {
+              "offset": 368,
+              "length": 6
+            }
+          ]
+        },
+        {
+          "content": "100.00",
+          "polygon": [
+            645,
+            383,
+            686,
+            383,
+            687,
+            397,
+            646,
+            397
+          ],
+          "spans": [
+            {
+              "offset": 375,
+              "length": 6
+            }
+          ]
+        },
+        {
+          "content": "2",
+          "polygon": [
+            80,
+            416,
+            91,
+            416,
+            91,
+            430,
+            81,
+            430
+          ],
+          "spans": [
+            {
+              "offset": 382,
+              "length": 1
+            }
+          ]
+        },
+        {
+          "content": "Mui grande churrolito",
+          "polygon": [
+            125,
+            415,
+            247,
+            415,
+            247,
+            431,
+            125,
+            431
+          ],
+          "spans": [
+            {
+              "offset": 384,
+              "length": 21
+            }
+          ]
+        },
+        {
+          "content": "25.00",
+          "polygon": [
+            489,
+            417,
+            522,
+            415,
+            522,
+            430,
+            489,
+            429
+          ],
+          "spans": [
+            {
+              "offset": 406,
+              "length": 5
+            }
+          ]
+        },
+        {
+          "content": "50.00",
+          "polygon": [
+            652,
+            416,
+            686,
+            416,
+            687,
+            429,
+            652,
+            429
+          ],
+          "spans": [
+            {
+              "offset": 412,
+              "length": 5
+            }
+          ]
+        },
+        {
+          "content": "3",
+          "polygon": [
+            81,
+            448,
+            91,
+            448,
+            91,
+            461,
+            81,
+            461
+          ],
+          "spans": [
+            {
+              "offset": 418,
+              "length": 1
+            }
+          ]
+        },
+        {
+          "content": "Equipaje de Fútbol",
+          "polygon": [
+            125,
+            448,
+            235,
+            448,
+            235,
+            464,
+            125,
+            464
+          ],
+          "spans": [
+            {
+              "offset": 420,
+              "length": 18
+            }
+          ]
+        },
+        {
+          "content": "5.00",
+          "polygon": [
+            495,
+            449,
+            523,
+            449,
+            523,
+            463,
+            496,
+            462
+          ],
+          "spans": [
+            {
+              "offset": 439,
+              "length": 4
+            }
+          ]
+        },
+        {
+          "content": "15.00",
+          "polygon": [
+            653,
+            449,
+            687,
+            448,
+            687,
+            462,
+            653,
+            462
+          ],
+          "spans": [
+            {
+              "offset": 444,
+              "length": 5
+            }
+          ]
+        },
+        {
+          "content": "Subtotal",
+          "polygon": [
+            474,
+            492,
+            523,
+            492,
+            523,
+            506,
+            474,
+            506
+          ],
+          "spans": [
+            {
+              "offset": 450,
+              "length": 8
+            }
+          ]
+        },
+        {
+          "content": "165.00",
+          "polygon": [
+            646,
+            492,
+            686,
+            492,
+            686,
+            506,
+            647,
+            506
+          ],
+          "spans": [
+            {
+              "offset": 459,
+              "length": 6
+            }
+          ]
+        },
+        {
+          "content": "IVA 21.0%",
+          "polygon": [
+            461,
+            524,
+            522,
+            524,
+            521,
+            539,
+            461,
+            538
+          ],
+          "spans": [
+            {
+              "offset": 466,
+              "length": 9
+            }
+          ]
+        },
+        {
+          "content": "34.65",
+          "polygon": [
+            652,
+            524,
+            686,
+            524,
+            686,
+            539,
+            652,
+            539
+          ],
+          "spans": [
+            {
+              "offset": 476,
+              "length": 5
+            }
+          ]
+        },
+        {
+          "content": "TOTAL",
+          "polygon": [
+            478,
+            554,
+            523,
+            554,
+            523,
+            575,
+            478,
+            574
+          ],
+          "spans": [
+            {
+              "offset": 482,
+              "length": 5
+            }
+          ]
+        },
+        {
+          "content": "199.65 €",
+          "polygon": [
+            623,
+            554,
+            687,
+            554,
+            687,
+            575,
+            623,
+            575
+          ],
+          "spans": [
+            {
+              "offset": 488,
+              "length": 8
+            }
+          ]
+        },
+        {
+          "content": "0",
+          "polygon": [
+            561,
+            619,
+            600,
+            622,
+            596,
+            671,
+            558,
+            668
+          ],
+          "spans": [
+            {
+              "offset": 497,
+              "length": 1
+            }
+          ]
+        },
+        {
+          "content": "Laura García",
+          "polygon": [
+            532,
+            665,
+            694,
+            661,
+            695,
+            706,
+            534,
+            715
+          ],
+          "spans": [
+            {
+              "offset": 499,
+              "length": 12
+            }
+          ]
+        },
+        {
+          "content": "CONDICIONES Y FORMA DE PAGO",
+          "polygon": [
+            388,
+            871,
+            579,
+            871,
+            579,
+            892,
+            388,
+            892
+          ],
+          "spans": [
+            {
+              "offset": 512,
+              "length": 27
+            }
+          ]
+        },
+        {
+          "content": "El pago se realizará en un plazo de 15 días",
+          "polygon": [
+            387,
+            919,
+            633,
+            919,
+            633,
+            936,
+            387,
+            936
+          ],
+          "spans": [
+            {
+              "offset": 540,
+              "length": 43
+            }
+          ]
+        },
+        {
+          "content": "Gracias",
+          "polygon": [
+            193,
+            955,
+            375,
+            954,
+            373,
+            1016,
+            193,
+            1019
+          ],
+          "spans": [
+            {
+              "offset": 584,
+              "length": 7
+            }
+          ]
+        },
+        {
+          "content": "Banco Santander",
+          "polygon": [
+            389,
+            956,
+            488,
+            956,
+            488,
+            971,
+            389,
+            971
+          ],
+          "spans": [
+            {
+              "offset": 592,
+              "length": 15
+            }
+          ]
+        },
+        {
+          "content": "IBAN: ES12 3456 7891",
+          "polygon": [
+            390,
+            974,
+            520,
+            974,
+            520,
+            989,
+            390,
+            989
+          ],
+          "spans": [
+            {
+              "offset": 608,
+              "length": 20
+            }
+          ]
+        },
+        {
+          "content": "SWIFT/BIC: ABCDESM1XXX",
+          "polygon": [
+            389,
+            991,
+            556,
+            991,
+            556,
+            1007,
+            389,
+            1007
+          ],
+          "spans": [
+            {
+              "offset": 629,
+              "length": 22
+            }
+          ]
+        }
+      ],
+      "spans": [
+        {
+          "offset": 0,
+          "length": 651
+        }
+      ]
+    }
+  ],
+  "tables": [
+    {
+      "rowCount": 4,
+      "columnCount": 4,
+      "cells": [
+        {
+          "kind": "columnHeader",
+          "rowIndex": 0,
+          "columnIndex": 0,
+          "content": "CANT.",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                52,
+                339,
+                115,
+                339,
+                115,
+                372,
+                51,
+                372
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 287,
+              "length": 5
+            }
+          ]
+        },
+        {
+          "kind": "columnHeader",
+          "rowIndex": 0,
+          "columnIndex": 1,
+          "content": "DESCRIPCIÓN",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                115,
+                339,
+                373,
+                339,
+                373,
+                372,
+                115,
+                372
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 293,
+              "length": 11
+            }
+          ]
+        },
+        {
+          "kind": "columnHeader",
+          "rowIndex": 0,
+          "columnIndex": 2,
+          "content": "PRECIO UNITARIO",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                373,
+                339,
+                576,
+                338,
+                576,
+                372,
+                373,
+                372
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 305,
+              "length": 15
+            }
+          ]
+        },
+        {
+          "kind": "columnHeader",
+          "rowIndex": 0,
+          "columnIndex": 3,
+          "content": "IMPORTE",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                576,
+                338,
+                699,
+                339,
+                699,
+                372,
+                576,
+                372
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 321,
+              "length": 7
+            }
+          ]
+        },
+        {
+          "rowIndex": 1,
+          "columnIndex": 0,
+          "content": "1",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                51,
+                372,
+                115,
+                372,
+                114,
+                407,
+                51,
+                407
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 329,
+              "length": 1
+            }
+          ]
+        },
+        {
+          "rowIndex": 1,
+          "columnIndex": 1,
+          "content": "Talla pequeña traje de luces en rojo",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                115,
+                372,
+                373,
+                372,
+                373,
+                407,
+                114,
+                407
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 331,
+              "length": 36
+            }
+          ]
+        },
+        {
+          "rowIndex": 1,
+          "columnIndex": 2,
+          "content": "100.00",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                373,
+                372,
+                576,
+                372,
+                576,
+                407,
+                373,
+                407
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 368,
+              "length": 6
+            }
+          ]
+        },
+        {
+          "rowIndex": 1,
+          "columnIndex": 3,
+          "content": "100.00",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                576,
+                372,
+                699,
+                372,
+                699,
+                407,
+                576,
+                407
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 375,
+              "length": 6
+            }
+          ]
+        },
+        {
+          "rowIndex": 2,
+          "columnIndex": 0,
+          "content": "2",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                51,
+                407,
+                114,
+                407,
+                114,
+                439,
+                50,
+                439
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 382,
+              "length": 1
+            }
+          ]
+        },
+        {
+          "rowIndex": 2,
+          "columnIndex": 1,
+          "content": "Mui grande churrolito",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                114,
+                407,
+                373,
+                407,
+                373,
+                439,
+                114,
+                439
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 384,
+              "length": 21
+            }
+          ]
+        },
+        {
+          "rowIndex": 2,
+          "columnIndex": 2,
+          "content": "25.00",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                373,
+                407,
+                576,
+                407,
+                576,
+                439,
+                373,
+                439
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 406,
+              "length": 5
+            }
+          ]
+        },
+        {
+          "rowIndex": 2,
+          "columnIndex": 3,
+          "content": "50.00",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                576,
+                407,
+                699,
+                407,
+                699,
+                439,
+                576,
+                439
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 412,
+              "length": 5
+            }
+          ]
+        },
+        {
+          "rowIndex": 3,
+          "columnIndex": 0,
+          "content": "3",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                50,
+                439,
+                114,
+                439,
+                114,
+                475,
+                50,
+                475
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 418,
+              "length": 1
+            }
+          ]
+        },
+        {
+          "rowIndex": 3,
+          "columnIndex": 1,
+          "content": "Equipaje de Fútbol",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                114,
+                439,
+                373,
+                439,
+                373,
+                475,
+                114,
+                475
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 420,
+              "length": 18
+            }
+          ]
+        },
+        {
+          "rowIndex": 3,
+          "columnIndex": 2,
+          "content": "5.00",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                373,
+                439,
+                576,
+                439,
+                575,
+                475,
+                373,
+                475
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 439,
+              "length": 4
+            }
+          ]
+        },
+        {
+          "rowIndex": 3,
+          "columnIndex": 3,
+          "content": "15.00",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                576,
+                439,
+                699,
+                439,
+                699,
+                474,
+                575,
+                475
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 444,
+              "length": 5
+            }
+          ]
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            52,
+            338,
+            698,
+            338,
+            698,
+            473,
+            52,
+            473
+          ]
+        }
+      ],
+      "spans": [
+        {
+          "offset": 287,
+          "length": 162
+        }
+      ]
+    }
+  ],
+  "styles": [
+    {
+      "confidence": 0.3,
+      "spans": [
+        {
+          "offset": 329,
+          "length": 1
+        }
+      ],
+      "isHandwritten": true
+    },
+    {
+      "confidence": 1,
+      "spans": [
+        {
+          "offset": 497,
+          "length": 14
+        }
+      ],
+      "isHandwritten": true
+    }
+  ],
+  "documents": [
+    {
+      "docType": "invoice",
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            0,
+            0,
+            750,
+            0,
+            750,
+            1061,
+            0,
+            1061
+          ]
+        }
+      ],
+      "fields": {
+        "CustomerAddress": {
+          "type": "address",
+          "content": "Virgen Blanca 63\n08759 Burgos, Burgos",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                53,
+                252,
+                180,
+                252,
+                180,
+                287,
+                53,
+                287
+              ]
+            }
+          ],
+          "confidence": 0.34,
+          "spans": [
+            {
+              "offset": 162,
+              "length": 16
+            },
+            {
+              "offset": 195,
+              "length": 20
+            }
+          ],
+          "valueAddress": {
+            "houseNumber": "63",
+            "road": "Virgen Blanca",
+            "postalCode": "08759",
+            "city": "Burgos",
+            "state": "Burgos",
+            "streetAddress": "63 Virgen Blanca"
+          }
+        },
+        "CustomerAddressRecipient": {
+          "type": "string",
+          "valueString": "Leda Villareal",
+          "content": "Leda Villareal",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                52,
+                234,
+                133,
+                234,
+                133,
+                249,
+                52,
+                249
+              ]
+            }
+          ],
+          "confidence": 0.416,
+          "spans": [
+            {
+              "offset": 115,
+              "length": 14
+            }
+          ]
+        },
+        "CustomerName": {
+          "type": "string",
+          "valueString": "Leda Villareal",
+          "content": "Leda Villareal",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                52,
+                234,
+                133,
+                234,
+                133,
+                249,
+                52,
+                249
+              ]
+            }
+          ],
+          "confidence": 0.416,
+          "spans": [
+            {
+              "offset": 115,
+              "length": 14
+            }
+          ]
+        },
+        "DueDate": {
+          "type": "date",
+          "valueDate": "2019-01-29",
+          "content": "29/01/2019",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                632,
+                289,
+                696,
+                290,
+                696,
+                304,
+                632,
+                305
+              ]
+            }
+          ],
+          "confidence": 0.939,
+          "spans": [
+            {
+              "offset": 276,
+              "length": 10
+            }
+          ]
+        },
+        "InvoiceDate": {
+          "type": "date",
+          "valueDate": "2019-01-29",
+          "content": "29/01/2019",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                632,
+                237,
+                696,
+                238,
+                696,
+                253,
+                632,
+                252
+              ]
+            }
+          ],
+          "confidence": 0.967,
+          "spans": [
+            {
+              "offset": 151,
+              "length": 10
+            }
+          ]
+        },
+        "InvoiceId": {
+          "type": "string",
+          "valueString": "ES-001",
+          "content": "ES-001",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                653,
+                212,
+                696,
+                212,
+                696,
+                227,
+                653,
+                226
+              ]
+            }
+          ],
+          "confidence": 0.967,
+          "spans": [
+            {
+              "offset": 108,
+              "length": 6
+            }
+          ]
+        },
+        "InvoiceTotal": {
+          "type": "currency",
+          "valueCurrency": {
+            "currencySymbol": "€",
+            "amount": 199.65,
+            "currencyCode": "EUR"
+          },
+          "content": "199.65 €",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                624,
+                554,
+                687,
+                554,
+                687,
+                576,
+                624,
+                576
+              ]
+            }
+          ],
+          "confidence": 0.945,
+          "spans": [
+            {
+              "offset": 488,
+              "length": 8
+            }
+          ]
+        },
+        "Items": {
+          "type": "array",
+          "valueArray": [
+            {
+              "type": "object",
+              "valueObject": {
+                "Amount": {
+                  "type": "currency",
+                  "valueCurrency": {
+                    "amount": 100,
+                    "currencyCode": "EUR"
+                  },
+                  "content": "100.00",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        648,
+                        383,
+                        686,
+                        383,
+                        686,
+                        397,
+                        648,
+                        397
+                      ]
+                    }
+                  ],
+                  "confidence": 0.957,
+                  "spans": [
+                    {
+                      "offset": 375,
+                      "length": 6
+                    }
+                  ]
+                },
+                "Description": {
+                  "type": "string",
+                  "valueString": "Talla pequeña traje de luces en rojo",
+                  "content": "Talla pequeña traje de luces en rojo",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        127,
+                        383,
+                        329,
+                        383,
+                        329,
+                        400,
+                        127,
+                        400
+                      ]
+                    }
+                  ],
+                  "confidence": 0.956,
+                  "spans": [
+                    {
+                      "offset": 331,
+                      "length": 36
+                    }
+                  ]
+                },
+                "Quantity": {
+                  "type": "number",
+                  "valueNumber": 1,
+                  "content": "1",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        82,
+                        383,
+                        89,
+                        383,
+                        89,
+                        396,
+                        82,
+                        396
+                      ]
+                    }
+                  ],
+                  "confidence": 0.956,
+                  "spans": [
+                    {
+                      "offset": 329,
+                      "length": 1
+                    }
+                  ]
+                },
+                "UnitPrice": {
+                  "type": "currency",
+                  "valueCurrency": {
+                    "amount": 100,
+                    "currencyCode": "EUR"
+                  },
+                  "content": "100.00",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        484,
+                        383,
+                        521,
+                        383,
+                        521,
+                        397,
+                        484,
+                        397
+                      ]
+                    }
+                  ],
+                  "confidence": 0.957,
+                  "spans": [
+                    {
+                      "offset": 368,
+                      "length": 6
+                    }
+                  ]
+                }
+              },
+              "content": "1\nTalla pequeña traje de luces en rojo\n100.00\n100.00",
+              "boundingRegions": [
+                {
+                  "pageNumber": 1,
+                  "polygon": [
+                    82,
+                    383,
+                    686,
+                    383,
+                    686,
+                    400,
+                    82,
+                    400
+                  ]
+                }
+              ],
+              "confidence": 0.917,
+              "spans": [
+                {
+                  "offset": 329,
+                  "length": 52
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "valueObject": {
+                "Amount": {
+                  "type": "currency",
+                  "valueCurrency": {
+                    "amount": 50,
+                    "currencyCode": "EUR"
+                  },
+                  "content": "50.00",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        654,
+                        416,
+                        685,
+                        416,
+                        685,
+                        429,
+                        654,
+                        429
+                      ]
+                    }
+                  ],
+                  "confidence": 0.957,
+                  "spans": [
+                    {
+                      "offset": 412,
+                      "length": 5
+                    }
+                  ]
+                },
+                "Description": {
+                  "type": "string",
+                  "valueString": "Mui grande churrolito",
+                  "content": "Mui grande churrolito",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        126,
+                        416,
+                        247,
+                        416,
+                        247,
+                        432,
+                        126,
+                        432
+                      ]
+                    }
+                  ],
+                  "confidence": 0.956,
+                  "spans": [
+                    {
+                      "offset": 384,
+                      "length": 21
+                    }
+                  ]
+                },
+                "Quantity": {
+                  "type": "number",
+                  "valueNumber": 2,
+                  "content": "2",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        83,
+                        416,
+                        90,
+                        416,
+                        90,
+                        430,
+                        83,
+                        430
+                      ]
+                    }
+                  ],
+                  "confidence": 0.956,
+                  "spans": [
+                    {
+                      "offset": 382,
+                      "length": 1
+                    }
+                  ]
+                },
+                "UnitPrice": {
+                  "type": "currency",
+                  "valueCurrency": {
+                    "amount": 25,
+                    "currencyCode": "EUR"
+                  },
+                  "content": "25.00",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        491,
+                        415,
+                        522,
+                        415,
+                        522,
+                        429,
+                        491,
+                        430
+                      ]
+                    }
+                  ],
+                  "confidence": 0.957,
+                  "spans": [
+                    {
+                      "offset": 406,
+                      "length": 5
+                    }
+                  ]
+                }
+              },
+              "content": "2\nMui grande churrolito\n25.00\n50.00",
+              "boundingRegions": [
+                {
+                  "pageNumber": 1,
+                  "polygon": [
+                    83,
+                    415,
+                    685,
+                    415,
+                    685,
+                    432,
+                    83,
+                    432
+                  ]
+                }
+              ],
+              "confidence": 0.919,
+              "spans": [
+                {
+                  "offset": 382,
+                  "length": 35
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "valueObject": {
+                "Amount": {
+                  "type": "currency",
+                  "valueCurrency": {
+                    "amount": 15,
+                    "currencyCode": "EUR"
+                  },
+                  "content": "15.00",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        654,
+                        448,
+                        685,
+                        448,
+                        685,
+                        462,
+                        655,
+                        462
+                      ]
+                    }
+                  ],
+                  "confidence": 0.957,
+                  "spans": [
+                    {
+                      "offset": 444,
+                      "length": 5
+                    }
+                  ]
+                },
+                "Description": {
+                  "type": "string",
+                  "valueString": "Equipaje de Fútbol",
+                  "content": "Equipaje de Fútbol",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        126,
+                        448,
+                        235,
+                        448,
+                        235,
+                        465,
+                        126,
+                        465
+                      ]
+                    }
+                  ],
+                  "confidence": 0.958,
+                  "spans": [
+                    {
+                      "offset": 420,
+                      "length": 18
+                    }
+                  ]
+                },
+                "Quantity": {
+                  "type": "number",
+                  "valueNumber": 3,
+                  "content": "3",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        83,
+                        448,
+                        89,
+                        448,
+                        89,
+                        461,
+                        83,
+                        461
+                      ]
+                    }
+                  ],
+                  "confidence": 0.956,
+                  "spans": [
+                    {
+                      "offset": 418,
+                      "length": 1
+                    }
+                  ]
+                },
+                "UnitPrice": {
+                  "type": "currency",
+                  "valueCurrency": {
+                    "amount": 5,
+                    "currencyCode": "EUR"
+                  },
+                  "content": "5.00",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        497,
+                        449,
+                        522,
+                        449,
+                        522,
+                        463,
+                        496,
+                        462
+                      ]
+                    }
+                  ],
+                  "confidence": 0.957,
+                  "spans": [
+                    {
+                      "offset": 439,
+                      "length": 4
+                    }
+                  ]
+                }
+              },
+              "content": "3\nEquipaje de Fútbol\n5.00\n15.00",
+              "boundingRegions": [
+                {
+                  "pageNumber": 1,
+                  "polygon": [
+                    83,
+                    448,
+                    685,
+                    448,
+                    685,
+                    465,
+                    83,
+                    465
+                  ]
+                }
+              ],
+              "confidence": 0.914,
+              "spans": [
+                {
+                  "offset": 418,
+                  "length": 31
+                }
+              ]
+            }
+          ]
+        },
+        "PaymentDetails": {
+          "type": "array",
+          "valueArray": [
+            {
+              "type": "object",
+              "valueObject": {
+                "IBAN": {
+                  "type": "string",
+                  "valueString": "ES12 3456 7891",
+                  "content": "ES12 3456 7891",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        425,
+                        974,
+                        520,
+                        974,
+                        520,
+                        990,
+                        425,
+                        990
+                      ]
+                    }
+                  ],
+                  "confidence": 0.954,
+                  "spans": [
+                    {
+                      "offset": 614,
+                      "length": 14
+                    }
+                  ]
+                },
+                "SWIFT": {
+                  "type": "string",
+                  "valueString": "ABCDESM1XXX",
+                  "content": "ABCDESM1XXX",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        459,
+                        992,
+                        555,
+                        992,
+                        555,
+                        1008,
+                        459,
+                        1007
+                      ]
+                    }
+                  ],
+                  "confidence": 0.962,
+                  "spans": [
+                    {
+                      "offset": 640,
+                      "length": 11
+                    }
+                  ]
+                }
+              },
+              "confidence": 0.995
+            }
+          ]
+        },
+        "PaymentTerm": {
+          "type": "string",
+          "valueString": "El pago se realizará en un plazo de 15 días",
+          "content": "El pago se realizará en un plazo de 15 días",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                388,
+                919,
+                633,
+                919,
+                633,
+                937,
+                388,
+                937
+              ]
+            }
+          ],
+          "confidence": 0.44,
+          "spans": [
+            {
+              "offset": 540,
+              "length": 43
+            }
+          ]
+        },
+        "PurchaseOrder": {
+          "type": "string",
+          "valueString": "1730/2019",
+          "content": "1730/2019",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                637,
+                263,
+                696,
+                264,
+                696,
+                278,
+                637,
+                278
+              ]
+            }
+          ],
+          "confidence": 0.819,
+          "spans": [
+            {
+              "offset": 248,
+              "length": 9
+            }
+          ]
+        },
+        "ShippingAddress": {
+          "type": "address",
+          "content": "Cercas Bajas 68\n47300 Cádiz, Cádiz",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                261,
+                252,
+                373,
+                252,
+                373,
+                285,
+                261,
+                285
+              ]
+            }
+          ],
+          "confidence": 0.443,
+          "spans": [
+            {
+              "offset": 179,
+              "length": 15
+            },
+            {
+              "offset": 216,
+              "length": 18
+            }
+          ],
+          "valueAddress": {
+            "houseNumber": "68",
+            "road": "Cercas Bajas",
+            "postalCode": "47300",
+            "city": "Cádiz",
+            "streetAddress": "68 Cercas Bajas",
+            "stateDistrict": "Cádiz"
+          }
+        },
+        "ShippingAddressRecipient": {
+          "type": "string",
+          "valueString": "Leda Villareal",
+          "content": "Leda Villareal",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                261,
+                234,
+                340,
+                234,
+                340,
+                249,
+                261,
+                249
+              ]
+            }
+          ],
+          "confidence": 0.654,
+          "spans": [
+            {
+              "offset": 130,
+              "length": 14
+            }
+          ]
+        },
+        "SubTotal": {
+          "type": "currency",
+          "valueCurrency": {
+            "amount": 165,
+            "currencyCode": "EUR"
+          },
+          "content": "165.00",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                648,
+                492,
+                685,
+                492,
+                685,
+                506,
+                648,
+                506
+              ]
+            }
+          ],
+          "confidence": 0.967,
+          "spans": [
+            {
+              "offset": 459,
+              "length": 6
+            }
+          ]
+        },
+        "TaxDetails": {
+          "type": "array",
+          "valueArray": [
+            {
+              "type": "object",
+              "valueObject": {
+                "Amount": {
+                  "type": "currency",
+                  "valueCurrency": {
+                    "amount": 34.65,
+                    "currencyCode": "EUR"
+                  },
+                  "content": "34.65",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        654,
+                        524,
+                        686,
+                        524,
+                        686,
+                        539,
+                        654,
+                        539
+                      ]
+                    }
+                  ],
+                  "confidence": 0.954,
+                  "spans": [
+                    {
+                      "offset": 476,
+                      "length": 5
+                    }
+                  ]
+                },
+                "Rate": {
+                  "type": "string",
+                  "valueString": "21.0%",
+                  "content": "21.0%",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        486,
+                        525,
+                        522,
+                        525,
+                        522,
+                        540,
+                        486,
+                        539
+                      ]
+                    }
+                  ],
+                  "confidence": 0.955,
+                  "spans": [
+                    {
+                      "offset": 470,
+                      "length": 5
+                    }
+                  ]
+                }
+              },
+              "content": "IVA 21.0%\n34.65",
+              "boundingRegions": [
+                {
+                  "pageNumber": 1,
+                  "polygon": [
+                    461,
+                    521,
+                    686,
+                    524,
+                    686,
+                    542,
+                    461,
+                    539
+                  ]
+                }
+              ],
+              "confidence": 0.876,
+              "spans": [
+                {
+                  "offset": 466,
+                  "length": 15
+                }
+              ]
+            }
+          ]
+        },
+        "TotalTax": {
+          "type": "currency",
+          "valueCurrency": {
+            "amount": 34.65,
+            "currencyCode": "EUR"
+          },
+          "content": "34.65",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                654,
+                524,
+                686,
+                524,
+                686,
+                539,
+                654,
+                539
+              ]
+            }
+          ],
+          "confidence": 0.968,
+          "spans": [
+            {
+              "offset": 476,
+              "length": 5
+            }
+          ]
+        },
+        "VendorAddress": {
+          "type": "address",
+          "content": "Carretera Muelle 38\n37531 Ávila, Ávila",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                53,
+                149,
+                166,
+                149,
+                166,
+                183,
+                53,
+                183
+              ]
+            }
+          ],
+          "confidence": 0.686,
+          "spans": [
+            {
+              "offset": 35,
+              "length": 38
+            }
+          ],
+          "valueAddress": {
+            "houseNumber": "38",
+            "road": "Carretera Muelle",
+            "postalCode": "37531",
+            "city": "Ávila",
+            "streetAddress": "38 Carretera Muelle",
+            "stateDistrict": "Ávila"
+          }
+        },
+        "VendorAddressRecipient": {
+          "type": "string",
+          "valueString": "Rojo Polo Paella Inc.",
+          "content": "Rojo Polo Paella Inc.",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                53,
+                128,
+                179,
+                128,
+                179,
+                143,
+                53,
+                143
+              ]
+            }
+          ],
+          "confidence": 0.682,
+          "spans": [
+            {
+              "offset": 13,
+              "length": 21
+            }
+          ]
+        },
+        "VendorName": {
+          "type": "string",
+          "valueString": "LOGO",
+          "content": "LOGO",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                617,
+                78,
+                684,
+                78,
+                684,
+                105,
+                617,
+                105
+              ]
+            }
+          ],
+          "confidence": 0.601,
+          "spans": [
+            {
+              "offset": 8,
+              "length": 4
+            }
+          ]
+        }
+      },
+      "confidence": 1,
+      "spans": [
+        {
+          "offset": 0,
+          "length": 651
+        }
+      ]
+    }
+  ],
+  "contentFormat": "text"
+}

@@ -1,0 +1,475 @@
+# ORIÓN — ZONA ESTUDIO DE FLOTAS
+
+## Documento Maestro v2 (Definitivo con detalle funcional completo)
+
+---
+
+# 1. OBJETIVO DEL SISTEMA
+
+La Zona de Estudio de Flotas permite:
+
+* Recibir información de flotas (Excel, email, PDF)
+* Organizar y normalizar datos en entorno tipo Excel
+* Preparar consulta SINCO
+* Procesar resultados SINCO
+* Generar informe técnico estructurado
+* Construir oferta aseguradora final en Excel
+
+Todo ello manteniendo:
+
+* control humano total
+* compatibilidad absoluta con Excel real
+
+---
+
+# 2. FILOSOFÍA DE DISEÑO
+
+* UI tipo Excel real
+* Hojas navegables (tabs inferiores)
+* Celdas editables
+* Fórmulas visibles
+* Referencias entre hojas
+* Copy/Paste funcional
+* Automatización asistida (NO invasiva)
+
+---
+
+# 3. ESTRUCTURA DE HOJAS
+
+1. ORIGINAL
+2. TRABAJO
+3. SINCO
+4. RESULTADOS SINCO
+5. COBERTURAS
+6. INFORME
+7. OFERTA
+
+---
+
+# 4. HOJA ORIGINAL
+
+## Función
+
+Entrada de datos inicial.
+
+## Requisito crítico
+
+Antes de pegar o importar datos, la hoja YA debe contener columnas mínimas base.
+
+## Columnas mínimas predefinidas:
+
+* MATRÍCULA
+* MARCA_MODELO
+* TIPO_VEHICULO
+* COBERTURAS
+* FRANQUICIA
+* PRIMA_REFERENCIA
+* COMPAÑIA
+* Nº_POLIZA
+* AMBITO
+* FECHA_VENCIMIENTO
+
+## Notas
+
+* No forzar parsing automático de marca/modelo
+* Se permite información incompleta
+* Se permite columnas adicionales
+
+---
+
+# 5. HOJA TRABAJO
+
+## Función
+
+Zona principal de organización manual.
+
+## Proceso replicado:
+
+1. Copiar datos desde ORIGINAL
+2. Ordenar por columnas
+3. Verificar estructura
+4. Contar vehículos
+
+## Fórmulas clave
+
+### Total vehículos
+
+=CONTARA(A2:A1000)
+(Ajustar rango según columna matrícula)
+
+---
+
+## Normalización pólizas
+
+Crear columna:
+
+Nº_POLIZA_SINCO
+
+### Regla:
+
+* Extraer últimos 5 dígitos
+* Si faltan → rellenar con ceros a la izquierda
+
+Ejemplo:
+123 → 00123
+
+---
+
+# 6. HOJA SINCO
+
+## Función
+
+Preparación exacta de consulta SINCO
+
+## Columnas
+
+* Grupo_Consultante → "MMT"
+* Tipo_Documento:
+
+  * C = CIF/NIF
+  * P = Pasaporte
+  * R = NIE
+* Documento
+* Poliza (5 dígitos)
+* Matrícula
+
+---
+
+# 7. EXPORTACIÓN SINCO
+
+## Escenario objetivo (pendiente)
+
+* Exportación EXACTA con plantilla real
+* MISMO nombre de archivo
+* MISMA estructura
+
+## Escenario actual
+
+* Visualización en ORIÓN
+* Copy/Paste manual
+
+---
+
+# 8. INGESTA RESULTADOS SINCO
+
+## Columnas esperadas:
+
+* Codigo_Retorno
+* Mensaje
+* Num_Siniestros
+* Fec_Ini_Cobertura
+* Fec_Vcto
+* Tipo_Vehiculo
+* Tipo
+* Num_Garantias
+* Garantias
+* Siniestros
+
+---
+
+# 9. HOJA RESULTADOS SINCO
+
+## Cálculos exactos
+
+### Total matrículas
+
+=CONTARA(MATRICULA)
+
+---
+
+### Vehículos con SINCO
+
+=CONTARA(Codigo_Retorno)
+
+---
+
+### Total siniestros
+
+=SUMA(Num_Siniestros)
+
+---
+
+### Antigüedad (columna nueva)
+
+=(HOY()-Fec_Ini_Cobertura)/365,25
+
+---
+
+### Antigüedad media
+
+=PROMEDIO(columna_antigüedad)
+
+---
+
+### Siniestros por año
+
+=Total_Siniestros / Antigüedad_Media
+
+---
+
+### Frecuencia
+
+=(Siniestros/Año) / Vehículos_con_SINCO
+
+---
+
+# 10. HOJA COBERTURAS
+
+## Función
+
+Asignación manual estructurada
+
+## UX
+
+* Selector de coberturas
+* Visualización de detalle
+* Copy/Paste entre vehículos
+
+---
+
+# 11. DICCIONARIO COMPLETO DE COBERTURAS
+
+## PRODUCTOS
+
+* Terceros
+* Terceros ampliado
+* Todo riesgo con franquicia
+
+---
+
+## TERCEROS
+
+### Obligatorias
+
+* Responsabilidad civil obligatoria
+* Responsabilidad civil voluntaria (50M)
+* Defensa jurídica y reclamación
+* Seguro conductor 22.550€
+
+### Opcionales
+
+* Lunas (excepto remolques)
+* Animales
+* Asistencia (Oro / Oro+)
+
+---
+
+## TERCEROS AMPLIADO
+
+### Obligatorias
+
+* RC obligatoria
+* RC voluntaria
+* Defensa jurídica
+* Seguro conductor
+* Lunas
+* Robo
+* Incendio
+
+### Opcionales
+
+* Pérdida total (+12%)
+* Animales
+* Asistencia
+
+---
+
+## TODO RIESGO CON FRANQUICIA
+
+### Obligatorias
+
+* Todo lo anterior
+* Daños propios
+
+### Franquicias
+
+Primera categoría:
+120, 180, 240, 300, 450, 600, 750
+
+Segunda categoría:
+1800 únicamente
+
+---
+
+# 12. ASISTENCIA EN VIAJE
+
+## PRIMERA CATEGORÍA
+
+### Alcance
+
+Turismos, furgonetas ≤3500kg, motos, ciclomotores, remolques ≤750kg
+
+---
+
+### Incluye
+
+* Reparación in situ
+* Remolque hasta 150km
+* Rescate (600€ / ilimitado ORO+)
+* Repatriación
+* Hotel
+* Transporte
+* Gastos médicos
+* Asistencia a personas
+* Defensa legal
+* Custodia
+
+---
+
+### Diferencia ORO vs ORO+
+
+| Elemento  | ORO      | ORO+       |
+| --------- | -------- | ---------- |
+| Rescate   | 600€     | Ilimitado  |
+| Operativa | estándar | optimizada |
+
+---
+
+## SEGUNDA CATEGORÍA
+
+### Incluye
+
+* Reparación in situ (máx 3h)
+* Remolque (hasta 1500€)
+* Rescate (1500€)
+* Traslado vehículo
+* Custodia
+* Asistencia a personas
+* Gastos médicos (5000€)
+
+---
+
+# 13. PRICING
+
+## PRIMERA CATEGORÍA
+
+* Turismo (TA): 395€ (incluye asistencia)
+* Furgoneta (TA): 640€ (incluye asistencia)
+
+### Ajustes
+
+* Animales: +25€
+* Asistencia:
+
+  * Particular: +110€
+  * Transportes propios: +110€
+  * Servicio público: +160€
+
+---
+
+## SEGUNDA CATEGORÍA
+
+(Tabla base — obligatoria)
+
+### Ajustes
+
+* Asistencia:
+
+  * Nacional: +221€
+  * Internacional: +327€
+
+* Isotermo: +30%
+
+* Pérdida total: +12%
+
+* Industriales: 190€
+
+---
+
+# 14. REGLAS CRÍTICAS
+
+* Lunas NO en remolques
+* Franquicia solo en TR
+* 1800 solo segunda categoría
+* Asistencia separada (excepto turismo/furgoneta TA)
+* Isotermo +30%
+* Pérdida total +12%
+
+---
+
+# 15. HOJA INFORME
+
+## TABLA DINÁMICA
+
+* Columnas: Coberturas
+* Filas: Tipo vehículo
+* Valores: Nº vehículos
+
+---
+
+## BLOQUE SINCO
+
+Columnas:
+
+* VEHÍCULOS
+* VEHÍCULOS CON SINCO
+* SINIESTROS
+
+Filas:
+
+* AÑOS
+* SINIESTROS/AÑOS
+* FRECUENCIA
+
+---
+
+## BLOQUE PRIMAS
+
+### Primas solicitadas
+
+* Cobertura
+* Franquicia
+* Prima
+
+### Primas MMT
+
+* Cobertura ORIÓN
+* Franquicia
+* Prima editable
+
+---
+
+# 16. HOJA OFERTA
+
+## Requisitos
+
+* Excel descargable
+* Compatible 100%
+* Mejor presentación
+* Misma base que TRABAJO
+
+---
+
+# 17. OUTPUT DEL SISTEMA
+
+* Informe técnico
+* Oferta Excel
+* Datos SINCO
+* Métricas
+
+---
+
+# 18. PENDIENTES
+
+* Plantilla SINCO real
+* Ajustes visuales oferta
+* Posible leyenda asistencia
+
+---
+
+# 19. PROHIBICIONES
+
+* NO inventar estructura SINCO
+* NO modificar nombre archivo
+* NO automatizar parsing dudoso
+* NO eliminar control manual
+
+---
+
+# 20. CONCLUSIÓN
+
+Sistema de suscripción de flotas asistido, replicable y listo para implementación técnica sin ambigüedades.
+
+---
+
+**FIN — DOCUMENTO MAESTRO v2**

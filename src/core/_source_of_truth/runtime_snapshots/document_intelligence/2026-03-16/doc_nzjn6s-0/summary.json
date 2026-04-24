@@ -1,0 +1,35 @@
+{
+  "docId": "nzjn6s-0",
+  "createdAt": "2026-03-16T18:54:57.741Z",
+  "pageCount": 1,
+  "firstLines": [],
+  "usedModel": "prebuilt-read",
+  "detectedType": "UNKNOWN",
+  "documentType": "UNKNOWN",
+  "detectedTypeLocked": true,
+  "detectedTypeEvidence": {
+    "evidence": [
+      "NO_WINNER_FORCED_UNKNOWN"
+    ],
+    "scoreV1": 0,
+    "scoreV2": 0
+  },
+  "extractorUsed": "none",
+  "classifierEvidence": {
+    "evidence": [
+      "NO_WINNER_FORCED_UNKNOWN"
+    ],
+    "scoreV1": 0,
+    "scoreV2": 0
+  },
+  "ocrQuality": {
+    "ocrChars": 0,
+    "nonEmptyLines": 0,
+    "fieldsFoundCount": 0,
+    "quality": "low"
+  },
+  "extractedFields": {
+    "rawText": ""
+  },
+  "decoded": {}
+}

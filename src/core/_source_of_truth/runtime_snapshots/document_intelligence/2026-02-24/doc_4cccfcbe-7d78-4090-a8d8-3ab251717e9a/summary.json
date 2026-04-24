@@ -1,0 +1,168 @@
+{
+  "docId": "4cccfcbe-7d78-4090-a8d8-3ab251717e9a",
+  "createdAt": "2026-02-24T12:31:27.999Z",
+  "pageCount": 1,
+  "firstLines": [
+    "Región de Murcia",
+    "AR",
+    "AESPANAS",
+    "SANSP",
+    "Matricula",
+    "Certificado nº",
+    "Código",
+    "Descripción",
+    "Código",
+    "Descripción"
+  ],
+  "usedModel": "prebuilt-layout",
+  "ocrQuality": {
+    "ocrChars": 1851,
+    "nonEmptyLines": 150,
+    "fieldsFoundCount": 10,
+    "quality": "high"
+  },
+  "extractedFields": {
+    "plate": "2635 LTD",
+    "CL": "1000 TURISMO SIN ESPECIFICAR",
+    "CI": null,
+    "CV": null,
+    "D1": "SPOSITIVO DE ACOPLAMIENTO CON CH .: E13",
+    "D3": null,
+    "E": "WV2ZZZ7HZ6H012958",
+    "J": "M1",
+    "J1": null,
+    "J2": null,
+    "J3": null,
+    "F2": null,
+    "F4": null,
+    "F5": null,
+    "F6": null,
+    "P3": null,
+    "P1": null,
+    "P2": null,
+    "S1": null,
+    "observations": "Certifica que el vehículo cuyas \n características se reseñan es apto para su \n matriculación o puesta en circulación. \n SPARA \n A \n OR \n itv \n 3050 \n 2021",
+    "homologationOptions": "Opciones incluidas en la homologación de tipo \n Incorpora dispositivo de acoplamiento con CH .: e13 \n 00-1087 .-- \n Mod. TITVIA \n Ejemplar para el usuario",
+    "issueDateRaw": "/ 09/08/2021",
+    "issueDateISO": "2021-08-09T00:00:00.000Z",
+    "powerCv": null,
+    "_v2Debug": {
+      "invoked": true,
+      "bestSource": "pages.lines",
+      "fullTextLen": 1851,
+      "linesCount": 150,
+      "sampleFirst500": "REGIÓN DE MURCIA AR AESPANAS SANSP MATRICULA CERTIFICADO Nº CÓDIGO DESCRIPCIÓN CÓDIGO DESCRIPCIÓN 2635LTD 3040202101490 Z M.1. 3000 G 1949 M.4. F.1 3200 L 2/4 F.1.1. 1640 / 1720 L.O. F.1.5. -/(2) LESPAK L.1. 1 / DEL / MECANICA CL 1000 TURISMO SIN ESPECIFICAR F.2. 3200 L.2 4 - 215/65 R16C 106T A.1. VOLKSWAGEN AG F.2.1. 1640 / 1720 P.5.1. VOLKSWAGEN AG A.2. D-38346 WOLFSBURG, ALEMANIA F.3. 5200 P.5. AXD B.1. F.3.1. 5200 P.3. D B.2. 0.1. P.1. 2461 D.1. VOLKSWAGEN 0.1.1. P.1.1. 4 EN LINEA D.2. 7HC /",
+      "foundTokens": {
+        "D1": 1,
+        "D3": 0,
+        "E": 1,
+        "S1": 0
+      },
+      "attempts": [
+        {
+          "strategy": "codeLine",
+          "key": "plate",
+          "raw": "2635LTD",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "F1",
+          "raw": ".1.",
+          "valid": false,
+          "reasonIfInvalid": "invalidMMA"
+        },
+        {
+          "strategy": "codeLine",
+          "key": "F1",
+          "raw": ".5.",
+          "valid": false,
+          "reasonIfInvalid": "invalidMMA"
+        },
+        {
+          "strategy": "codeLine",
+          "key": "L2",
+          "raw": "4 - 215/65 R16C 106T",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "F2",
+          "raw": ".1.",
+          "valid": false,
+          "reasonIfInvalid": "invalidMMA"
+        },
+        {
+          "strategy": "codeLine",
+          "key": "D3",
+          "raw": "8346 WOLFSBURG, ALEMANIA",
+          "valid": false,
+          "reasonIfInvalid": "looksLikeAddress"
+        },
+        {
+          "strategy": "codeLine",
+          "key": "P1",
+          "raw": ".",
+          "valid": false,
+          "reasonIfInvalid": "isGarbage (empty/symbols/<2 chars)"
+        },
+        {
+          "strategy": "codeLine",
+          "key": "P1",
+          "raw": ".1.",
+          "valid": false,
+          "reasonIfInvalid": "invalidCC"
+        },
+        {
+          "strategy": "codeLine",
+          "key": "P2",
+          "raw": ".",
+          "valid": false,
+          "reasonIfInvalid": "isGarbage (empty/symbols/<2 chars)"
+        },
+        {
+          "strategy": "codeLine",
+          "key": "P2",
+          "raw": ".1.",
+          "valid": false,
+          "reasonIfInvalid": "invalidKW"
+        },
+        {
+          "strategy": "codeLine",
+          "key": "D1",
+          "raw": "SPOSITIVO DE ACOPLAMIENTO CON CH .: E13",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "E",
+          "raw": "WV2ZZZ7HZ6H012958",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "globalSearch",
+          "key": "E",
+          "raw": "WV2ZZZ7HZ6H012958",
+          "valid": true
+        }
+      ]
+    },
+    "L2": "4 - 215/65 R16C 106T",
+    "_v2Fallback": [
+      "L2",
+      "D1"
+    ]
+  },
+  "decoded": {
+    "make": "SPOSITIVO DE ACOPLAMIENTO CON CH .: E13",
+    "model": null,
+    "vehicleClass": "1000 TURISMO SIN ESPECIFICAR",
+    "vehicleCategory": "Vehículo de pasajeros",
+    "bodyType": null,
+    "fuelType": null
+  }
+}

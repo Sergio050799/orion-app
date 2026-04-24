@@ -1,0 +1,67 @@
+{
+  "docId": "ce7r9m",
+  "createdAt": "2026-02-23T12:32:18.226Z",
+  "isMixedPdf": false,
+  "pagesTotal": 1,
+  "pageMap": [
+    {
+      "pageIndex": 1,
+      "rotationApplied": 0.18403269350528717,
+      "detectedType": "FICHA_TECNICA",
+      "confidence": 0.95
+    }
+  ],
+  "segments": [
+    {
+      "id": "c9fe9b87-ccab-4540-a73b-98223de19e5b",
+      "type": "FICHA_TECNICA",
+      "pages": [
+        1
+      ],
+      "extractionStatus": "done",
+      "extractedData": {
+        "plate": "8945 NKN",
+        "CL": "2400",
+        "CI": "F.3",
+        "CV": "1",
+        "D1": "TOYOTA",
+        "D3": "Proace City",
+        "E": "YAREDYHT2RJ071736",
+        "J": "N1",
+        "J1": "BB",
+        "J2": "F.7",
+        "J3": "F.7.1",
+        "F2": "2370",
+        "F4": "1880",
+        "F5": "1848",
+        "F6": "4403",
+        "P3": "M/D",
+        "P1": "1499",
+        "P2": "75",
+        "S1": 2,
+        "observations": "Masa Real:01524",
+        "homologationOptions": "Opciones incluidas en la homologación de tipo \n Certifica que el vehículo cuyas \n características se reseñan \n es completamente conforme con el \n número de homologación.",
+        "issueDateRaw": "22/11/2025",
+        "issueDateISO": "2025-11-22T00:00:00.000Z",
+        "powerCv": 102
+      }
+    }
+  ],
+  "vehicleGroups": [
+    {
+      "id": "96239ca8-ee72-43e0-958d-8ff5aed19c91",
+      "matricula": "8945 NKN",
+      "bastidor": "YAREDYHT2RJ071736",
+      "documents": [
+        {
+          "segmentId": "c9fe9b87-ccab-4540-a73b-98223de19e5b",
+          "type": "FICHA_TECNICA",
+          "pages": [
+            1
+          ],
+          "status": "done"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,845 @@
+{
+  "metadata": {
+    "version": "1.0",
+    "generated_at": "2026-02-18T15:29:34.829198"
+  },
+  "clasificacion_construccion": {
+    "01": {
+      "label": "Vehículo de tracción animal.",
+      "source": "02_extracted.md"
+    },
+    "02": {
+      "label": "Bicicleta",
+      "source": "02_extracted.md"
+    },
+    "03": {
+      "label": "Ciclomotor",
+      "source": "02_extracted.md"
+    },
+    "04": {
+      "label": "Motocicleta",
+      "source": "02_extracted.md"
+    },
+    "05": {
+      "label": "Motocarro",
+      "source": "02_extracted.md"
+    },
+    "06": {
+      "label": "Automóvil de tres ruedas",
+      "source": "02_extracted.md"
+    },
+    "10": {
+      "label": "Turismo",
+      "source": "02_extracted.md"
+    },
+    "11": {
+      "label": "Autobús o autocar MMA<= 3.500 Kg",
+      "source": "02_extracted.md"
+    },
+    "12": {
+      "label": "Autobús o autocar MMA >3.500 kg",
+      "source": "02_extracted.md"
+    },
+    "13": {
+      "label": "Autobús o autocar articulado",
+      "source": "02_extracted.md"
+    },
+    "14": {
+      "label": "Autobús o autocar mixto",
+      "source": "02_extracted.md"
+    },
+    "15": {
+      "label": "Trolebús",
+      "source": "02_extracted.md"
+    },
+    "16": {
+      "label": "Autobús o autocar de dos pisos",
+      "source": "02_extracted.md"
+    },
+    "20": {
+      "label": "Camión MMA < = 3.500 Kg",
+      "source": "02_extracted.md"
+    },
+    "21": {
+      "label": "Camión 3.500 kg < = 12.000 kg",
+      "source": "02_extracted.md"
+    },
+    "22": {
+      "label": "Camión MMA > 12.000 kg",
+      "source": "02_extracted.md"
+    },
+    "23": {
+      "label": "Tractocamión",
+      "source": "02_extracted.md"
+    },
+    "24": {
+      "label": "Furgón/Furgoneta < = 3.500 Kg",
+      "source": "02_extracted.md"
+    },
+    "25": {
+      "label": "Furgón 3.500 kg < = 12.000 kg",
+      "source": "02_extracted.md"
+    },
+    "26": {
+      "label": "Furgón MMA > 12.000 kg",
+      "source": "02_extracted.md"
+    },
+    "30": {
+      "label": "Derivado de turismo",
+      "source": "02_extracted.md"
+    },
+    "31": {
+      "label": "Vehículo mixto adaptable",
+      "source": "02_extracted.md"
+    },
+    "32": {
+      "label": "Auto-caravana < = 3.500 kg",
+      "source": "02_extracted.md"
+    },
+    "33": {
+      "label": "Auto-caravana MMA > 3.500 kg",
+      "source": "02_extracted.md"
+    },
+    "40": {
+      "label": "Remolque y semirremolque ligero MMA < = 750 kg",
+      "source": "02_extracted.md"
+    },
+    "41": {
+      "label": "Remolque y semirremolque 750 kg < MMA < = 3.500 Kg",
+      "source": "02_extracted.md"
+    },
+    "42": {
+      "label": "Remolque y semirremolque 3.500 kg < MMA < = 10.000 kg",
+      "source": "02_extracted.md"
+    },
+    "43": {
+      "label": "Remolque y semirremolque MMA > 10.000 kg.",
+      "source": "02_extracted.md"
+    },
+    "50": {
+      "label": "Tractor agrícola",
+      "source": "02_extracted.md"
+    },
+    "51": {
+      "label": "Motocultor",
+      "source": "02_extracted.md"
+    },
+    "52": {
+      "label": "Portador",
+      "source": "02_extracted.md"
+    },
+    "53": {
+      "label": "Tractocarro",
+      "source": "02_extracted.md"
+    },
+    "54": {
+      "label": "Remolque agrícola",
+      "source": "02_extracted.md"
+    },
+    "55": {
+      "label": "Máquina agrícola automotriz",
+      "source": "02_extracted.md"
+    },
+    "56": {
+      "label": "Máquina agrícola remolcada",
+      "source": "02_extracted.md"
+    },
+    "60": {
+      "label": "Tractor de obras",
+      "source": "02_extracted.md"
+    },
+    "61": {
+      "label": "Máquina de obras automotriz",
+      "source": "02_extracted.md"
+    },
+    "62": {
+      "label": "Máquina de obras remolcada",
+      "source": "02_extracted.md"
+    },
+    "63": {
+      "label": "Tractor de servicios",
+      "source": "02_extracted.md"
+    },
+    "64": {
+      "label": "Máquina de servicios automotriz",
+      "source": "02_extracted.md"
+    },
+    "65": {
+      "label": "Máquina de servicios remolcada",
+      "source": "02_extracted.md"
+    },
+    "70": {
+      "label": "Militares",
+      "source": "02_extracted.md"
+    },
+    "80": {
+      "label": "Tren turístico",
+      "source": "02_extracted.md"
+    }
+  },
+  "clasificacion_uso": {
+    "00": {
+      "label": "Sin especificar",
+      "source": "02_extracted.md"
+    },
+    "01": {
+      "label": "Personas de movilidad reducida",
+      "source": "02_extracted.md"
+    },
+    "02": {
+      "label": "Familiar",
+      "source": "02_extracted.md"
+    },
+    "03": {
+      "label": "Escolar",
+      "source": "02_extracted.md"
+    },
+    "04": {
+      "label": "Escolar no exclusivo",
+      "source": "02_extracted.md"
+    },
+    "05": {
+      "label": "Escuela de conductores",
+      "source": "02_extracted.md"
+    },
+    "06": {
+      "label": "Urbano",
+      "source": "02_extracted.md"
+    },
+    "07": {
+      "label": "Corto recorrido",
+      "source": "02_extracted.md"
+    },
+    "08": {
+      "label": "Largo recorrido",
+      "source": "02_extracted.md"
+    },
+    "09": {
+      "label": "Derivado de camión",
+      "source": "02_extracted.md"
+    },
+    "10": {
+      "label": "Plataforma",
+      "source": "02_extracted.md"
+    },
+    "11": {
+      "label": "Caja abierta",
+      "source": "02_extracted.md"
+    },
+    "12": {
+      "label": "Porta-contenedores",
+      "source": "02_extracted.md"
+    },
+    "13": {
+      "label": "Jaula",
+      "source": "02_extracted.md"
+    },
+    "14": {
+      "label": "Botellero",
+      "source": "02_extracted.md"
+    },
+    "15": {
+      "label": "Porta-vehículos",
+      "source": "02_extracted.md"
+    },
+    "16": {
+      "label": "Silo",
+      "source": "02_extracted.md"
+    },
+    "17": {
+      "label": "Basculante",
+      "source": "02_extracted.md"
+    },
+    "18": {
+      "label": "Dumper",
+      "source": "02_extracted.md"
+    },
+    "19": {
+      "label": "Batería de recipientes",
+      "source": "02_extracted.md"
+    },
+    "20": {
+      "label": "Caja cerrada",
+      "source": "02_extracted.md"
+    },
+    "21": {
+      "label": "Capitoné",
+      "source": "02_extracted.md"
+    },
+    "22": {
+      "label": "Blindado",
+      "source": "02_extracted.md"
+    },
+    "23": {
+      "label": "Isotermo",
+      "source": "02_extracted.md"
+    },
+    "24": {
+      "label": "Refrigerante",
+      "source": "02_extracted.md"
+    },
+    "25": {
+      "label": "Frigorífico",
+      "source": "02_extracted.md"
+    },
+    "26": {
+      "label": "Calorífico",
+      "source": "02_extracted.md"
+    },
+    "27": {
+      "label": "Cisterna",
+      "source": "02_extracted.md"
+    },
+    "28": {
+      "label": "Cisterna isoterma",
+      "source": "02_extracted.md"
+    },
+    "29": {
+      "label": "Cisterna refrigerante",
+      "source": "02_extracted.md"
+    },
+    "30": {
+      "label": "Cisterna frigorífica",
+      "source": "02_extracted.md"
+    },
+    "31": {
+      "label": "Cisterna calorífica",
+      "source": "02_extracted.md"
+    },
+    "32": {
+      "label": "Góndola",
+      "source": "02_extracted.md"
+    },
+    "33": {
+      "label": "Todo terreno",
+      "source": "02_extracted.md"
+    },
+    "40": {
+      "label": "Taxi",
+      "source": "02_extracted.md"
+    },
+    "41": {
+      "label": "Alquiler",
+      "source": "02_extracted.md"
+    },
+    "42": {
+      "label": "Autoturismo",
+      "source": "02_extracted.md"
+    },
+    "43": {
+      "label": "Ambulancia",
+      "source": "02_extracted.md"
+    },
+    "44": {
+      "label": "Servicio médico",
+      "source": "02_extracted.md"
+    },
+    "45": {
+      "label": "Funerario",
+      "source": "02_extracted.md"
+    },
+    "46": {
+      "label": "Bomberos",
+      "source": "02_extracted.md"
+    },
+    "47": {
+      "label": "RTV",
+      "source": "02_extracted.md"
+    },
+    "48": {
+      "label": "Vivienda",
+      "source": "02_extracted.md"
+    },
+    "49": {
+      "label": "Taller o laboratorio",
+      "source": "02_extracted.md"
+    },
+    "50": {
+      "label": "Biblioteca",
+      "source": "02_extracted.md"
+    },
+    "51": {
+      "label": "Tienda",
+      "source": "02_extracted.md"
+    },
+    "52": {
+      "label": "Exposición u oficinas",
+      "source": "02_extracted.md"
+    },
+    "53": {
+      "label": "Grúa de arrastre",
+      "source": "02_extracted.md"
+    },
+    "54": {
+      "label": "Grúa de elevación",
+      "source": "02_extracted.md"
+    },
+    "55": {
+      "label": "Basurero",
+      "source": "02_extracted.md"
+    },
+    "56": {
+      "label": "Hormigonera",
+      "source": "02_extracted.md"
+    },
+    "58": {
+      "label": "Vehículo para ferias",
+      "source": "02_extracted.md"
+    },
+    "59": {
+      "label": "Estación transformadora móvil",
+      "source": "02_extracted.md"
+    },
+    "60": {
+      "label": "Extractor de fangos",
+      "source": "02_extracted.md"
+    },
+    "61": {
+      "label": "Autobomba",
+      "source": "02_extracted.md"
+    },
+    "62": {
+      "label": "Grupo electrógeno",
+      "source": "02_extracted.md"
+    },
+    "63": {
+      "label": "Compresor",
+      "source": "02_extracted.md"
+    },
+    "64": {
+      "label": "Carretilla transportadora elevadora",
+      "source": "02_extracted.md"
+    },
+    "65": {
+      "label": "Barredora",
+      "source": "02_extracted.md"
+    },
+    "66": {
+      "label": "Bomba de hormigonar",
+      "source": "02_extracted.md"
+    },
+    "67": {
+      "label": "Perforadora",
+      "source": "02_extracted.md"
+    },
+    "68": {
+      "label": "Excavadora",
+      "source": "02_extracted.md"
+    },
+    "69": {
+      "label": "Retroexcavadora",
+      "source": "02_extracted.md"
+    },
+    "70": {
+      "label": "Cargadora",
+      "source": "02_extracted.md"
+    },
+    "71": {
+      "label": "Cargadora retro-excavadora",
+      "source": "02_extracted.md"
+    },
+    "72": {
+      "label": "Traílla.",
+      "source": "02_extracted.md"
+    },
+    "73": {
+      "label": "Niveladora",
+      "source": "02_extracted.md"
+    },
+    "74": {
+      "label": "Compactador vibratorio",
+      "source": "02_extracted.md"
+    },
+    "75": {
+      "label": "Compactador estático",
+      "source": "02_extracted.md"
+    },
+    "76": {
+      "label": "Riego asfáltico",
+      "source": "02_extracted.md"
+    },
+    "77": {
+      "label": "Pintabandas",
+      "source": "02_extracted.md"
+    },
+    "78": {
+      "label": "Quitanieves",
+      "source": "02_extracted.md"
+    }
+  },
+  "categorias_ue": {
+    "M1": {
+      "label": "vehículos para el transporte de personas que cuentan con nueve plazas, incluida la del conductor.",
+      "source": "03_extracted.md"
+    },
+    "M2": {
+      "label": "vehículos para el transporte de personas con más de nueve plazas, contando la del conductor, y que su masa máxima no supere las 5 toneladas de peso.",
+      "source": "03_extracted.md"
+    },
+    "M3": {
+      "label": "vehículos para el transporte de personas que cuenten con más de nueve plazas, incluyendo la del conductor, y que supere las 5 toneladas de masa máxima.",
+      "source": "03_extracted.md"
+    },
+    "N1": {
+      "label": "vehículos para el transporte de mercancías con una masa máxima que no supere las 3,5 toneladas.",
+      "source": "03_extracted.md"
+    },
+    "N2": {
+      "label": "vehículos para el transporte de mercancías con una masa máxima que supere las 3,5 toneladas pero no las 12 toneladas.",
+      "source": "03_extracted.md"
+    },
+    "N3": {
+      "label": "vehículos destinados para el transporte de mercancías que su masa máxima supere las 12 toneladas.",
+      "source": "03_extracted.md"
+    },
+    "O1": {
+      "label": "remolques con una masa máxima que no supere las 0,75 toneladas.",
+      "source": "03_extracted.md"
+    },
+    "O2": {
+      "label": "remolques con una masa máxima que supera las 0,75 toneladas pero no las 3,5 toneladas.",
+      "source": "03_extracted.md"
+    },
+    "O3": {
+      "label": "remolques con una masa máxima que supera las 3,5 toneladas pero no las 10 toneladas.",
+      "source": "03_extracted.md"
+    },
+    "O4": {
+      "label": "remolques con una masa superior a las 10 toneladas.",
+      "source": "03_extracted.md"
+    },
+    "L1": {
+      "label": "vehículos con dos ruedas que cuentan con una cilindrada menor a los 50 cm³ y una velocidad máxima de 50 km/h.",
+      "source": "03_extracted.md"
+    },
+    "L2": {
+      "label": "vehículos con tres ruedas que cuentan con una cilindrada menor a los 50 cm³ y una velocidad máxima de 50 km/h.",
+      "source": "03_extracted.md"
+    },
+    "L3": {
+      "label": "vehículos de dos ruedas cuya cilindrada supera los 50 cm³ y puede superar los 50 km/h de velocidad.",
+      "source": "03_extracted.md"
+    },
+    "L4": {
+      "label": "vehículos con tres ruedas asimétricas con respecto al eje cuya cilindrada supera los 50 cm³ y puede superar los 50 km/h de velocidad.",
+      "source": "03_extracted.md"
+    },
+    "L5": {
+      "label": "vehículos con tres ruedas simétricas con respecto al eje cuya cilindrada supera los 50 cm³ y puede superar los 50 km/h de velocidad.",
+      "source": "03_extracted.md"
+    }
+  },
+  "carrocerias": {
+    "AA": {
+      "label": "Berlina",
+      "categories": [
+        "M1"
+      ],
+      "source": "04_extracted.md"
+    },
+    "AB": {
+      "label": "Berlina con portón trasero",
+      "categories": [
+        "M1"
+      ],
+      "source": "04_extracted.md"
+    },
+    "AC": {
+      "label": "Familiar",
+      "categories": [
+        "M1"
+      ],
+      "source": "04_extracted.md"
+    },
+    "AD": {
+      "label": "Cupé",
+      "categories": [
+        "M1"
+      ],
+      "source": "04_extracted.md"
+    },
+    "AE": {
+      "label": "Descapotable",
+      "categories": [
+        "M1"
+      ],
+      "source": "04_extracted.md"
+    },
+    "AF": {
+      "label": "Multiusos",
+      "categories": [
+        "M1"
+      ],
+      "source": "04_extracted.md"
+    },
+    "AG": {
+      "label": "Camioneta Familiar",
+      "categories": [
+        "M1"
+      ],
+      "source": "04_extracted.md"
+    },
+    "ND": {
+      "label": "No disponible",
+      "categories": [
+        "M1",
+        "N3"
+      ],
+      "source": "04_extracted.md"
+    },
+    "CA": {
+      "label": "Vehículo de un solo piso",
+      "categories": [
+        "M2",
+        "M3"
+      ],
+      "source": "04_extracted.md"
+    },
+    "CB": {
+      "label": "Vehículo de dos pisos",
+      "categories": [
+        "M2",
+        "M3"
+      ],
+      "source": "04_extracted.md"
+    },
+    "CC": {
+      "label": "Articulado de un solo piso",
+      "categories": [
+        "M2",
+        "M3"
+      ],
+      "source": "04_extracted.md"
+    },
+    "CE": {
+      "label": "De un solo piso con suelo bajo",
+      "categories": [
+        "M2",
+        "M3"
+      ],
+      "source": "04_extracted.md"
+    },
+    "CF": {
+      "label": "De dos pisos con suelo bajo",
+      "categories": [
+        "M2",
+        "M3"
+      ],
+      "source": "04_extracted.md"
+    },
+    "CG": {
+      "label": "Articulado de un solo piso suelo bajo",
+      "categories": [
+        "M2",
+        "M3"
+      ],
+      "source": "04_extracted.md"
+    },
+    "CH": {
+      "label": "Articulado de dos pisos suelo bajo",
+      "categories": [
+        "M2",
+        "M3"
+      ],
+      "source": "04_extracted.md"
+    },
+    "CI": {
+      "label": "De un solo piso techo abierto",
+      "categories": [
+        "M2",
+        "M3"
+      ],
+      "source": "04_extracted.md"
+    },
+    "CJ": {
+      "label": "De dos pisos techo abierto",
+      "categories": [
+        "M2",
+        "M3"
+      ],
+      "source": "04_extracted.md"
+    },
+    "CX": {
+      "label": "Chasis de autobús",
+      "categories": [
+        "M2",
+        "M3"
+      ],
+      "source": "04_extracted.md"
+    },
+    "BA": {
+      "label": "Camión",
+      "categories": [
+        "N1"
+      ],
+      "source": "04_extracted.md"
+    },
+    "BB": {
+      "label": "Furgoneta",
+      "categories": [
+        "N1"
+      ],
+      "source": "04_extracted.md"
+    },
+    "BC": {
+      "label": "Tractora semirremolque",
+      "categories": [
+        "N1"
+      ],
+      "source": "04_extracted.md"
+    },
+    "BD": {
+      "label": "Tractora remolque",
+      "categories": [
+        "N1"
+      ],
+      "source": "04_extracted.md"
+    },
+    "BE": {
+      "label": "Pick up",
+      "categories": [
+        "N1"
+      ],
+      "source": "04_extracted.md"
+    },
+    "BX": {
+      "label": "Bastidor con cabina o con cubierta",
+      "categories": [
+        "N1"
+      ],
+      "source": "04_extracted.md"
+    },
+    "DA": {
+      "label": "Semirremolque",
+      "categories": [
+        "N3"
+      ],
+      "source": "04_extracted.md"
+    },
+    "DB": {
+      "label": "Remolque con barras de tracción",
+      "categories": [
+        "N3"
+      ],
+      "source": "04_extracted.md"
+    },
+    "DC": {
+      "label": "Remolque de eje central",
+      "categories": [
+        "N3"
+      ],
+      "source": "04_extracted.md"
+    },
+    "DE": {
+      "label": "Remolque con barra de tracción rígida",
+      "categories": [
+        "N3"
+      ],
+      "source": "04_extracted.md"
+    }
+  },
+  "dimensiones": {
+    "F.1": {
+      "label": "Masa Máxima en carga Técnicamente Admisible (MMTA)",
+      "unit": "kg",
+      "source": "01_extracted.md"
+    },
+    "F.1.1": {
+      "label": "Masa Máxima en carga Técnicamente Admisible en cada eje 1º/2º/3º",
+      "unit": "kg",
+      "source": "01_extracted.md"
+    },
+    "F.1.5": {
+      "label": "Masa Máxima en carga Técnicamente Admisible en 5ª rueda o pivote de acoplamiento",
+      "unit": "kg",
+      "source": "01_extracted.md"
+    },
+    "F.2": {
+      "label": "Masa Máxima en carga Admisible del Vehículo en circulación (MMA)",
+      "unit": "kg",
+      "source": "01_extracted.md"
+    },
+    "F.2.1": {
+      "label": "Masa Máxima autorizada en cada eje 1º/2º/3º",
+      "unit": "kg",
+      "source": "01_extracted.md"
+    },
+    "F.3": {
+      "label": "Masa Máxima Técnicamente Admisible del conjunto (MMTAC)",
+      "unit": "kg",
+      "source": "01_extracted.md"
+    },
+    "F.3.1": {
+      "label": "Masa Máxima Autorizada del conjunto MMC",
+      "unit": "kg",
+      "source": "01_extracted.md"
+    },
+    "F.4": {
+      "label": "Altura total",
+      "unit": "mm",
+      "source": "01_extracted.md"
+    },
+    "F.5": {
+      "label": "Anchura total",
+      "unit": "mm",
+      "source": "01_extracted.md"
+    },
+    "F.5.1": {
+      "label": "Anchura máxima carrozable",
+      "unit": "mm",
+      "source": "01_extracted.md"
+    },
+    "F.6": {
+      "label": "Longitud total",
+      "unit": "mm",
+      "source": "01_extracted.md"
+    },
+    "F.6.1": {
+      "label": "Longitud máxima carrozable",
+      "unit": "mm",
+      "source": "01_extracted.md"
+    },
+    "F.7": {
+      "label": "Vía anterior",
+      "unit": "mm",
+      "source": "01_extracted.md"
+    },
+    "F.7.1": {
+      "label": "Vía posterior",
+      "unit": "mm",
+      "source": "01_extracted.md"
+    },
+    "F.8": {
+      "label": "Voladizo posterior",
+      "unit": "mm",
+      "source": "01_extracted.md"
+    },
+    "F.8.1": {
+      "label": "Voladizo máximo posterior carrozable",
+      "unit": "mm",
+      "source": "01_extracted.md"
+    }
+  },
+  "etiqueta_ambiental": {
+    "0 Emisiones": {
+      "description": "BEV, REEV, PHEV (≥40 km), hidrógeno",
+      "source": "05_extracted.md"
+    },
+    "ECO": {
+      "description": "Híbridos no enchufables (HEV), PHEV (<40 km), vehículos GNC / GNL / GLP",
+      "source": "05_extracted.md"
+    },
+    "C Gasolina": {
+      "description": "Turismos y furgonetas gasolina Euro 4–6 (≥2006), diésel Euro 6 (≥2015)",
+      "source": "05_extracted.md"
+    },
+    "B Gasolina": {
+      "description": "Gasolina Euro 3 (≥2000)",
+      "source": "05_extracted.md"
+    },
+    "Sin distintivo": {
+      "description": "Gasolina <2001<br>Diésel <2006",
+      "source": "05_extracted.md"
+    }
+  }
+}

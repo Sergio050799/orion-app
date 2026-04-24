@@ -1,0 +1,4660 @@
+{
+  "apiVersion": "2024-02-29-preview",
+  "modelId": "prebuilt-invoice",
+  "stringIndexType": "textElements",
+  "content": "FACTURA\nA\nNº: 01\nDATOS DEL CLIENTE\nDATOS DE LA EMPRESA\nAlba Castro\nAlba Castro\nHola@unsitiogenial.es\nHola@unsitiogenial.es\n911-234-5678\n911-234-5678\nCalle Cualquiera 123, Cualquier Lugar\nCalle Cualquiera 123, Cualquier Lugar\nDetalle\nCantidad\nPrecio\nTotal\nDiseño de Logotipo\n01\n10 €\n10 €\nPresentación\n01\n10 €\n10 €\nEquipo de marketing\n01\n10 €\n10 €\nFormación\n01\n10 €\n10 €\nRecursos\n01\n10 €\n10 €\nRecursos\n01\n10 €\n10 €\nIVA\n21 %\n200 €\nTOTAL\n400 €\nINFORMACIÓN DE PAGO\nTransferencia bancaria\nBanco Borcelle\nNombre: Alba Castro\nNúmero de cuenta\nWWW.UNSITIOGENIAL.ES",
+  "pages": [
+    {
+      "pageNumber": 1,
+      "angle": 0,
+      "width": 1131,
+      "height": 1600,
+      "unit": "pixel",
+      "words": [
+        {
+          "content": "FACTURA",
+          "polygon": [
+            119,
+            135,
+            442,
+            133,
+            444,
+            194,
+            119,
+            193
+          ],
+          "confidence": 0.994,
+          "span": {
+            "offset": 0,
+            "length": 7
+          }
+        },
+        {
+          "content": "A",
+          "polygon": [
+            920,
+            122,
+            982,
+            122,
+            980,
+            231,
+            918,
+            230
+          ],
+          "confidence": 0.994,
+          "span": {
+            "offset": 8,
+            "length": 1
+          }
+        },
+        {
+          "content": "Nº:",
+          "polygon": [
+            144,
+            224,
+            187,
+            224,
+            187,
+            250,
+            144,
+            249
+          ],
+          "confidence": 0.544,
+          "span": {
+            "offset": 10,
+            "length": 3
+          }
+        },
+        {
+          "content": "01",
+          "polygon": [
+            192,
+            224,
+            220,
+            224,
+            220,
+            250,
+            192,
+            250
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 14,
+            "length": 2
+          }
+        },
+        {
+          "content": "DATOS",
+          "polygon": [
+            140,
+            373,
+            214,
+            373,
+            214,
+            398,
+            139,
+            398
+          ],
+          "confidence": 0.994,
+          "span": {
+            "offset": 17,
+            "length": 5
+          }
+        },
+        {
+          "content": "DEL",
+          "polygon": [
+            220,
+            373,
+            261,
+            373,
+            261,
+            398,
+            220,
+            398
+          ],
+          "confidence": 0.992,
+          "span": {
+            "offset": 23,
+            "length": 3
+          }
+        },
+        {
+          "content": "CLIENTE",
+          "polygon": [
+            268,
+            373,
+            356,
+            372,
+            357,
+            398,
+            268,
+            398
+          ],
+          "confidence": 0.992,
+          "span": {
+            "offset": 27,
+            "length": 7
+          }
+        },
+        {
+          "content": "DATOS",
+          "polygon": [
+            733,
+            368,
+            806,
+            368,
+            807,
+            392,
+            733,
+            392
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 35,
+            "length": 5
+          }
+        },
+        {
+          "content": "DE",
+          "polygon": [
+            812,
+            368,
+            842,
+            368,
+            842,
+            392,
+            813,
+            392
+          ],
+          "confidence": 0.992,
+          "span": {
+            "offset": 41,
+            "length": 2
+          }
+        },
+        {
+          "content": "LA",
+          "polygon": [
+            848,
+            368,
+            872,
+            369,
+            873,
+            392,
+            848,
+            392
+          ],
+          "confidence": 0.996,
+          "span": {
+            "offset": 44,
+            "length": 2
+          }
+        },
+        {
+          "content": "EMPRESA",
+          "polygon": [
+            880,
+            369,
+            986,
+            369,
+            986,
+            392,
+            880,
+            392
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 47,
+            "length": 7
+          }
+        },
+        {
+          "content": "Alba",
+          "polygon": [
+            142,
+            418,
+            179,
+            418,
+            180,
+            437,
+            142,
+            438
+          ],
+          "confidence": 0.991,
+          "span": {
+            "offset": 55,
+            "length": 4
+          }
+        },
+        {
+          "content": "Castro",
+          "polygon": [
+            186,
+            418,
+            243,
+            419,
+            243,
+            437,
+            186,
+            437
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 60,
+            "length": 6
+          }
+        },
+        {
+          "content": "Alba",
+          "polygon": [
+            886,
+            411,
+            924,
+            411,
+            924,
+            430,
+            887,
+            430
+          ],
+          "confidence": 0.989,
+          "span": {
+            "offset": 67,
+            "length": 4
+          }
+        },
+        {
+          "content": "Castro",
+          "polygon": [
+            930,
+            411,
+            987,
+            411,
+            987,
+            431,
+            931,
+            430
+          ],
+          "confidence": 0.992,
+          "span": {
+            "offset": 72,
+            "length": 6
+          }
+        },
+        {
+          "content": "Hola@unsitiogenial.es",
+          "polygon": [
+            142,
+            444,
+            338,
+            444,
+            338,
+            466,
+            142,
+            465
+          ],
+          "confidence": 0.961,
+          "span": {
+            "offset": 79,
+            "length": 21
+          }
+        },
+        {
+          "content": "Hola@unsitiogenial.es",
+          "polygon": [
+            794,
+            437,
+            990,
+            437,
+            990,
+            458,
+            794,
+            459
+          ],
+          "confidence": 0.964,
+          "span": {
+            "offset": 101,
+            "length": 21
+          }
+        },
+        {
+          "content": "911-234-5678",
+          "polygon": [
+            142,
+            471,
+            256,
+            472,
+            256,
+            491,
+            142,
+            491
+          ],
+          "confidence": 0.975,
+          "span": {
+            "offset": 123,
+            "length": 12
+          }
+        },
+        {
+          "content": "911-234-5678",
+          "polygon": [
+            875,
+            465,
+            989,
+            464,
+            989,
+            484,
+            875,
+            484
+          ],
+          "confidence": 0.989,
+          "span": {
+            "offset": 136,
+            "length": 12
+          }
+        },
+        {
+          "content": "Calle",
+          "polygon": [
+            142,
+            499,
+            185,
+            499,
+            185,
+            520,
+            142,
+            519
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 149,
+            "length": 5
+          }
+        },
+        {
+          "content": "Cualquiera",
+          "polygon": [
+            190,
+            498,
+            284,
+            498,
+            284,
+            521,
+            190,
+            520
+          ],
+          "confidence": 0.992,
+          "span": {
+            "offset": 155,
+            "length": 10
+          }
+        },
+        {
+          "content": "123,",
+          "polygon": [
+            288,
+            498,
+            320,
+            498,
+            320,
+            521,
+            288,
+            521
+          ],
+          "confidence": 0.983,
+          "span": {
+            "offset": 166,
+            "length": 4
+          }
+        },
+        {
+          "content": "Cualquier",
+          "polygon": [
+            324,
+            498,
+            408,
+            499,
+            408,
+            521,
+            324,
+            521
+          ],
+          "confidence": 0.981,
+          "span": {
+            "offset": 171,
+            "length": 9
+          }
+        },
+        {
+          "content": "Lugar",
+          "polygon": [
+            412,
+            499,
+            465,
+            499,
+            464,
+            521,
+            412,
+            521
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 181,
+            "length": 5
+          }
+        },
+        {
+          "content": "Calle",
+          "polygon": [
+            668,
+            490,
+            712,
+            490,
+            712,
+            513,
+            668,
+            513
+          ],
+          "confidence": 0.994,
+          "span": {
+            "offset": 187,
+            "length": 5
+          }
+        },
+        {
+          "content": "Cualquiera",
+          "polygon": [
+            716,
+            490,
+            810,
+            490,
+            810,
+            513,
+            716,
+            513
+          ],
+          "confidence": 0.992,
+          "span": {
+            "offset": 193,
+            "length": 10
+          }
+        },
+        {
+          "content": "123,",
+          "polygon": [
+            814,
+            490,
+            847,
+            490,
+            847,
+            513,
+            814,
+            513
+          ],
+          "confidence": 0.986,
+          "span": {
+            "offset": 204,
+            "length": 4
+          }
+        },
+        {
+          "content": "Cualquier",
+          "polygon": [
+            851,
+            490,
+            934,
+            491,
+            934,
+            513,
+            851,
+            513
+          ],
+          "confidence": 0.983,
+          "span": {
+            "offset": 209,
+            "length": 9
+          }
+        },
+        {
+          "content": "Lugar",
+          "polygon": [
+            938,
+            491,
+            990,
+            492,
+            990,
+            512,
+            938,
+            513
+          ],
+          "confidence": 0.992,
+          "span": {
+            "offset": 219,
+            "length": 5
+          }
+        },
+        {
+          "content": "Detalle",
+          "polygon": [
+            151,
+            611,
+            222,
+            611,
+            222,
+            632,
+            151,
+            633
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 225,
+            "length": 7
+          }
+        },
+        {
+          "content": "Cantidad",
+          "polygon": [
+            605,
+            612,
+            698,
+            611,
+            698,
+            633,
+            605,
+            632
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 233,
+            "length": 8
+          }
+        },
+        {
+          "content": "Precio",
+          "polygon": [
+            762,
+            611,
+            829,
+            611,
+            829,
+            632,
+            762,
+            633
+          ],
+          "confidence": 0.992,
+          "span": {
+            "offset": 242,
+            "length": 6
+          }
+        },
+        {
+          "content": "Total",
+          "polygon": [
+            918,
+            611,
+            970,
+            611,
+            970,
+            632,
+            918,
+            632
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 249,
+            "length": 5
+          }
+        },
+        {
+          "content": "Diseño",
+          "polygon": [
+            149,
+            675,
+            212,
+            675,
+            212,
+            697,
+            149,
+            697
+          ],
+          "confidence": 0.994,
+          "span": {
+            "offset": 255,
+            "length": 6
+          }
+        },
+        {
+          "content": "de",
+          "polygon": [
+            216,
+            675,
+            240,
+            675,
+            240,
+            697,
+            216,
+            697
+          ],
+          "confidence": 0.996,
+          "span": {
+            "offset": 262,
+            "length": 2
+          }
+        },
+        {
+          "content": "Logotipo",
+          "polygon": [
+            244,
+            675,
+            325,
+            675,
+            325,
+            698,
+            244,
+            697
+          ],
+          "confidence": 0.994,
+          "span": {
+            "offset": 265,
+            "length": 8
+          }
+        },
+        {
+          "content": "01",
+          "polygon": [
+            643,
+            675,
+            663,
+            675,
+            663,
+            695,
+            643,
+            695
+          ],
+          "confidence": 0.925,
+          "span": {
+            "offset": 274,
+            "length": 2
+          }
+        },
+        {
+          "content": "10",
+          "polygon": [
+            776,
+            675,
+            794,
+            675,
+            794,
+            694,
+            776,
+            694
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 277,
+            "length": 2
+          }
+        },
+        {
+          "content": "€",
+          "polygon": [
+            802,
+            675,
+            813,
+            675,
+            813,
+            694,
+            802,
+            694
+          ],
+          "confidence": 0.948,
+          "span": {
+            "offset": 280,
+            "length": 1
+          }
+        },
+        {
+          "content": "10",
+          "polygon": [
+            922,
+            674,
+            939,
+            674,
+            939,
+            694,
+            922,
+            694
+          ],
+          "confidence": 0.996,
+          "span": {
+            "offset": 282,
+            "length": 2
+          }
+        },
+        {
+          "content": "€",
+          "polygon": [
+            947,
+            674,
+            959,
+            674,
+            959,
+            694,
+            947,
+            694
+          ],
+          "confidence": 0.934,
+          "span": {
+            "offset": 285,
+            "length": 1
+          }
+        },
+        {
+          "content": "Presentación",
+          "polygon": [
+            149,
+            722,
+            269,
+            722,
+            269,
+            742,
+            149,
+            742
+          ],
+          "confidence": 0.961,
+          "span": {
+            "offset": 287,
+            "length": 12
+          }
+        },
+        {
+          "content": "01",
+          "polygon": [
+            643,
+            721,
+            662,
+            721,
+            662,
+            740,
+            643,
+            741
+          ],
+          "confidence": 0.959,
+          "span": {
+            "offset": 300,
+            "length": 2
+          }
+        },
+        {
+          "content": "10",
+          "polygon": [
+            776,
+            721,
+            793,
+            721,
+            793,
+            741,
+            776,
+            741
+          ],
+          "confidence": 0.996,
+          "span": {
+            "offset": 303,
+            "length": 2
+          }
+        },
+        {
+          "content": "€",
+          "polygon": [
+            801,
+            722,
+            812,
+            722,
+            811,
+            742,
+            801,
+            742
+          ],
+          "confidence": 0.988,
+          "span": {
+            "offset": 306,
+            "length": 1
+          }
+        },
+        {
+          "content": "10",
+          "polygon": [
+            922,
+            722,
+            941,
+            722,
+            940,
+            742,
+            922,
+            741
+          ],
+          "confidence": 0.991,
+          "span": {
+            "offset": 308,
+            "length": 2
+          }
+        },
+        {
+          "content": "€",
+          "polygon": [
+            949,
+            722,
+            959,
+            722,
+            959,
+            742,
+            948,
+            742
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 311,
+            "length": 1
+          }
+        },
+        {
+          "content": "Equipo",
+          "polygon": [
+            148,
+            769,
+            212,
+            768,
+            212,
+            791,
+            149,
+            791
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 313,
+            "length": 6
+          }
+        },
+        {
+          "content": "de",
+          "polygon": [
+            218,
+            768,
+            240,
+            768,
+            240,
+            791,
+            218,
+            791
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 320,
+            "length": 2
+          }
+        },
+        {
+          "content": "marketing",
+          "polygon": [
+            244,
+            768,
+            341,
+            768,
+            341,
+            792,
+            245,
+            791
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 323,
+            "length": 9
+          }
+        },
+        {
+          "content": "01",
+          "polygon": [
+            643,
+            768,
+            663,
+            768,
+            663,
+            789,
+            643,
+            789
+          ],
+          "confidence": 0.951,
+          "span": {
+            "offset": 333,
+            "length": 2
+          }
+        },
+        {
+          "content": "10",
+          "polygon": [
+            776,
+            768,
+            794,
+            768,
+            794,
+            788,
+            776,
+            788
+          ],
+          "confidence": 0.997,
+          "span": {
+            "offset": 336,
+            "length": 2
+          }
+        },
+        {
+          "content": "€",
+          "polygon": [
+            802,
+            768,
+            812,
+            768,
+            812,
+            788,
+            802,
+            788
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 339,
+            "length": 1
+          }
+        },
+        {
+          "content": "10",
+          "polygon": [
+            923,
+            768,
+            940,
+            768,
+            940,
+            788,
+            923,
+            787
+          ],
+          "confidence": 0.996,
+          "span": {
+            "offset": 341,
+            "length": 2
+          }
+        },
+        {
+          "content": "€",
+          "polygon": [
+            948,
+            768,
+            959,
+            768,
+            959,
+            788,
+            948,
+            788
+          ],
+          "confidence": 0.994,
+          "span": {
+            "offset": 344,
+            "length": 1
+          }
+        },
+        {
+          "content": "Formación",
+          "polygon": [
+            149,
+            815,
+            245,
+            815,
+            245,
+            836,
+            149,
+            835
+          ],
+          "confidence": 0.936,
+          "span": {
+            "offset": 346,
+            "length": 9
+          }
+        },
+        {
+          "content": "01",
+          "polygon": [
+            643,
+            816,
+            664,
+            816,
+            664,
+            835,
+            643,
+            835
+          ],
+          "confidence": 0.961,
+          "span": {
+            "offset": 356,
+            "length": 2
+          }
+        },
+        {
+          "content": "10",
+          "polygon": [
+            776,
+            815,
+            793,
+            815,
+            793,
+            835,
+            776,
+            835
+          ],
+          "confidence": 0.996,
+          "span": {
+            "offset": 359,
+            "length": 2
+          }
+        },
+        {
+          "content": "€",
+          "polygon": [
+            801,
+            816,
+            812,
+            816,
+            811,
+            836,
+            801,
+            836
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 362,
+            "length": 1
+          }
+        },
+        {
+          "content": "10",
+          "polygon": [
+            922,
+            815,
+            940,
+            815,
+            940,
+            836,
+            922,
+            836
+          ],
+          "confidence": 0.996,
+          "span": {
+            "offset": 364,
+            "length": 2
+          }
+        },
+        {
+          "content": "€",
+          "polygon": [
+            949,
+            815,
+            960,
+            815,
+            960,
+            836,
+            949,
+            836
+          ],
+          "confidence": 0.994,
+          "span": {
+            "offset": 367,
+            "length": 1
+          }
+        },
+        {
+          "content": "Recursos",
+          "polygon": [
+            149,
+            863,
+            236,
+            865,
+            236,
+            884,
+            149,
+            883
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 369,
+            "length": 8
+          }
+        },
+        {
+          "content": "01",
+          "polygon": [
+            643,
+            863,
+            663,
+            863,
+            663,
+            882,
+            643,
+            882
+          ],
+          "confidence": 0.961,
+          "span": {
+            "offset": 378,
+            "length": 2
+          }
+        },
+        {
+          "content": "10",
+          "polygon": [
+            776,
+            863,
+            793,
+            863,
+            793,
+            884,
+            776,
+            884
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 381,
+            "length": 2
+          }
+        },
+        {
+          "content": "€",
+          "polygon": [
+            802,
+            863,
+            813,
+            863,
+            813,
+            884,
+            801,
+            884
+          ],
+          "confidence": 0.994,
+          "span": {
+            "offset": 384,
+            "length": 1
+          }
+        },
+        {
+          "content": "10",
+          "polygon": [
+            922,
+            862,
+            940,
+            862,
+            940,
+            883,
+            922,
+            883
+          ],
+          "confidence": 0.996,
+          "span": {
+            "offset": 386,
+            "length": 2
+          }
+        },
+        {
+          "content": "€",
+          "polygon": [
+            949,
+            862,
+            960,
+            862,
+            960,
+            883,
+            949,
+            883
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 389,
+            "length": 1
+          }
+        },
+        {
+          "content": "Recursos",
+          "polygon": [
+            148,
+            910,
+            236,
+            911,
+            236,
+            931,
+            149,
+            930
+          ],
+          "confidence": 0.992,
+          "span": {
+            "offset": 391,
+            "length": 8
+          }
+        },
+        {
+          "content": "01",
+          "polygon": [
+            643,
+            910,
+            662,
+            910,
+            662,
+            929,
+            643,
+            929
+          ],
+          "confidence": 0.989,
+          "span": {
+            "offset": 400,
+            "length": 2
+          }
+        },
+        {
+          "content": "10",
+          "polygon": [
+            776,
+            908,
+            794,
+            908,
+            794,
+            930,
+            776,
+            930
+          ],
+          "confidence": 0.996,
+          "span": {
+            "offset": 403,
+            "length": 2
+          }
+        },
+        {
+          "content": "€",
+          "polygon": [
+            801,
+            908,
+            813,
+            908,
+            813,
+            930,
+            801,
+            930
+          ],
+          "confidence": 0.991,
+          "span": {
+            "offset": 406,
+            "length": 1
+          }
+        },
+        {
+          "content": "10",
+          "polygon": [
+            923,
+            909,
+            940,
+            909,
+            940,
+            930,
+            923,
+            930
+          ],
+          "confidence": 0.996,
+          "span": {
+            "offset": 408,
+            "length": 2
+          }
+        },
+        {
+          "content": "€",
+          "polygon": [
+            948,
+            909,
+            959,
+            909,
+            959,
+            930,
+            948,
+            930
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 411,
+            "length": 1
+          }
+        },
+        {
+          "content": "IVA",
+          "polygon": [
+            588,
+            1036,
+            625,
+            1036,
+            625,
+            1059,
+            588,
+            1058
+          ],
+          "confidence": 0.991,
+          "span": {
+            "offset": 413,
+            "length": 3
+          }
+        },
+        {
+          "content": "21",
+          "polygon": [
+            782,
+            1037,
+            804,
+            1037,
+            803,
+            1060,
+            782,
+            1060
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 417,
+            "length": 2
+          }
+        },
+        {
+          "content": "%",
+          "polygon": [
+            813,
+            1037,
+            826,
+            1037,
+            825,
+            1060,
+            813,
+            1060
+          ],
+          "confidence": 0.951,
+          "span": {
+            "offset": 420,
+            "length": 1
+          }
+        },
+        {
+          "content": "200",
+          "polygon": [
+            923,
+            1038,
+            956,
+            1038,
+            956,
+            1058,
+            923,
+            1058
+          ],
+          "confidence": 0.997,
+          "span": {
+            "offset": 422,
+            "length": 3
+          }
+        },
+        {
+          "content": "€",
+          "polygon": [
+            964,
+            1038,
+            975,
+            1038,
+            975,
+            1058,
+            964,
+            1058
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 426,
+            "length": 1
+          }
+        },
+        {
+          "content": "TOTAL",
+          "polygon": [
+            587,
+            1101,
+            651,
+            1101,
+            652,
+            1123,
+            587,
+            1122
+          ],
+          "confidence": 0.994,
+          "span": {
+            "offset": 428,
+            "length": 5
+          }
+        },
+        {
+          "content": "400",
+          "polygon": [
+            921,
+            1102,
+            960,
+            1102,
+            960,
+            1123,
+            921,
+            1123
+          ],
+          "confidence": 0.997,
+          "span": {
+            "offset": 434,
+            "length": 3
+          }
+        },
+        {
+          "content": "€",
+          "polygon": [
+            968,
+            1102,
+            980,
+            1102,
+            980,
+            1123,
+            969,
+            1123
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 438,
+            "length": 1
+          }
+        },
+        {
+          "content": "INFORMACIÓN",
+          "polygon": [
+            135,
+            1254,
+            294,
+            1251,
+            293,
+            1279,
+            135,
+            1278
+          ],
+          "confidence": 0.918,
+          "span": {
+            "offset": 440,
+            "length": 11
+          }
+        },
+        {
+          "content": "DE",
+          "polygon": [
+            304,
+            1251,
+            334,
+            1251,
+            333,
+            1279,
+            304,
+            1279
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 452,
+            "length": 2
+          }
+        },
+        {
+          "content": "PAGO",
+          "polygon": [
+            341,
+            1251,
+            402,
+            1252,
+            402,
+            1279,
+            340,
+            1279
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 455,
+            "length": 4
+          }
+        },
+        {
+          "content": "Transferencia",
+          "polygon": [
+            136,
+            1298,
+            260,
+            1297,
+            260,
+            1321,
+            136,
+            1322
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 460,
+            "length": 13
+          }
+        },
+        {
+          "content": "bancaria",
+          "polygon": [
+            264,
+            1297,
+            349,
+            1297,
+            349,
+            1321,
+            264,
+            1321
+          ],
+          "confidence": 0.981,
+          "span": {
+            "offset": 474,
+            "length": 8
+          }
+        },
+        {
+          "content": "Banco",
+          "polygon": [
+            135,
+            1326,
+            191,
+            1327,
+            191,
+            1345,
+            136,
+            1346
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 483,
+            "length": 5
+          }
+        },
+        {
+          "content": "Borcelle",
+          "polygon": [
+            198,
+            1327,
+            273,
+            1326,
+            273,
+            1345,
+            199,
+            1345
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 489,
+            "length": 8
+          }
+        },
+        {
+          "content": "Nombre:",
+          "polygon": [
+            135,
+            1353,
+            215,
+            1354,
+            215,
+            1373,
+            136,
+            1374
+          ],
+          "confidence": 0.979,
+          "span": {
+            "offset": 498,
+            "length": 7
+          }
+        },
+        {
+          "content": "Alba",
+          "polygon": [
+            219,
+            1354,
+            259,
+            1354,
+            259,
+            1373,
+            219,
+            1373
+          ],
+          "confidence": 0.989,
+          "span": {
+            "offset": 506,
+            "length": 4
+          }
+        },
+        {
+          "content": "Castro",
+          "polygon": [
+            264,
+            1354,
+            323,
+            1353,
+            323,
+            1374,
+            264,
+            1373
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 511,
+            "length": 6
+          }
+        },
+        {
+          "content": "Número",
+          "polygon": [
+            135,
+            1380,
+            207,
+            1381,
+            207,
+            1400,
+            135,
+            1401
+          ],
+          "confidence": 0.993,
+          "span": {
+            "offset": 518,
+            "length": 6
+          }
+        },
+        {
+          "content": "de",
+          "polygon": [
+            214,
+            1381,
+            237,
+            1381,
+            237,
+            1400,
+            214,
+            1400
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 525,
+            "length": 2
+          }
+        },
+        {
+          "content": "cuenta",
+          "polygon": [
+            242,
+            1381,
+            305,
+            1380,
+            306,
+            1401,
+            242,
+            1400
+          ],
+          "confidence": 0.995,
+          "span": {
+            "offset": 528,
+            "length": 6
+          }
+        },
+        {
+          "content": "WWW.UNSITIOGENIAL.ES",
+          "polygon": [
+            411,
+            1529,
+            717,
+            1529,
+            717,
+            1555,
+            411,
+            1555
+          ],
+          "confidence": 0.948,
+          "span": {
+            "offset": 535,
+            "length": 20
+          }
+        }
+      ],
+      "lines": [
+        {
+          "content": "FACTURA",
+          "polygon": [
+            118,
+            132,
+            458,
+            132,
+            459,
+            193,
+            118,
+            194
+          ],
+          "spans": [
+            {
+              "offset": 0,
+              "length": 7
+            }
+          ]
+        },
+        {
+          "content": "A",
+          "polygon": [
+            888,
+            124,
+            1018,
+            122,
+            1022,
+            232,
+            886,
+            225
+          ],
+          "spans": [
+            {
+              "offset": 8,
+              "length": 1
+            }
+          ]
+        },
+        {
+          "content": "Nº: 01",
+          "polygon": [
+            144,
+            224,
+            221,
+            225,
+            221,
+            250,
+            144,
+            250
+          ],
+          "spans": [
+            {
+              "offset": 10,
+              "length": 6
+            }
+          ]
+        },
+        {
+          "content": "DATOS DEL CLIENTE",
+          "polygon": [
+            138,
+            372,
+            360,
+            372,
+            360,
+            397,
+            138,
+            397
+          ],
+          "spans": [
+            {
+              "offset": 17,
+              "length": 17
+            }
+          ]
+        },
+        {
+          "content": "DATOS DE LA EMPRESA",
+          "polygon": [
+            732,
+            368,
+            990,
+            368,
+            990,
+            392,
+            732,
+            392
+          ],
+          "spans": [
+            {
+              "offset": 35,
+              "length": 19
+            }
+          ]
+        },
+        {
+          "content": "Alba Castro",
+          "polygon": [
+            140,
+            418,
+            245,
+            418,
+            245,
+            437,
+            140,
+            437
+          ],
+          "spans": [
+            {
+              "offset": 55,
+              "length": 11
+            }
+          ]
+        },
+        {
+          "content": "Alba Castro",
+          "polygon": [
+            885,
+            410,
+            990,
+            411,
+            990,
+            430,
+            885,
+            429
+          ],
+          "spans": [
+            {
+              "offset": 67,
+              "length": 11
+            }
+          ]
+        },
+        {
+          "content": "Hola@unsitiogenial.es",
+          "polygon": [
+            141,
+            443,
+            338,
+            444,
+            338,
+            465,
+            141,
+            465
+          ],
+          "spans": [
+            {
+              "offset": 79,
+              "length": 21
+            }
+          ]
+        },
+        {
+          "content": "Hola@unsitiogenial.es",
+          "polygon": [
+            792,
+            436,
+            989,
+            436,
+            989,
+            458,
+            792,
+            458
+          ],
+          "spans": [
+            {
+              "offset": 101,
+              "length": 21
+            }
+          ]
+        },
+        {
+          "content": "911-234-5678",
+          "polygon": [
+            140,
+            471,
+            257,
+            471,
+            257,
+            490,
+            140,
+            490
+          ],
+          "spans": [
+            {
+              "offset": 123,
+              "length": 12
+            }
+          ]
+        },
+        {
+          "content": "911-234-5678",
+          "polygon": [
+            874,
+            464,
+            990,
+            464,
+            990,
+            483,
+            874,
+            483
+          ],
+          "spans": [
+            {
+              "offset": 136,
+              "length": 12
+            }
+          ]
+        },
+        {
+          "content": "Calle Cualquiera 123, Cualquier Lugar",
+          "polygon": [
+            140,
+            498,
+            464,
+            498,
+            464,
+            521,
+            140,
+            520
+          ],
+          "spans": [
+            {
+              "offset": 149,
+              "length": 37
+            }
+          ]
+        },
+        {
+          "content": "Calle Cualquiera 123, Cualquier Lugar",
+          "polygon": [
+            667,
+            489,
+            989,
+            490,
+            989,
+            513,
+            667,
+            512
+          ],
+          "spans": [
+            {
+              "offset": 187,
+              "length": 37
+            }
+          ]
+        },
+        {
+          "content": "Detalle",
+          "polygon": [
+            149,
+            611,
+            224,
+            611,
+            224,
+            632,
+            149,
+            632
+          ],
+          "spans": [
+            {
+              "offset": 225,
+              "length": 7
+            }
+          ]
+        },
+        {
+          "content": "Cantidad",
+          "polygon": [
+            604,
+            610,
+            701,
+            610,
+            701,
+            632,
+            604,
+            632
+          ],
+          "spans": [
+            {
+              "offset": 233,
+              "length": 8
+            }
+          ]
+        },
+        {
+          "content": "Precio",
+          "polygon": [
+            760,
+            610,
+            830,
+            610,
+            830,
+            632,
+            760,
+            632
+          ],
+          "spans": [
+            {
+              "offset": 242,
+              "length": 6
+            }
+          ]
+        },
+        {
+          "content": "Total",
+          "polygon": [
+            914,
+            611,
+            970,
+            611,
+            970,
+            632,
+            914,
+            632
+          ],
+          "spans": [
+            {
+              "offset": 249,
+              "length": 5
+            }
+          ]
+        },
+        {
+          "content": "Diseño de Logotipo",
+          "polygon": [
+            148,
+            674,
+            326,
+            674,
+            326,
+            697,
+            148,
+            696
+          ],
+          "spans": [
+            {
+              "offset": 255,
+              "length": 18
+            }
+          ]
+        },
+        {
+          "content": "01",
+          "polygon": [
+            640,
+            675,
+            664,
+            675,
+            664,
+            695,
+            639,
+            695
+          ],
+          "spans": [
+            {
+              "offset": 274,
+              "length": 2
+            }
+          ]
+        },
+        {
+          "content": "10 €",
+          "polygon": [
+            774,
+            675,
+            816,
+            675,
+            816,
+            694,
+            774,
+            694
+          ],
+          "spans": [
+            {
+              "offset": 277,
+              "length": 4
+            }
+          ]
+        },
+        {
+          "content": "10 €",
+          "polygon": [
+            921,
+            674,
+            962,
+            674,
+            962,
+            694,
+            921,
+            694
+          ],
+          "spans": [
+            {
+              "offset": 282,
+              "length": 4
+            }
+          ]
+        },
+        {
+          "content": "Presentación",
+          "polygon": [
+            148,
+            722,
+            272,
+            721,
+            272,
+            741,
+            148,
+            742
+          ],
+          "spans": [
+            {
+              "offset": 287,
+              "length": 12
+            }
+          ]
+        },
+        {
+          "content": "01",
+          "polygon": [
+            641,
+            722,
+            662,
+            721,
+            663,
+            741,
+            642,
+            741
+          ],
+          "spans": [
+            {
+              "offset": 300,
+              "length": 2
+            }
+          ]
+        },
+        {
+          "content": "10 €",
+          "polygon": [
+            775,
+            721,
+            817,
+            722,
+            816,
+            742,
+            775,
+            741
+          ],
+          "spans": [
+            {
+              "offset": 303,
+              "length": 4
+            }
+          ]
+        },
+        {
+          "content": "10 €",
+          "polygon": [
+            921,
+            722,
+            963,
+            722,
+            963,
+            742,
+            922,
+            741
+          ],
+          "spans": [
+            {
+              "offset": 308,
+              "length": 4
+            }
+          ]
+        },
+        {
+          "content": "Equipo de marketing",
+          "polygon": [
+            148,
+            768,
+            341,
+            768,
+            341,
+            791,
+            148,
+            791
+          ],
+          "spans": [
+            {
+              "offset": 313,
+              "length": 19
+            }
+          ]
+        },
+        {
+          "content": "01",
+          "polygon": [
+            640,
+            768,
+            664,
+            768,
+            664,
+            789,
+            639,
+            789
+          ],
+          "spans": [
+            {
+              "offset": 333,
+              "length": 2
+            }
+          ]
+        },
+        {
+          "content": "10 €",
+          "polygon": [
+            774,
+            768,
+            817,
+            768,
+            817,
+            788,
+            775,
+            788
+          ],
+          "spans": [
+            {
+              "offset": 336,
+              "length": 4
+            }
+          ]
+        },
+        {
+          "content": "10 €",
+          "polygon": [
+            922,
+            768,
+            963,
+            768,
+            963,
+            788,
+            922,
+            787
+          ],
+          "spans": [
+            {
+              "offset": 341,
+              "length": 4
+            }
+          ]
+        },
+        {
+          "content": "Formación",
+          "polygon": [
+            148,
+            815,
+            248,
+            815,
+            248,
+            835,
+            148,
+            835
+          ],
+          "spans": [
+            {
+              "offset": 346,
+              "length": 9
+            }
+          ]
+        },
+        {
+          "content": "01",
+          "polygon": [
+            641,
+            816,
+            664,
+            816,
+            664,
+            835,
+            641,
+            835
+          ],
+          "spans": [
+            {
+              "offset": 356,
+              "length": 2
+            }
+          ]
+        },
+        {
+          "content": "10 €",
+          "polygon": [
+            775,
+            815,
+            817,
+            816,
+            816,
+            836,
+            775,
+            835
+          ],
+          "spans": [
+            {
+              "offset": 359,
+              "length": 4
+            }
+          ]
+        },
+        {
+          "content": "10 €",
+          "polygon": [
+            921,
+            816,
+            963,
+            815,
+            963,
+            836,
+            921,
+            835
+          ],
+          "spans": [
+            {
+              "offset": 364,
+              "length": 4
+            }
+          ]
+        },
+        {
+          "content": "Recursos",
+          "polygon": [
+            148,
+            862,
+            238,
+            864,
+            237,
+            883,
+            148,
+            882
+          ],
+          "spans": [
+            {
+              "offset": 369,
+              "length": 8
+            }
+          ]
+        },
+        {
+          "content": "01",
+          "polygon": [
+            641,
+            863,
+            663,
+            863,
+            663,
+            882,
+            641,
+            882
+          ],
+          "spans": [
+            {
+              "offset": 378,
+              "length": 2
+            }
+          ]
+        },
+        {
+          "content": "10 €",
+          "polygon": [
+            774,
+            863,
+            817,
+            863,
+            817,
+            884,
+            774,
+            883
+          ],
+          "spans": [
+            {
+              "offset": 381,
+              "length": 4
+            }
+          ]
+        },
+        {
+          "content": "10 €",
+          "polygon": [
+            921,
+            862,
+            963,
+            862,
+            963,
+            883,
+            922,
+            883
+          ],
+          "spans": [
+            {
+              "offset": 386,
+              "length": 4
+            }
+          ]
+        },
+        {
+          "content": "Recursos",
+          "polygon": [
+            148,
+            910,
+            238,
+            911,
+            237,
+            930,
+            148,
+            929
+          ],
+          "spans": [
+            {
+              "offset": 391,
+              "length": 8
+            }
+          ]
+        },
+        {
+          "content": "01",
+          "polygon": [
+            642,
+            910,
+            663,
+            910,
+            663,
+            929,
+            642,
+            929
+          ],
+          "spans": [
+            {
+              "offset": 400,
+              "length": 2
+            }
+          ]
+        },
+        {
+          "content": "10 €",
+          "polygon": [
+            775,
+            909,
+            817,
+            908,
+            817,
+            930,
+            775,
+            929
+          ],
+          "spans": [
+            {
+              "offset": 403,
+              "length": 4
+            }
+          ]
+        },
+        {
+          "content": "10 €",
+          "polygon": [
+            922,
+            910,
+            963,
+            909,
+            963,
+            930,
+            922,
+            929
+          ],
+          "spans": [
+            {
+              "offset": 408,
+              "length": 4
+            }
+          ]
+        },
+        {
+          "content": "IVA",
+          "polygon": [
+            587,
+            1036,
+            629,
+            1036,
+            630,
+            1059,
+            588,
+            1058
+          ],
+          "spans": [
+            {
+              "offset": 413,
+              "length": 3
+            }
+          ]
+        },
+        {
+          "content": "21 %",
+          "polygon": [
+            778,
+            1037,
+            826,
+            1037,
+            826,
+            1060,
+            778,
+            1059
+          ],
+          "spans": [
+            {
+              "offset": 417,
+              "length": 4
+            }
+          ]
+        },
+        {
+          "content": "200 €",
+          "polygon": [
+            919,
+            1038,
+            978,
+            1038,
+            978,
+            1058,
+            920,
+            1058
+          ],
+          "spans": [
+            {
+              "offset": 422,
+              "length": 5
+            }
+          ]
+        },
+        {
+          "content": "TOTAL",
+          "polygon": [
+            584,
+            1101,
+            654,
+            1101,
+            653,
+            1122,
+            584,
+            1122
+          ],
+          "spans": [
+            {
+              "offset": 428,
+              "length": 5
+            }
+          ]
+        },
+        {
+          "content": "400 €",
+          "polygon": [
+            919,
+            1101,
+            986,
+            1101,
+            986,
+            1123,
+            919,
+            1122
+          ],
+          "spans": [
+            {
+              "offset": 434,
+              "length": 5
+            }
+          ]
+        },
+        {
+          "content": "INFORMACIÓN DE PAGO",
+          "polygon": [
+            134,
+            1251,
+            406,
+            1251,
+            406,
+            1278,
+            134,
+            1279
+          ],
+          "spans": [
+            {
+              "offset": 440,
+              "length": 19
+            }
+          ]
+        },
+        {
+          "content": "Transferencia bancaria",
+          "polygon": [
+            133,
+            1297,
+            348,
+            1296,
+            349,
+            1320,
+            133,
+            1321
+          ],
+          "spans": [
+            {
+              "offset": 460,
+              "length": 22
+            }
+          ]
+        },
+        {
+          "content": "Banco Borcelle",
+          "polygon": [
+            135,
+            1326,
+            273,
+            1325,
+            273,
+            1345,
+            135,
+            1345
+          ],
+          "spans": [
+            {
+              "offset": 483,
+              "length": 14
+            }
+          ]
+        },
+        {
+          "content": "Nombre: Alba Castro",
+          "polygon": [
+            135,
+            1352,
+            326,
+            1352,
+            326,
+            1373,
+            135,
+            1374
+          ],
+          "spans": [
+            {
+              "offset": 498,
+              "length": 19
+            }
+          ]
+        },
+        {
+          "content": "Número de cuenta",
+          "polygon": [
+            135,
+            1380,
+            306,
+            1380,
+            306,
+            1400,
+            135,
+            1400
+          ],
+          "spans": [
+            {
+              "offset": 518,
+              "length": 16
+            }
+          ]
+        },
+        {
+          "content": "WWW.UNSITIOGENIAL.ES",
+          "polygon": [
+            411,
+            1527,
+            718,
+            1527,
+            718,
+            1554,
+            411,
+            1554
+          ],
+          "spans": [
+            {
+              "offset": 535,
+              "length": 20
+            }
+          ]
+        }
+      ],
+      "spans": [
+        {
+          "offset": 0,
+          "length": 555
+        }
+      ]
+    }
+  ],
+  "tables": [
+    {
+      "rowCount": 7,
+      "columnCount": 4,
+      "cells": [
+        {
+          "kind": "columnHeader",
+          "rowIndex": 0,
+          "columnIndex": 0,
+          "content": "Detalle",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                124,
+                595,
+                470,
+                595,
+                470,
+                651,
+                123,
+                651
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 225,
+              "length": 7
+            }
+          ]
+        },
+        {
+          "kind": "columnHeader",
+          "rowIndex": 0,
+          "columnIndex": 1,
+          "content": "Cantidad",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                470,
+                595,
+                730,
+                595,
+                730,
+                651,
+                470,
+                651
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 233,
+              "length": 8
+            }
+          ]
+        },
+        {
+          "kind": "columnHeader",
+          "rowIndex": 0,
+          "columnIndex": 2,
+          "content": "Precio",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                730,
+                595,
+                873,
+                594,
+                873,
+                651,
+                730,
+                651
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 242,
+              "length": 6
+            }
+          ]
+        },
+        {
+          "kind": "columnHeader",
+          "rowIndex": 0,
+          "columnIndex": 3,
+          "content": "Total",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                873,
+                594,
+                1000,
+                595,
+                1000,
+                651,
+                873,
+                651
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 249,
+              "length": 5
+            }
+          ]
+        },
+        {
+          "rowIndex": 1,
+          "columnIndex": 0,
+          "content": "Diseño de Logotipo",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                123,
+                651,
+                470,
+                651,
+                470,
+                709,
+                123,
+                709
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 255,
+              "length": 18
+            }
+          ]
+        },
+        {
+          "rowIndex": 1,
+          "columnIndex": 1,
+          "content": "01",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                470,
+                651,
+                730,
+                651,
+                731,
+                708,
+                470,
+                709
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 274,
+              "length": 2
+            }
+          ]
+        },
+        {
+          "rowIndex": 1,
+          "columnIndex": 2,
+          "content": "10 €",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                730,
+                651,
+                873,
+                651,
+                873,
+                708,
+                731,
+                708
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 277,
+              "length": 4
+            }
+          ]
+        },
+        {
+          "rowIndex": 1,
+          "columnIndex": 3,
+          "content": "10 €",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                873,
+                651,
+                1000,
+                651,
+                1000,
+                708,
+                873,
+                708
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 282,
+              "length": 4
+            }
+          ]
+        },
+        {
+          "rowIndex": 2,
+          "columnIndex": 0,
+          "content": "Presentación",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                123,
+                709,
+                470,
+                709,
+                470,
+                755,
+                123,
+                755
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 287,
+              "length": 12
+            }
+          ]
+        },
+        {
+          "rowIndex": 2,
+          "columnIndex": 1,
+          "content": "01",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                470,
+                709,
+                731,
+                708,
+                731,
+                754,
+                470,
+                755
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 300,
+              "length": 2
+            }
+          ]
+        },
+        {
+          "rowIndex": 2,
+          "columnIndex": 2,
+          "content": "10 €",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                731,
+                708,
+                873,
+                708,
+                873,
+                754,
+                731,
+                754
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 303,
+              "length": 4
+            }
+          ]
+        },
+        {
+          "rowIndex": 2,
+          "columnIndex": 3,
+          "content": "10 €",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                873,
+                708,
+                1000,
+                708,
+                1000,
+                754,
+                873,
+                754
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 308,
+              "length": 4
+            }
+          ]
+        },
+        {
+          "rowIndex": 3,
+          "columnIndex": 0,
+          "content": "Equipo de marketing",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                123,
+                755,
+                470,
+                755,
+                471,
+                803,
+                123,
+                803
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 313,
+              "length": 19
+            }
+          ]
+        },
+        {
+          "rowIndex": 3,
+          "columnIndex": 1,
+          "content": "01",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                470,
+                755,
+                731,
+                754,
+                731,
+                803,
+                471,
+                803
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 333,
+              "length": 2
+            }
+          ]
+        },
+        {
+          "rowIndex": 3,
+          "columnIndex": 2,
+          "content": "10 €",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                731,
+                754,
+                873,
+                754,
+                873,
+                803,
+                731,
+                803
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 336,
+              "length": 4
+            }
+          ]
+        },
+        {
+          "rowIndex": 3,
+          "columnIndex": 3,
+          "content": "10 €",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                873,
+                754,
+                1000,
+                754,
+                1000,
+                803,
+                873,
+                803
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 341,
+              "length": 4
+            }
+          ]
+        },
+        {
+          "rowIndex": 4,
+          "columnIndex": 0,
+          "content": "Formación",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                123,
+                803,
+                471,
+                803,
+                471,
+                849,
+                122,
+                849
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 346,
+              "length": 9
+            }
+          ]
+        },
+        {
+          "rowIndex": 4,
+          "columnIndex": 1,
+          "content": "01",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                471,
+                803,
+                731,
+                803,
+                731,
+                850,
+                471,
+                849
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 356,
+              "length": 2
+            }
+          ]
+        },
+        {
+          "rowIndex": 4,
+          "columnIndex": 2,
+          "content": "10 €",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                731,
+                803,
+                873,
+                803,
+                873,
+                850,
+                731,
+                850
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 359,
+              "length": 4
+            }
+          ]
+        },
+        {
+          "rowIndex": 4,
+          "columnIndex": 3,
+          "content": "10 €",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                873,
+                803,
+                1000,
+                803,
+                1000,
+                850,
+                873,
+                850
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 364,
+              "length": 4
+            }
+          ]
+        },
+        {
+          "rowIndex": 5,
+          "columnIndex": 0,
+          "content": "Recursos",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                122,
+                849,
+                471,
+                849,
+                471,
+                897,
+                122,
+                896
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 369,
+              "length": 8
+            }
+          ]
+        },
+        {
+          "rowIndex": 5,
+          "columnIndex": 1,
+          "content": "01",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                471,
+                849,
+                731,
+                850,
+                731,
+                897,
+                471,
+                897
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 378,
+              "length": 2
+            }
+          ]
+        },
+        {
+          "rowIndex": 5,
+          "columnIndex": 2,
+          "content": "10 €",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                731,
+                850,
+                873,
+                850,
+                873,
+                897,
+                731,
+                897
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 381,
+              "length": 4
+            }
+          ]
+        },
+        {
+          "rowIndex": 5,
+          "columnIndex": 3,
+          "content": "10 €",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                873,
+                850,
+                1000,
+                850,
+                1000,
+                897,
+                873,
+                897
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 386,
+              "length": 4
+            }
+          ]
+        },
+        {
+          "rowIndex": 6,
+          "columnIndex": 0,
+          "content": "Recursos",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                122,
+                896,
+                471,
+                897,
+                471,
+                1009,
+                122,
+                1009
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 391,
+              "length": 8
+            }
+          ]
+        },
+        {
+          "rowIndex": 6,
+          "columnIndex": 1,
+          "content": "01",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                471,
+                897,
+                731,
+                897,
+                731,
+                1010,
+                471,
+                1009
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 400,
+              "length": 2
+            }
+          ]
+        },
+        {
+          "rowIndex": 6,
+          "columnIndex": 2,
+          "content": "10 €",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                731,
+                897,
+                873,
+                897,
+                873,
+                1010,
+                731,
+                1010
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 403,
+              "length": 4
+            }
+          ]
+        },
+        {
+          "rowIndex": 6,
+          "columnIndex": 3,
+          "content": "10 €",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                873,
+                897,
+                1000,
+                897,
+                1000,
+                1010,
+                873,
+                1010
+              ]
+            }
+          ],
+          "spans": [
+            {
+              "offset": 408,
+              "length": 4
+            }
+          ]
+        }
+      ],
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            111,
+            593,
+            1020,
+            594,
+            1020,
+            1013,
+            111,
+            1013
+          ]
+        }
+      ],
+      "spans": [
+        {
+          "offset": 225,
+          "length": 187
+        }
+      ]
+    }
+  ],
+  "styles": [
+    {
+      "confidence": 1,
+      "spans": [
+        {
+          "offset": 8,
+          "length": 1
+        }
+      ],
+      "isHandwritten": true
+    }
+  ],
+  "documents": [
+    {
+      "docType": "invoice",
+      "boundingRegions": [
+        {
+          "pageNumber": 1,
+          "polygon": [
+            0,
+            0,
+            1131,
+            0,
+            1131,
+            1600,
+            0,
+            1600
+          ]
+        }
+      ],
+      "fields": {
+        "CustomerAddress": {
+          "type": "address",
+          "content": "Calle Cualquiera 123, Cualquier Lugar",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                142,
+                497,
+                465,
+                499,
+                465,
+                522,
+                142,
+                520
+              ]
+            }
+          ],
+          "confidence": 0.885,
+          "spans": [
+            {
+              "offset": 149,
+              "length": 37
+            }
+          ],
+          "valueAddress": {
+            "houseNumber": "123",
+            "road": "Calle Cualquiera",
+            "streetAddress": "123 Calle Cualquiera"
+          }
+        },
+        "CustomerAddressRecipient": {
+          "type": "string",
+          "valueString": "Alba Castro",
+          "content": "Alba Castro",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                142,
+                418,
+                243,
+                419,
+                243,
+                439,
+                142,
+                438
+              ]
+            }
+          ],
+          "confidence": 0.82,
+          "spans": [
+            {
+              "offset": 55,
+              "length": 11
+            }
+          ]
+        },
+        "CustomerName": {
+          "type": "string",
+          "valueString": "Alba Castro",
+          "content": "Alba Castro",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                142,
+                418,
+                243,
+                419,
+                243,
+                439,
+                142,
+                438
+              ]
+            }
+          ],
+          "confidence": 0.82,
+          "spans": [
+            {
+              "offset": 55,
+              "length": 11
+            }
+          ]
+        },
+        "InvoiceId": {
+          "type": "string",
+          "valueString": "01",
+          "content": "01",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                192,
+                224,
+                220,
+                224,
+                220,
+                250,
+                192,
+                250
+              ]
+            }
+          ],
+          "confidence": 0.945,
+          "spans": [
+            {
+              "offset": 14,
+              "length": 2
+            }
+          ]
+        },
+        "InvoiceTotal": {
+          "type": "currency",
+          "valueCurrency": {
+            "currencySymbol": "€",
+            "amount": 400,
+            "currencyCode": "EUR"
+          },
+          "content": "400 €",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                921,
+                1102,
+                980,
+                1102,
+                980,
+                1123,
+                921,
+                1123
+              ]
+            }
+          ],
+          "confidence": 0.942,
+          "spans": [
+            {
+              "offset": 434,
+              "length": 5
+            }
+          ]
+        },
+        "Items": {
+          "type": "array",
+          "valueArray": [
+            {
+              "type": "object",
+              "valueObject": {
+                "Amount": {
+                  "type": "currency",
+                  "valueCurrency": {
+                    "currencySymbol": "€",
+                    "amount": 10,
+                    "currencyCode": "EUR"
+                  },
+                  "content": "10 €",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        922,
+                        674,
+                        959,
+                        674,
+                        959,
+                        694,
+                        922,
+                        694
+                      ]
+                    }
+                  ],
+                  "confidence": 0.953,
+                  "spans": [
+                    {
+                      "offset": 282,
+                      "length": 4
+                    }
+                  ]
+                },
+                "Description": {
+                  "type": "string",
+                  "valueString": "Diseño de Logotipo",
+                  "content": "Diseño de Logotipo",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        149,
+                        675,
+                        325,
+                        675,
+                        325,
+                        698,
+                        149,
+                        698
+                      ]
+                    }
+                  ],
+                  "confidence": 0.951,
+                  "spans": [
+                    {
+                      "offset": 255,
+                      "length": 18
+                    }
+                  ]
+                },
+                "Quantity": {
+                  "type": "number",
+                  "valueNumber": 1,
+                  "content": "01",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        643,
+                        675,
+                        663,
+                        675,
+                        663,
+                        695,
+                        643,
+                        695
+                      ]
+                    }
+                  ],
+                  "confidence": 0.956,
+                  "spans": [
+                    {
+                      "offset": 274,
+                      "length": 2
+                    }
+                  ]
+                },
+                "UnitPrice": {
+                  "type": "currency",
+                  "valueCurrency": {
+                    "currencySymbol": "€",
+                    "amount": 10,
+                    "currencyCode": "EUR"
+                  },
+                  "content": "10 €",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        776,
+                        675,
+                        813,
+                        675,
+                        813,
+                        694,
+                        776,
+                        694
+                      ]
+                    }
+                  ],
+                  "confidence": 0.952,
+                  "spans": [
+                    {
+                      "offset": 277,
+                      "length": 4
+                    }
+                  ]
+                }
+              },
+              "content": "Diseño de Logotipo\n01\n10 €\n10 €",
+              "boundingRegions": [
+                {
+                  "pageNumber": 1,
+                  "polygon": [
+                    149,
+                    674,
+                    959,
+                    674,
+                    959,
+                    698,
+                    149,
+                    698
+                  ]
+                }
+              ],
+              "confidence": 0.925,
+              "spans": [
+                {
+                  "offset": 255,
+                  "length": 31
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "valueObject": {
+                "Amount": {
+                  "type": "currency",
+                  "valueCurrency": {
+                    "currencySymbol": "€",
+                    "amount": 10,
+                    "currencyCode": "EUR"
+                  },
+                  "content": "10 €",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        922,
+                        721,
+                        960,
+                        722,
+                        959,
+                        743,
+                        921,
+                        741
+                      ]
+                    }
+                  ],
+                  "confidence": 0.951,
+                  "spans": [
+                    {
+                      "offset": 308,
+                      "length": 4
+                    }
+                  ]
+                },
+                "Description": {
+                  "type": "string",
+                  "valueString": "Presentación",
+                  "content": "Presentación",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        149,
+                        722,
+                        269,
+                        722,
+                        269,
+                        742,
+                        149,
+                        742
+                      ]
+                    }
+                  ],
+                  "confidence": 0.954,
+                  "spans": [
+                    {
+                      "offset": 287,
+                      "length": 12
+                    }
+                  ]
+                },
+                "Quantity": {
+                  "type": "number",
+                  "valueNumber": 1,
+                  "content": "01",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        643,
+                        721,
+                        662,
+                        721,
+                        662,
+                        740,
+                        643,
+                        741
+                      ]
+                    }
+                  ],
+                  "confidence": 0.954,
+                  "spans": [
+                    {
+                      "offset": 300,
+                      "length": 2
+                    }
+                  ]
+                },
+                "UnitPrice": {
+                  "type": "currency",
+                  "valueCurrency": {
+                    "currencySymbol": "€",
+                    "amount": 10,
+                    "currencyCode": "EUR"
+                  },
+                  "content": "10 €",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        776,
+                        721,
+                        812,
+                        721,
+                        812,
+                        742,
+                        776,
+                        742
+                      ]
+                    }
+                  ],
+                  "confidence": 0.951,
+                  "spans": [
+                    {
+                      "offset": 303,
+                      "length": 4
+                    }
+                  ]
+                }
+              },
+              "content": "Presentación\n01\n10 €\n10 €",
+              "boundingRegions": [
+                {
+                  "pageNumber": 1,
+                  "polygon": [
+                    149,
+                    721,
+                    959,
+                    721,
+                    959,
+                    742,
+                    149,
+                    742
+                  ]
+                }
+              ],
+              "confidence": 0.926,
+              "spans": [
+                {
+                  "offset": 287,
+                  "length": 25
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "valueObject": {
+                "Amount": {
+                  "type": "currency",
+                  "valueCurrency": {
+                    "currencySymbol": "€",
+                    "amount": 10,
+                    "currencyCode": "EUR"
+                  },
+                  "content": "10 €",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        923,
+                        767,
+                        960,
+                        768,
+                        959,
+                        789,
+                        922,
+                        787
+                      ]
+                    }
+                  ],
+                  "confidence": 0.951,
+                  "spans": [
+                    {
+                      "offset": 341,
+                      "length": 4
+                    }
+                  ]
+                },
+                "Description": {
+                  "type": "string",
+                  "valueString": "Equipo de marketing",
+                  "content": "Equipo de marketing",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        148,
+                        768,
+                        341,
+                        768,
+                        341,
+                        792,
+                        148,
+                        792
+                      ]
+                    }
+                  ],
+                  "confidence": 0.951,
+                  "spans": [
+                    {
+                      "offset": 313,
+                      "length": 19
+                    }
+                  ]
+                },
+                "Quantity": {
+                  "type": "number",
+                  "valueNumber": 1,
+                  "content": "01",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        643,
+                        768,
+                        663,
+                        768,
+                        663,
+                        789,
+                        643,
+                        789
+                      ]
+                    }
+                  ],
+                  "confidence": 0.954,
+                  "spans": [
+                    {
+                      "offset": 333,
+                      "length": 2
+                    }
+                  ]
+                },
+                "UnitPrice": {
+                  "type": "currency",
+                  "valueCurrency": {
+                    "currencySymbol": "€",
+                    "amount": 10,
+                    "currencyCode": "EUR"
+                  },
+                  "content": "10 €",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        776,
+                        768,
+                        812,
+                        768,
+                        812,
+                        788,
+                        776,
+                        788
+                      ]
+                    }
+                  ],
+                  "confidence": 0.95,
+                  "spans": [
+                    {
+                      "offset": 336,
+                      "length": 4
+                    }
+                  ]
+                }
+              },
+              "content": "Equipo de marketing\n01\n10 €\n10 €",
+              "boundingRegions": [
+                {
+                  "pageNumber": 1,
+                  "polygon": [
+                    148,
+                    768,
+                    959,
+                    768,
+                    959,
+                    792,
+                    148,
+                    792
+                  ]
+                }
+              ],
+              "confidence": 0.925,
+              "spans": [
+                {
+                  "offset": 313,
+                  "length": 32
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "valueObject": {
+                "Amount": {
+                  "type": "currency",
+                  "valueCurrency": {
+                    "currencySymbol": "€",
+                    "amount": 10,
+                    "currencyCode": "EUR"
+                  },
+                  "content": "10 €",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        922,
+                        815,
+                        960,
+                        815,
+                        960,
+                        836,
+                        922,
+                        836
+                      ]
+                    }
+                  ],
+                  "confidence": 0.951,
+                  "spans": [
+                    {
+                      "offset": 364,
+                      "length": 4
+                    }
+                  ]
+                },
+                "Description": {
+                  "type": "string",
+                  "valueString": "Formación",
+                  "content": "Formación",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        149,
+                        815,
+                        245,
+                        815,
+                        245,
+                        836,
+                        149,
+                        835
+                      ]
+                    }
+                  ],
+                  "confidence": 0.956,
+                  "spans": [
+                    {
+                      "offset": 346,
+                      "length": 9
+                    }
+                  ]
+                },
+                "Quantity": {
+                  "type": "number",
+                  "valueNumber": 1,
+                  "content": "01",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        643,
+                        816,
+                        664,
+                        816,
+                        664,
+                        835,
+                        643,
+                        835
+                      ]
+                    }
+                  ],
+                  "confidence": 0.953,
+                  "spans": [
+                    {
+                      "offset": 356,
+                      "length": 2
+                    }
+                  ]
+                },
+                "UnitPrice": {
+                  "type": "currency",
+                  "valueCurrency": {
+                    "currencySymbol": "€",
+                    "amount": 10,
+                    "currencyCode": "EUR"
+                  },
+                  "content": "10 €",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        776,
+                        815,
+                        812,
+                        815,
+                        812,
+                        836,
+                        776,
+                        836
+                      ]
+                    }
+                  ],
+                  "confidence": 0.95,
+                  "spans": [
+                    {
+                      "offset": 359,
+                      "length": 4
+                    }
+                  ]
+                }
+              },
+              "content": "Formación\n01\n10 €\n10 €",
+              "boundingRegions": [
+                {
+                  "pageNumber": 1,
+                  "polygon": [
+                    149,
+                    815,
+                    960,
+                    815,
+                    960,
+                    836,
+                    149,
+                    836
+                  ]
+                }
+              ],
+              "confidence": 0.925,
+              "spans": [
+                {
+                  "offset": 346,
+                  "length": 22
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "valueObject": {
+                "Amount": {
+                  "type": "currency",
+                  "valueCurrency": {
+                    "currencySymbol": "€",
+                    "amount": 10,
+                    "currencyCode": "EUR"
+                  },
+                  "content": "10 €",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        922,
+                        862,
+                        960,
+                        862,
+                        960,
+                        883,
+                        922,
+                        883
+                      ]
+                    }
+                  ],
+                  "confidence": 0.951,
+                  "spans": [
+                    {
+                      "offset": 386,
+                      "length": 4
+                    }
+                  ]
+                },
+                "Description": {
+                  "type": "string",
+                  "valueString": "Recursos",
+                  "content": "Recursos",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        149,
+                        863,
+                        236,
+                        865,
+                        236,
+                        884,
+                        149,
+                        883
+                      ]
+                    }
+                  ],
+                  "confidence": 0.952,
+                  "spans": [
+                    {
+                      "offset": 369,
+                      "length": 8
+                    }
+                  ]
+                },
+                "Quantity": {
+                  "type": "number",
+                  "valueNumber": 1,
+                  "content": "01",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        643,
+                        863,
+                        663,
+                        863,
+                        663,
+                        882,
+                        643,
+                        882
+                      ]
+                    }
+                  ],
+                  "confidence": 0.953,
+                  "spans": [
+                    {
+                      "offset": 378,
+                      "length": 2
+                    }
+                  ]
+                },
+                "UnitPrice": {
+                  "type": "currency",
+                  "valueCurrency": {
+                    "currencySymbol": "€",
+                    "amount": 10,
+                    "currencyCode": "EUR"
+                  },
+                  "content": "10 €",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        776,
+                        863,
+                        813,
+                        863,
+                        813,
+                        884,
+                        776,
+                        884
+                      ]
+                    }
+                  ],
+                  "confidence": 0.95,
+                  "spans": [
+                    {
+                      "offset": 381,
+                      "length": 4
+                    }
+                  ]
+                }
+              },
+              "content": "Recursos\n01\n10 €\n10 €",
+              "boundingRegions": [
+                {
+                  "pageNumber": 1,
+                  "polygon": [
+                    149,
+                    862,
+                    960,
+                    862,
+                    960,
+                    884,
+                    149,
+                    884
+                  ]
+                }
+              ],
+              "confidence": 0.926,
+              "spans": [
+                {
+                  "offset": 369,
+                  "length": 21
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "valueObject": {
+                "Amount": {
+                  "type": "currency",
+                  "valueCurrency": {
+                    "currencySymbol": "€",
+                    "amount": 10,
+                    "currencyCode": "EUR"
+                  },
+                  "content": "10 €",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        923,
+                        909,
+                        959,
+                        909,
+                        959,
+                        930,
+                        923,
+                        930
+                      ]
+                    }
+                  ],
+                  "confidence": 0.951,
+                  "spans": [
+                    {
+                      "offset": 408,
+                      "length": 4
+                    }
+                  ]
+                },
+                "Description": {
+                  "type": "string",
+                  "valueString": "Recursos",
+                  "content": "Recursos",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        148,
+                        910,
+                        236,
+                        911,
+                        236,
+                        931,
+                        149,
+                        930
+                      ]
+                    }
+                  ],
+                  "confidence": 0.952,
+                  "spans": [
+                    {
+                      "offset": 391,
+                      "length": 8
+                    }
+                  ]
+                },
+                "Quantity": {
+                  "type": "number",
+                  "valueNumber": 1,
+                  "content": "01",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        643,
+                        910,
+                        662,
+                        910,
+                        662,
+                        929,
+                        643,
+                        929
+                      ]
+                    }
+                  ],
+                  "confidence": 0.952,
+                  "spans": [
+                    {
+                      "offset": 400,
+                      "length": 2
+                    }
+                  ]
+                },
+                "UnitPrice": {
+                  "type": "currency",
+                  "valueCurrency": {
+                    "currencySymbol": "€",
+                    "amount": 10,
+                    "currencyCode": "EUR"
+                  },
+                  "content": "10 €",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        776,
+                        908,
+                        813,
+                        908,
+                        813,
+                        930,
+                        776,
+                        930
+                      ]
+                    }
+                  ],
+                  "confidence": 0.95,
+                  "spans": [
+                    {
+                      "offset": 403,
+                      "length": 4
+                    }
+                  ]
+                }
+              },
+              "content": "Recursos\n01\n10 €\n10 €",
+              "boundingRegions": [
+                {
+                  "pageNumber": 1,
+                  "polygon": [
+                    148,
+                    908,
+                    959,
+                    908,
+                    959,
+                    931,
+                    148,
+                    931
+                  ]
+                }
+              ],
+              "confidence": 0.926,
+              "spans": [
+                {
+                  "offset": 391,
+                  "length": 21
+                }
+              ]
+            }
+          ]
+        },
+        "TaxDetails": {
+          "type": "array",
+          "valueArray": [
+            {
+              "type": "object",
+              "valueObject": {
+                "Amount": {
+                  "type": "currency",
+                  "valueCurrency": {
+                    "currencySymbol": "€",
+                    "amount": 200,
+                    "currencyCode": "EUR"
+                  },
+                  "content": "200 €",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        923,
+                        1038,
+                        975,
+                        1038,
+                        975,
+                        1058,
+                        923,
+                        1058
+                      ]
+                    }
+                  ],
+                  "confidence": 0.946,
+                  "spans": [
+                    {
+                      "offset": 422,
+                      "length": 5
+                    }
+                  ]
+                },
+                "Rate": {
+                  "type": "string",
+                  "valueString": "21 %",
+                  "content": "21 %",
+                  "boundingRegions": [
+                    {
+                      "pageNumber": 1,
+                      "polygon": [
+                        782,
+                        1037,
+                        826,
+                        1037,
+                        826,
+                        1060,
+                        782,
+                        1060
+                      ]
+                    }
+                  ],
+                  "confidence": 0.948,
+                  "spans": [
+                    {
+                      "offset": 417,
+                      "length": 4
+                    }
+                  ]
+                }
+              },
+              "content": "IVA\n21 %\n200 €",
+              "boundingRegions": [
+                {
+                  "pageNumber": 1,
+                  "polygon": [
+                    588,
+                    1036,
+                    975,
+                    1036,
+                    975,
+                    1060,
+                    588,
+                    1060
+                  ]
+                }
+              ],
+              "confidence": 0.923,
+              "spans": [
+                {
+                  "offset": 413,
+                  "length": 14
+                }
+              ]
+            }
+          ]
+        },
+        "TotalTax": {
+          "type": "currency",
+          "valueCurrency": {
+            "currencySymbol": "€",
+            "amount": 200,
+            "currencyCode": "EUR"
+          },
+          "content": "200 €",
+          "boundingRegions": [
+            {
+              "pageNumber": 1,
+              "polygon": [
+                923,
+                1038,
+                975,
+                1038,
+                975,
+                1058,
+                923,
+                1058
+              ]
+            }
+          ],
+          "confidence": 0.946,
+          "spans": [
+            {
+              "offset": 422,
+              "length": 5
+            }
+          ]
+        }
+      },
+      "confidence": 1,
+      "spans": [
+        {
+          "offset": 0,
+          "length": 555
+        }
+      ]
+    }
+  ],
+  "contentFormat": "text"
+}

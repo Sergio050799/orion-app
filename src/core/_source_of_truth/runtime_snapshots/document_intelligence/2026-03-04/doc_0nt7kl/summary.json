@@ -1,0 +1,257 @@
+{
+  "docId": "0nt7kl",
+  "createdAt": "2026-03-04T15:52:39.104Z",
+  "pageCount": 1,
+  "firstLines": [
+    "TOYOTA MOTOR EUROPE NV/SA",
+    "B",
+    "Nº de Serie:",
+    "e021100839",
+    "Matrícula",
+    "8945NKN",
+    "Certificado Nº",
+    "e021100839-",
+    "20251122",
+    "Código"
+  ],
+  "usedModel": "prebuilt-read",
+  "documentType": "PERMISO_V1",
+  "extractorUsed": "permisoExtractor.v1",
+  "classifierEvidence": {
+    "evidence": [
+      "V2_KW:MATRICULA",
+      "V1_CODES: D\\.1,D\\.2,D\\.3,E,F\\.1,G,I,J,P\\.1,P\\.2,P\\.3,S\\.1,S\\.2",
+      "WINNER:PERMISO_V1"
+    ],
+    "scoreV1": 420,
+    "scoreV2": -100
+  },
+  "ocrQuality": {
+    "ocrChars": 1652,
+    "nonEmptyLines": 137,
+    "fieldsFoundCount": 5,
+    "quality": "high"
+  },
+  "extractedFields": {
+    "identification": {
+      "license_plate": {
+        "value": "UTOSA",
+        "confidence": 0.8,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "vin": {
+        "value": "YAREDYHT2RJ071736",
+        "confidence": 0.9,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "first_registration_date": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo",
+        "source": "ocr"
+      },
+      "registration_date": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo",
+        "source": "ocr"
+      },
+      "issue_date": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo",
+        "source": "ocr"
+      },
+      "validity_until": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo",
+        "source": "ocr"
+      },
+      "issuing_authority": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo",
+        "source": "ocr"
+      }
+    },
+    "holder": {
+      "full_name": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo",
+        "source": "ocr"
+      }
+    },
+    "vehicleCommercial": {
+      "brand": {
+        "value": "TOYOTA",
+        "confidence": 0.8,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "model": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo",
+        "source": "ocr"
+      },
+      "commercial_name": {
+        "value": "PROACE CITY",
+        "confidence": 0.8,
+        "status_color": "verde",
+        "source": "ocr"
+      }
+    },
+    "vehicleTechnical": {
+      "fuel_raw": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo",
+        "source": "ocr"
+      },
+      "engine_displacement_cc": {
+        "value": 1499,
+        "confidence": 0.9,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "power_kw": {
+        "value": 75,
+        "confidence": 0.9,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "seats": {
+        "value": 2,
+        "confidence": 0.9,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "mass_in_service_kg": {
+        "value": 1463,
+        "confidence": 0.9,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "max_mass_kg": {
+        "value": 2370,
+        "confidence": 0.9,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "tech_max_mass_kg": {
+        "value": 2370,
+        "confidence": 0.9,
+        "status_color": "verde",
+        "source": "ocr"
+      }
+    },
+    "meta": {
+      "document_version": "V1",
+      "detected_type": "PERMISO_V1",
+      "warnings": [
+        "B_DATE_NOT_FOUND",
+        "SERVICE_D4_NOT_FOUND"
+      ],
+      "_debugExtract": [
+        {
+          "key": "G (Masa Servicio)",
+          "value": "1463",
+          "sourceLine": "G",
+          "method": "codeRegex"
+        },
+        {
+          "key": "F.1 (MMA)",
+          "value": "2370",
+          "sourceLine": "F.1",
+          "method": "codeRegex"
+        },
+        {
+          "key": "F.2 (MTM)",
+          "value": "2370",
+          "sourceLine": "F.2",
+          "method": "codeRegex"
+        },
+        {
+          "key": "A (Matrícula)",
+          "value": "UTO SA",
+          "sourceLine": "STELLANTIS AUTO SA",
+          "method": "codeRegex"
+        },
+        {
+          "key": "P.1 (Cilindrada)",
+          "value": "1499",
+          "sourceLine": "P.1",
+          "method": "codeRegex"
+        },
+        {
+          "key": "D.1 (Marca)",
+          "value": "TOYOTA",
+          "sourceLine": "D.1",
+          "method": "codeRegex"
+        },
+        {
+          "key": "P.2 (Potencia)",
+          "value": "75",
+          "sourceLine": "P.2",
+          "method": "codeRegex"
+        },
+        {
+          "key": "D.3 (Modelo)",
+          "value": "PROACE CITY",
+          "sourceLine": "D.3",
+          "method": "codeRegex"
+        },
+        {
+          "key": "E (Bastidor)",
+          "value": "YAREDYHT2RJ071736",
+          "sourceLine": "E",
+          "method": "codeRegex"
+        },
+        {
+          "key": "S.1 (Plazas)",
+          "value": "2",
+          "sourceLine": "S.1",
+          "method": "codeRegex"
+        },
+        {
+          "key": "RAW_OBSERVACIONES",
+          "value": "Masa Real:01524 \n Firma autorizada Registro de fabricantes y firmas autorizadas \n Opciones incluidas en la homologación de tipo \n ************ \n JOSÉ MANUEL MÉNDEZ SÁNCHEZ \n A49C6A15A54F46F3B2CEBD621DE942A3 \n Tarjeta elTV expedida por DGT \n Primera expedición: \n 17/02/2026 09:35:03 \n Expedición: \n 17/02/2026 09.35.05",
+          "sourceLine": "DEBUG",
+          "method": "RAW"
+        },
+        {
+          "key": "Observaciones",
+          "value": "Masa Real:01524\nFirma autorizada Registro de fabricantes y firmas autorizadas\nOpciones incluidas en la homologación de tipo\n************\nJOSÉ MANUEL MÉNDEZ SÁNCHEZ\nA49C6A15A54F46F3B2CEBD621DE942A3\nTarjeta elTV expedida por DGT\nPrimera expedición:\n17/02/2026 09:35:03\nExpedición:\n17/02/2026 09.35.05",
+          "sourceLine": "Bloque OBSERVACIONES (Limpio)",
+          "method": "regexBlockFiltered"
+        }
+      ],
+      "debugSources": {
+        "B": {
+          "candidates": [],
+          "validated": false,
+          "regex": "\\b(0[1-9]|[12]\\d|3[01])[\\/\\-](0[1-9]|1[0-2])[\\/\\-](19|20)\\d{2}\\b"
+        },
+        "D4": {
+          "candidates": [],
+          "validated": false,
+          "regex": "exclude_codes,take_text"
+        }
+      },
+      "raw_observations": [
+        "Masa Real:01524 \n Firma autorizada Registro de fabricantes y firmas autorizadas \n Opciones incluidas en la homologación de tipo \n ************ \n JOSÉ MANUEL MÉNDEZ SÁNCHEZ \n A49C6A15A54F46F3B2CEBD621DE942A3 \n Tarjeta elTV expedida por DGT \n Primera expedición: \n 17/02/2026 09:35:03 \n Expedición: \n 17/02/2026 09.35.05"
+      ]
+    },
+    "observations": {
+      "value": "Masa Real:01524\nFirma autorizada Registro de fabricantes y firmas autorizadas\nOpciones incluidas en la homologación de tipo\n************\nJOSÉ MANUEL MÉNDEZ SÁNCHEZ\nA49C6A15A54F46F3B2CEBD621DE942A3\nTarjeta elTV expedida por DGT\nPrimera expedición:\n17/02/2026 09:35:03\nExpedición:\n17/02/2026 09.35.05",
+      "confidence": 0.8,
+      "status_color": "verde",
+      "source": "ocr"
+    }
+  },
+  "decoded": {}
+}

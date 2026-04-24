@@ -1,0 +1,31 @@
+{
+  "docId": "aec063b6-9f7e-464d-a5a9-0fe382ad3522",
+  "createdAt": "2026-02-20T17:42:15.316Z",
+  "pageCount": 1,
+  "firstLines": [
+    "B",
+    "Nº de Serle:",
+    "e018468964",
+    "M.1",
+    "2583 / --------------- / -------------",
+    "Matricula",
+    "0102NKN",
+    "Certificado Nº",
+    "75377309",
+    "Código"
+  ],
+  "vehiclePreview": {
+    "plate": "0102 NKN",
+    "make": null,
+    "model": "CLIO",
+    "seats": 5,
+    "powerCv": 101,
+    "firstLines": [
+      "B",
+      "Nº de Serle:",
+      "e018468964",
+      "M.1",
+      "2583 / --------------- / -------------"
+    ]
+  }
+}

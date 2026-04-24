@@ -1,0 +1,22 @@
+
+import fs from 'fs';
+import path from 'path';
+import { NormativaV1, MasterDictionaryV2 } from '@/core/types';
+
+// Adjust path relative to CWD (Project Root)
+// Next.js runtime CWD is usually project root.
+const DATA_DIR = path.join(process.cwd(), 'src', 'core', 'data');
+
+export async function loadCoreData() {
+    const normativaPath = path.join(DATA_DIR, 'normativa_unificada.v1.json');
+    const dictionaryPath = path.join(DATA_DIR, 'itv_master_dictionary.v2.json');
+
+    if (!fs.existsSync(normativaPath)) {
+        throw new Error(`Normativa V1 not found at ${normativaPath}`);
+    }
+
+    const normativa = JSON.parse(fs.readFileSync(normativaPath, 'utf-8')) as NormativaV1;
+    const dictionary = JSON.parse(fs.readFileSync(dictionaryPath, 'utf-8')) as MasterDictionaryV2;
+
+    return { normativa, dictionary };
+}

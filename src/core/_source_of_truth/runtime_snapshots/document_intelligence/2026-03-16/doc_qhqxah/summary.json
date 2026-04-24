@@ -1,0 +1,240 @@
+{
+  "docId": "qhqxah",
+  "createdAt": "2026-03-16T11:15:16.156Z",
+  "pageCount": 1,
+  "firstLines": [
+    "DGT",
+    "AUTORIZACIÓN PROVISIONAL DE CIRCULACIÓN",
+    "Fecha expedición:",
+    "16/01/2028 10:03",
+    "DATOS GENERALES",
+    "Jefatura:",
+    "Jefatura Provincial de Asturias",
+    "Fecha Matriculación",
+    "16/01/2026",
+    "Matricula."
+  ],
+  "usedModel": "prebuilt-read",
+  "detectedType": "PERMISO_V2",
+  "documentType": "PERMISO_V2",
+  "detectedTypeLocked": true,
+  "detectedTypeEvidence": {
+    "evidence": [
+      "EXACT_TITLE_V2"
+    ],
+    "scoreV1": 0,
+    "scoreV2": 0
+  },
+  "extractorUsed": "permisoExtractor.v2",
+  "classifierEvidence": {
+    "evidence": [
+      "EXACT_TITLE_V2"
+    ],
+    "scoreV1": 0,
+    "scoreV2": 0
+  },
+  "ocrQuality": {
+    "ocrChars": 1787,
+    "nonEmptyLines": 79,
+    "fieldsFoundCount": 4,
+    "quality": "medium"
+  },
+  "extractedFields": {
+    "identification": {
+      "license_plate": {
+        "value": null,
+        "confidence": 0.1,
+        "status_color": "rojo",
+        "source": "ocr"
+      },
+      "vin": {
+        "value": "VSSZZZKJ3TR554347",
+        "confidence": 0.9,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "first_registration_date": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo",
+        "source": "ocr"
+      },
+      "registration_date": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo",
+        "source": "ocr"
+      },
+      "issue_date": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo",
+        "source": "ocr"
+      },
+      "validity_until": {
+        "value": "16/04/2026",
+        "confidence": 0.9,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "issuing_authority": {
+        "value": "PROVINCIAL DE ASTURIAS",
+        "confidence": 0.8,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "nive": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo",
+        "source": "ocr"
+      }
+    },
+    "holder": {
+      "full_name": {
+        "value": ";",
+        "confidence": 0.8,
+        "status_color": "naranja",
+        "source": "ocr"
+      }
+    },
+    "vehicleCommercial": {
+      "brand": {
+        "value": "SEAT",
+        "confidence": 0.8,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "model": {
+        "value": "VSSZZZKJ3TR554347",
+        "confidence": 0.8,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "commercial_name": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo",
+        "source": "ocr"
+      },
+      "type": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo",
+        "source": "ocr"
+      },
+      "variant": {
+        "value": "BDSGD",
+        "confidence": 0.8,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "version": {
+        "value": "FM5SFMSDF01C4",
+        "confidence": 0.8,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "color": {
+        "value": "BLANCO",
+        "confidence": 0.8,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "service": {
+        "value": "PARTICULAR - SIN ESPECIFICAR",
+        "confidence": 0.8,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "renting": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo",
+        "source": "ocr"
+      },
+      "procedencia": {
+        "value": "EEE",
+        "confidence": 0.8,
+        "status_color": "verde",
+        "source": "ocr"
+      }
+    },
+    "vehicleTechnical": {
+      "fuel_raw": {
+        "value": "GASOLINA",
+        "confidence": 0.8,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "engine_displacement_cc": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo",
+        "source": "ocr"
+      },
+      "power_kw": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo",
+        "source": "ocr"
+      },
+      "seats": {
+        "value": 5,
+        "confidence": 0.9,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "max_mass_kg": {
+        "value": 1535,
+        "confidence": 0.9,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "homologation_code": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo",
+        "source": "ocr"
+      },
+      "max_mass_loaded_kg": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo",
+        "source": "ocr"
+      },
+      "mass_in_service_kg": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo",
+        "source": "ocr"
+      },
+      "co2_g_km": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo",
+        "source": "ocr"
+      },
+      "power_to_weight_ratio": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo",
+        "source": "ocr"
+      }
+    },
+    "meta": {
+      "document_version": "V2",
+      "detected_type": "PERMISO_V2",
+      "warnings": [
+        "Matrícula no encontrada."
+      ]
+    },
+    "next_itv": {
+      "value": "16/04/2026",
+      "confidence": 0.9,
+      "status_color": "verde",
+      "source": "ocr"
+    }
+  },
+  "decoded": {}
+}

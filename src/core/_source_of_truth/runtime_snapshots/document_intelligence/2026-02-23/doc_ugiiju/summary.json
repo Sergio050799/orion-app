@@ -1,0 +1,67 @@
+{
+  "docId": "ugiiju",
+  "createdAt": "2026-02-23T12:23:23.722Z",
+  "isMixedPdf": false,
+  "pagesTotal": 1,
+  "pageMap": [
+    {
+      "pageIndex": 1,
+      "rotationApplied": -90,
+      "detectedType": "FICHA_TECNICA",
+      "confidence": 0.95
+    }
+  ],
+  "segments": [
+    {
+      "id": "338b67c6-0fed-4808-86a4-88f442218b4a",
+      "type": "FICHA_TECNICA",
+      "pages": [
+        1
+      ],
+      "extractionStatus": "done",
+      "extractedData": {
+        "plate": "0078 NKN",
+        "CL": "1000",
+        "CI": "F.3",
+        "CV": "28",
+        "D1": "RENAULT",
+        "D3": "CLIO",
+        "E": "VF1RJA00375377315",
+        "J": "M1",
+        "J1": "AB --",
+        "J2": "F.7",
+        "J3": "F.7.1",
+        "F2": "1685",
+        "F4": "1437",
+        "F5": "1728",
+        "F6": "4047",
+        "P3": "M/D",
+        "P1": "1461",
+        "P2": "74",
+        "S1": 5,
+        "observations": null,
+        "homologationOptions": "Opciones incluidas en la homologación de tipo \n José Luis García Sanz \n VIAS: 1518 MM / 1506 MM; ALTURA 1457 MM CON ANTENA DE TIBURON",
+        "issueDateRaw": "12/09/2025",
+        "issueDateISO": "2025-09-12T00:00:00.000Z",
+        "powerCv": 101
+      }
+    }
+  ],
+  "vehicleGroups": [
+    {
+      "id": "afea9ca6-7ddf-457b-8e2a-ea240f5c4aeb",
+      "matricula": "0078 NKN",
+      "bastidor": "VF1RJA00375377315",
+      "documents": [
+        {
+          "segmentId": "338b67c6-0fed-4808-86a4-88f442218b4a",
+          "type": "FICHA_TECNICA",
+          "pages": [
+            1
+          ],
+          "status": "done"
+        }
+      ]
+    }
+  ]
+}

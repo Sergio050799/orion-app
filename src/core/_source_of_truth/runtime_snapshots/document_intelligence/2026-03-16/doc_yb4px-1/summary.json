@@ -1,0 +1,72 @@
+{
+  "docId": "yb4px-1",
+  "createdAt": "2026-03-16T16:02:48.866Z",
+  "pageCount": 1,
+  "firstLines": [],
+  "usedModel": "prebuilt-read",
+  "detectedType": "FICHA_TECNICA",
+  "documentType": "FICHA_TECNICA",
+  "detectedTypeLocked": true,
+  "detectedTypeEvidence": {
+    "evidence": [
+      "LOCKED_BY_USER"
+    ],
+    "scoreV1": 0,
+    "scoreV2": 0
+  },
+  "extractorUsed": "legacyFichaExtractor",
+  "classifierEvidence": {
+    "evidence": [
+      "LOCKED_BY_USER"
+    ],
+    "scoreV1": 0,
+    "scoreV2": 0
+  },
+  "ocrQuality": {
+    "ocrChars": 0,
+    "nonEmptyLines": 0,
+    "fieldsFoundCount": 0,
+    "quality": "low"
+  },
+  "extractedFields": {
+    "plate": null,
+    "CL": null,
+    "CI": null,
+    "CV": null,
+    "D1": null,
+    "D3": null,
+    "E": null,
+    "J": null,
+    "J1": null,
+    "J2": null,
+    "J3": null,
+    "F2": null,
+    "F4": null,
+    "F5": null,
+    "F6": null,
+    "P3": null,
+    "P1": null,
+    "P2": null,
+    "S1": null,
+    "observations": null,
+    "homologationOptions": null,
+    "issueDateRaw": null,
+    "issueDateISO": null,
+    "powerCv": null,
+    "_v2Debug": {
+      "invoked": true,
+      "bestSource": "none",
+      "fullTextLen": 0,
+      "linesCount": 0,
+      "attempts": []
+    }
+  },
+  "decoded": {
+    "make": null,
+    "model": null,
+    "vehicleClass": null,
+    "vehicleCategory": null,
+    "bodyType": null,
+    "fuelType": null
+  }
+}

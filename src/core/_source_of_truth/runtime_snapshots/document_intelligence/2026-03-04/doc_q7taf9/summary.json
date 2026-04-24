@@ -1,0 +1,223 @@
+{
+  "docId": "q7taf9",
+  "createdAt": "2026-03-04T08:31:43.023Z",
+  "pageCount": 1,
+  "firstLines": [
+    "A",
+    "7958MZZ",
+    "B",
+    "H",
+    "-",
+    "I",
+    "14-04-2025",
+    "(I.1)",
+    "(I.2)",
+    "MADRID"
+  ],
+  "usedModel": "prebuilt-read",
+  "documentType": "PERMISO_V1",
+  "extractorUsed": "permisoExtractor.v1",
+  "classifierEvidence": {
+    "evidence": [
+      "V1_CODES: C\\.1\\.1,C\\.1\\.2,C\\.1\\.3,C\\.4,D\\.1,D\\.2,D\\.3,D\\.4,E,F\\.1,G,I,P\\.1,P\\.2,P\\.3,Q,S\\.1,S\\.2",
+      "WINNER:PERMISO_V1"
+    ],
+    "scoreV1": 720,
+    "scoreV2": 0
+  },
+  "ocrQuality": {
+    "ocrChars": 524,
+    "nonEmptyLines": 50,
+    "fieldsFoundCount": 6,
+    "quality": "high"
+  },
+  "extractedFields": {
+    "identification": {
+      "license_plate": {
+        "value": "7958MZZ",
+        "confidence": 0.8,
+        "status_color": "verde"
+      },
+      "vin": {
+        "value": "W1VVMGFZ9S4510098",
+        "confidence": 0.9,
+        "status_color": "verde"
+      },
+      "first_registration_date": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo"
+      },
+      "issue_date": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo"
+      },
+      "validity_until": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo"
+      },
+      "issuing_authority": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo"
+      }
+    },
+    "holder": {
+      "full_name": {
+        "value": "FREDY ALEXANDER",
+        "confidence": 0.9,
+        "status_color": "verde"
+      }
+    },
+    "vehicleCommercial": {
+      "brand": {
+        "value": "MERCEDES-BENZ",
+        "confidence": 0.8,
+        "status_color": "verde"
+      },
+      "model": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo"
+      },
+      "commercial_name": {
+        "value": "VITO TOURER",
+        "confidence": 0.8,
+        "status_color": "verde"
+      },
+      "type": {
+        "value": "639/2/KOU6L320SXX/3GJRFX29BEXX",
+        "confidence": 0.8,
+        "status_color": "verde"
+      },
+      "service": {
+        "value": "PÚBLICO - TAXI",
+        "confidence": 0.8,
+        "status_color": "verde"
+      }
+    },
+    "vehicleTechnical": {
+      "fuel_raw": {
+        "value": "DIESEL",
+        "confidence": 0.8,
+        "status_color": "verde"
+      },
+      "engine_displacement_cc": {
+        "value": 1950,
+        "confidence": 0.9,
+        "status_color": "verde"
+      },
+      "power_kw": {
+        "value": 140,
+        "confidence": 0.9,
+        "status_color": "verde"
+      },
+      "seats": {
+        "value": 9,
+        "confidence": 0.9,
+        "status_color": "verde"
+      }
+    },
+    "meta": {
+      "document_version": "V1",
+      "detected_type": "PERMISO_V1",
+      "warnings": [
+        "B_DATE_NOT_FOUND"
+      ],
+      "_debugExtract": [
+        {
+          "key": "A (Matrícula)",
+          "value": "7958MZZ",
+          "sourceLine": "A",
+          "method": "codeRegex"
+        },
+        {
+          "key": "E (Bastidor)",
+          "value": "W1VVMGFZ9S4510098",
+          "sourceLine": "E",
+          "method": "codeRegex"
+        },
+        {
+          "key": "P.1 (Cilindrada)",
+          "value": "1950",
+          "sourceLine": "P.1",
+          "method": "codeRegex"
+        },
+        {
+          "key": "P.2 (Potencia)",
+          "value": "140.0",
+          "sourceLine": "P.2",
+          "method": "codeRegex"
+        },
+        {
+          "key": "P.3 (Combustible)",
+          "value": "DIESEL",
+          "sourceLine": "P.3",
+          "method": "codeRegex"
+        },
+        {
+          "key": "S.1 (Plazas)",
+          "value": "9",
+          "sourceLine": "S.1",
+          "method": "codeRegex"
+        },
+        {
+          "key": "C.1.x (Titular)",
+          "value": "FREDY ALEXANDER",
+          "sourceLine": "C.1.2",
+          "method": "codeRegex_Concat"
+        },
+        {
+          "key": "D.1 (Marca)",
+          "value": "MERCEDES-BENZ",
+          "sourceLine": "D.1",
+          "method": "codeRegex"
+        },
+        {
+          "key": "D.2 (Tipo)",
+          "value": "639/2/KOU6L320SXX/3GJRFX29BEXX",
+          "sourceLine": "D.2",
+          "method": "codeRegex"
+        },
+        {
+          "key": "D.3 (Modelo)",
+          "value": "VITO TOURER",
+          "sourceLine": "D.3",
+          "method": "codeRegex"
+        },
+        {
+          "key": "D.4 (Servicio)",
+          "value": "PÚBLICO - TAXI",
+          "sourceLine": "PÚBLICO - TAXI",
+          "method": "candidates_filter"
+        }
+      ],
+      "debugSources": {
+        "B": {
+          "candidates": [
+            "B",
+            "H",
+            "-"
+          ],
+          "validated": false,
+          "regex": "\\b(0[1-9]|[12]\\d|3[01])[\\/\\-](0[1-9]|1[0-2])[\\/\\-](19|20)\\d{2}\\b",
+          "reason": "NO_DATE_MATCH"
+        },
+        "D4": {
+          "candidates": [
+            "(D.4)",
+            "PÚBLICO - TAXI"
+          ],
+          "validated": true,
+          "regex": "exclude_codes,take_text",
+          "chosen": "PÚBLICO - TAXI",
+          "line": "PÚBLICO - TAXI",
+          "reason": "VALUE_EXTRACTED"
+        }
+      }
+    }
+  },
+  "decoded": {}
+}

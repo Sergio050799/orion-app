@@ -1,0 +1,179 @@
+{
+  "docId": "om7f94",
+  "createdAt": "2026-03-03T15:52:15.988Z",
+  "pageCount": 1,
+  "firstLines": [
+    "GOWERNO",
+    "DE ESPAÑA",
+    ":DGT",
+    "0078NKN",
+    "SIGA.8575857",
+    "AUTORIZACIÓN PROVISIONAL DE CIRCULACIÓN",
+    "Matrícula:",
+    "Ref:",
+    "Fecha expedición:",
+    "13/02/2026 11:55"
+  ],
+  "usedModel": "prebuilt-read",
+  "documentType": "PERMISO_V2",
+  "extractorUsed": "permisoExtractor.v2",
+  "classifierEvidence": {
+    "evidence": [
+      "EXACT_TITLE_V2"
+    ],
+    "scoreV1": 0,
+    "scoreV2": 0
+  },
+  "ocrQuality": {
+    "ocrChars": 2257,
+    "nonEmptyLines": 96,
+    "fieldsFoundCount": 4,
+    "quality": "medium"
+  },
+  "extractedFields": {
+    "identification": {
+      "license_plate": {
+        "value": "REF:",
+        "confidence": 0.8,
+        "status_color": "verde"
+      },
+      "vin": {
+        "value": "VF1RJA00375377315",
+        "confidence": 0.9,
+        "status_color": "verde"
+      },
+      "first_registration_date": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo"
+      },
+      "issue_date": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo"
+      },
+      "validity_until": {
+        "value": "14/05/2026",
+        "confidence": 0.9,
+        "status_color": "verde"
+      },
+      "issuing_authority": {
+        "value": "JEFATURA PROVINCIAL DE ASTURIAS",
+        "confidence": 0.8,
+        "status_color": "verde"
+      }
+    },
+    "holder": {
+      "full_name": {
+        "value": "ALVEMACO RENTACAR SL",
+        "confidence": 0.8,
+        "status_color": "verde"
+      }
+    },
+    "vehicleCommercial": {
+      "brand": {
+        "value": null,
+        "confidence": 0.8,
+        "status_color": "rojo"
+      },
+      "model": {
+        "value": "CLIO",
+        "confidence": 0.8,
+        "status_color": "verde"
+      },
+      "commercial_name": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo"
+      },
+      "type": {
+        "value": "BASTIDOR:",
+        "confidence": 0.8,
+        "status_color": "verde"
+      },
+      "variant": {
+        "value": "BASE:",
+        "confidence": 0.8,
+        "status_color": "verde"
+      },
+      "version": {
+        "value": "BASE:",
+        "confidence": 0.8,
+        "status_color": "verde"
+      },
+      "color": {
+        "value": "BLANCO",
+        "confidence": 0.8,
+        "status_color": "verde"
+      },
+      "service": {
+        "value": "PARTICULAR - SIN ESPECIFICAR",
+        "confidence": 0.8,
+        "status_color": "verde"
+      },
+      "renting": {
+        "value": "N",
+        "confidence": 0.8,
+        "status_color": "naranja"
+      }
+    },
+    "vehicleTechnical": {
+      "fuel_raw": {
+        "value": "CILINDRADA:",
+        "confidence": 0.8,
+        "status_color": "verde"
+      },
+      "engine_displacement_cc": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo"
+      },
+      "power_kw": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo"
+      },
+      "seats": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo"
+      },
+      "max_mass_kg": {
+        "value": 1685,
+        "confidence": 0.9,
+        "status_color": "verde"
+      },
+      "homologation_code": {
+        "value": "E2*2007/46*0676*30",
+        "confidence": 0.8,
+        "status_color": "verde"
+      },
+      "max_mass_loaded_kg": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo"
+      },
+      "mass_in_service_kg": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo"
+      },
+      "co2_g_km": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo"
+      },
+      "power_to_weight_ratio": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo"
+      }
+    },
+    "meta": {
+      "document_version": "V2",
+      "detected_type": "PERMISO_V2",
+      "warnings": []
+    }
+  },
+  "decoded": {}
+}

@@ -1,0 +1,205 @@
+{
+  "docId": "gxj5r6",
+  "createdAt": "2026-03-13T19:06:48.013Z",
+  "pageCount": 1,
+  "firstLines": [
+    "INSPECCIONES TÉCNICAS",
+    "Matrícula:",
+    "Inspección:",
+    "013865 1",
+    "FAVORABLE",
+    "Fecha Insp:",
+    "09/08/2021 ..",
+    "Fecha validez:",
+    "09/08/2022",
+    "itv Lorca Centro ILC"
+  ],
+  "usedModel": "prebuilt-read",
+  "detectedType": "FICHA_TECNICA",
+  "documentType": "FICHA_TECNICA",
+  "detectedTypeLocked": true,
+  "detectedTypeEvidence": {
+    "evidence": [
+      "PERMISO_STRUCTURAL_MARKERS:5",
+      "FICHA_EXCLUSIVE_CODES:8",
+      "V2_KW:MATRICULA",
+      "STRONG_V1_CODES: D\\.1,D\\.2,D\\.3,F\\.1,P\\.1,P\\.2,P\\.3,S\\.1,S\\.2",
+      "V1_CODES: D\\.1,D\\.2,D\\.3,F\\.1,P\\.1,P\\.2,P\\.3,S\\.1,S\\.2",
+      "FICHA_EXCLUSIVE_STRONG:8",
+      "WINNER:FICHA_TECNICA"
+    ],
+    "scoreV1": -990,
+    "scoreV2": -1150
+  },
+  "extractorUsed": "legacyFichaExtractor",
+  "classifierEvidence": {
+    "evidence": [
+      "PERMISO_STRUCTURAL_MARKERS:5",
+      "FICHA_EXCLUSIVE_CODES:8",
+      "V2_KW:MATRICULA",
+      "STRONG_V1_CODES: D\\.1,D\\.2,D\\.3,F\\.1,P\\.1,P\\.2,P\\.3,S\\.1,S\\.2",
+      "V1_CODES: D\\.1,D\\.2,D\\.3,F\\.1,P\\.1,P\\.2,P\\.3,S\\.1,S\\.2",
+      "FICHA_EXCLUSIVE_STRONG:8",
+      "WINNER:FICHA_TECNICA"
+    ],
+    "scoreV1": -990,
+    "scoreV2": -1150
+  },
+  "ocrQuality": {
+    "ocrChars": 4907,
+    "nonEmptyLines": 215,
+    "fieldsFoundCount": 24,
+    "quality": "high"
+  },
+  "extractedFields": {
+    "plate": "2022ITV",
+    "CL": "CLASIFICACIÓN DEL VEHÍCULO",
+    "CI": null,
+    "CV": "CONTROL VIN",
+    "D1": "MARCA",
+    "D3": ".. DENOMINACIÓN COMERCIAL DEL",
+    "E": "Númerodeidentificacióndel",
+    "J": "/ VARIANTE / VERSION",
+    "J1": "CARROCERÍA DEL VEHICULO",
+    "J2": "CLASE",
+    "J3": "Volumen de bodegas",
+    "F2": "MASA MÁXIMA EN CARGA",
+    "F4": "ALTURA TOTAL",
+    "F5": "ANCHURA TOTAL",
+    "F6": "LONGITUD TOTAL",
+    "P3": "TIPO DE COMBUSTIBLE O",
+    "P1": "CILINDRADA",
+    "P2": "POTENCIA DEL MOTOR",
+    "S1": 1,
+    "observations": null,
+    "homologationOptions": null,
+    "issueDateRaw": "09/08/2021",
+    "issueDateISO": "2021-08-09T00:00:00.000Z",
+    "powerCv": null,
+    "_v2Debug": {
+      "invoked": true,
+      "bestSource": "pages.lines",
+      "fullTextLen": 4907,
+      "linesCount": 215,
+      "sampleFirst500": "INSPECCIONES TÉCNICAS MATRÍCULA: INSPECCIÓN: 013865 1 FAVORABLE FECHA INSP: 09/08/2021 .. FECHA VALIDEZ: 09/08/2022 ITV LORCA CENTRO ILC FECHA 29-09-2022 VALIDEZ: DESFAVORABLE INFORME: 17003-22-049495 KM: 192.821 FECHA: 18-10-2022 VALIDEZ: 18-10-2023 ITV 3040 INFORME: 17003-22-052188 ILV 2941 ILV 2941 REGIÓN: DE MURCIA JUNTA DE ANDALUEN JUNTA DE ANDALUCÍA .6 FECHA: VALIDEZ: G MASA EN ORDEN DE MARCHA (MOM) G.1 MASA EN VACÍO PARA VEHÍCULOS CATEGORÍA L G.2 MASA MINIMA ADMISIBLE DEL VEHÍCULO COMPLET",
+      "foundTokens": {
+        "D1": 1,
+        "D3": 1,
+        "E": 0,
+        "S1": 1
+      },
+      "attempts": [
+        {
+          "strategy": "codeLine",
+          "key": "J",
+          "raw": "UNTA",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "J2",
+          "raw": "CLASE",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "S1",
+          "raw": "2",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "D1",
+          "raw": "LIGENCIA DE VENTA",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "CL",
+          "raw": "C.V CONTROL VIN",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "CV",
+          "raw": "CONTROL VIN",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "D2",
+          "raw": "TIPO / VARIANTE / VERSION",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "J3",
+          "raw": "VOLUMEN DE BODEGAS",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "L2",
+          "raw": "DIMENSIONES DE LOS NEUMÁTICOS",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "P1",
+          "raw": ".1",
+          "valid": false,
+          "reasonIfInvalid": "invalidCC"
+        },
+        {
+          "strategy": "codeLine",
+          "key": "P2",
+          "raw": ".1",
+          "valid": false,
+          "reasonIfInvalid": "invalidKW"
+        },
+        {
+          "strategy": "codeLine",
+          "key": "P3",
+          "raw": "TIPO DE COMBUSTIBLE O",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "globalSearch",
+          "key": "plate",
+          "raw": "2022 ITV",
+          "valid": true
+        }
+      ]
+    },
+    "D2": "TIPO / VARIANTE / VERSION",
+    "L2": "DIMENSIONES DE LOS NEUMÁTICOS",
+    "trackWidth": "F.7.1 VIA POSTERIOR",
+    "bodegaVolumen": "S",
+    "_v2Fallback": [
+      "J",
+      "D2",
+      "L2",
+      "plate",
+      "trackWidth",
+      "bodegaVolumen"
+    ]
+  },
+  "decoded": {
+    "make": "MARCA",
+    "model": ".. DENOMINACIÓN COMERCIAL DEL",
+    "vehicleClass": "CLASIFICACIÓN DEL VEHÍCULO",
+    "vehicleCategory": "/ VARIANTE / VERSION",
+    "bodyType": "CARROCERÍA DEL VEHICULO",
+    "fuelType": "TIPO DE COMBUSTIBLE O"
+  }
+}

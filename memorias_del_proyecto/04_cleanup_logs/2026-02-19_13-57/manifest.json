@@ -1,0 +1,12 @@
+{
+    "timestamp": "2026-02-19T13:57:04+01:00",
+    "action": "ARCHITECTURAL_RESET",
+    "reason": "User request for clean state and source of truth consolidation",
+    "moved_items": [
+        "src/core/dictionaries -> src/memorias_del_proyecto/cleanup_backup/...",
+        "src/core/plates -> src/memorias_del_proyecto/cleanup_backup/...",
+        "src/core/normativa_md -> src/memorias_del_proyecto/cleanup_backup/..."
+    ],
+    "deleted_items": [],
+    "notes": "Everything removed from runtime will be moved here first."
+}

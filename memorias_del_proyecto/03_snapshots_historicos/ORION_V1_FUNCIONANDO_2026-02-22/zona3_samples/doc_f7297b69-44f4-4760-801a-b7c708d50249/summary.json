@@ -1,0 +1,55 @@
+{
+  "docId": "f7297b69-44f4-4760-801a-b7c708d50249",
+  "createdAt": "2026-02-20T18:26:30.636Z",
+  "pageCount": 1,
+  "firstLines": [
+    "B",
+    "Nº de Serle:",
+    "e018468964",
+    "Código",
+    "Descripción",
+    "Código",
+    "Descripción",
+    "Matricula",
+    "0102NKN",
+    "Certificado Nº"
+  ],
+  "usedModel": "prebuilt-read",
+  "ocrQuality": {
+    "ocrChars": 2020,
+    "nonEmptyLines": 139,
+    "fieldsFoundCount": 18,
+    "quality": "high"
+  },
+  "extractedFields": {
+    "plate": "0102 NKN",
+    "CL": "C.I",
+    "D1": "RENAULT",
+    "D3": "CLIO",
+    "E": "VF1RJA00875377309",
+    "J": null,
+    "J1": null,
+    "J2": null,
+    "J3": "R",
+    "F2": "1685",
+    "F4": "1437",
+    "F5": "1728",
+    "F6": null,
+    "P3": "M/D",
+    "P1": "1461",
+    "P2": "74",
+    "S1": 5,
+    "observations": "S.A.",
+    "homologationOptions": "Opciones incluidas en la homologación de tipo \n MIAS: 1518 MM / 1506 MM; ALTURA 1457 MM CON ANTENA DE TIBURON \n José Luis García Sanz \n F069160890994575868404623E84CA45 \n * VÁLIDO HASTA 14/05/2026 * \n CÓDIGO SEGURO DE VERIFICACIÓN \n RETELE-6202D145EA5A10 \n EXPEDIENTE \n SIGA.8575866 \n DIRECCIÓN DE VALIDACIÓN \n https://sedeclave.dgt.gob.es/WEB_FCSV/index.jsf?CSV=RETELE-6202D145EA5A10",
+    "issueDateRaw": "12/09/2025",
+    "issueDateISO": "2025-09-12T00:00:00.000Z",
+    "powerCv": 101
+  },
+  "decoded": {
+    "make": "RENAULT",
+    "model": "CLIO",
+    "vehicleCategory": null,
+    "bodyType": null,
+    "fuelType": "M/D"
+  }
+}

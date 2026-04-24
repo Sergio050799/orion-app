@@ -1,0 +1,148 @@
+export interface PlateEstimation {
+    date: string;
+    year: number;
+    month: number;
+    confidence: number;
+    method: string;
+    out_of_range?: boolean;
+    bounds?: {
+        from?: { date: string; series: string };
+        to?: { date: string; series: string };
+    };
+    error?: string;
+}
+
+export interface ClassificationResult {
+    cl_code: string | null;
+    vehicle_category: string;
+    source: string;
+    confidence: number;
+}
+
+export interface RiskResult {
+    risk_class: string;
+    score: number;
+    factors: string[];
+}
+
+export interface LogEntry {
+    level: string;
+    code: string;
+    msg: string;
+    ts: string;
+}
+
+export interface HistoryResultSummary {
+    risk_class: string;
+    category: string;
+    year?: number;
+    confidence?: number;
+}
+
+export interface HistoryEntry {
+    id: string;
+    timestamp: string;
+    plate: string;
+    result_summary: HistoryResultSummary;
+}
+
+export interface AnalysisResult {
+    plate: string;
+    normalized_plate: string;
+    is_valid_plate: boolean;
+    estimated: PlateEstimation;
+    classification: ClassificationResult;
+    risk: RiskResult;
+    history: {
+        stored: boolean;
+        id: string;
+    };
+    logs: LogEntry[];
+}
+
+// --- ORION PANEL 3 (BATCH WORKSTATION) TYPES ---
+
+export interface VehicleNormalized {
+    id: string;
+    matricula: string;
+    vin: string | null;
+    marca: string;
+    modelo: string;
+    tipo_var_ver: string;
+    fecha_primera_matriculacion: string;
+    combustible: string;
+    potencia_kw: number | null;
+    potencia_cv: number | null;
+    cilindrada_cc: number | null;
+    cilindrada_l: number | null;
+    plazas: number | null;
+
+    categoria_codigo: string;
+    categoria_texto: string;
+
+    clasificacion_codigo: string;
+    clasificacion_texto: string;
+
+    carroceria_codigo: string;
+    carroceria_texto: string;
+
+    confianza_media: number;
+    estado_coherencia: 'COHERENTE' | 'REVISAR';
+    estado_operativo: 'PENDIENTE' | 'APROBADO' | 'RECHAZADO';
+
+    informe: ValidationReport;
+
+    raw_data?: Record<string, any>;
+}
+
+export interface ValidationReport {
+    coherence_rules: RuleResult[];
+    technical_fields: TechnicalField[];
+    observations: string[];
+}
+
+export interface RuleResult {
+    rule: string;
+    status: 'OK' | 'ERROR' | 'REVISAR';
+    message?: string;
+}
+
+export interface TechnicalField {
+    field: string;
+    value: string | number | null;
+    label: string;
+    source_key: string;
+    confidence: number;
+    is_derived?: boolean;
+}
+
+export interface NormativaV1 {
+    metadata: { version: string };
+    clasificacion_construccion: Record<string, { label: string; source: string }>;
+    clasificacion_uso: Record<string, { label: string; source: string }>;
+    categorias_ue: Record<string, { label: string; source: string }>;
+    carrocerias: Record<string, { label: string; categories: string[]; source: string }>;
+    dimensiones: Record<string, { label: string; unit: string; source: string }>;
+    etiqueta_ambiental: Record<string, { description: string; source: string }>;
+}
+
+export interface MasterDictionaryV2 {
+    version: string;
+    schema: Record<string, any>;
+    rendering_rules: {
+        dimensions: Record<string, string>;
+        power: { kW_to_CV: string };
+        engine: { display_logic: string; fallback: string };
+    };
+    fleet_panel_spec: {
+        columns: Array<{ id: string; source: string }>;
+    };
+    human_report_template: {
+        sections: any[];
+    }
+}
+
+export interface CoreData {
+    normativa: NormativaV1;
+    dictionary: MasterDictionaryV2;
+}

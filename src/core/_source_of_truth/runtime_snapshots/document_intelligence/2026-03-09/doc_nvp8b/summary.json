@@ -1,0 +1,336 @@
+{
+  "docId": "nvp8b",
+  "createdAt": "2026-03-09T16:02:56.502Z",
+  "pageCount": 1,
+  "firstLines": [
+    "A",
+    "8919NKN",
+    "B",
+    "--",
+    "H",
+    "I",
+    "17-02-2026",
+    "(I.1)",
+    "17-02-2026",
+    "(I.2)"
+  ],
+  "usedModel": "prebuilt-read",
+  "detectedType": "PERMISO_V1",
+  "documentType": "PERMISO_V1",
+  "detectedTypeLocked": true,
+  "detectedTypeEvidence": {
+    "evidence": [
+      "PERMISO_STRUCTURAL_MARKERS:8",
+      "STRONG_V1_CODES: C\\.1\\.1,C\\.1\\.2,C\\.1\\.3,C\\.4,D\\.1,D\\.2,D\\.3,D\\.4,E,F\\.1,G,I,P\\.1,P\\.2,P\\.3,Q,S\\.1,S\\.2",
+      "V1_CODES: C\\.1\\.1,C\\.1\\.2,C\\.1\\.3,C\\.4,D\\.1,D\\.2,D\\.3,D\\.4,E,F\\.1,G,I,P\\.1,P\\.2,P\\.3,Q,S\\.1,S\\.2",
+      "WINNER:PERMISO_V1"
+    ],
+    "scoreV1": 1670,
+    "scoreV2": -50
+  },
+  "extractorUsed": "permisoExtractor.v1",
+  "classifierEvidence": {
+    "evidence": [
+      "PERMISO_STRUCTURAL_MARKERS:8",
+      "STRONG_V1_CODES: C\\.1\\.1,C\\.1\\.2,C\\.1\\.3,C\\.4,D\\.1,D\\.2,D\\.3,D\\.4,E,F\\.1,G,I,P\\.1,P\\.2,P\\.3,Q,S\\.1,S\\.2",
+      "V1_CODES: C\\.1\\.1,C\\.1\\.2,C\\.1\\.3,C\\.4,D\\.1,D\\.2,D\\.3,D\\.4,E,F\\.1,G,I,P\\.1,P\\.2,P\\.3,Q,S\\.1,S\\.2",
+      "WINNER:PERMISO_V1"
+    ],
+    "scoreV1": 1670,
+    "scoreV2": -50
+  },
+  "ocrQuality": {
+    "ocrChars": 521,
+    "nonEmptyLines": 51,
+    "fieldsFoundCount": 6,
+    "quality": "high"
+  },
+  "extractedFields": {
+    "identification": {
+      "license_plate": {
+        "value": "8919NKN",
+        "confidence": 0.8,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "vin": {
+        "value": "YARTCF6F8RMA78386",
+        "confidence": 0.9,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "first_registration_date": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo",
+        "source": "ocr"
+      },
+      "registration_date": {
+        "value": "17-02-2026",
+        "confidence": 0.8,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "issue_date": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo",
+        "source": "ocr"
+      },
+      "validity_until": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo",
+        "source": "ocr"
+      },
+      "issuing_authority": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo",
+        "source": "ocr"
+      }
+    },
+    "holder": {
+      "full_name": {
+        "value": "ALVEMACO RENTACAR SL",
+        "confidence": 0.8,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "holder_id": {
+        "value": "0",
+        "confidence": 0.8,
+        "status_color": "naranja",
+        "source": "ocr"
+      }
+    },
+    "vehicleCommercial": {
+      "brand": {
+        "value": "TOYOTA",
+        "confidence": 0.8,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "model": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo",
+        "source": "ocr"
+      },
+      "commercial_name": {
+        "value": "PROACE MAX",
+        "confidence": 0.8,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "service": {
+        "value": "PARTICULAR - SIN ESPECIFICAR",
+        "confidence": 0.8,
+        "status_color": "verde",
+        "source": "ocr"
+      }
+    },
+    "vehicleTechnical": {
+      "fuel_raw": {
+        "value": "DIESEL",
+        "confidence": 0.8,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "engine_displacement_cc": {
+        "value": 2184,
+        "confidence": 0.9,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "power_kw": {
+        "value": 103,
+        "confidence": 0.9,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "seats": {
+        "value": 3,
+        "confidence": 0.9,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "max_mass_kg": {
+        "value": 3500,
+        "confidence": 0.9,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "tech_max_mass_kg": {
+        "value": 3500,
+        "confidence": 0.9,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "mass_in_service_kg": {
+        "value": 2100,
+        "confidence": 0.9,
+        "status_color": "verde",
+        "source": "ocr"
+      }
+    },
+    "meta": {
+      "document_version": "V1",
+      "detected_type": "PERMISO_V1",
+      "warnings": [
+        "B_DATE_NOT_FOUND"
+      ],
+      "_debugExtract": [
+        {
+          "key": "I (Fecha Matr.)",
+          "value": "17-02-2026",
+          "sourceLine": "17-02-2026",
+          "method": "Match on next line: I"
+        },
+        {
+          "key": "A (Matrícula)",
+          "value": "8919NKN",
+          "sourceLine": "A",
+          "method": "codeRegex"
+        },
+        {
+          "key": "C.4 (Identificador Titular)",
+          "value": "0",
+          "sourceLine": "C.4",
+          "method": "codeRegex"
+        },
+        {
+          "key": "D.1 (Marca)",
+          "value": "TOYOTA",
+          "sourceLine": "D.1",
+          "method": "codeRegex"
+        },
+        {
+          "key": "D.3 (Modelo)",
+          "value": "PROACE MAX",
+          "sourceLine": "D.3",
+          "method": "codeRegex"
+        },
+        {
+          "key": "D.4 (Servicio)",
+          "value": "PARTICULAR - SIN ESPECIFICAR",
+          "sourceLine": "PARTICULAR - SIN ESPECIFICAR",
+          "method": "candidates_filter"
+        },
+        {
+          "key": "E (Bastidor)",
+          "value": "YARTCF6F8RMA78386",
+          "sourceLine": "E",
+          "method": "codeRegex"
+        },
+        {
+          "key": "F.1 (MMA)",
+          "value": "3500",
+          "sourceLine": "F.1",
+          "method": "codeRegex"
+        },
+        {
+          "key": "F.2 (MTM)",
+          "value": "3500",
+          "sourceLine": "F.2",
+          "method": "codeRegex"
+        },
+        {
+          "key": "G (Masa Servicio)",
+          "value": "2100",
+          "sourceLine": "G",
+          "method": "codeRegex"
+        },
+        {
+          "key": "P.1 (Cilindrada)",
+          "value": "2184",
+          "sourceLine": "P.1",
+          "method": "codeRegex"
+        },
+        {
+          "key": "P.2 (Potencia)",
+          "value": "103.0",
+          "sourceLine": "P.2",
+          "method": "codeRegex"
+        },
+        {
+          "key": "P.3 (Combustible)",
+          "value": "DIESEL",
+          "sourceLine": "P.3",
+          "method": "codeRegex"
+        },
+        {
+          "key": "S.1 (Plazas)",
+          "value": "3",
+          "sourceLine": "S.1",
+          "method": "codeRegex"
+        },
+        {
+          "key": "Titular Compilado",
+          "value": "ALVEMACO RENTACAR SL",
+          "sourceLine": "N/A",
+          "method": "COMPANY(C.1.1 + C.1.3)"
+        },
+        {
+          "key": "Titular Componentes",
+          "value": "{\"c11\":\"ALVEMACO RENTACAR SL\",\"c12\":null,\"c13\":null,\"ruleUsed\":\"COMPANY(C.1.1 + C.1.3)\"}",
+          "sourceLine": "DEBUG",
+          "method": "COMPANY(C.1.1 + C.1.3)"
+        },
+        {
+          "key": "RAW_OBSERVACIONES",
+          "value": "Documento válido si acompaña ITV en vigor \n Próxima ITV: 17-02-2028 \n 00",
+          "sourceLine": "DEBUG",
+          "method": "RAW"
+        },
+        {
+          "key": "Observaciones",
+          "value": "Documento válido si acompaña ITV en vigor\nPróxima ITV: 17-02-2028\n00",
+          "sourceLine": "Bloque OBSERVACIONES (Limpio)",
+          "method": "regexBlockFiltered"
+        },
+        {
+          "key": "Próxima ITV",
+          "value": "17-02-2028",
+          "sourceLine": "Dentro de Observaciones",
+          "method": "regexInsideBlock"
+        }
+      ],
+      "debugSources": {
+        "B": {
+          "candidates": [],
+          "validated": false,
+          "regex": "\\b(0[1-9]|[12]\\d|3[01])[\\/\\-](0[1-9]|1[0-2])[\\/\\-](19|20)\\d{2}\\b"
+        },
+        "D4": {
+          "candidates": [
+            "(D.4)",
+            "PARTICULAR - SIN ESPECIFICAR",
+            "E"
+          ],
+          "validated": true,
+          "regex": "exclude_codes,take_text",
+          "chosen": "PARTICULAR - SIN ESPECIFICAR",
+          "line": "PARTICULAR - SIN ESPECIFICAR",
+          "reason": "VALUE_EXTRACTED"
+        }
+      },
+      "raw_observations": [
+        "Documento válido si acompaña ITV en vigor \n Próxima ITV: 17-02-2028 \n 00"
+      ]
+    },
+    "observations": {
+      "value": "Documento válido si acompaña ITV en vigor\nPróxima ITV: 17-02-2028\n00",
+      "confidence": 0.8,
+      "status_color": "verde",
+      "source": "ocr"
+    },
+    "next_itv": {
+      "value": "17-02-2028",
+      "confidence": 0.9,
+      "status_color": "verde",
+      "source": "ocr"
+    }
+  },
+  "decoded": {}
+}

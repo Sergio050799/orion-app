@@ -1,0 +1,32 @@
+﻿{
+    "timestamp":  "2026-02-19T15:52:25.4778989+01:00",
+    "planned_deletions":  [
+                              "src/memorias_del_proyecto/ (after migration)",
+                              "src/app/orion/panel-3/",
+                              "src/app/orion/ (if empty)",
+                              "memorias_del_proyecto/backup_antigravity/ (re-homed into cleanup backup)",
+                              "datasets/ (if empty/non-referenced)",
+                              "data/history.json (if non-referenced)",
+                              "data/ (if empty)",
+                              "src/core/_source_of_truth/plates/__pycache__/ (artifact)",
+                              "references_orion/ (if empty after migration)"
+                          ],
+    "planned_moves":  [
+                          {
+                              "to":  "memorias_del_proyecto/memorias/",
+                              "from":  "src/memorias_del_proyecto/memorias/*"
+                          },
+                          {
+                              "to":  "memorias_del_proyecto/cleanup_backup/",
+                              "from":  "src/memorias_del_proyecto/cleanup_backup/*"
+                          },
+                          {
+                              "to":  "src/core/_source_of_truth/references/",
+                              "from":  "references_orion/*"
+                          },
+                          {
+                              "to":  "memorias_del_proyecto\\cleanup_backup\\2026-02-19_15-52\\backup_antigravity",
+                              "from":  "memorias_del_proyecto/backup_antigravity/"
+                          }
+                      ]
+}

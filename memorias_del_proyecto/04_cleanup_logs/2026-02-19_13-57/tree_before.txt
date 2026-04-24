@@ -1,0 +1,20 @@
+src/
+├── app/
+│   ├── api/
+│   ├── layout.tsx
+│   ├── page.tsx
+│   └── globals.css
+├── components/
+│   └── ui/
+├── core/
+│   ├── data/
+│   ├── dictionaries/
+│   ├── models/
+│   ├── normativa_md/
+│   ├── plates/
+│   ├── truth/
+│   └── types.ts
+└── memorias_del_proyecto/
+    ├── backup_antigravity/
+    ├── memorias/
+    └── inventario_antigravity.md

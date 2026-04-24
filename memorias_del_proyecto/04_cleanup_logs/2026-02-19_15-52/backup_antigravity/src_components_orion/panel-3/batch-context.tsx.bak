@@ -1,0 +1,134 @@
+
+"use client"
+
+import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import type { VehicleNormalized, CoreData } from '@/core/types';
+import { normalizeVehicle } from '@/lib/orion/logic-core';
+
+interface BatchState {
+    batchId: string | null;
+    vehicles: VehicleNormalized[];
+    selectedVehicleId: string | null;
+    processing: boolean;
+    coreData: CoreData | null;
+}
+
+interface BatchContextType extends BatchState {
+    uploadFiles: (files: File[]) => Promise<void>;
+    selectVehicle: (id: string | null) => void;
+    approveVehicle: (id: string) => void;
+    deleteVehicle: (id: string) => void;
+    approveAll: () => void;
+    exportCSV: () => void;
+}
+
+const BatchContext = createContext<BatchContextType | undefined>(undefined);
+
+export function BatchProvider({
+    children,
+    coreData
+}: {
+    children: ReactNode;
+    coreData: CoreData;
+}) {
+    const [vehicles, setVehicles] = useState<VehicleNormalized[]>([]);
+    const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
+    const [processing, setProcessing] = useState(false);
+    const [batchId, setBatchId] = useState<string | null>(null);
+
+    useEffect(() => {
+        setBatchId(crypto.randomUUID());
+    }, []);
+
+    const uploadFiles = async (files: File[]) => {
+        setProcessing(true);
+        console.log("Processing files...", files.length);
+
+        // Simulate delay
+        await new Promise(r => setTimeout(r, 1500));
+
+        const newVehicles: VehicleNormalized[] = [];
+
+        // Process each file (Mock OCR for now)
+        for (const _file of files) {
+            // Mock Raw Data 
+            const rawMock = {
+                matricula: `1234${String.fromCharCode(65 + Math.floor(Math.random() * 26))}${String.fromCharCode(65 + Math.floor(Math.random() * 26))}${String.fromCharCode(65 + Math.floor(Math.random() * 26))}`,
+                "D.1": "HYUNDAI",
+                "D.2": "i30",
+                "C.L": "1000",
+                "J": "M1",
+                "J.1": "AA",
+                "P.2": (88 + Math.random() * 20).toFixed(0),
+                "P.1": (1500 + Math.random() * 500).toFixed(0),
+                "P.3": "D",
+                "S.1": "5"
+            };
+
+            const normalized = normalizeVehicle(rawMock, coreData);
+            newVehicles.push(normalized);
+        }
+
+        setVehicles(prev => [...prev, ...newVehicles]);
+        setProcessing(false);
+    };
+
+    const selectVehicle = (id: string | null) => {
+        setSelectedVehicleId(id);
+    };
+
+    const approveVehicle = (id: string) => {
+        setVehicles(prev => prev.map(v =>
+            v.id === id ? { ...v, estado_operativo: 'APROBADO' } : v
+        ));
+    };
+
+    const deleteVehicle = (id: string) => {
+        setVehicles(prev => prev.filter(v => v.id !== id));
+        if (selectedVehicleId === id) setSelectedVehicleId(null);
+    }
+
+    const approveAll = () => {
+        setVehicles(prev => prev.map(v =>
+            v.estado_coherencia === 'COHERENTE' ? { ...v, estado_operativo: 'APROBADO' } : v
+        ));
+    };
+
+    const exportCSV = () => {
+        console.log("Exporting CSV...", vehicles);
+        const header = "Matricula,Marca,Modelo,Bastidor,Estado\n";
+        const rows = vehicles.map(v => `${v.matricula},${v.marca},${v.modelo},${v.id},${v.estado_operativo}`).join("\n");
+        const blob = new Blob([header + rows], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `batch_${batchId}.csv`;
+        a.click();
+    };
+
+    return (
+        <BatchContext.Provider value={{
+            batchId,
+            vehicles,
+            selectedVehicleId,
+            processing,
+            coreData,
+            uploadFiles,
+            selectVehicle,
+            approveVehicle,
+            deleteVehicle,
+            approveAll,
+            exportCSV
+        }}>
+            {children}
+        </BatchContext.Provider>
+    );
+}
+
+export function useBatch() {
+    const context = useContext(BatchContext);
+    if (context === undefined) {
+        throw new Error('useBatch must be used within a BatchProvider');
+    }
+    return context;
+}

@@ -1,0 +1,65 @@
+/* eslint-disable */
+"use client";
+
+import { useEffect, useState } from "react";
+import { BatchProvider } from "../orion/panel-3/batch-context";
+import { Workstation } from "../orion/panel-3/workstation";
+import { CoreData } from "@/core/types";
+import { Loader2 } from "lucide-react";
+
+interface PDFManagerPanelProps {
+    onOcrSuccess: (data: Record<string, string>, confidence: Record<string, number>) => void;
+}
+
+export default function PDFManagerPanel({ onOcrSuccess }: PDFManagerPanelProps) {
+    const [coreData, setCoreData] = useState<CoreData | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        async function fetchData() {
+            try {
+                const res = await fetch('/api/orion/core-data');
+                if (!res.ok) throw new Error("Failed to load Core Data");
+                const data = await res.json();
+                setCoreData(data);
+            } catch (err) {
+                console.error(err);
+                setError("Error cargando Orion Data Core. Verifique logs.");
+            } finally {
+                setLoading(false);
+            }
+        }
+        fetchData();
+    }, []);
+
+    if (loading) {
+        return (
+            <div className="flex h-[500px] items-center justify-center border-2 border-dashed border-[#ffffff08] rounded-xl bg-[#ffffff02]">
+                <div className="flex flex-col items-center gap-2">
+                    <Loader2 className="h-8 w-8 text-[#3CE0FF] animate-spin" />
+                    <p className="text-slate-400 text-sm">Cargando Orion Data Core...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (error || !coreData) {
+        return (
+            <div className="flex h-[500px] items-center justify-center border-2 border-dashed border-red-900/20 rounded-xl bg-red-900/5">
+                <div className="flex flex-col items-center gap-2 text-red-400">
+                    <p className="font-bold">Error de Inicialización</p>
+                    <p className="text-sm">{error}</p>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="h-[800px] border border-[#ffffff08] rounded-xl overflow-hidden bg-[#0B1020] shadow-2xl">
+            <BatchProvider coreData={coreData}>
+                <Workstation />
+            </BatchProvider>
+        </div>
+    );
+}

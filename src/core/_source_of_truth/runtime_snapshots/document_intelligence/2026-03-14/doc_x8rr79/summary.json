@@ -1,0 +1,112 @@
+{
+  "docId": "x8rr79",
+  "createdAt": "2026-03-14T12:29:27.549Z",
+  "pageCount": 1,
+  "firstLines": [
+    "PERMISO DE CONDUCCIÓN REINO DE ESPAÑA",
+    "1. SAN JOSE",
+    "SERRANO",
+    "2. JOSE LUIS",
+    "3. 26-06-1975",
+    "4a.30-10-2015",
+    "4b.31-10-2025",
+    "5. 51420164-F",
+    "7.",
+    "ESPAÑA"
+  ],
+  "usedModel": "prebuilt-read",
+  "detectedType": "CARNET_CONDUCIR",
+  "documentType": "CARNET_CONDUCIR",
+  "detectedTypeLocked": true,
+  "detectedTypeEvidence": {
+    "evidence": [
+      "EXACT_TITLE_CARNET"
+    ],
+    "scoreV1": 0,
+    "scoreV2": 0
+  },
+  "extractorUsed": "carnetExtractor.v1",
+  "classifierEvidence": {
+    "evidence": [
+      "EXACT_TITLE_CARNET"
+    ],
+    "scoreV1": 0,
+    "scoreV2": 0
+  },
+  "ocrQuality": {
+    "ocrChars": 181,
+    "nonEmptyLines": 14,
+    "fieldsFoundCount": 7,
+    "quality": "high"
+  },
+  "extractedFields": {
+    "identification": {
+      "apellidos": {
+        "value": "SAN JOSE SERRANO",
+        "confidence": 0.9,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "nombre": {
+        "value": "JOSE LUIS",
+        "confidence": 0.9,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "fecha_nacimiento": {
+        "value": "26-06-1975",
+        "confidence": 0.9,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "pais_nacimiento": {
+        "value": null,
+        "confidence": 0,
+        "status_color": "rojo",
+        "source": "ocr"
+      },
+      "nif": {
+        "value": "51420164F",
+        "confidence": 0.9,
+        "status_color": "verde",
+        "source": "ocr"
+      }
+    },
+    "validity": {
+      "fecha_expedicion": {
+        "value": "30-10-2015",
+        "confidence": 0.9,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "fecha_caducidad": {
+        "value": "31-10-2025",
+        "confidence": 0.9,
+        "status_color": "verde",
+        "source": "ocr"
+      },
+      "codigo_autoridad": {
+        "value": "28-00",
+        "confidence": 0.9,
+        "status_color": "verde",
+        "source": "ocr"
+      }
+    },
+    "categories": {
+      "lista": {
+        "value": [
+          "B"
+        ],
+        "confidence": 0.9,
+        "status_color": "verde",
+        "source": "ocr"
+      }
+    },
+    "meta": {
+      "document_version": "V1",
+      "detected_type": "CARNET_CONDUCIR",
+      "warnings": []
+    }
+  },
+  "decoded": {}
+}

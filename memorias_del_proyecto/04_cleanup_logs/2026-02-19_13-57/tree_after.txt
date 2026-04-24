@@ -1,0 +1,27 @@
+src/
+├── app/
+│   ├── api/
+│   ├── orion/
+│   │   └── panel-3/
+│   │       └── page.tsx (Placeholder)
+│   ├── layout.tsx
+│   ├── page.tsx (Clean Dashboard)
+│   └── globals.css
+├── components/
+│   └── ui/ (MassAnalysisPanel, TechSheetPanel - connected to core/data)
+├── core/
+│   ├── _source_of_truth/
+│   │   ├── dictionaries/
+│   │   ├── normativa_md/
+│   │   ├── plates/
+│   │   ├── references/
+│   │   └── models/
+│   ├── data/ (Runtime JSONs only)
+│   └── types.ts
+└── memorias_del_proyecto/
+    ├── cleanup_backup/
+    ├── memorias/
+    │   ├── what_was_done.md
+    │   ├── files_of_truth.md
+    │   └── do_not_repeat.md
+    └── inventario_antigravity.md

@@ -1,0 +1,197 @@
+{
+  "docId": "nknn1f-0",
+  "createdAt": "2026-03-19T08:42:25.271Z",
+  "pageCount": 1,
+  "firstLines": [
+    "Comunidad de Madrid",
+    "Dirección General de Industria, Energía y Minas.",
+    "A",
+    "Nº de Serie",
+    "0451121",
+    "Matrícula",
+    "Certificado Nº",
+    "Código",
+    "Descripción",
+    "Código"
+  ],
+  "usedModel": "prebuilt-layout",
+  "detectedType": "FICHA_TECNICA",
+  "documentType": "FICHA_TECNICA",
+  "detectedTypeLocked": true,
+  "detectedTypeEvidence": {
+    "evidence": [
+      "PERMISO_STRUCTURAL_MARKERS:5",
+      "FICHA_EXCLUSIVE_CODES:8",
+      "V2_KW:MATRICULA",
+      "STRONG_V1_CODES: D\\.1,D\\.2,D\\.3,F\\.1,P\\.1,P\\.2,P\\.3,S\\.1,S\\.2",
+      "V1_CODES: D\\.1,D\\.2,D\\.3,F\\.1,P\\.1,P\\.2,P\\.3,S\\.1,S\\.2",
+      "FICHA_EXCLUSIVE_STRONG:8",
+      "WINNER:FICHA_TECNICA"
+    ],
+    "scoreV1": -40,
+    "scoreV2": -200
+  },
+  "extractorUsed": "legacyFichaExtractor",
+  "classifierEvidence": {
+    "evidence": [
+      "PERMISO_STRUCTURAL_MARKERS:5",
+      "FICHA_EXCLUSIVE_CODES:8",
+      "V2_KW:MATRICULA",
+      "STRONG_V1_CODES: D\\.1,D\\.2,D\\.3,F\\.1,P\\.1,P\\.2,P\\.3,S\\.1,S\\.2",
+      "V1_CODES: D\\.1,D\\.2,D\\.3,F\\.1,P\\.1,P\\.2,P\\.3,S\\.1,S\\.2",
+      "FICHA_EXCLUSIVE_STRONG:8",
+      "WINNER:FICHA_TECNICA"
+    ],
+    "scoreV1": -40,
+    "scoreV2": -200
+  },
+  "ocrQuality": {
+    "ocrChars": 1660,
+    "nonEmptyLines": 147,
+    "fieldsFoundCount": 24,
+    "quality": "high"
+  },
+  "extractedFields": {
+    "plate": "4865 JGC",
+    "CL": "1000 - TURISMO PARTICULAR",
+    "CI": null,
+    "CV": null,
+    "D1": "0.1.1",
+    "D3": "O.1.3",
+    "E": "WBA3D11020J626243",
+    "J": "M1",
+    "J1": "AA",
+    "J2": null,
+    "J3": "F.7",
+    "F2": "1960",
+    "F4": "1429",
+    "F5": "1811",
+    "F6": "4624",
+    "P3": "D",
+    "P1": "1995",
+    "P2": "105",
+    "S1": 5,
+    "observations": "Emisión de tarjeta en cumplimiento del Art. 5.3 b) del Real Decreto 750/2010 .-",
+    "homologationOptions": "Opciones incluidas en la homologación de tipo \n --- \n --- \n --- \n -- \n --- \n --- \n ---",
+    "issueDateRaw": "05/06/2015",
+    "issueDateISO": "2015-06-05T00:00:00.000Z",
+    "powerCv": 143,
+    "_v2Debug": {
+      "invoked": true,
+      "bestSource": "pages.lines",
+      "fullTextLen": 1660,
+      "linesCount": 147,
+      "sampleFirst500": "COMUNIDAD DE MADRID DIRECCIÓN GENERAL DE INDUSTRIA, ENERGÍA Y MINAS. A Nº DE SERIE 0451121 MATRÍCULA CERTIFICADO Nº CÓDIGO DESCRIPCIÓN CÓDIGO DESCRIPCIÓN 4865JGC 626243 2015/89M0552 Z ---- 1485 M.1 2810 G M.4 ---- F.1 1960 905/1130 L 2/4 F.1.1 L.0 --- F.1.5 75 L.1 1 TRAS. C.L 1000 - TURISMO PARTICULAR BAYERISCHE MOTOREN WERKE AG D-80788 MÜNCHEN --- ---- BMW 3L/3D11/5H150000 318D F.2 1960 L.2 205/60 R16 92V A.1 F.2.1 905/1130 P.5.1 BAYER. MOT. WERKE AG A.2 F.3 3635 P.5 N47D20C B.1 F.3.1 3635 ----",
+      "foundTokens": {
+        "D1": 1,
+        "D3": 1,
+        "E": 1,
+        "S1": 0
+      },
+      "attempts": [
+        {
+          "strategy": "codeLine",
+          "key": "D1",
+          "raw": "RECCIÓN GENERAL DE INDUSTRIA, ENERGÍA Y MINAS",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "plate",
+          "raw": "4865JGC",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "CL",
+          "raw": "1000 - TURISMO PARTICULAR",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "L2",
+          "raw": "205/60 R16 92V",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "P3",
+          "raw": "D",
+          "valid": false,
+          "reasonIfInvalid": "isGarbage (empty/symbols/<2 chars)"
+        },
+        {
+          "strategy": "codeLine",
+          "key": "P1",
+          "raw": ".1",
+          "valid": false,
+          "reasonIfInvalid": "invalidCC"
+        },
+        {
+          "strategy": "codeLine",
+          "key": "D2",
+          "raw": "0.1.2",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "P2",
+          "raw": ".1",
+          "valid": false,
+          "reasonIfInvalid": "invalidKW"
+        },
+        {
+          "strategy": "codeLine",
+          "key": "J1",
+          "raw": "AA",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "J",
+          "raw": "EURO 5",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "E",
+          "raw": "WBA3D11020J626243",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "globalSearch",
+          "key": "E",
+          "raw": "WBA3D11020J626243",
+          "valid": true
+        }
+      ]
+    },
+    "L2": "205/60 R16 92V",
+    "D2": "0.1.2",
+    "_isCellPairFormat": true,
+    "L": "2/4",
+    "_v2Fallback": [
+      "CL",
+      "L2",
+      "D2",
+      "_isCellPairFormat",
+      "L"
+    ]
+  },
+  "decoded": {
+    "make": "0.1.1",
+    "model": "O.1.3",
+    "vehicleClass": "1000 - TURISMO PARTICULAR",
+    "vehicleCategory": "Vehículo de pasajeros",
+    "bodyType": "AA",
+    "fuelType": "Diésel"
+  }
+}

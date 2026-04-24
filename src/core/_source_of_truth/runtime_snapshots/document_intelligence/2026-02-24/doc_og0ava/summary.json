@@ -1,0 +1,93 @@
+{
+  "docId": "og0ava",
+  "createdAt": "2026-02-24T11:40:26.376Z",
+  "isMixedPdf": false,
+  "pagesTotal": 1,
+  "pageMap": [
+    {
+      "pageIndex": 1,
+      "rotationApplied": 0,
+      "detectedType": "FICHA_TECNICA",
+      "confidence": 0.95
+    }
+  ],
+  "segments": [
+    {
+      "id": "cb20b9f0-2737-47d3-94e2-ca787e2f9273",
+      "type": "FICHA_TECNICA",
+      "pages": [
+        1
+      ],
+      "extractionStatus": "done",
+      "extractedData": {
+        "plate": "2635 LTD",
+        "CL": "1000 TURISMO SIN ESPECIFICAR",
+        "CI": null,
+        "CV": null,
+        "D1": ".",
+        "D3": ".",
+        "E": "WV2ZZZ7HZ6H012958",
+        "J": "M1",
+        "J1": ".",
+        "J2": ".",
+        "J3": ".",
+        "F2": ".",
+        "F4": ".",
+        "F5": ".",
+        "F6": ".",
+        "P3": ".",
+        "P1": ".",
+        "P2": ".",
+        "S1": ".",
+        "observations": null,
+        "homologationOptions": "Opciones incluidas en la homologación de tipo \n Certifica que el vehículo cuyas \n características se reseñan es apto para su \n matriculación o puesta en circulación. \n CE \n CA \n 01 \n >noroesteny \n 2021 \n (2) Valor en punto de acoplamiento .: 100kg .- \n 09/08/2021. ITV 3040. Emisión de tarjeta en cumplimiento del art. 5.3b del Real Decreto \n 750/2010 .- \n Incorpora dispositivo de acoplamiento con CH .: e13 \n 00-1087.",
+        "issueDateRaw": "09/08/2021",
+        "issueDateISO": "2021-08-09T00:00:00.000Z",
+        "powerCv": null,
+        "G": "1949",
+        "F1": ".",
+        "L2": ".",
+        "D2": ".",
+        "V7": ".",
+        "V9": ".",
+        "_v2Fallback": [
+          "G",
+          "F1",
+          "F2",
+          "L2",
+          "P3",
+          "P1",
+          "D1",
+          "D2",
+          "P2",
+          "D3",
+          "F4",
+          "J1",
+          "F5",
+          "J2",
+          "F6",
+          "J3",
+          "V7",
+          "V9"
+        ]
+      }
+    }
+  ],
+  "vehicleGroups": [
+    {
+      "id": "dc6fe2de-22dd-44f3-b15c-f3d8406afbd2",
+      "matricula": "2635 LTD",
+      "bastidor": "WV2ZZZ7HZ6H012958",
+      "documents": [
+        {
+          "segmentId": "cb20b9f0-2737-47d3-94e2-ca787e2f9273",
+          "type": "FICHA_TECNICA",
+          "pages": [
+            1
+          ],
+          "status": "done"
+        }
+      ]
+    }
+  ]
+}

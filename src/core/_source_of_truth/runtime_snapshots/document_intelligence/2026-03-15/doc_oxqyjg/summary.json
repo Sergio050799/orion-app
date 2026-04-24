@@ -1,0 +1,193 @@
+{
+  "docId": "oxqyjg",
+  "createdAt": "2026-03-15T14:26:47.851Z",
+  "pageCount": 1,
+  "firstLines": [
+    "M",
+    "Bayerische Motoren Werke AG",
+    "Matricula",
+    "Certificado Nº",
+    "B",
+    "Nº de Serio:",
+    "e006940835",
+    "Código",
+    "G",
+    "F.1"
+  ],
+  "usedModel": "prebuilt-layout",
+  "detectedType": "FICHA_TECNICA",
+  "documentType": "FICHA_TECNICA",
+  "detectedTypeLocked": true,
+  "detectedTypeEvidence": {
+    "evidence": [
+      "PERMISO_STRUCTURAL_MARKERS:5",
+      "FICHA_EXCLUSIVE_CODES:9",
+      "V2_KW:MATRICULA",
+      "STRONG_V1_CODES: D\\.1,D\\.2,D\\.3,F\\.1,P\\.1,P\\.2,P\\.3,S\\.1,S\\.2",
+      "V1_CODES: D\\.1,D\\.2,D\\.3,F\\.1,P\\.1,P\\.2,P\\.3,S\\.1,S\\.2",
+      "FICHA_EXCLUSIVE_STRONG:9",
+      "WINNER:FICHA_TECNICA"
+    ],
+    "scoreV1": -190,
+    "scoreV2": -200
+  },
+  "extractorUsed": "legacyFichaExtractor",
+  "classifierEvidence": {
+    "evidence": [
+      "PERMISO_STRUCTURAL_MARKERS:5",
+      "FICHA_EXCLUSIVE_CODES:9",
+      "V2_KW:MATRICULA",
+      "STRONG_V1_CODES: D\\.1,D\\.2,D\\.3,F\\.1,P\\.1,P\\.2,P\\.3,S\\.1,S\\.2",
+      "V1_CODES: D\\.1,D\\.2,D\\.3,F\\.1,P\\.1,P\\.2,P\\.3,S\\.1,S\\.2",
+      "FICHA_EXCLUSIVE_STRONG:9",
+      "WINNER:FICHA_TECNICA"
+    ],
+    "scoreV1": -190,
+    "scoreV2": -200
+  },
+  "ocrQuality": {
+    "ocrChars": 2096,
+    "nonEmptyLines": 139,
+    "fieldsFoundCount": 24,
+    "quality": "high"
+  },
+  "extractedFields": {
+    "plate": "5030 KWN",
+    "CL": "C.I",
+    "CI": "1000",
+    "CV": "44",
+    "D1": "BMW",
+    "D3": "320đ",
+    "E": "WBA5V51020AJ57684",
+    "J": "M1",
+    "J1": "AA",
+    "J2": null,
+    "J3": "F.7",
+    "F2": "L.O",
+    "F4": "1435",
+    "F5": "1827",
+    "F6": "4709",
+    "P3": "M/D",
+    "P1": "1995",
+    "P2": "140",
+    "S1": 5,
+    "observations": "CON ENGANCHE DE REMOLQUE: . 75(F.1)/+110(F.1.1, EJE 2);L.2: 1/2: 205/60 R16 96H M+S/W 6 1/2JX16 ET22. 1/2: 225/50 R17 98H M+S/Y 7 1/2JX17 ET30;1: \n 225/45 R18 95Y 7 1/2JX18 ET25 2: 255/40 R18 99Y 8 1/2JX18 ET40;1: 225/35 R20 90Y 8JX20 ET27 2: 255/30 R20 92Y 8 1/2JX20 ET40(NO ES POSIBLE \n REMOLCAR); 1: 225/40 R19 93Y 8JX19 ET27 2: 255/35 R19 96Y 8 1/2JX19 ET40:1/2: 225/45 R18 95H M+S/Y 7 1/2JX18 ET25;1: 225/45 R18 95V M+S 7 1/2JX18 ET25 \n 2: 255/40 R18 99V M·S 8 1/2JX18 ET40; ---",
+    "homologationOptions": "Opciones incluidas en la homologación de tipo \n Olga Beatriz Gonzalez Humada \n ASIENTOS DEPORTIVOS DELANTEROS/SUSPENSION DEPORTIVA/PAQUETE \n AERODINAMICO/SPOILER TRASERO/ ... \n DD6D1F2E9458429BBE407CF106FB7E5D \n Tarjeta elTV expedida por DGT \n Primera expedición: \n 26/04/2019 19:25:56 \n Expedición: \n 13/08/2024 12.38.59",
+    "issueDateRaw": "04/04/2019",
+    "issueDateISO": "2019-04-04T00:00:00.000Z",
+    "powerCv": 190,
+    "_v2Debug": {
+      "invoked": true,
+      "bestSource": "pages.lines",
+      "fullTextLen": 2096,
+      "linesCount": 139,
+      "sampleFirst500": "M BAYERISCHE MOTOREN WERKE AG MATRICULA CERTIFICADO Nº B Nº DE SERIO: E006940835 CÓDIGO G F.1 DESCRIPCIÓN CÓDIGO DESCRIPCIÓN 5030KWN 5469338-19 1530 M.1 2851 / -- 1 2085 M.4 F.1.1 F.1.5 970 / 1180 / ---------- / -........ L 2/4 F.2 L.O -/ - CL C.I 1000 BMW24939Y F.2.1 2085 970 / 1180 / L.1 1 / EJE 2 / - C.V 44 F.3 3685 L.2 P.5.1 VER OBSERVACIONES BMWAG A.1 BAYERISCHE MOTOREN WERKE AG F.3.1 3685 P.5 B470208 A.2 DE-80788 MUENCHEN 0.1 P.3 M/D D.1 BMW O.1.1 P.1 1995 D.2 G3L / 5V51 / DAW50000 0.1.2 P",
+      "foundTokens": {
+        "D1": 1,
+        "D3": 1,
+        "E": 1,
+        "S1": 0
+      },
+      "attempts": [
+        {
+          "strategy": "codeLine",
+          "key": "plate",
+          "raw": "5030KWN",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "CL",
+          "raw": "C.I",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "CI",
+          "raw": "1000",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "CV",
+          "raw": "44",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "P3",
+          "raw": "M/D",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "D1",
+          "raw": "BMW",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "P1",
+          "raw": ".1",
+          "valid": false,
+          "reasonIfInvalid": "invalidCC"
+        },
+        {
+          "strategy": "codeLine",
+          "key": "D3",
+          "raw": "320Đ",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "P2",
+          "raw": ".1",
+          "valid": false,
+          "reasonIfInvalid": "invalidKW"
+        },
+        {
+          "strategy": "codeLine",
+          "key": "J1",
+          "raw": "AA",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "codeLine",
+          "key": "E",
+          "raw": "WBA5V51020AJ57684",
+          "valid": true,
+          "reasonIfInvalid": ""
+        },
+        {
+          "strategy": "globalSearch",
+          "key": "E",
+          "raw": "WBA5V51020AJ57684",
+          "valid": true
+        }
+      ]
+    },
+    "_isCellPairFormat": true,
+    "L": "2/4",
+    "_v2Fallback": [
+      "CL",
+      "_isCellPairFormat",
+      "L"
+    ]
+  },
+  "decoded": {
+    "make": "BMW",
+    "model": "320đ",
+    "vehicleClass": "C.I",
+    "vehicleCategory": "Vehículo de pasajeros",
+    "bodyType": "AA",
+    "fuelType": "M/D"
+  }
+}
