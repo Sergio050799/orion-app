@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useCallback, useRef, forwardRef, useImperativeHandle } from 'react';
-import * as XLSX from 'xlsx';
 import {
   contarVehiculos, contarVehiculosConSinco,
   calcularAntiguedadMedia, calcularSiniestrosPorAnio, calcularFrecuencia,
@@ -26,9 +25,10 @@ const HojaResultadosSinco = forwardRef<HojaResultadosSincoHandle, Props>(
 
     useImperativeHandle(ref, () => ({ getRows: () => rows }));
 
-    const handleImport = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImport = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (!file) return;
+      const XLSX = await import('xlsx');
       const reader = new FileReader();
       reader.onload = (ev) => {
         const wb = XLSX.read(ev.target?.result, { type: 'binary' });

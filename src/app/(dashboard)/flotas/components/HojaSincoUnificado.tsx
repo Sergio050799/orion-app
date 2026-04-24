@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useCallback, useRef, useMemo, useEffect } from 'react';
-import * as XLSX from 'xlsx';
 import {
   consolidarSinco, mergeSincoToTrabajo,
   contarVehiculos, contarVehiculosConSinco,
@@ -112,7 +111,8 @@ function ModoAutomatico({ header, trabajoRows, sincoResultRows, onSincoResultCha
   const fileRef = useRef<HTMLInputElement>(null);
 
   // Generar Excel de consulta
-  const handleExport = useCallback(() => {
+  const handleExport = useCallback(async () => {
+    const XLSX = await import('xlsx');
     function inferTipoDocumento(cif: string): string {
       if (!cif) return 'C';
       const first = cif[0].toUpperCase();
@@ -141,9 +141,10 @@ function ModoAutomatico({ header, trabajoRows, sincoResultRows, onSincoResultCha
   }, [header, trabajoRows]);
 
   // Importar resultado
-  const handleImport = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImport = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const XLSX = await import('xlsx');
     const reader = new FileReader();
     reader.onload = (ev) => {
       const wb = XLSX.read(ev.target?.result, { type: 'binary' });

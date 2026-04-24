@@ -1,3 +1,5 @@
+import type { Periodicidad } from '@/core/flotas/corredor';
+
 // ─── Tipos compartidos — Estudio de Flotas ──────────────────────────────────
 
 export interface ColDef {
@@ -19,7 +21,7 @@ export interface FlotaHeader {
   efecto: string;
   cifTomador?: string;
   fechaEmision?: string;
-  periodicidad?: string;
+  periodicidad?: Periodicidad;
   // Ampliados E-1
   polizaActual?: string;
   ciaActual?: string;

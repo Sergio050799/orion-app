@@ -188,7 +188,8 @@ export default function EmissionUploadModal({ onConfirm, onCancel }: EmissionUpl
                     const thumbCanvas = document.createElement('canvas');
                     thumbCanvas.width = thumbViewport.width;
                     thumbCanvas.height = thumbViewport.height;
-                    await pdfPage.render({ canvasContext: thumbCanvas.getContext('2d')!, viewport: thumbViewport }).promise;
+                    // pdfjs RenderParameters compat
+                    await pdfPage.render({ canvasContext: thumbCanvas.getContext('2d')!, viewport: thumbViewport } as any).promise;
                     const thumbRaw = thumbCanvas.toDataURL('image/jpeg', 0.7);
                     const thumb = await cropThumbnail(thumbRaw);
                     const fallbackBlob = await dataUrlToBlob(thumb);

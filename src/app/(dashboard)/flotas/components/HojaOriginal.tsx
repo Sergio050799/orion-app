@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useRef, forwardRef, useImperativeHandle } from 'react';
-import FlotaGrid from './FlotaGrid';
+import React, { lazy, Suspense, useState, useRef, forwardRef, useImperativeHandle } from 'react';
+const FlotaGrid = lazy(() => import('./FlotaGrid'));
 import HeaderBlock from './HeaderBlock';
 import { BASE_COL_DEFS } from './constants';
 import { parseExcelTemplate, generarPlantillaExcel } from '@/core/flotas';
@@ -83,11 +83,13 @@ const HojaOriginal = forwardRef<FlotaGridHandle, Props>(function HojaOriginal(
 
       {/* Grid (siempre montado) */}
       <div style={{ flex: 1, minHeight: 0, display: showModeSelect ? 'none' : 'flex', flexDirection: 'column' }}>
-        <FlotaGrid
-          ref={gridRef}
-          initialColDefs={BASE_COL_DEFS}
-          onDataChange={onDataChange}
-        />
+        <Suspense fallback={<div className="flex-1 animate-pulse rounded-xl bg-white/5" />}>
+          <FlotaGrid
+            ref={gridRef}
+            initialColDefs={BASE_COL_DEFS}
+            onDataChange={onDataChange}
+          />
+        </Suspense>
       </div>
 
       {/* Pantalla de elección de modo */}

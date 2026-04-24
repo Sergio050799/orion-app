@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useCallback, useRef, forwardRef } from 'react';
-import FlotaGrid from './FlotaGrid';
+import React, { lazy, Suspense, useState, useCallback, useRef, forwardRef } from 'react';
+const FlotaGrid = lazy(() => import('./FlotaGrid'));
 import HeaderBlock from './HeaderBlock';
 import { makeTrabajoColDefs } from './constants';
 import { contarVehiculos, filtrarFilasReales } from '@/core/flotas';
@@ -88,11 +88,13 @@ const HojaTrabajos = forwardRef<FlotaGridHandle, Props>(function HojaTrabajos(
         )}
       </div>
 
-      <FlotaGrid
-        ref={gridRef}
-        initialColDefs={TRABAJO_COL_DEFS}
-        onDataChange={handleDataChange}
-      />
+      <Suspense fallback={<div className="flex-1 animate-pulse rounded-xl bg-white/5" />}>
+        <FlotaGrid
+          ref={gridRef}
+          initialColDefs={TRABAJO_COL_DEFS}
+          onDataChange={handleDataChange}
+        />
+      </Suspense>
     </div>
   );
 });

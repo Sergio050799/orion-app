@@ -5,12 +5,15 @@ import { createContext, useContext, useState, useEffect, ReactNode } from "react
 interface LayoutContextType {
     theme: 'dark' | 'light';
     setTheme: (theme: 'dark' | 'light') => void;
+    isSidebarCollapsed: boolean;
+    setIsSidebarCollapsed: (collapsed: boolean) => void;
 }
 
 const LayoutContext = createContext<LayoutContextType | undefined>(undefined);
 
 export function LayoutProvider({ children }: { children: ReactNode }) {
     const [theme, setThemeState] = useState<'dark' | 'light'>('dark');
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
     useEffect(() => {
         const savedTheme = localStorage.getItem("orion_theme") as 'dark' | 'light';
@@ -37,7 +40,7 @@ export function LayoutProvider({ children }: { children: ReactNode }) {
     };
 
     return (
-        <LayoutContext.Provider value={{ theme, setTheme }}>
+        <LayoutContext.Provider value={{ theme, setTheme, isSidebarCollapsed, setIsSidebarCollapsed }}>
             {children}
         </LayoutContext.Provider>
     );

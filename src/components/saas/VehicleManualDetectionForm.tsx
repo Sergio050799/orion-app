@@ -46,7 +46,7 @@ export default function VehicleManualDetectionForm() {
     const [catalogoSeleccionadoData, setCatalogoSeleccionadoData] = useState<any | null>(null);
     const [catalogoOpen, setCatalogoOpen] = useState(false);
     const [fuelOpen, setFuelOpen] = useState(false);
-    const debounceRef = useRef<NodeJS.Timeout>();
+    const debounceRef = useRef<NodeJS.Timeout>(undefined);
     const fuelRef = useRef<HTMLDivElement>(null);
 
     const [formData, setFormData] = useState(INITIAL_FORM);

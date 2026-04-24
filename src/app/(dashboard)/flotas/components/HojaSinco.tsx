@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useMemo, useCallback, forwardRef, useImperativeHandle, useState } from 'react';
-import * as XLSX from 'xlsx';
 import type { FlotaHeader, FlotaGridHandle, ColDef } from './types';
 import { SINCO_COL_NAMES } from './constants';
 import { normalizarPoliza } from '@/core/flotas';
@@ -60,7 +59,8 @@ const HojaSinco = forwardRef<HojaSincoHandle, Props>(function HojaSinco({ header
     setRows: (r) => setOverrideRows(r),
   }));
 
-  const handleExport = useCallback(() => {
+  const handleExport = useCallback(async () => {
+    const XLSX = await import('xlsx');
     const wsData = [SINCO_COL_NAMES, ...rows];
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.aoa_to_sheet(wsData);

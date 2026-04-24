@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import * as XLSX from 'xlsx';
+import React, { lazy, Suspense, useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import {
@@ -14,7 +13,8 @@ import HojaOriginal from './components/HojaOriginal';
 import HojaTrabajos from './components/HojaTrabajos';
 import HojaSincoUnificado from './components/HojaSincoUnificado';
 import HojaInforme from './components/HojaInforme';
-import HojaOferta, { type HojaOfertaHandle } from './components/HojaOferta';
+import type { HojaOfertaHandle } from './components/HojaOferta';
+const HojaOferta = lazy(() => import('./components/HojaOferta'));
 import HojaPreEmision from './components/HojaPreEmision';
 import HojaDatosGenerales from './components/HojaDatosGenerales';
 import type { FlotaGridHandle, FlotaHeader, CoberturaRow } from './components/types';
@@ -33,6 +33,7 @@ function normalizarCarpeta(c: FlotaCarpeta): FlotaCarpeta {
 // ─── Descarga zip ─────────────────────────────────────────────────────────────
 
 async function descargarTodo(carpeta: FlotaCarpeta) {
+  const XLSX = await import('xlsx');
   const zip = new JSZip();
 
   const addSheet = (name: string, data: Record<string, string>[]) => {
@@ -358,11 +359,13 @@ export default function FlotasPage() {
                   <HojaInforme trabajoRows={trabajoRows} coberturas={coberturas} sincoRows={sincoResultRows.map(r => Object.values(r))} />
                 )}
                 {tab === 'OFERTA' && (
-                  <HojaOferta
-                    ref={ofertaRef}
-                    trabajoRows={trabajoRows}
-                    onDataChange={handleOfertaChange}
-                  />
+                  <Suspense fallback={<div className="flex-1 animate-pulse rounded-xl bg-white/5" />}>
+                    <HojaOferta
+                      ref={ofertaRef}
+                      trabajoRows={trabajoRows}
+                      onDataChange={handleOfertaChange}
+                    />
+                  </Suspense>
                 )}
                 {tab === 'PRE-EMISIÓN' && (
                   <HojaPreEmision trabajoRows={trabajoRows} />

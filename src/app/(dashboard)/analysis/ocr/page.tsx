@@ -20,7 +20,7 @@ export default function OCRAnalysisPage() {
     const [activeSegmentId, setActiveSegmentId] = useState<string | null>(null);
     const [kpis, setKpis] = useState({ processed: 0, pending: 0, failed: 0, today: 0 });
     const [toast, setToast] = useState<Toast | null>(null);
-    const [bulkQueue, setBulkQueue] = useState<{ files: File[]; meta: { docCategory: string; docSubtype?: string } } | null>(null);
+    const [bulkQueue, setBulkQueue] = useState<{ files: File[]; meta: UploadMeta } | null>(null);
 
     const showToast = useCallback((msg: string, type: Toast['type'] = 'info') => {
         setToast({ msg, type });
@@ -47,7 +47,7 @@ export default function OCRAnalysisPage() {
         setDocuments(DocumentService.getDocuments());
     }, []);
 
-    const handleBulkProcess = useCallback(async (files: File[], meta: { docCategory: string; docSubtype?: string }) => {
+    const handleBulkProcess = useCallback(async (files: File[], meta: UploadMeta) => {
         setBulkQueue(null);
         await DocumentService.uploadDocuments(files, meta);
         setDocuments(DocumentService.getDocuments());
