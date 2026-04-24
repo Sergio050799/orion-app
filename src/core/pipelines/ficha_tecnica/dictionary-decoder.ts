@@ -6,79 +6,7 @@ import itvMaster from '../../data/itv_master_dictionary.v2.json';
  * This acts as an adapter over normative dictionaries for the UI layer.
  */
 
-// Basic hardcoded mappings extracted from normative assumptions as per requirement.
-// In a full production scenario, this might import JSON dictionaries directly.
-const DICTIONARY_MAP: Record<string, Record<string, string>> = {
-    "fuel": {
-        "D": "Diésel",
-        "G": "Gasolina",
-        "E": "Eléctrico",
-        "GLP": "Gas Licuado del Petróleo (GLP)",
-        "GNC": "Gas Natural Comprimido",
-        "H": "Híbrido (HEV)",
-        "PHEV": "Híbrido Enchufable",
-        "M-D": "Mild-Hybrid Diésel",
-        "M-G": "Mild-Hybrid Gasolina",
-        "M/D": "Mild-Hybrid Diésel",
-        "M/G": "Mild-Hybrid Gasolina",
-        "HEV": "Híbrido (HEV)",
-        "MHEV": "Mild-Hybrid"
-    },
-    "vehicleCategory": {
-        "M1": "Vehículos de motor destinados al transporte de personas y que tengan, por lo menos, cuatro ruedas. Máximo 8 plazas más conductor.",
-        "M2": "Vehículos de motor destinados al transporte de personas. Más de 8 plazas, masa máxima no superior a 5 t.",
-        "M3": "Vehículos de motor destinados al transporte de personas. Más de 8 plazas, masa máxima superior a 5 t.",
-        "N1": "Vehículos de motor destinados al transporte de mercancías. Masa máxima autorizada no superior a 3,5 t.",
-        "N2": "Vehículos de motor destinados al transporte de mercancías. Masa máxima autorizada superior a 3,5 t pero no supera 12 t.",
-        "N3": "Vehículos de motor destinados al transporte de mercancías. Masa máxima autorizada superior a 12 t.",
-        "O1": "Remolques y semirremolques. Masa máxima no superior a 0,75 t.",
-        "O2": "Remolques y semirremolques. Masa máxima superior a 0,75 t pero inferior o igual a 3,5 t.",
-        "O3": "Remolques y semirremolques. Masa máxima superior a 3,5 t pero inferior o igual a 10 t.",
-        "O4": "Remolques y semirremolques. Masa máxima superior a 10 t.",
-        "L1e": "Ciclomotores de dos ruedas.",
-        "L3e": "Motocicletas de dos ruedas sin sidecar.",
-        "M1G": "Vehículo de pasajeros todoterreno (M1 off-road).",
-        "M2G": "Vehículo de pasajeros +8 plazas todoterreno (M2 off-road).",
-        "M3G": "Vehículo de pasajeros +8 plazas todoterreno >5t (M3 off-road).",
-        "N1G": "Vehículo de mercancías ≤3,5t todoterreno (N1 off-road).",
-        "N2G": "Vehículo de mercancías 3,5–12t todoterreno (N2 off-road).",
-        "N3G": "Vehículo de mercancías >12t todoterreno (N3 off-road)."
-    },
-    "bodyType": {
-        // M1 — Vehículos de pasajeros
-        "AA": "Berlina",
-        "AB": "Berlina con portón trasero",
-        "AC": "Familiar",
-        "AD": "Cupé",
-        "AE": "Descapotable",
-        "AF": "Multiuso",
-        "AG": "Camioneta familiar",
-        // M2/M3 — Autobuses
-        "CA": "Vehículo de un solo piso",
-        "CB": "Vehículo de dos pisos",
-        "CC": "Vehículo articulado de un solo piso",
-        "CD": "Vehículo articulado de dos pisos",
-        "CE": "Vehículo de suelo bajo de un solo piso",
-        "CF": "Vehículo de suelo bajo de dos pisos",
-        "CG": "Vehículo articulado de suelo bajo de un solo piso",
-        "CH": "Vehículo articulado de suelo bajo de dos pisos",
-        "CI": "Vehículo de un solo piso de techo abierto",
-        "CJ": "Vehículo de dos pisos de techo abierto",
-        "CX": "Bastidor de autobús",
-        // N1/N2/N3 — Vehículos de motor para mercancías
-        "BA": "Camión",
-        "BB": "Furgoneta",
-        "BC": "Tractocamión",
-        "BD": "Vehículo tractor de carretera",
-        "BE": "Furgoneta de plataforma descubierta",
-        "BX": "Bastidor con cabina o bastidor con cubierta",
-        // O — Remolques
-        "DA": "Semirremolque",
-        "DB": "Remolque con barra de tracción",
-        "DC": "Remolque de eje central",
-        "DE": "Remolque con barra de tracción rígida"
-    }
-};
+const dictionaries = (itvMaster as any).dictionaries;
 
 export interface CLDecoded {
     code: string;
@@ -104,8 +32,8 @@ export function decodeCL(value: unknown): CLDecoded | null {
     const construccionCode = cl.slice(0, 2);
     const usoCode = cl.slice(2, 4);
 
-    const construccionLabel = (itvMaster.dictionaries as any).clasificacion_construccion?.[construccionCode];
-    const usoLabel = (itvMaster.dictionaries as any).clasificacion_uso?.[usoCode];
+    const construccionLabel = dictionaries.clasificacion_construccion?.[construccionCode];
+    const usoLabel = dictionaries.clasificacion_uso?.[usoCode];
 
     if (!construccionLabel) {
         // According to instructions: If construccion does not exist -> fallback "Sin diccionario"
@@ -153,17 +81,22 @@ export function decodeFieldValue(code: string, value: unknown): string {
         return strValue;
     }
 
-    // Mapping field codes to our internal dictionary keys
-    let dictKey = null;
-    if (code === "P.3") dictKey = "fuel";
-    if (code === "J") dictKey = "vehicleCategory";
-    if (code === "J.1") dictKey = "bodyType";
-
-    if (dictKey && DICTIONARY_MAP[dictKey]) {
-        const meaning = DICTIONARY_MAP[dictKey][cleanValue];
-        if (meaning) return meaning;
+    if (code === "P.3") {
+        const byLetter = dictionaries.combustible_codigo_letra?.[cleanValue];
+        if (byLetter) return byLetter;
+        const byRaw = dictionaries.tipo_combustible?.[cleanValue];
+        if (byRaw) return byRaw;
     }
 
-    // Default fallback for fields with no specific mapping or unknown values
+    if (code === "J") {
+        const cat = dictionaries.categorias_homologacion_ue?.[cleanValue];
+        if (cat) return cat;
+    }
+
+    if (code === "J.1") {
+        const body = dictionaries.carrocerias?.[cleanValue];
+        if (body) return body;
+    }
+
     return "No disponible (pendiente de diccionario)";
 }
