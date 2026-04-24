@@ -72,20 +72,22 @@ export function consolidarSinco(rows: Record<string, string>[]): ResumenSinco {
 
     for (const row of reales) {
         // Siniestros
-        const sinRaw = row['num_siniestros'];
+        const sinRaw = row['num_siniestros'] ?? row['Num_Siniestros'];
         if (sinRaw !== undefined) {
             const n = parseFloat(sinRaw);
             if (!isNaN(n)) totalSiniestros += n;
         }
 
         // Antigüedad
-        const fecha = row['fec_ini_cobertura'] ?? row['fecha_ini_cobertura'];
+        const fecha = row['fec_ini_cobertura'] ?? row['Fec_Ini_Cobertura']
+            ?? row['fecha_ini_cobertura'];
         if (fecha && fecha.trim() !== '') {
             antiguedades.push(calcularAntiguedad(fecha.trim()));
         }
 
         // Código de retorno
-        const cod = row['cod_retorno'] ?? row['codigo_retorno'] ?? '';
+        const cod = row['cod_retorno'] ?? row['codigo_retorno']
+            ?? row['Codigo_Retorno'] ?? '';
         codigosRetorno.push(cod);
     }
 

@@ -213,11 +213,27 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
   const onDataChangeRef = useRef(onDataChange);
   onDataChangeRef.current = onDataChange;
 
-  // Seed from trabajoRows on first non-empty load
+  // Seed from trabajoRows on first non-empty load + resync nuevos vehículos
   useEffect(() => {
-    if (seeded || trabajoRows.length === 0) return;
-    setRows(trabajoToOferta(trabajoRows));
-    setSeeded(true);
+    if (trabajoRows.length === 0) return;
+
+    if (!seeded) {
+      setRows(trabajoToOferta(trabajoRows));
+      setSeeded(true);
+      return;
+    }
+
+    // Resync: añadir vehículos nuevos que no estén en rows
+    const existingMats = new Set(rows.map(r => r.matricula));
+    const newFromTrabajo = trabajoToOferta(trabajoRows)
+      .filter(r => r.matricula && !existingMats.has(r.matricula));
+
+    if (newFromTrabajo.length > 0) {
+      setRows(prev => [
+        ...prev,
+        ...newFromTrabajo.map((r, i) => ({ ...r, _id: prev.length + i })),
+      ]);
+    }
   }, [trabajoRows, seeded]);
 
   // Notify parent of changes

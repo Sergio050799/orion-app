@@ -60,34 +60,50 @@ export default function HojaInforme({ trabajoRows, coberturas, sincoResultRows, 
 
   const resumenManual = useMemo(() => {
     if (sincoManual.length === 0) return null;
-    const asRecords = sincoManual.map(e => ({
-      matricula: e.matricula,
-      num_siniestros: String(e.num_siniestros),
-      fec_ini_cobertura: e.fec_ini_cobertura,
-      fec_vcto: e.fec_vcto,
-      codigo_retorno: e.codigo_retorno,
-      garantias: e.garantias,
-      observaciones: e.observaciones,
-    }));
-    return consolidarSinco(asRecords);
+    const manualRecords = sincoManual
+      .filter(e => e.num_siniestros > 0 || e.fec_ini_cobertura || e.codigo_retorno)
+      .map(e => ({
+        num_siniestros: String(e.num_siniestros),
+        fec_ini_cobertura: e.fec_ini_cobertura,
+        codigo_retorno: e.codigo_retorno,
+      }));
+    if (manualRecords.length === 0) return null;
+    return consolidarSinco(manualRecords);
   }, [sincoManual]);
 
   const hasSincoData = resumenAuto !== null || resumenManual !== null || sincoGlobal !== null;
   const fmt = (n:number) => isNaN(n)||!isFinite(n)?'—':n.toFixed(2);
 
-  // ─── Primas ────────────────────────────────────────────────────────────────
-  const primasSol = useMemo(() =>
-    trabajoRows
-      .filter(r=>r['matricula']?.trim())
-      .map(r=>({ mat:r['matricula'], cob:r['coberturas_solicitadas']||'—', frq:r['frq']||'—', prima:r['prima_referencia']||'—' })),
-    [trabajoRows],
-  );
-  const primasMmt = useMemo(() =>
-    trabajoRows
-      .filter(r=>r['matricula']?.trim())
-      .map((r,i)=>({ mat:r['matricula'], cob:coberturas[i]?.cobertura||'—', frq:coberturas[i]?.frq||'—', prima:coberturas[i]?.primaMmt!=null?`${coberturas[i].primaMmt} €`:'—' })),
-    [trabajoRows, coberturas],
-  );
+  // ─── Primas agrupadas por tipo de vehículo ─────────────────────────────────
+  const primasSol = useMemo(() => {
+    const grupos: Record<string, { count: number; suma: number }> = {};
+    trabajoRows.filter(r => r['matricula']?.trim()).forEach(r => {
+      const tipo = r['tipo_vehiculo'] || 'Sin tipo';
+      const prima = parseFloat(r['prima_referencia'] ?? '');
+      if (!grupos[tipo]) grupos[tipo] = { count: 0, suma: 0 };
+      grupos[tipo].count++;
+      if (!isNaN(prima)) grupos[tipo].suma += prima;
+    });
+    return Object.entries(grupos).map(([tipo, g]) => ({
+      tipo, count: g.count, media: g.count > 0 ? g.suma / g.count : 0, total: g.suma,
+    }));
+  }, [trabajoRows]);
+
+  const primasMmt = useMemo(() => {
+    const grupos: Record<string, { count: number; suma: number }> = {};
+    trabajoRows.filter(r => r['matricula']?.trim()).forEach((r, i) => {
+      const tipo = r['tipo_vehiculo'] || 'Sin tipo';
+      const prima = coberturas[i]?.primaMmt;
+      if (!grupos[tipo]) grupos[tipo] = { count: 0, suma: 0 };
+      if (prima != null) {
+        grupos[tipo].count++;
+        grupos[tipo].suma += prima;
+      }
+    });
+    return Object.entries(grupos).map(([tipo, g]) => ({
+      tipo, count: g.count, media: g.count > 0 ? g.suma / g.count : 0, total: g.suma,
+    }));
+  }, [trabajoRows, coberturas]);
 
   return (
     <div className="flex-1 overflow-auto custom-scrollbar p-4" style={{ background:'#f9fafb' }}>
@@ -178,35 +194,47 @@ export default function HojaInforme({ trabajoRows, coberturas, sincoResultRows, 
           {[
             { title:'Primas solicitadas', rows:primasSol },
             { title:'Primas MMT',         rows:primasMmt },
-          ].map(block => (
-            <div key={block.title} className="rounded-xl overflow-hidden" style={{ border:'1px solid #e5e7eb', background:'#ffffff' }}>
-              <div style={{ padding:'10px 14px', borderBottom:'1px solid #e5e7eb', background:'#f9fafb' }}>
-                <span className="text-[11px] font-black uppercase tracking-widest" style={{ color:'#374151' }}>{block.title}</span>
+          ].map(block => {
+            const totalCount = block.rows.reduce((a, r) => a + r.count, 0);
+            const totalPrima = block.rows.reduce((a, r) => a + r.total, 0);
+            return (
+              <div key={block.title} className="rounded-xl overflow-hidden" style={{ border:'1px solid #e5e7eb', background:'#ffffff' }}>
+                <div style={{ padding:'10px 14px', borderBottom:'1px solid #e5e7eb', background:'#f9fafb' }}>
+                  <span className="text-[11px] font-black uppercase tracking-widest" style={{ color:'#374151' }}>{block.title}</span>
+                </div>
+                <div style={{ maxHeight:240, overflowY:'auto' }} className="custom-scrollbar">
+                  <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
+                    <thead>
+                      <tr style={{ background:'#f3f4f6' }}>
+                        {['Tipo Vehículo','N Vehículos','Prima Media','Total'].map(h=><th key={h} style={thS}>{h}</th>)}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {block.rows.length===0
+                        ? <tr><td colSpan={4} style={{textAlign:'center',padding:'20px 0',color:'#9ca3af'}}>Sin datos</td></tr>
+                        : <>
+                            {block.rows.map(r=>(
+                              <tr key={r.tipo} style={{ borderBottom:'1px solid #f3f4f6' }}>
+                                <td style={tdS}>{r.tipo}</td>
+                                <td style={{...tdS,textAlign:'center'}}>{r.count}</td>
+                                <td style={{...tdS,textAlign:'right',fontFamily:'monospace'}}>{r.media ? r.media.toLocaleString('es-ES', { maximumFractionDigits: 0 }) + ' EUR' : '—'}</td>
+                                <td style={{...tdS,textAlign:'right',fontFamily:'monospace',fontWeight:700}}>{r.total ? r.total.toLocaleString('es-ES', { maximumFractionDigits: 0 }) + ' EUR' : '—'}</td>
+                              </tr>
+                            ))}
+                            <tr style={{ borderTop:'2px solid #d1d5db', background:'#f9fafb', fontWeight:900 }}>
+                              <td style={tdS}>Total</td>
+                              <td style={{...tdS,textAlign:'center'}}>{totalCount}</td>
+                              <td style={tdS}></td>
+                              <td style={{...tdS,textAlign:'right',fontFamily:'monospace'}}>{totalPrima ? totalPrima.toLocaleString('es-ES', { maximumFractionDigits: 0 }) + ' EUR' : '—'}</td>
+                            </tr>
+                          </>
+                      }
+                    </tbody>
+                  </table>
+                </div>
               </div>
-              <div style={{ maxHeight:240, overflowY:'auto' }} className="custom-scrollbar">
-                <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
-                  <thead>
-                    <tr style={{ background:'#f3f4f6' }}>
-                      {['Matrícula','Cobertura','FRQ','Prima'].map(h=><th key={h} style={thS}>{h}</th>)}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {block.rows.length===0
-                      ? <tr><td colSpan={4} style={{textAlign:'center',padding:'20px 0',color:'#9ca3af'}}>Sin datos</td></tr>
-                      : block.rows.map((r,i)=>(
-                          <tr key={i} style={{ borderBottom:'1px solid #f3f4f6' }}>
-                            <td style={{...tdS,fontFamily:'monospace',fontWeight:700}}>{r.mat}</td>
-                            <td style={tdS}>{r.cob}</td>
-                            <td style={{...tdS,textAlign:'center'}}>{r.frq}</td>
-                            <td style={{...tdS,textAlign:'right',fontFamily:'monospace'}}>{r.prima}</td>
-                          </tr>
-                        ))
-                    }
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
       </div>

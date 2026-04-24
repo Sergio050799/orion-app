@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 
 // ─── Estimación fecha matrícula (placas españolas nuevas NNNN-LLL) ───────────
 
@@ -172,6 +172,15 @@ export default function HojaPreEmision({ trabajoRows }: Props) {
   );
 
   const [vehicles, setVehicles] = useState<VehicleEmision[]>(initial);
+
+  // Resync: añadir vehículos nuevos de trabajoRows
+  useEffect(() => {
+    const existingMats = new Set(vehicles.map(v => v.matricula));
+    const newVehicles = initial.filter(v => v.matricula && !existingMats.has(v.matricula));
+    if (newVehicles.length > 0) {
+      setVehicles(prev => [...prev, ...newVehicles]);
+    }
+  }, [initial]);
 
   const setV = useCallback((i: number, patch: Partial<VehicleEmision>) => {
     setVehicles(prev => { const n = [...prev]; n[i] = { ...n[i], ...patch }; return n; });
