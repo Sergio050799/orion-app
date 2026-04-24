@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
     // Si solo hay una factura, devolver DOCX directo
     if (facturas.length === 1) {
       const buf = generarFacturaDocx(templateBytes, common, facturas[0]);
-      return new NextResponse(new Uint8Array(buf), {
+      return new NextResponse(Buffer.from(buf), {
         status: 200,
         headers: {
           'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
 
     const zipBuffer = zipOut.generate({ type: 'nodebuffer' });
 
-    return new NextResponse(new Uint8Array(zipBuffer), {
+    return new NextResponse(Buffer.from(zipBuffer), {
       status: 200,
       headers: {
         'Content-Type': 'application/zip',

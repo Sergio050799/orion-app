@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
     const buf = doc.getZip().generate({ type: 'nodebuffer' });
 
     // 5. Devolver DOCX
-    return new NextResponse(new Uint8Array(buf), {
+    return new NextResponse(Buffer.from(buf), {
       status: 200,
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',

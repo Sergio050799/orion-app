@@ -8,6 +8,7 @@ import OcrReportPreview from "./components/OcrReportPreview";
 import OcrKpiStrip from "./components/OcrKpiStrip";
 import OcrBulkActionsBar from "./components/OcrBulkActionsBar";
 import OcrBulkUploadQueue from "./components/OcrBulkUploadQueue";
+import type { UploadMeta } from './components/UploadTypeModal';
 import { exportDocumentsToCsv } from "@/core/utils/exportToCsv";
 
 interface Toast { msg: string; type: 'error' | 'success' | 'info'; }
