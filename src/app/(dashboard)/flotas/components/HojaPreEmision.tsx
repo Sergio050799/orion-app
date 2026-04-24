@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 
 // ─── Estimación fecha matrícula (placas españolas nuevas NNNN-LLL) ───────────
 
@@ -30,10 +30,17 @@ function estimateYear(plate: string): { year: number; range: string } | null {
 type EmisionStatus = 'pendiente' | 'listo' | 'sin_catalogo';
 
 interface CandidatoCatalogo {
-  id: string;
-  nombre: string;
+  id_veh: string;
+  marca: string;
+  modelo: string;
   version: string;
-  score: number;
+  combustible: string;
+  kw: number;
+  cilindrada: number;
+  plazas: number;
+  anyo: number;
+  pvp?: number;
+  score?: number;
 }
 
 interface VehicleEmision {
@@ -52,6 +59,7 @@ interface VehicleEmision {
 
 interface Props {
   trabajoRows: Record<string, string>[];
+  onCatalogoChange?: (selecciones: Record<string, string>) => void; // matricula → id_veh
 }
 
 // ─── Componente card por vehículo ─────────────────────────────────────────────
@@ -110,8 +118,8 @@ function VehicleCard({ v, onSearch, onSelect }: {
             <div style={{ padding: '6px 10px', background: '#d1fae5', borderRadius: 8, border: '1px solid #6ee7b7', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
                 <div style={{ fontSize: 10, fontWeight: 900, color: '#065f46', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Catálogo confirmado</div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: '#111827' }}>{v.seleccionado.nombre} {v.seleccionado.version}</div>
-                <div style={{ fontSize: 10, color: '#6b7280' }}>Score: {Math.round(v.seleccionado.score * 100)}%</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#111827' }}>{v.seleccionado.marca} {v.seleccionado.modelo} {v.seleccionado.version} ({v.seleccionado.anyo})</div>
+                <div style={{ fontSize: 10, color: '#6b7280' }}>{v.seleccionado.kw}kW{v.seleccionado.score != null ? ` · Score: ${Math.round(v.seleccionado.score * 100)}%` : ''}</div>
               </div>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg>
             </div>
@@ -120,15 +128,17 @@ function VehicleCard({ v, onSearch, onSelect }: {
               <div style={{ fontSize: 10, fontWeight: 700, color: '#6b7280', marginBottom: 4 }}>Top {v.candidatos.length} candidatos:</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 {v.candidatos.map(c => (
-                  <button key={c.id} type="button" onClick={() => onSelect(c)}
+                  <button key={c.id_veh} type="button" onClick={() => onSelect(c)}
                     style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '5px 8px', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 6, cursor: 'pointer', fontSize: 12, textAlign: 'left' }}
                     onMouseEnter={e => (e.currentTarget.style.background = '#eff0ff')}
                     onMouseLeave={e => (e.currentTarget.style.background = '#f9fafb')}>
-                    <span style={{ fontWeight: 600, color: '#374151' }}>{c.nombre} {c.version}</span>
-                    <span className="text-[10px] font-black px-1.5 py-0.5 rounded"
-                      style={{ background: c.score >= 0.8 ? '#d1fae5' : '#fef3c7', color: c.score >= 0.8 ? '#065f46' : '#92400e' }}>
-                      {Math.round(c.score * 100)}%
-                    </span>
+                    <span style={{ fontWeight: 600, color: '#374151' }}>{c.marca} {c.modelo} {c.version} ({c.anyo}) — {c.kw}kW</span>
+                    {c.score != null && (
+                      <span className="text-[10px] font-black px-1.5 py-0.5 rounded"
+                        style={{ background: c.score >= 0.8 ? '#d1fae5' : '#fef3c7', color: c.score >= 0.8 ? '#065f46' : '#92400e' }}>
+                        {Math.round(c.score * 100)}%
+                      </span>
+                    )}
                   </button>
                 ))}
               </div>
@@ -153,7 +163,7 @@ function VehicleCard({ v, onSearch, onSelect }: {
 
 // ─── Componente principal ─────────────────────────────────────────────────────
 
-export default function HojaPreEmision({ trabajoRows }: Props) {
+export default function HojaPreEmision({ trabajoRows, onCatalogoChange }: Props) {
   const initial = useMemo<VehicleEmision[]>(() =>
     trabajoRows.filter(r => r['matricula']?.trim()).map(r => ({
       matricula:   r['matricula'] ?? '',
@@ -172,6 +182,7 @@ export default function HojaPreEmision({ trabajoRows }: Props) {
   );
 
   const [vehicles, setVehicles] = useState<VehicleEmision[]>(initial);
+  const autoSearchedRef = useRef(false);
 
   // Resync: añadir vehículos nuevos de trabajoRows
   useEffect(() => {
@@ -188,6 +199,7 @@ export default function HojaPreEmision({ trabajoRows }: Props) {
 
   const handleSearch = useCallback(async (i: number) => {
     const v = vehicles[i];
+    if (!v) return;
     setV(i, { searching: true });
     try {
       const res = await fetch('/api/catalogo/search', {
@@ -197,16 +209,42 @@ export default function HojaPreEmision({ trabajoRows }: Props) {
       });
       if (!res.ok) throw new Error('API error');
       const json = await res.json();
-      const candidatos: CandidatoCatalogo[] = (json.results ?? []).slice(0, 3);
+      const candidatos: CandidatoCatalogo[] = (json.candidates ?? json.candidatos ?? json.results ?? []).slice(0, 3);
       setV(i, { candidatos, status: candidatos.length > 0 ? 'pendiente' : 'sin_catalogo', searching: false });
     } catch {
       setV(i, { status: 'sin_catalogo', searching: false });
     }
   }, [vehicles, setV]);
 
+  // Auto-buscar al montar
+  useEffect(() => {
+    if (autoSearchedRef.current) return;
+    if (vehicles.length === 0) return;
+    autoSearchedRef.current = true;
+    vehicles.forEach((v, i) => {
+      if (v.candidatos.length === 0 && !v.searching && v.marca) {
+        handleSearch(i);
+      }
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vehicles.length]);
+
   const handleSelect = useCallback((i: number, c: CandidatoCatalogo) => {
     setV(i, { seleccionado: c, status: 'listo', candidatos: [] });
-  }, [setV]);
+    // Persistir selección
+    setVehicles(prev => {
+      const updated = [...prev];
+      updated[i] = { ...updated[i], seleccionado: c, status: 'listo', candidatos: [] };
+      const selecciones: Record<string, string> = {};
+      updated.forEach(v => {
+        if (v.seleccionado && v.matricula) {
+          selecciones[v.matricula] = v.seleccionado.id_veh;
+        }
+      });
+      onCatalogoChange?.(selecciones);
+      return updated;
+    });
+  }, [setV, onCatalogoChange]);
 
   const listos = vehicles.filter(v => v.status === 'listo').length;
 

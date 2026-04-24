@@ -47,6 +47,8 @@ export interface FlotaCarpeta {
   sincoManual?:    { matricula: string; num_siniestros: number; fec_ini_cobertura: string; fec_vcto: string; codigo_retorno: string; garantias: string; observaciones: string; }[];
   sincoGlobal?:    { siniestrosTotales: number; anyosExperiencia: number; frecuencia: number; observaciones: string; };
   oferta:          Record<string, string>[];  // datos hoja OFERTA con coberturas
+  primasMmtInforme?: Record<string, number>;   // tipo_vehiculo → prima MMT editada en Informe
+  catalogoSeleccion?: Record<string, string>;   // matricula → id_veh seleccionado en Pre-Emisión
 }
 
 const STORAGE_KEY = 'flotas_carpetas_v1';

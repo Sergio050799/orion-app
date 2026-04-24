@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { consolidarSinco } from '@/core/flotas';
 import type { CoberturaRow } from './types';
 
@@ -27,9 +27,11 @@ interface Props {
   sincoResultRows: Record<string, string>[];
   sincoManual: SincoManualEntry[];
   sincoGlobal: SincoGlobal | null;
+  primasMmtValues?: Record<string, number>;
+  onPrimasMmtChange?: (primas: Record<string, number>) => void;
 }
 
-export default function HojaInforme({ trabajoRows, coberturas, sincoResultRows, sincoManual, sincoGlobal }: Props) {
+export default function HojaInforme({ trabajoRows, coberturas, sincoResultRows, sincoManual, sincoGlobal, primasMmtValues, onPrimasMmtChange }: Props) {
   // ─── Tabla dinámica tipo×cobertura ─────────────────────────────────────────
   const pivot = useMemo(() => {
     const tipos = new Set<string>();
@@ -72,38 +74,56 @@ export default function HojaInforme({ trabajoRows, coberturas, sincoResultRows, 
   }, [sincoManual]);
 
   const hasSincoData = resumenAuto !== null || resumenManual !== null || sincoGlobal !== null;
-  const fmt = (n:number) => isNaN(n)||!isFinite(n)?'—':n.toFixed(2);
+  const fmtFreq = (n: number) => isNaN(n) || !isFinite(n) ? '—' : `${n.toFixed(2)}%`;
+  const fmt = (n: number) => isNaN(n) || !isFinite(n) ? '—' : n.toFixed(2);
 
   // ─── Primas agrupadas por tipo de vehículo ─────────────────────────────────
-  const primasSol = useMemo(() => {
-    const grupos: Record<string, { count: number; suma: number }> = {};
+  const tipoGrupos = useMemo(() => {
+    const grupos: Record<string, { count: number; sumaPrimaSol: number }> = {};
     trabajoRows.filter(r => r['matricula']?.trim()).forEach(r => {
       const tipo = r['tipo_vehiculo'] || 'Sin tipo';
       const prima = parseFloat(r['prima_referencia'] ?? '');
-      if (!grupos[tipo]) grupos[tipo] = { count: 0, suma: 0 };
+      if (!grupos[tipo]) grupos[tipo] = { count: 0, sumaPrimaSol: 0 };
       grupos[tipo].count++;
-      if (!isNaN(prima)) grupos[tipo].suma += prima;
+      if (!isNaN(prima)) grupos[tipo].sumaPrimaSol += prima;
     });
-    return Object.entries(grupos).map(([tipo, g]) => ({
-      tipo, count: g.count, media: g.count > 0 ? g.suma / g.count : 0, total: g.suma,
-    }));
+    return grupos;
   }, [trabajoRows]);
 
-  const primasMmt = useMemo(() => {
-    const grupos: Record<string, { count: number; suma: number }> = {};
-    trabajoRows.filter(r => r['matricula']?.trim()).forEach((r, i) => {
-      const tipo = r['tipo_vehiculo'] || 'Sin tipo';
-      const prima = coberturas[i]?.primaMmt;
-      if (!grupos[tipo]) grupos[tipo] = { count: 0, suma: 0 };
-      if (prima != null) {
-        grupos[tipo].count++;
-        grupos[tipo].suma += prima;
-      }
-    });
-    return Object.entries(grupos).map(([tipo, g]) => ({
-      tipo, count: g.count, media: g.count > 0 ? g.suma / g.count : 0, total: g.suma,
+  const primasSol = useMemo(() => {
+    return Object.entries(tipoGrupos).map(([tipo, g]) => ({
+      tipo, count: g.count, media: g.count > 0 ? g.sumaPrimaSol / g.count : 0, total: g.sumaPrimaSol,
     }));
-  }, [trabajoRows, coberturas]);
+  }, [tipoGrupos]);
+
+  // ─── Primas MMT editables ──────────────────────────────────────────────────
+  const [mmtInputs, setMmtInputs] = useState<Record<string, number>>(primasMmtValues ?? {});
+
+  useEffect(() => {
+    if (primasMmtValues) setMmtInputs(primasMmtValues);
+  }, [primasMmtValues]);
+
+  const handleMmtChange = (tipo: string, value: string) => {
+    const num = parseFloat(value);
+    const updated = { ...mmtInputs };
+    if (value === '' || isNaN(num)) {
+      delete updated[tipo];
+    } else {
+      updated[tipo] = num;
+    }
+    setMmtInputs(updated);
+    onPrimasMmtChange?.(updated);
+  };
+
+  const mmtRows = useMemo(() => {
+    return Object.entries(tipoGrupos).map(([tipo, g]) => {
+      const prima = mmtInputs[tipo];
+      const total = prima != null ? prima * g.count : null;
+      return { tipo, count: g.count, prima: prima ?? null, total };
+    });
+  }, [tipoGrupos, mmtInputs]);
+
+  const fmtEur = (n: number) => n.toLocaleString('es-ES', { maximumFractionDigits: 0 }) + ' EUR';
 
   return (
     <div className="flex-1 overflow-auto custom-scrollbar p-4" style={{ background:'#f9fafb' }}>
@@ -160,10 +180,10 @@ export default function HojaInforme({ trabajoRows, coberturas, sincoResultRows, 
             ) : (
               <div style={{ display:'flex', flexDirection:'column' }}>
                 {resumenAuto && (
-                  <SincoBlock label="Automático" r={resumenAuto} fmt={fmt} />
+                  <SincoBlock label="Automático" r={resumenAuto} fmt={fmt} fmtFreq={fmtFreq} />
                 )}
                 {resumenManual && (
-                  <SincoBlock label="Por Matrícula" r={resumenManual} fmt={fmt} />
+                  <SincoBlock label="Por Matrícula" r={resumenManual} fmt={fmt} fmtFreq={fmtFreq} />
                 )}
                 {sincoGlobal && (
                   <div style={{ borderTop: resumenAuto || resumenManual ? '1px solid #e5e7eb' : undefined }}>
@@ -174,7 +194,7 @@ export default function HojaInforme({ trabajoRows, coberturas, sincoResultRows, 
                       {[
                         ['SINIESTROS', String(sincoGlobal.siniestrosTotales)],
                         ['AÑOS', String(sincoGlobal.anyosExperiencia)],
-                        ['FRECUENCIA', fmt(sincoGlobal.frecuencia)],
+                        ['FRECUENCIA', fmtFreq(sincoGlobal.frecuencia)],
                       ].map(([label, value]) => (
                         <div key={label} style={{ background:'#ffffff', padding:'10px 14px' }}>
                           <div className="text-[9px] font-black uppercase tracking-widest" style={{ color:'#9ca3af' }}>{label}</div>
@@ -191,50 +211,103 @@ export default function HojaInforme({ trabajoRows, coberturas, sincoResultRows, 
 
         {/* ── Bloque derecho — Primas ──────────────────────────────────── */}
         <div style={{ flex:'1 1 400px', minWidth:300, display:'flex', flexDirection:'column', gap:16 }}>
-          {[
-            { title:'Primas solicitadas', rows:primasSol },
-            { title:'Primas MMT',         rows:primasMmt },
-          ].map(block => {
-            const totalCount = block.rows.reduce((a, r) => a + r.count, 0);
-            const totalPrima = block.rows.reduce((a, r) => a + r.total, 0);
-            return (
-              <div key={block.title} className="rounded-xl overflow-hidden" style={{ border:'1px solid #e5e7eb', background:'#ffffff' }}>
-                <div style={{ padding:'10px 14px', borderBottom:'1px solid #e5e7eb', background:'#f9fafb' }}>
-                  <span className="text-[11px] font-black uppercase tracking-widest" style={{ color:'#374151' }}>{block.title}</span>
-                </div>
-                <div style={{ maxHeight:240, overflowY:'auto' }} className="custom-scrollbar">
-                  <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
-                    <thead>
-                      <tr style={{ background:'#f3f4f6' }}>
-                        {['Tipo Vehículo','N Vehículos','Prima Media','Total'].map(h=><th key={h} style={thS}>{h}</th>)}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {block.rows.length===0
-                        ? <tr><td colSpan={4} style={{textAlign:'center',padding:'20px 0',color:'#9ca3af'}}>Sin datos</td></tr>
-                        : <>
-                            {block.rows.map(r=>(
-                              <tr key={r.tipo} style={{ borderBottom:'1px solid #f3f4f6' }}>
-                                <td style={tdS}>{r.tipo}</td>
-                                <td style={{...tdS,textAlign:'center'}}>{r.count}</td>
-                                <td style={{...tdS,textAlign:'right',fontFamily:'monospace'}}>{r.media ? r.media.toLocaleString('es-ES', { maximumFractionDigits: 0 }) + ' EUR' : '—'}</td>
-                                <td style={{...tdS,textAlign:'right',fontFamily:'monospace',fontWeight:700}}>{r.total ? r.total.toLocaleString('es-ES', { maximumFractionDigits: 0 }) + ' EUR' : '—'}</td>
-                              </tr>
-                            ))}
-                            <tr style={{ borderTop:'2px solid #d1d5db', background:'#f9fafb', fontWeight:900 }}>
-                              <td style={tdS}>Total</td>
-                              <td style={{...tdS,textAlign:'center'}}>{totalCount}</td>
-                              <td style={tdS}></td>
-                              <td style={{...tdS,textAlign:'right',fontFamily:'monospace'}}>{totalPrima ? totalPrima.toLocaleString('es-ES', { maximumFractionDigits: 0 }) + ' EUR' : '—'}</td>
-                            </tr>
-                          </>
-                      }
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            );
-          })}
+
+          {/* Primas Solicitadas — solo lectura */}
+          <div className="rounded-xl overflow-hidden" style={{ border:'1px solid #e5e7eb', background:'#ffffff' }}>
+            <div style={{ padding:'10px 14px', borderBottom:'1px solid #e5e7eb', background:'#f9fafb' }}>
+              <span className="text-[11px] font-black uppercase tracking-widest" style={{ color:'#374151' }}>Primas solicitadas</span>
+            </div>
+            <div style={{ maxHeight:240, overflowY:'auto' }} className="custom-scrollbar">
+              <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
+                <thead>
+                  <tr style={{ background:'#f3f4f6' }}>
+                    {['Tipo Vehículo','N Vehículos','Prima Media','Total'].map(h=><th key={h} style={thS}>{h}</th>)}
+                  </tr>
+                </thead>
+                <tbody>
+                  {primasSol.length===0
+                    ? <tr><td colSpan={4} style={{textAlign:'center',padding:'20px 0',color:'#9ca3af'}}>Sin datos</td></tr>
+                    : <>
+                        {primasSol.map(r=>(
+                          <tr key={r.tipo} style={{ borderBottom:'1px solid #f3f4f6' }}>
+                            <td style={tdS}>{r.tipo}</td>
+                            <td style={{...tdS,textAlign:'center'}}>{r.count}</td>
+                            <td style={{...tdS,textAlign:'right',fontFamily:'monospace'}}>{r.media ? fmtEur(r.media) : '—'}</td>
+                            <td style={{...tdS,textAlign:'right',fontFamily:'monospace',fontWeight:700}}>{r.total ? fmtEur(r.total) : '—'}</td>
+                          </tr>
+                        ))}
+                        <tr style={{ borderTop:'2px solid #d1d5db', background:'#f9fafb', fontWeight:900 }}>
+                          <td style={tdS}>Total</td>
+                          <td style={{...tdS,textAlign:'center'}}>{primasSol.reduce((a,r)=>a+r.count,0)}</td>
+                          <td style={tdS}></td>
+                          <td style={{...tdS,textAlign:'right',fontFamily:'monospace'}}>{primasSol.reduce((a,r)=>a+r.total,0) ? fmtEur(primasSol.reduce((a,r)=>a+r.total,0)) : '—'}</td>
+                        </tr>
+                      </>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Primas MMT — editables */}
+          <div className="rounded-xl overflow-hidden" style={{ border:'1px solid #e5e7eb', background:'#ffffff' }}>
+            <div style={{ padding:'10px 14px', borderBottom:'1px solid #e5e7eb', background:'#f9fafb' }}>
+              <span className="text-[11px] font-black uppercase tracking-widest" style={{ color:'#374151' }}>Primas MMT</span>
+            </div>
+            <div style={{ maxHeight:240, overflowY:'auto' }} className="custom-scrollbar">
+              <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
+                <thead>
+                  <tr style={{ background:'#f3f4f6' }}>
+                    {['Tipo Vehículo','N Vehículos','Prima Media','Total'].map(h=><th key={h} style={thS}>{h}</th>)}
+                  </tr>
+                </thead>
+                <tbody>
+                  {mmtRows.length===0
+                    ? <tr><td colSpan={4} style={{textAlign:'center',padding:'20px 0',color:'#9ca3af'}}>Sin datos</td></tr>
+                    : <>
+                        {mmtRows.map(r=>(
+                          <tr key={r.tipo} style={{ borderBottom:'1px solid #f3f4f6' }}>
+                            <td style={tdS}>{r.tipo}</td>
+                            <td style={{...tdS,textAlign:'center'}}>{r.count}</td>
+                            <td style={{...tdS,textAlign:'right'}}>
+                              <input
+                                type="number"
+                                min="0"
+                                step="1"
+                                value={r.prima != null ? r.prima : ''}
+                                onChange={e => handleMmtChange(r.tipo, e.target.value)}
+                                placeholder="—"
+                                style={{
+                                  width: 90, textAlign: 'right', fontFamily: 'monospace', fontSize: 12,
+                                  background: 'transparent', border: 'none', outline: 'none',
+                                  padding: '2px 4px', borderRadius: 4, color: '#111827',
+                                }}
+                                onFocus={e => { e.currentTarget.style.boxShadow = '0 0 0 2px #6366f1'; }}
+                                onBlur={e => { e.currentTarget.style.boxShadow = 'none'; }}
+                              />
+                            </td>
+                            <td style={{...tdS,textAlign:'right',fontFamily:'monospace',fontWeight:700}}>
+                              {r.total != null ? fmtEur(r.total) : '—'}
+                            </td>
+                          </tr>
+                        ))}
+                        <tr style={{ borderTop:'2px solid #d1d5db', background:'#f9fafb', fontWeight:900 }}>
+                          <td style={tdS}>Total</td>
+                          <td style={{...tdS,textAlign:'center'}}>{mmtRows.reduce((a,r)=>a+r.count,0)}</td>
+                          <td style={tdS}></td>
+                          <td style={{...tdS,textAlign:'right',fontFamily:'monospace'}}>
+                            {mmtRows.some(r => r.total != null)
+                              ? fmtEur(mmtRows.reduce((a,r)=>a+(r.total ?? 0),0))
+                              : '—'}
+                          </td>
+                        </tr>
+                      </>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+
         </div>
 
       </div>
@@ -242,7 +315,7 @@ export default function HojaInforme({ trabajoRows, coberturas, sincoResultRows, 
   );
 }
 
-function SincoBlock({ label, r, fmt }: { label: string; r: { totalVehiculos: number; vehiculosConSinco: number; totalSiniestros: number; antiguedadMedia: number; siniestrosPorAnio: number; frecuencia: number }; fmt: (n: number) => string }) {
+function SincoBlock({ label, r, fmt, fmtFreq }: { label: string; r: { totalVehiculos: number; vehiculosConSinco: number; totalSiniestros: number; antiguedadMedia: number; siniestrosPorAnio: number; frecuencia: number }; fmt: (n: number) => string; fmtFreq: (n: number) => string }) {
   return (
     <div>
       <div style={{ padding:'6px 14px', background:'#f9fafb', borderBottom:'1px solid #e5e7eb' }}>
@@ -251,7 +324,7 @@ function SincoBlock({ label, r, fmt }: { label: string; r: { totalVehiculos: num
       <div className="grid grid-cols-3 gap-px" style={{ background:'#e5e7eb' }}>
         {[
           ['VEHÍCULOS', String(r.totalVehiculos)], ['CON SINCO', String(r.vehiculosConSinco)], ['SINIESTROS', String(r.totalSiniestros)],
-          ['AÑOS MEDIA', fmt(r.antiguedadMedia)], ['SIN / AÑO', fmt(r.siniestrosPorAnio)], ['FRECUENCIA', fmt(r.frecuencia)],
+          ['AÑOS MEDIA', fmt(r.antiguedadMedia)], ['SIN / AÑO', fmt(r.siniestrosPorAnio)], ['FRECUENCIA', fmtFreq(r.frecuencia)],
         ].map(([l, v]) => (
           <div key={l} style={{ background:'#ffffff', padding:'10px 14px' }}>
             <div className="text-[9px] font-black uppercase tracking-widest" style={{ color:'#9ca3af' }}>{l}</div>

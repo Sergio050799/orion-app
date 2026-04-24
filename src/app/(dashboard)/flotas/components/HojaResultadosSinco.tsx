@@ -61,6 +61,7 @@ const HojaResultadosSinco = forwardRef<HojaResultadosSincoHandle, Props>(
     const freq    = calcularFrecuencia(sinAnio, conSinco);
 
     const fmt = (n: number) => isNaN(n) || !isFinite(n) ? '—' : n.toFixed(2);
+    const fmtFreq = (n: number) => isNaN(n) || !isFinite(n) ? '—' : `${n.toFixed(2)}%`;
 
     return (
       <div className="flex flex-col h-full min-h-0">
@@ -95,7 +96,7 @@ const HojaResultadosSinco = forwardRef<HojaResultadosSincoHandle, Props>(
                 { label: 'SINIESTROS',          value: String(numSiniestros) },
                 { label: 'AÑOS MEDIA',          value: fmt(antiguedMedia) },
                 { label: 'SINIESTROS / AÑO',   value: fmt(sinAnio) },
-                { label: 'FRECUENCIA',          value: fmt(freq) },
+                { label: 'FRECUENCIA',          value: fmtFreq(freq) },
               ].map(m => (
                 <div key={m.label} className="rounded-lg px-3 py-2"
                   style={{ background: '#ffffff', border: '1px solid #e5e7eb' }}>

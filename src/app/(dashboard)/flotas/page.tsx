@@ -362,6 +362,13 @@ export default function FlotasPage() {
                     sincoResultRows={sincoResultRows}
                     sincoManual={carpetaActiva?.sincoManual ?? []}
                     sincoGlobal={carpetaActiva?.sincoGlobal ?? null}
+                    primasMmtValues={carpetaActiva?.primasMmtInforme}
+                    onPrimasMmtChange={(primas) => {
+                      if (carpetaActiva) {
+                        const updated = { ...carpetaActiva, primasMmtInforme: primas };
+                        setCarpetaActiva(updated);
+                      }
+                    }}
                   />
                 )}
                 {tab === 'OFERTA' && (
@@ -369,12 +376,22 @@ export default function FlotasPage() {
                     <HojaOferta
                       ref={ofertaRef}
                       trabajoRows={trabajoRows}
+                      header={flotaHeader}
+                      carpetaNombre={carpetaActiva?.nombre}
                       onDataChange={handleOfertaChange}
                     />
                   </Suspense>
                 )}
                 {tab === 'PRE-EMISIÓN' && (
-                  <HojaPreEmision trabajoRows={trabajoRows} />
+                  <HojaPreEmision
+                    trabajoRows={trabajoRows}
+                    onCatalogoChange={(selecciones) => {
+                      if (carpetaActiva) {
+                        const updated = { ...carpetaActiva, catalogoSeleccion: selecciones };
+                        setCarpetaActiva(updated);
+                      }
+                    }}
+                  />
                 )}
               </div>
             ))}

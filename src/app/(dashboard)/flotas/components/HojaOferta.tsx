@@ -34,6 +34,8 @@ export interface HojaOfertaHandle {
 
 interface Props {
   trabajoRows: Record<string, string>[];
+  header?: { cif: string; tomador: string; actividad: string; formaPago: string; efecto: string };
+  carpetaNombre?: string;
   onDataChange?: (data: Record<string, string>[]) => void;
 }
 
@@ -205,7 +207,7 @@ function rowToRecord(row: OfertaRow): Record<string, string> {
 // ─── HojaOferta ───────────────────────────────────────────────────────────────
 
 const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
-  { trabajoRows, onDataChange },
+  { trabajoRows, header, carpetaNombre, onDataChange },
   ref,
 ) {
   const [rows, setRows] = useState<OfertaRow[]>([]);
@@ -326,6 +328,109 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
       return sum + (isNaN(v) ? 0 : v);
     }, 0);
   }, [rows]);
+
+  // ─── Generar Oferta Excel ──────────────────────────────────────────────────
+  const handleExportOferta = useCallback(async () => {
+    const ExcelJS = (await import('exceljs')).default;
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet('Oferta');
+
+    // Colores corporativos
+    const indigo = '6366F1';
+    const headerBg = 'EEF2FF';
+    const grayBg = 'F9FAFB';
+    const borderColor = 'D1D5DB';
+
+    // Cabecera
+    ws.mergeCells('A1:H1');
+    const titleCell = ws.getCell('A1');
+    titleCell.value = 'OFERTA DE SEGURO DE FLOTAS — ORION';
+    titleCell.font = { bold: true, size: 14, color: { argb: indigo } };
+    titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+    ws.getRow(1).height = 30;
+
+    ws.mergeCells('A2:H2');
+    const subtitleCell = ws.getCell('A2');
+    subtitleCell.value = `${carpetaNombre ?? 'Sin nombre'} — ${new Date().toLocaleDateString('es-ES')}`;
+    subtitleCell.font = { size: 10, color: { argb: '6B7280' } };
+    subtitleCell.alignment = { horizontal: 'center' };
+
+    // Datos empresa
+    if (header) {
+      ws.getCell('A4').value = 'CIF:';
+      ws.getCell('B4').value = header.cif;
+      ws.getCell('A5').value = 'Tomador:';
+      ws.getCell('B5').value = header.tomador;
+      ws.getCell('A6').value = 'Actividad:';
+      ws.getCell('B6').value = header.actividad;
+      for (let r = 4; r <= 6; r++) {
+        ws.getCell(`A${r}`).font = { bold: true, size: 10, color: { argb: '374151' } };
+        ws.getCell(`B${r}`).font = { size: 10, color: { argb: '111827' } };
+      }
+    }
+
+    // Tabla de vehículos
+    const startRow = header ? 8 : 4;
+    const headers = ['Matrícula', 'Marca / Modelo', 'Tipo Vehículo', 'Coberturas', 'Ámbito', 'FRQ', 'Prima MMT'];
+    const headerRow = ws.getRow(startRow);
+    headers.forEach((h, i) => {
+      const cell = headerRow.getCell(i + 1);
+      cell.value = h;
+      cell.font = { bold: true, size: 10, color: { argb: '374151' } };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: headerBg } };
+      cell.border = { bottom: { style: 'thin', color: { argb: borderColor } } };
+      cell.alignment = { horizontal: i >= 5 ? 'right' : 'left', vertical: 'middle' };
+    });
+    headerRow.height = 22;
+
+    rows.forEach((r, idx) => {
+      const row = ws.getRow(startRow + 1 + idx);
+      const vals = [r.matricula, r.marca_modelo, r.tipo_vehiculo, r.coberturas, r.ambito, r.frq, r.oferta_prima_mmt];
+      vals.forEach((v, i) => {
+        const cell = row.getCell(i + 1);
+        if (i === 6 && v) {
+          cell.value = parseFloat(v) || 0;
+          cell.numFmt = '#,##0" €"';
+        } else {
+          cell.value = v;
+        }
+        cell.font = { size: 10, color: { argb: '111827' } };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: idx % 2 === 0 ? 'FFFFFF' : grayBg } };
+        cell.border = { bottom: { style: 'hair', color: { argb: borderColor } } };
+        cell.alignment = { horizontal: i >= 5 ? 'right' : 'left', vertical: 'middle' };
+      });
+    });
+
+    // Fila total
+    const totalRow = ws.getRow(startRow + 1 + rows.length);
+    totalRow.getCell(1).value = 'TOTAL FLOTA';
+    totalRow.getCell(1).font = { bold: true, size: 11, color: { argb: indigo } };
+    totalRow.getCell(7).value = primaTotal;
+    totalRow.getCell(7).numFmt = '#,##0" €"';
+    totalRow.getCell(7).font = { bold: true, size: 11, color: { argb: '111827' } };
+    for (let i = 1; i <= 7; i++) {
+      totalRow.getCell(i).border = { top: { style: 'medium', color: { argb: indigo } } };
+      totalRow.getCell(i).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: headerBg } };
+    }
+
+    // Column widths
+    ws.getColumn(1).width = 14;
+    ws.getColumn(2).width = 24;
+    ws.getColumn(3).width = 20;
+    ws.getColumn(4).width = 26;
+    ws.getColumn(5).width = 14;
+    ws.getColumn(6).width = 10;
+    ws.getColumn(7).width = 14;
+
+    const buffer = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Oferta_${carpetaNombre ?? 'flota'}_${new Date().toLocaleDateString('es-ES').replace(/\//g, '-')}.xlsx`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [rows, primaTotal, header, carpetaNombre]);
 
   const columns = useMemo((): Column<OfertaRow>[] => [
     {
@@ -457,6 +562,14 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
             <span style={{ fontSize: 12, fontWeight: 900, color: '#111827', fontFamily: 'monospace', background: '#e0e7ff', padding: '3px 10px', borderRadius: 6, border: '1px solid #c7d2fe' }}>
               TOTAL FLOTA: {primaTotal.toLocaleString('es-ES')} €
             </span>
+          )}
+          {rows.length > 0 && (
+            <button onClick={handleExportOferta}
+              style={{ fontSize: 10, fontWeight: 800, padding: '4px 12px', borderRadius: 6, background: 'rgba(22,163,74,0.1)', color: '#16a34a', border: '1px solid rgba(22,163,74,0.25)', cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.05em' }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(22,163,74,0.2)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'rgba(22,163,74,0.1)')}>
+              Generar Oferta
+            </button>
           )}
           {rows.length === 0 && trabajoRows.length === 0 && (
             <span style={{ fontSize: 10, color: '#9ca3af' }}>Completa TRABAJO para generar la oferta.</span>

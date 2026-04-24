@@ -86,6 +86,7 @@ const tdS: React.CSSProperties = {
 };
 
 const fmt = (n: number) => isNaN(n) || !isFinite(n) ? '—' : n.toFixed(2);
+const fmtFreq = (n: number) => isNaN(n) || !isFinite(n) ? '—' : `${n.toFixed(2)}%`;
 
 // ─── KPI Panel ──────────────────────────────────────────────────────────────
 
@@ -223,7 +224,7 @@ function ModoAutomatico({ header, trabajoRows, sincoResultRows, onSincoResultCha
               { label: 'Siniestros', value: String(numSiniestros) },
               { label: 'Años media', value: fmt(antiguedMedia) },
               { label: 'Siniestros / año', value: fmt(sinAnio) },
-              { label: 'Frecuencia', value: fmt(freq) },
+              { label: 'Frecuencia', value: fmtFreq(freq) },
             ]} />
 
             <div style={{ marginBottom: 16, display: 'flex', gap: 10 }}>
@@ -319,7 +320,7 @@ function ModoPorMatricula({ trabajoRows, carpetaActiva, onCarpetaChange }: Pick<
             { label: 'Siniestros', value: String(resumen.totalSiniestros) },
             { label: 'Años media', value: fmt(resumen.antiguedadMedia) },
             { label: 'Siniestros / año', value: fmt(resumen.siniestrosPorAnio) },
-            { label: 'Frecuencia', value: fmt(resumen.frecuencia) },
+            { label: 'Frecuencia', value: fmtFreq(resumen.frecuencia) },
           ]} />
         )}
 
@@ -472,7 +473,7 @@ function ModoGlobalFlota({ carpetaActiva, onCarpetaChange, sincoResultRows }: Pi
           <div style={{ marginBottom: 14 }}>
             <label style={labelStyle}>Frecuencia global (calculada)</label>
             <div style={{ ...inputStyle, background: 'rgba(255,255,255,0.02)', color: freqCalc > 0 ? '#818cf8' : 'rgba(255,255,255,0.3)', fontWeight: 800, fontFamily: 'monospace' }}>
-              {freqCalc > 0 ? freqCalc.toFixed(4) : '—'}
+              {freqCalc > 0 ? `${freqCalc.toFixed(2)}%` : '—'}
             </div>
           </div>
           <div>
@@ -493,7 +494,7 @@ function ModoGlobalFlota({ carpetaActiva, onCarpetaChange, sincoResultRows }: Pi
                 <div style={{ ...kpiBox, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.5)' }}>SINCO por vehículo</span>
                   <span style={{ fontSize: 12, fontWeight: 800, color: '#e2e8f0', fontFamily: 'monospace' }}>
-                    {autoResumen.totalSiniestros} siniestros, freq {fmt(autoResumen.frecuencia)}
+                    {autoResumen.totalSiniestros} siniestros, freq {fmtFreq(autoResumen.frecuencia)}
                   </span>
                 </div>
               )}
@@ -501,7 +502,7 @@ function ModoGlobalFlota({ carpetaActiva, onCarpetaChange, sincoResultRows }: Pi
                 <div style={{ ...kpiBox, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.5)' }}>SINCO manual</span>
                   <span style={{ fontSize: 12, fontWeight: 800, color: '#e2e8f0', fontFamily: 'monospace' }}>
-                    {manualResumen.totalSiniestros} siniestros, freq {fmt(manualResumen.frecuencia)}
+                    {manualResumen.totalSiniestros} siniestros, freq {fmtFreq(manualResumen.frecuencia)}
                   </span>
                 </div>
               )}
@@ -509,7 +510,7 @@ function ModoGlobalFlota({ carpetaActiva, onCarpetaChange, sincoResultRows }: Pi
                 <div style={{ ...kpiBox, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.5)' }}>Global flota</span>
                   <span style={{ fontSize: 12, fontWeight: 800, color: '#e2e8f0', fontFamily: 'monospace' }}>
-                    {global.siniestrosTotales} siniestros, freq {freqCalc.toFixed(4)}
+                    {global.siniestrosTotales} siniestros, freq {`${freqCalc.toFixed(2)}%`}
                   </span>
                 </div>
               )}
@@ -593,7 +594,7 @@ function ModoConsolidado({ sincoResultRows, carpetaActiva }: Pick<Props, 'sincoR
                 { label: 'Siniestros', value: String(autoResumen.totalSiniestros) },
                 { label: 'Años media', value: fmt(autoResumen.antiguedadMedia) },
                 { label: 'Siniestros / año', value: fmt(autoResumen.siniestrosPorAnio) },
-                { label: 'Frecuencia', value: fmt(autoResumen.frecuencia) },
+                { label: 'Frecuencia', value: fmtFreq(autoResumen.frecuencia) },
               ]} />
             )}
             {manualResumen && (
@@ -603,14 +604,14 @@ function ModoConsolidado({ sincoResultRows, carpetaActiva }: Pick<Props, 'sincoR
                 { label: 'Siniestros', value: String(manualResumen.totalSiniestros) },
                 { label: 'Años media', value: fmt(manualResumen.antiguedadMedia) },
                 { label: 'Siniestros / año', value: fmt(manualResumen.siniestrosPorAnio) },
-                { label: 'Frecuencia', value: fmt(manualResumen.frecuencia) },
+                { label: 'Frecuencia', value: fmtFreq(manualResumen.frecuencia) },
               ]} />
             )}
             {hasGlobal && globalData && (
               <KpiPanel label="Global Flota" kpis={[
                 { label: 'Siniestros totales', value: String(globalData.siniestrosTotales) },
                 { label: 'Años experiencia', value: fmt(globalData.anyosExperiencia) },
-                { label: 'Frecuencia', value: globalData.frecuencia > 0 ? globalData.frecuencia.toFixed(4) : '—' },
+                { label: 'Frecuencia', value: globalData.frecuencia > 0 ? `${globalData.frecuencia.toFixed(2)}%` : '—' },
               ]} />
             )}
 
