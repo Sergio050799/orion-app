@@ -129,13 +129,14 @@ ${motorLine}${seats !== null ? `- **Plazas:** ${seats}\n` : ""}${validoHasta ? `
 *Los detalles de confianza semafórica se analizan en vivo en la interfaz.*
 `;
     } else {
-        const dictCL = decoded.vehicleClass || extractedFields.CL || null;
+        const dec = decoded as Record<string, unknown>; // TODO: se reemplaza con pipeline Donut
+        const dictCL = dec.vehicleClass || extractedFields.CL || null;
         const clDecoded = decodeCL(extractedFields.CL);
-        const categoryJ = decoded.vehicleCategory || extractedFields.J || null;
-        const bodyJ1 = decoded.bodyType || extractedFields.J1 || null;
+        const categoryJ = dec.vehicleCategory || extractedFields.J || null;
+        const bodyJ1 = dec.bodyType || extractedFields.J1 || null;
         const classJ2 = extractedFields.J2 && extractedFields.J2.toUpperCase() !== "F.7" && extractedFields.J2.toUpperCase() !== "F7" ? extractedFields.J2 : null;
         const fechaEmision = extractedFields.issueDateRaw || "No disponible";
-        const fuel = decoded.fuelType || extractedFields.P3 || null; // P1=cilindrada, CI=ambiguo — no usar como fallback de combustible
+        const fuel = dec.fuelType || extractedFields.P3 || null; // P1=cilindrada, CI=ambiguo — no usar como fallback de combustible
 
         // Resumen operativo
         const resParts = [];

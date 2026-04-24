@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
                     mimeType: file.type
                 });
                 if (optResult.optimized) {
-                    buffer = optResult.buffer;
+                    buffer = Buffer.from(optResult.buffer);
                     finalMimeType = optResult.mimeTypeOut;
                 }
             } catch (optError: unknown) {

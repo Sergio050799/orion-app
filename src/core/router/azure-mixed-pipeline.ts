@@ -78,7 +78,6 @@ export async function processMixedDocument(fileBuffer: Buffer, mimeType: string,
                     postRes = await fetch(analyzeUrl, {
                         method: 'POST',
                         headers: { 'Ocp-Apim-Subscription-Key': key, 'Content-Type': 'application/pdf' },
-                        // @ts-expect-error Node.js Buffer is compatible with BodyInit at runtime
                         body: Buffer.from(singlePdfBytes),
                         signal: postAbort.signal
                     });

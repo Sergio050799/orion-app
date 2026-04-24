@@ -23,10 +23,11 @@ export function exportDocumentsToCsv(records: DocumentRecord[], filename: string
         "Combustible"
     ];
 
-    const getDecodedVal = (code: string, rawStr: string | undefined): string => {
-        if (!rawStr) return "---";
-        const val = decodeFieldValue(code, rawStr);
-        return val.includes("No disponible") ? rawStr : val;
+    const getDecodedVal = (code: string, rawStr: string | number | null | undefined): string => {
+        if (rawStr === null || rawStr === undefined) return "---";
+        const s = String(rawStr);
+        const val = decodeFieldValue(code, s);
+        return val.includes("No disponible") ? s : val;
     };
 
     const escapeCsv = (val: unknown) => {
@@ -49,18 +50,18 @@ export function exportDocumentsToCsv(records: DocumentRecord[], filename: string
         let uCat = "---";
         if (raw.J) {
             const decJ = getDecodedVal("J", raw.J);
-            uCat = decJ !== "---" ? decJ.split('.')[0] : raw.J;
+            uCat = decJ !== "---" ? decJ.split('.')[0] : String(raw.J);
         }
 
         let body = "---";
         if (raw.J1) {
             const decJ1 = getDecodedVal("J.1", raw.J1);
-            body = decJ1 !== "---" ? decJ1.split('(')[0].trim() : raw.J1;
+            body = decJ1 !== "---" ? decJ1.split('(')[0].trim() : String(raw.J1);
         }
 
         let estYear = "---";
         if (raw.plate) {
-            const est = estimateDate(raw.plate);
+            const est = estimateDate(String(raw.plate));
             if (est) estYear = est.year.toString();
         }
 

@@ -29,7 +29,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem("orion_user", username);
         setUser(username);
         setIsAuthenticated(true);
-        router.push("/analysis/ocr"); // Default to OCR module
+        router.push("/dashboard");
     };
 
     const logout = () => {
