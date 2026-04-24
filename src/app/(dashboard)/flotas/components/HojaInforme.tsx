@@ -1,19 +1,35 @@
 "use client";
 
 import React, { useMemo } from 'react';
-import {
-  contarVehiculos, contarVehiculosConSinco,
-  calcularAntiguedadMedia, calcularSiniestrosPorAnio, calcularFrecuencia,
-} from '@/core/flotas';
+import { consolidarSinco } from '@/core/flotas';
 import type { CoberturaRow } from './types';
+
+interface SincoManualEntry {
+  matricula: string;
+  num_siniestros: number;
+  fec_ini_cobertura: string;
+  fec_vcto: string;
+  codigo_retorno: string;
+  garantias: string;
+  observaciones: string;
+}
+
+interface SincoGlobal {
+  siniestrosTotales: number;
+  anyosExperiencia: number;
+  frecuencia: number;
+  observaciones: string;
+}
 
 interface Props {
   trabajoRows: Record<string, string>[];
   coberturas: CoberturaRow[];
-  sincoRows: string[][];
+  sincoResultRows: Record<string, string>[];
+  sincoManual: SincoManualEntry[];
+  sincoGlobal: SincoGlobal | null;
 }
 
-export default function HojaInforme({ trabajoRows, coberturas, sincoRows }: Props) {
+export default function HojaInforme({ trabajoRows, coberturas, sincoResultRows, sincoManual, sincoGlobal }: Props) {
   // ─── Tabla dinámica tipo×cobertura ─────────────────────────────────────────
   const pivot = useMemo(() => {
     const tipos = new Set<string>();
@@ -36,19 +52,27 @@ export default function HojaInforme({ trabajoRows, coberturas, sincoRows }: Prop
     };
   }, [trabajoRows, coberturas]);
 
-  // ─── Métricas SINCO ────────────────────────────────────────────────────────
-  const matriculas = sincoRows.map(r=>r[4]??'').filter(Boolean);
-  const codigosRet = sincoRows.map(r=>r[5]??'');
-  const fecInis    = sincoRows.map(r=>r[8]??'').filter(Boolean);
-  const numSin     = sincoRows.reduce((a,r)=>a+(parseInt(r[7])||0),0);
-  const totalVeh   = contarVehiculos(matriculas);
-  const conSinco   = contarVehiculosConSinco(codigosRet);
-  const amed       = calcularAntiguedadMedia(fecInis.map(f=>{
-    const d=new Date(f.split('/').reverse().join('-'));
-    return isNaN(d.getTime())?0:(Date.now()-d.getTime())/(1000*60*60*24*365.25);
-  }));
-  const sinAnio = calcularSiniestrosPorAnio(numSin, amed);
-  const freq    = calcularFrecuencia(sinAnio, conSinco);
+  // ─── Métricas SINCO (3 fuentes) ────────────────────────────────────────────
+  const resumenAuto = useMemo(() => {
+    if (sincoResultRows.length === 0) return null;
+    return consolidarSinco(sincoResultRows);
+  }, [sincoResultRows]);
+
+  const resumenManual = useMemo(() => {
+    if (sincoManual.length === 0) return null;
+    const asRecords = sincoManual.map(e => ({
+      matricula: e.matricula,
+      num_siniestros: String(e.num_siniestros),
+      fec_ini_cobertura: e.fec_ini_cobertura,
+      fec_vcto: e.fec_vcto,
+      codigo_retorno: e.codigo_retorno,
+      garantias: e.garantias,
+      observaciones: e.observaciones,
+    }));
+    return consolidarSinco(asRecords);
+  }, [sincoManual]);
+
+  const hasSincoData = resumenAuto !== null || resumenManual !== null || sincoGlobal !== null;
   const fmt = (n:number) => isNaN(n)||!isFinite(n)?'—':n.toFixed(2);
 
   // ─── Primas ────────────────────────────────────────────────────────────────
@@ -115,17 +139,37 @@ export default function HojaInforme({ trabajoRows, coberturas, sincoRows }: Prop
             <div style={{ padding:'10px 14px', borderBottom:'1px solid #e5e7eb', background:'#f9fafb' }}>
               <span className="text-[11px] font-black uppercase tracking-widest" style={{ color:'#374151' }}>SINCO</span>
             </div>
-            <div className="grid grid-cols-3 gap-px" style={{ background:'#e5e7eb' }}>
-              {[
-                ['VEHÍCULOS', String(totalVeh)], ['CON SINCO', String(conSinco)], ['SINIESTROS', String(numSin)],
-                ['AÑOS MEDIA', fmt(amed)], ['SIN / AÑO', fmt(sinAnio)], ['FRECUENCIA', fmt(freq)],
-              ].map(([label, value]) => (
-                <div key={label} style={{ background:'#ffffff', padding:'10px 14px' }}>
-                  <div className="text-[9px] font-black uppercase tracking-widest" style={{ color:'#9ca3af' }}>{label}</div>
-                  <div className="text-[16px] font-black" style={{ color:'#111827', fontFamily:'monospace' }}>{value}</div>
-                </div>
-              ))}
-            </div>
+            {!hasSincoData ? (
+              <div style={{ padding:'20px 14px', textAlign:'center', color:'#9ca3af', fontSize:12 }}>Sin datos SINCO</div>
+            ) : (
+              <div style={{ display:'flex', flexDirection:'column' }}>
+                {resumenAuto && (
+                  <SincoBlock label="Automático" r={resumenAuto} fmt={fmt} />
+                )}
+                {resumenManual && (
+                  <SincoBlock label="Por Matrícula" r={resumenManual} fmt={fmt} />
+                )}
+                {sincoGlobal && (
+                  <div style={{ borderTop: resumenAuto || resumenManual ? '1px solid #e5e7eb' : undefined }}>
+                    <div style={{ padding:'6px 14px', background:'#f9fafb' }}>
+                      <span className="text-[9px] font-black uppercase tracking-widest" style={{ color:'#6366f1' }}>Global Flota</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-px" style={{ background:'#e5e7eb' }}>
+                      {[
+                        ['SINIESTROS', String(sincoGlobal.siniestrosTotales)],
+                        ['AÑOS', String(sincoGlobal.anyosExperiencia)],
+                        ['FRECUENCIA', fmt(sincoGlobal.frecuencia)],
+                      ].map(([label, value]) => (
+                        <div key={label} style={{ background:'#ffffff', padding:'10px 14px' }}>
+                          <div className="text-[9px] font-black uppercase tracking-widest" style={{ color:'#9ca3af' }}>{label}</div>
+                          <div className="text-[16px] font-black" style={{ color:'#111827', fontFamily:'monospace' }}>{value}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -165,6 +209,27 @@ export default function HojaInforme({ trabajoRows, coberturas, sincoRows }: Prop
           ))}
         </div>
 
+      </div>
+    </div>
+  );
+}
+
+function SincoBlock({ label, r, fmt }: { label: string; r: { totalVehiculos: number; vehiculosConSinco: number; totalSiniestros: number; antiguedadMedia: number; siniestrosPorAnio: number; frecuencia: number }; fmt: (n: number) => string }) {
+  return (
+    <div>
+      <div style={{ padding:'6px 14px', background:'#f9fafb', borderBottom:'1px solid #e5e7eb' }}>
+        <span className="text-[9px] font-black uppercase tracking-widest" style={{ color:'#6366f1' }}>{label}</span>
+      </div>
+      <div className="grid grid-cols-3 gap-px" style={{ background:'#e5e7eb' }}>
+        {[
+          ['VEHÍCULOS', String(r.totalVehiculos)], ['CON SINCO', String(r.vehiculosConSinco)], ['SINIESTROS', String(r.totalSiniestros)],
+          ['AÑOS MEDIA', fmt(r.antiguedadMedia)], ['SIN / AÑO', fmt(r.siniestrosPorAnio)], ['FRECUENCIA', fmt(r.frecuencia)],
+        ].map(([l, v]) => (
+          <div key={l} style={{ background:'#ffffff', padding:'10px 14px' }}>
+            <div className="text-[9px] font-black uppercase tracking-widest" style={{ color:'#9ca3af' }}>{l}</div>
+            <div className="text-[16px] font-black" style={{ color:'#111827', fontFamily:'monospace' }}>{v}</div>
+          </div>
+        ))}
       </div>
     </div>
   );

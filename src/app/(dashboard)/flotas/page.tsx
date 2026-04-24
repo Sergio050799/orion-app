@@ -356,7 +356,13 @@ export default function FlotasPage() {
                   />
                 )}
                 {tab === 'INFORME' && (
-                  <HojaInforme trabajoRows={trabajoRows} coberturas={coberturas} sincoRows={sincoResultRows.map(r => Object.values(r))} />
+                  <HojaInforme
+                    trabajoRows={trabajoRows}
+                    coberturas={coberturas}
+                    sincoResultRows={sincoResultRows}
+                    sincoManual={carpetaActiva?.sincoManual ?? []}
+                    sincoGlobal={carpetaActiva?.sincoGlobal ?? null}
+                  />
                 )}
                 {tab === 'OFERTA' && (
                   <Suspense fallback={<div className="flex-1 animate-pulse rounded-xl bg-white/5" />}>
