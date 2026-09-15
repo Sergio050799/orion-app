@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
-import { listarCarpetas, listarCorredores, cargarCorredor, type FlotaCarpeta, type Corredor } from '@/core/flotas';
+import { listarCarpetas, listarCorredores, cargarCarpetasDelServidor, cargarCorredoresDelServidor, type FlotaCarpeta, type Corredor } from '@/core/flotas';
 import { useAuth } from '@/context/AuthContext';
 
 const DashboardCharts = dynamic(() => import('./components/DashboardCharts'), {
@@ -140,8 +140,16 @@ function normalizeTipo(raw: string): string {
 
 export default function DashboardPage() {
   const { user } = useAuth();
-  const carpetas = useMemo(() => listarCarpetas(), []);
-  const corredores = useMemo(() => listarCorredores(), []);
+  const [carpetas, setCarpetas] = useState<FlotaCarpeta[]>(() => listarCarpetas());
+  const [corredores, setCorredores] = useState<Corredor[]>(() => listarCorredores());
+
+  useEffect(() => {
+    const ac = new AbortController();
+    cargarCarpetasDelServidor(ac.signal).then(setCarpetas).catch(() => {});
+    cargarCorredoresDelServidor(ac.signal).then(setCorredores).catch(() => {});
+    return () => ac.abort();
+  }, []);
+
   const corredorMap = useMemo(() => {
     const map = new Map<string, Corredor>();
     corredores.forEach(c => map.set(c.id, c));

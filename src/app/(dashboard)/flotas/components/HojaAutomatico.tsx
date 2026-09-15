@@ -393,9 +393,26 @@ function Step1({
                         <>
                             {duplicadas.length > 0 && (
                                 <div style={{ marginTop: 10, padding: '10px 14px', background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.35)', borderRadius: 10 }}>
-                                    <span style={{ fontSize: 12, fontWeight: 700, color: '#ef4444' }}>
-                                        ⚠ {duplicadas.length} matrícula{duplicadas.length !== 1 ? 's' : ''} duplicada{duplicadas.length !== 1 ? 's' : ''} — revisa el Excel antes de continuar
-                                    </span>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                                        <span style={{ fontSize: 12, fontWeight: 700, color: '#ef4444' }}>
+                                            ⚠ {duplicadas.length} matrícula{duplicadas.length !== 1 ? 's' : ''} duplicada{duplicadas.length !== 1 ? 's' : ''}
+                                        </span>
+                                        <button
+                                            onClick={() => {
+                                                const firstSeen = new Set<string>();
+                                                setUploadedRows(uploadedRows!.filter(r => {
+                                                    const mat = r['matricula']?.trim().replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+                                                    if (!mat) return true;
+                                                    if (firstSeen.has(mat)) return false;
+                                                    firstSeen.add(mat);
+                                                    return true;
+                                                }));
+                                            }}
+                                            style={{ fontSize: 11, fontWeight: 700, color: '#fff', background: '#ef4444', border: 'none', borderRadius: 6, padding: '4px 12px', cursor: 'pointer', flexShrink: 0 }}
+                                        >
+                                            Eliminar duplicadas
+                                        </button>
+                                    </div>
                                     <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                                         {duplicadas.map(m => (
                                             <span key={m} style={{ fontSize: 11, fontWeight: 800, color: '#ef4444', background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 4, padding: '2px 8px', fontFamily: 'monospace' }}>
