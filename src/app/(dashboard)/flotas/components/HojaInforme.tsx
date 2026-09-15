@@ -562,6 +562,17 @@ export default function HojaInforme({
   const difColor   = (d: number) => d < 0 ? '#dc2626' : d > 0 ? '#16a34a' : '#6b7280';
   const difBg      = (d: number) => d < 0 ? 'rgba(220,38,38,0.06)' : d > 0 ? 'rgba(22,163,74,0.06)' : 'transparent';
 
+  // ── Recalcular primas MMT desde oferta/tarifa ─────────────────────────────────
+  const handleRecalcPrimas = useCallback(() => {
+    const newInputs: Record<string, number> = {};
+    for (const key of Object.keys(tipoCobGrupos)) {
+      if (ofertaDefaults[key] != null) newInputs[key] = ofertaDefaults[key];
+      else if (tarifaDefaults[key] != null) newInputs[key] = tarifaDefaults[key];
+    }
+    setMmtInputs(newInputs);
+    onPrimasMmtChange?.(newInputs);
+  }, [tipoCobGrupos, ofertaDefaults, tarifaDefaults, onPrimasMmtChange]);
+
   // ── PDF ───────────────────────────────────────────────────────────────────────
   const handlePdf = useCallback(() => {
     const r = resumenAuto ?? resumenManual;
@@ -621,20 +632,37 @@ export default function HojaInforme({
             </span>
           )}
         </div>
-        <button onClick={handlePdf} style={{
-          display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 8,
-          background: 'rgba(220,38,38,0.12)', border: '1px solid rgba(220,38,38,0.3)',
-          color: '#ef4444', fontSize: 11, fontWeight: 700, cursor: 'pointer',
-          textTransform: 'uppercase', letterSpacing: '0.08em',
-        }}
-          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(220,38,38,0.22)')}
-          onMouseLeave={e => (e.currentTarget.style.background = 'rgba(220,38,38,0.12)')}>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" />
-            <line x1="12" y1="18" x2="12" y2="12" /><line x1="9" y1="15" x2="15" y2="15" />
-          </svg>
-          Descargar PDF
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button onClick={handleRecalcPrimas} style={{
+            display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 8,
+            background: 'rgba(18,64,204,0.1)', border: '1px solid rgba(18,64,204,0.3)',
+            color: '#1240CC', fontSize: 11, fontWeight: 700, cursor: 'pointer',
+            textTransform: 'uppercase', letterSpacing: '0.08em',
+          }}
+            title="Recalcula las primas MMT desde los valores de la Oferta y la tarifa"
+            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(18,64,204,0.2)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'rgba(18,64,204,0.1)')}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/>
+              <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+            </svg>
+            Recalcular primas
+          </button>
+          <button onClick={handlePdf} style={{
+            display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 8,
+            background: 'rgba(220,38,38,0.12)', border: '1px solid rgba(220,38,38,0.3)',
+            color: '#ef4444', fontSize: 11, fontWeight: 700, cursor: 'pointer',
+            textTransform: 'uppercase', letterSpacing: '0.08em',
+          }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(220,38,38,0.22)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'rgba(220,38,38,0.12)')}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" />
+              <line x1="12" y1="18" x2="12" y2="12" /><line x1="9" y1="15" x2="15" y2="15" />
+            </svg>
+            Descargar PDF
+          </button>
+        </div>
       </div>
 
       {/* Contenido: columna única, scroll vertical; overflowX auto como fallback */}

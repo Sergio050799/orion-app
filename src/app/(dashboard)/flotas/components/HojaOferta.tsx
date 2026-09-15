@@ -175,6 +175,7 @@ function buildOfertaPdfHtml(data: {
       <td>${mp.join(' ').toUpperCase()}</td>
       <td style="font-weight:700">${r.coberturas.toUpperCase()}</td>
       <td>${(header?.formaPago ?? 'ANUAL').toUpperCase()}</td>
+      <td>${parseFecha(header?.efecto) || '—'}</td>
       <td style="font-weight:700;color:#002F82;text-align:right;font-family:monospace">${r.oferta_prima_mmt ? fmtE(parseFloat(r.oferta_prima_mmt)||0) : '—'}</td>
     </tr>`;
   }).join('');
