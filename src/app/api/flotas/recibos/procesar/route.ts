@@ -122,7 +122,6 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (e: unknown) {
-    console.error("[RECIBOS] Procesar error:", e);
     return NextResponse.json(
       { error: (e instanceof Error ? e.message : "Error desconocido") },
       { status: 500 }

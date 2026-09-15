@@ -7,7 +7,7 @@ const nextConfig: NextConfig = {
     },
     // serverComponentsExternalPackages moved to root
   },
-  serverExternalPackages: ['@napi-rs/canvas', 'sharp', 'pdfjs-dist', 'canvas', 'jsdom'],
+  serverExternalPackages: ['@napi-rs/canvas', 'sharp', 'pdfjs-dist', 'canvas', 'jsdom', 'pg'],
 };
 
 export default nextConfig;

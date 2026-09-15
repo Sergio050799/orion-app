@@ -82,7 +82,7 @@ export default function Sidebar() {
 
     const isActive = (href: string) => pathname === href || pathname.startsWith(href);
 
-    const ACCENT = '#6366f1';
+    const ACCENT = '#1240CC';
 
     return (
         <aside style={{
@@ -90,20 +90,19 @@ export default function Sidebar() {
             transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             background: 'rgba(2, 6, 23, 0.97)',
             borderRight: '1px solid rgba(255,255,255,0.06)',
-            backdropFilter: 'blur(24px)',
             flexShrink: 0, height: '100%',
             display: 'flex', flexDirection: 'column',
             position: 'relative', zIndex: 20, overflow: 'hidden',
         }}>
             {/* Accent line top */}
             <div className="absolute top-0 left-0 right-0 h-px"
-                style={{ background: `linear-gradient(90deg, transparent, rgba(99,102,241,0.4), transparent)` }} />
+                style={{ background: `linear-gradient(90deg, transparent, rgba(18,64,204,0.4), transparent)` }} />
 
             {/* Logo */}
             <div className="h-14 flex items-center shrink-0 px-4"
                 style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                 <Link href="/flotas" className="flex items-center gap-3 min-w-0">
-                    <div className="shrink-0 relative" style={{ width: 28, height: 28, filter: `drop-shadow(0 0 8px rgba(99,102,241,0.3))`, transition: 'filter 0.2s ease' }}>
+                    <div className="shrink-0 relative" style={{ width: 28, height: 28, filter: `drop-shadow(0 0 8px rgba(18,64,204,0.3))`, transition: 'filter 0.2s ease' }}>
                         <Image src="/ORION_LOGO.png" alt="ORION" fill className="object-contain" priority />
                     </div>
                     <div className="flex items-center gap-2 min-w-0" style={{
@@ -114,7 +113,7 @@ export default function Sidebar() {
                     }}>
                         <span className="font-black text-white tracking-[0.18em] text-sm uppercase">ORION</span>
                         <span className="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider shrink-0"
-                            style={{ color: ACCENT, background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)' }}>
+                            style={{ color: ACCENT, background: 'rgba(18,64,204,0.1)', border: '1px solid rgba(18,64,204,0.2)' }}>
                             SaaS
                         </span>
                     </div>
@@ -132,7 +131,7 @@ export default function Sidebar() {
                                 <Link key={`${href}-${label}`} href={href} title={label}
                                     className="w-full flex items-center justify-center p-2.5 rounded-xl transition-all duration-150"
                                     style={active
-                                        ? { color: ACCENT, background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.18)' }
+                                        ? { color: ACCENT, background: 'rgba(18,64,204,0.08)', border: '1px solid rgba(18,64,204,0.18)' }
                                         : { color: 'rgba(255,255,255,0.32)', border: '1px solid transparent' }}
                                     onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.7)'; }}
                                     onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.32)'; }}>
@@ -157,10 +156,10 @@ export default function Sidebar() {
                         className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors group"
                         style={{ border: '1px solid rgba(255,255,255,0.06)', cursor: isAdmin ? 'pointer' : 'default' }}
                         onClick={isAdmin ? () => setAdminOpen(true) : undefined}
-                        onMouseEnter={e => { if (isAdmin) { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.borderColor = 'rgba(99,102,241,0.25)'; } }}
+                        onMouseEnter={e => { if (isAdmin) { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.borderColor = 'rgba(18,64,204,0.25)'; } }}
                         onMouseLeave={e => { e.currentTarget.style.background = ''; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; }}>
                         <div className="w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black shrink-0"
-                            style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.3), rgba(99,102,241,0.08))', border: '1px solid rgba(99,102,241,0.25)', color: ACCENT }}>
+                            style={{ background: 'linear-gradient(135deg, rgba(18,64,204,0.3), rgba(18,64,204,0.08))', border: '1px solid rgba(18,64,204,0.25)', color: ACCENT }}>
                             U
                         </div>
                         <div className="flex-1 min-w-0">
@@ -177,7 +176,7 @@ export default function Sidebar() {
                     <div className="flex justify-center">
                         <div
                             className="w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-black"
-                            style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.3), rgba(99,102,241,0.08))', border: '1px solid rgba(99,102,241,0.25)', color: ACCENT, cursor: isAdmin ? 'pointer' : 'default' }}
+                            style={{ background: 'linear-gradient(135deg, rgba(18,64,204,0.3), rgba(18,64,204,0.08))', border: '1px solid rgba(18,64,204,0.25)', color: ACCENT, cursor: isAdmin ? 'pointer' : 'default' }}
                             onClick={isAdmin ? () => setAdminOpen(true) : undefined}>
                             U
                         </div>
@@ -220,7 +219,7 @@ function NavSection({ label, open, onToggle, items, isActive, accent }: {
                                 <Link key={`${href}-${label}`} href={href}
                                     className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150"
                                     style={active
-                                        ? { color: accent, background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.15)' }
+                                        ? { color: accent, background: 'rgba(18,64,204,0.08)', border: '1px solid rgba(18,64,204,0.15)' }
                                         : { color: 'rgba(255,255,255,0.42)', border: '1px solid transparent' }}
                                     onMouseEnter={e => { if (!active) { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.8)'; (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; } }}
                                     onMouseLeave={e => { if (!active) { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.42)'; (e.currentTarget as HTMLElement).style.background = ''; } }}>

@@ -205,7 +205,7 @@ const HojaCoberturas = forwardRef<HojaCoberturasHandle, Props>(
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-black" style={{ color:'#374151' }}>Total prima MMT:</span>
             <span className="text-[13px] font-black px-2 py-1 rounded-md"
-              style={{ background:'rgba(99,102,241,0.1)', color:'#4338ca', border:'1px solid rgba(99,102,241,0.2)' }}>
+              style={{ background:'rgba(18,64,204,0.1)', color:'#4338ca', border:'1px solid rgba(18,64,204,0.2)' }}>
               {totalPrima > 0 ? `${totalPrima.toLocaleString('es-ES')} €` : '—'}
             </span>
           </div>
@@ -290,12 +290,12 @@ const HojaCoberturas = forwardRef<HojaCoberturasHandle, Props>(
                     <td style={{...tdS,textAlign:'center'}} onClick={e=>e.stopPropagation()}>
                       <input type="checkbox" checked={row.animales}
                         onChange={e=>setRow(i,{animales:e.target.checked})}
-                        style={{accentColor:'#6366f1',cursor:'pointer',width:14,height:14}} />
+                        style={{accentColor:'#1240CC',cursor:'pointer',width:14,height:14}} />
                     </td>
                     <td style={{...tdS,textAlign:'center'}} onClick={e=>e.stopPropagation()}>
                       <input type="checkbox" checked={row.perdidaTotal}
                         onChange={e=>setRow(i,{perdidaTotal:e.target.checked})}
-                        style={{accentColor:'#6366f1',cursor:'pointer',width:14,height:14}} />
+                        style={{accentColor:'#1240CC',cursor:'pointer',width:14,height:14}} />
                     </td>
                     <td style={{...tdS,fontFamily:'monospace',fontWeight:700,textAlign:'right',
                       color: !validation.valido?'#ef4444':(prima!==null?'#374151':'#9ca3af')}}>

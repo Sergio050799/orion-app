@@ -141,7 +141,7 @@ export async function optimizeForAzure({
         if (e.code === "AZURE_INPUT_TOO_LARGE_AFTER_OPTIMIZE") {
             throw e;
         }
-        console.warn("Sharp optimization failed, returning original:", e);
+        // Sharp optimization failed, returning original
         result.optimized = false;
         result.steps.push(`Failed optimization: ${e.message}`);
         result.buffer = inputBuffer;

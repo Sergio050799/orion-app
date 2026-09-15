@@ -9,9 +9,8 @@ interface CarnetReportCardProps {
 const ALL_CATEGORIES = ['AM', 'A1', 'A2', 'A', 'B1', 'B', 'BE', 'C1', 'C1E', 'C', 'CE', 'D1', 'D1E', 'D', 'DE'];
 
 const cardStyle: React.CSSProperties = {
-    background: 'rgba(2,6,23,0.85)',
+    background: 'rgba(2,6,23,0.92)',
     border: '1px solid rgba(255,255,255,0.08)',
-    backdropFilter: 'blur(24px)',
 };
 
 const panelStyle: React.CSSProperties = {
@@ -66,7 +65,7 @@ export default function CarnetReportCard({ ui, isLoading }: CarnetReportCardProp
     if (isLoading) {
         return (
             <div className="w-full max-w-[1600px] mx-auto rounded-2xl flex flex-col p-6 overflow-hidden relative" style={cardStyle}>
-                <div className="absolute top-0 left-0 right-0 h-px animate-pulse" style={{ background: 'linear-gradient(90deg, transparent, #6366f1, transparent)' }} />
+                <div className="absolute top-0 left-0 right-0 h-px animate-pulse" style={{ background: 'linear-gradient(90deg, transparent, #1240CC, transparent)' }} />
                 <div className="animate-pulse space-y-5 mt-4">
                     <div className="h-16 rounded-xl" style={{ background: 'rgba(255,255,255,0.05)' }} />
                     <div className="h-10 rounded-xl" style={{ background: 'rgba(255,255,255,0.05)' }} />
@@ -125,13 +124,13 @@ export default function CarnetReportCard({ ui, isLoading }: CarnetReportCardProp
                     style={{ background: 'rgba(0,0,0,0.3)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}
                 >
                     {/* Top accent */}
-                    <div className="absolute top-0 left-0 right-0 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(99,102,241,0.45), transparent)' }} />
+                    <div className="absolute top-0 left-0 right-0 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(18,64,204,0.45), transparent)' }} />
 
                     {/* Tipo documento */}
                     <div className="flex items-center gap-2 mb-4">
                         <span
                             className="text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg"
-                            style={{ color: '#6366f1', background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)' }}
+                            style={{ color: '#1240CC', background: 'rgba(18,64,204,0.1)', border: '1px solid rgba(18,64,204,0.2)' }}
                         >
                             Permiso de Conducción
                         </span>
@@ -233,21 +232,21 @@ export default function CarnetReportCard({ ui, isLoading }: CarnetReportCardProp
                     <div
                         className="rounded-xl p-6"
                         style={{
-                            background: categorias.length > 0 ? 'rgba(99,102,241,0.04)' : 'rgba(255,255,255,0.02)',
-                            border: categorias.length > 0 ? '1px solid rgba(99,102,241,0.15)' : '1px solid rgba(255,255,255,0.07)',
+                            background: categorias.length > 0 ? 'rgba(18,64,204,0.04)' : 'rgba(255,255,255,0.02)',
+                            border: categorias.length > 0 ? '1px solid rgba(18,64,204,0.15)' : '1px solid rgba(255,255,255,0.07)',
                         }}
                     >
                         <div className="flex items-center justify-between mb-5">
                             <h4
                                 className="text-[10px] font-black uppercase tracking-widest"
-                                style={{ color: categorias.length > 0 ? '#6366f1' : 'rgba(255,255,255,0.28)' }}
+                                style={{ color: categorias.length > 0 ? '#1240CC' : 'rgba(255,255,255,0.28)' }}
                             >
                                 Categorías habilitadas
                             </h4>
                             {categorias.length > 0 && (
                                 <span
                                     className="text-xs font-black px-3 py-1 rounded-full"
-                                    style={{ color: '#6366f1', background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.2)' }}
+                                    style={{ color: '#1240CC', background: 'rgba(18,64,204,0.12)', border: '1px solid rgba(18,64,204,0.2)' }}
                                 >
                                     {categorias.length} / {ALL_CATEGORIES.length}
                                 </span>
@@ -265,8 +264,8 @@ export default function CarnetReportCard({ ui, isLoading }: CarnetReportCardProp
                                             minWidth: '52px',
                                             padding: '10px 14px',
                                             color: '#020617',
-                                            background: '#6366f1',
-                                            boxShadow: '0 0 16px rgba(99,102,241,0.35)',
+                                            background: '#1240CC',
+                                            boxShadow: '0 0 16px rgba(18,64,204,0.35)',
                                         } : {
                                             minWidth: '52px',
                                             padding: '10px 14px',

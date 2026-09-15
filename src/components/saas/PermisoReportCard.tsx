@@ -8,9 +8,8 @@ interface PermisoReportCardProps {
 }
 
 const cardStyle: React.CSSProperties = {
-    background: 'rgba(2,6,23,0.85)',
+    background: 'rgba(2,6,23,0.92)',
     border: '1px solid rgba(255,255,255,0.08)',
-    backdropFilter: 'blur(24px)',
 };
 
 const panelStyle: React.CSSProperties = {
@@ -29,7 +28,7 @@ export default function PermisoReportCard({ ui: initialUi, docId, isLoading }: P
     if (isLoading) {
         return (
             <div className="w-full max-w-[1600px] mx-auto rounded-2xl flex flex-col p-6 overflow-hidden relative" style={cardStyle}>
-                <div className="absolute top-0 left-0 right-0 h-px animate-pulse" style={{ background: 'linear-gradient(90deg, transparent, #6366f1, transparent)' }} />
+                <div className="absolute top-0 left-0 right-0 h-px animate-pulse" style={{ background: 'linear-gradient(90deg, transparent, #1240CC, transparent)' }} />
                 <div className="animate-pulse space-y-6 flex-1 mt-4">
                     <div className="h-12 rounded-lg" style={{ background: 'rgba(255,255,255,0.05)' }} />
                     <div className="grid grid-cols-2 gap-4">
@@ -160,7 +159,7 @@ export default function PermisoReportCard({ ui: initialUi, docId, isLoading }: P
                     <div className="flex items-center gap-1.5 mb-1">
                         <StatusBadge isDetected={isDetected} />
                         <span className="text-[11px] font-semibold tracking-wide" style={{ color: 'rgba(255,255,255,0.4)' }}>{label}</span>
-                        {isMan && <span className="ml-1 text-[8px] px-1 rounded uppercase" style={{ color: '#6366f1', background: 'rgba(99,102,241,0.1)' }}>Editado</span>}
+                        {isMan && <span className="ml-1 text-[8px] px-1 rounded uppercase" style={{ color: '#1240CC', background: 'rgba(18,64,204,0.1)' }}>Editado</span>}
                         {currentVal && (
                             <button onClick={() => handleCopy(String(currentVal), label)} className="opacity-0 group-hover:opacity-100 transition-opacity ml-auto">
                                 <CopyIcon type={label} />
@@ -177,10 +176,10 @@ export default function PermisoReportCard({ ui: initialUi, docId, isLoading }: P
         if (isComputed) return null;
 
         return (
-            <div className="flex flex-col py-2" style={{ borderBottom: '1px dashed rgba(99,102,241,0.15)' }}>
+            <div className="flex flex-col py-2" style={{ borderBottom: '1px dashed rgba(18,64,204,0.15)' }}>
                 <div className="flex items-center gap-1.5 mb-1">
-                    <span className="text-[10px] font-bold uppercase tracking-wide flex-1" style={{ color: '#6366f1' }}>{label}</span>
-                    {isMan && <span className="text-[8px] px-1 rounded" style={{ color: '#6366f1', background: 'rgba(99,102,241,0.1)' }}>EDITADO</span>}
+                    <span className="text-[10px] font-bold uppercase tracking-wide flex-1" style={{ color: '#1240CC' }}>{label}</span>
+                    {isMan && <span className="text-[8px] px-1 rounded" style={{ color: '#1240CC', background: 'rgba(18,64,204,0.1)' }}>EDITADO</span>}
                 </div>
                 <div className="flex items-center gap-2">
                     <input
@@ -219,7 +218,7 @@ export default function PermisoReportCard({ ui: initialUi, docId, isLoading }: P
                                 {[brand, model].filter(Boolean).join(" ")}
                             </div>
                             {service && (
-                                <div className="mt-2 text-sm font-semibold inline-flex px-3 py-1 rounded w-max" style={{ color: '#6366f1', background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)' }}>
+                                <div className="mt-2 text-sm font-semibold inline-flex px-3 py-1 rounded w-max" style={{ color: '#1240CC', background: 'rgba(18,64,204,0.08)', border: '1px solid rgba(18,64,204,0.2)' }}>
                                     Servicio: {service}
                                 </div>
                             )}
@@ -319,14 +318,14 @@ export default function PermisoReportCard({ ui: initialUi, docId, isLoading }: P
 
                     {/* Observations */}
                     {(obsVal || isEditing) && (
-                        <div className="rounded-xl p-6" style={{ background: 'rgba(99,102,241,0.04)', border: '1px solid rgba(99,102,241,0.15)' }}>
-                            <h4 className="text-[10px] font-bold uppercase tracking-widest mb-3" style={{ color: '#6366f1' }}>Observaciones</h4>
+                        <div className="rounded-xl p-6" style={{ background: 'rgba(18,64,204,0.04)', border: '1px solid rgba(18,64,204,0.15)' }}>
+                            <h4 className="text-[10px] font-bold uppercase tracking-widest mb-3" style={{ color: '#1240CC' }}>Observaciones</h4>
                             {isEditing ? (
                                 <textarea
                                     value={(getVal('observations', 'observations') as string) || (getVal('', 'observations') as string) || ""}
                                     onChange={(e) => handleChange('', 'observations', e.target.value)}
                                     className="w-full text-sm text-white p-3 rounded-lg outline-none"
-                                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(99,102,241,0.2)' }}
+                                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(18,64,204,0.2)' }}
                                     rows={3}
                                     placeholder="Sin observaciones documentadas..."
                                 />
@@ -371,9 +370,9 @@ export default function PermisoReportCard({ ui: initialUi, docId, isLoading }: P
                         onClick={handleSave}
                         disabled={isSaving}
                         className="flex-1 font-bold py-3.5 px-4 rounded-xl transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
-                        style={{ background: '#6366f1', color: '#020617' }}
+                        style={{ background: '#1240CC', color: '#020617' }}
                         onMouseEnter={e => { if (!isSaving) (e.currentTarget as HTMLElement).style.background = '#5AEAFF'; }}
-                        onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = '#6366f1'}
+                        onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = '#1240CC'}
                     >
                         {isSaving ? (
                             <>

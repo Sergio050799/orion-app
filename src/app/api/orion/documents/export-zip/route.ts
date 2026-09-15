@@ -63,8 +63,7 @@ export async function POST(req: NextRequest) {
                 "Content-Disposition": `attachment; filename="orion_mixed_export_${Date.now()}.zip"`
             }
         });
-    } catch (error) {
-        console.error("Export ZIP Error:", error);
+    } catch {
         return new NextResponse("Internal server error", { status: 500 });
     }
 }

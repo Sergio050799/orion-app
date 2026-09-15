@@ -34,13 +34,13 @@ interface SectionProps {
 function Section({ title, icon, accept, file, inputRef, status, onFileChange, onUpload, versions, loadingVersiones, seedWarning }: SectionProps) {
   return (
     <div className="glass-card rounded-2xl p-5 mb-4">
-      <p className="text-[11px] font-black uppercase tracking-widest mb-3" style={{ color: 'rgba(255,255,255,0.6)' }}>
+      <p className="text-[11px] font-black uppercase tracking-widest mb-3" style={{ color: 'rgba(178,198,245,0.78)' }}>
         {icon} {title}
       </p>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
         <button
           onClick={() => inputRef.current?.click()}
-          style={{ fontSize: 11, fontWeight: 700, padding: '6px 12px', borderRadius: 8, color: '#818cf8', background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+          style={{ fontSize: 11, fontWeight: 700, padding: '6px 12px', borderRadius: 8, color: '#3366FF', background: 'rgba(18,64,204,0.1)', border: '1px solid rgba(18,64,204,0.25)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
           {file ? file.name : `Seleccionar ${accept.toUpperCase()}`}
         </button>
         <input ref={inputRef} type="file" accept={accept} style={{ display: 'none' }}
@@ -50,7 +50,7 @@ function Section({ title, icon, accept, file, inputRef, status, onFileChange, on
           disabled={!file || status.type === 'uploading'}
           style={{
             fontSize: 11, fontWeight: 800, padding: '6px 16px', borderRadius: 8,
-            color: '#fff', background: (!file || status.type === 'uploading') ? 'rgba(99,102,241,0.3)' : '#6366f1',
+            color: '#fff', background: (!file || status.type === 'uploading') ? 'rgba(18,64,204,0.3)' : '#1240CC',
             border: 'none', cursor: (!file || status.type === 'uploading') ? 'not-allowed' : 'pointer',
           }}>
           {status.type === 'uploading' ? 'Subiendo...' : 'Subir'}
@@ -67,25 +67,25 @@ function Section({ title, icon, accept, file, inputRef, status, onFileChange, on
         </div>
       )}
       {seedWarning && (
-        <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginBottom: 10, fontWeight: 600 }}>
+        <p style={{ fontSize: 10, color: 'rgba(178,198,245,0.5)', marginBottom: 10, fontWeight: 600 }}>
           ⚠ Activo tras reiniciar el servidor
         </p>
       )}
       <div>
-        <p style={{ fontSize: 10, fontWeight: 800, color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>
+        <p style={{ fontSize: 10, fontWeight: 800, color: 'rgba(178,198,245,0.42)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>
           Versiones
         </p>
         {loadingVersiones && !versions && (
-          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)' }}>Cargando...</p>
+          <p style={{ fontSize: 11, color: 'rgba(178,198,245,0.42)' }}>Cargando...</p>
         )}
         {versions && versions.length === 0 && (
-          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)' }}>Sin versiones registradas.</p>
+          <p style={{ fontSize: 11, color: 'rgba(178,198,245,0.42)' }}>Sin versiones registradas.</p>
         )}
         {versions && versions.map((v, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0', borderBottom: i < versions.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
-            <span style={{ fontSize: 10, color: v.activa ? '#4ade80' : 'rgba(255,255,255,0.3)', fontWeight: 800 }}>{v.activa ? '●' : '○'}</span>
-            <span style={{ fontSize: 11, color: v.activa ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.4)', fontWeight: v.activa ? 700 : 500, flex: 1 }}>{v.fecha}</span>
-            <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontWeight: 600 }}>
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0', borderBottom: i < versions.length - 1 ? '1px solid rgba(61,112,255,0.12)' : 'none' }}>
+            <span style={{ fontSize: 10, color: v.activa ? '#4ade80' : 'rgba(178,198,245,0.5)', fontWeight: 800 }}>{v.activa ? '●' : '○'}</span>
+            <span style={{ fontSize: 11, color: v.activa ? '#BDD4FF' : 'rgba(178,198,245,0.6)', fontWeight: v.activa ? 700 : 500, flex: 1 }}>{v.fecha}</span>
+            <span style={{ fontSize: 10, color: 'rgba(178,198,245,0.55)', fontWeight: 600 }}>
               {v.count.toLocaleString('es-ES')} {accept === '.csv' ? 'veh.' : 'entradas'}
             </span>
             {v.activa && (
@@ -190,8 +190,8 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
       {/* Panel */}
       <div style={{
         position: 'fixed', top: 0, right: 0, bottom: 0, width: 560,
-        background: 'linear-gradient(135deg, #1e1b4b 0%, #0f0c29 100%)',
-        border: '1px solid rgba(255,255,255,0.08)',
+        background: 'linear-gradient(180deg, rgba(8,22,72,0.95) 0%, rgba(0,7,45,0.98) 100%)',
+        border: '1px solid rgba(61,112,255,0.22)',
         borderRight: 'none',
         zIndex: 100,
         display: 'flex',
@@ -201,24 +201,24 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
         {/* Header */}
         <div style={{
           padding: '16px 24px',
-          borderBottom: '1px solid rgba(255,255,255,0.08)',
+          borderBottom: '1px solid rgba(61,112,255,0.16)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           flexShrink: 0,
         }}>
           <div>
-            <h2 style={{ margin: 0, fontSize: 14, fontWeight: 800, color: '#e2e8f0', textTransform: 'uppercase', letterSpacing: '0.12em', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ width: 6, height: 16, borderRadius: 3, background: '#6366f1', flexShrink: 0 }} />
+            <h2 style={{ margin: 0, fontSize: 14, fontWeight: 800, color: '#FFFFFF', textTransform: 'uppercase', letterSpacing: '0.12em', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ width: 6, height: 16, borderRadius: 3, background: '#1240CC', flexShrink: 0 }} />
               Configuración — Base de Datos
             </h2>
-            <p style={{ margin: '2px 0 0', fontSize: 10, color: 'rgba(255,255,255,0.3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            <p style={{ margin: '2px 0 0', fontSize: 10, color: 'rgba(178,198,245,0.5)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
               Panel de administración
             </p>
           </div>
           <button onClick={onClose} style={{
             background: 'none', border: 'none', cursor: 'pointer',
-            color: 'rgba(255,255,255,0.4)', fontSize: 22, lineHeight: 1, padding: 4,
+            color: 'rgba(178,198,245,0.5)', fontSize: 22, lineHeight: 1, padding: 4,
           }}>×</button>
         </div>
 
@@ -284,8 +284,8 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
             disabled={loadingVersiones || !secret}
             style={{
               fontSize: 10, fontWeight: 800, padding: '6px 16px', borderRadius: 8,
-              color: '#6366f1', background: 'rgba(99,102,241,0.08)',
-              border: '1px solid rgba(99,102,241,0.2)', cursor: 'pointer',
+              color: '#1240CC', background: 'rgba(18,64,204,0.08)',
+              border: '1px solid rgba(18,64,204,0.2)', cursor: 'pointer',
               opacity: loadingVersiones ? 0.5 : 1,
             }}>
             {loadingVersiones ? 'Cargando...' : '↻ Refrescar versiones'}

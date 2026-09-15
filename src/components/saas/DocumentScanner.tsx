@@ -59,9 +59,9 @@ function drawOverlay(canvas: HTMLCanvasElement, img: HTMLImageElement, corners: 
     ctx.restore();
 
     // Borde del área seleccionada
-    ctx.strokeStyle = "#6366f1";
+    ctx.strokeStyle = "#1240CC";
     ctx.lineWidth = 2 / scale;
-    ctx.shadowColor = "rgba(99,102,241,0.6)";
+    ctx.shadowColor = "rgba(18,64,204,0.6)";
     ctx.shadowBlur = 8 / scale;
     ctx.setLineDash([]);
     ctx.beginPath();
@@ -287,7 +287,6 @@ export default function DocumentScanner({ onConfirm, onCancel, initialImage }: D
     const modalStyle: React.CSSProperties = {
         background: 'rgba(2,6,23,0.97)',
         border: '1px solid rgba(255,255,255,0.1)',
-        backdropFilter: 'blur(32px)',
     };
 
     const panelStyle: React.CSSProperties = {
@@ -304,7 +303,7 @@ export default function DocumentScanner({ onConfirm, onCancel, initialImage }: D
                 style={modalStyle}
             >
                 {/* Accent line */}
-                <div className="absolute top-0 left-0 right-0 h-px rounded-t-2xl" style={{ background: 'linear-gradient(90deg, transparent, rgba(99,102,241,0.5), transparent)' }} />
+                <div className="absolute top-0 left-0 right-0 h-px rounded-t-2xl" style={{ background: 'linear-gradient(90deg, transparent, rgba(18,64,204,0.5), transparent)' }} />
 
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
@@ -331,12 +330,12 @@ export default function DocumentScanner({ onConfirm, onCancel, initialImage }: D
 
                     {/* Estado OpenCV */}
                     {cvStatus === "loading" && (
-                        <div className="flex items-center gap-3 text-sm rounded-xl p-4" style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.15)', color: 'rgba(255,255,255,0.5)' }}>
-                            <svg className="animate-spin w-4 h-4 shrink-0" style={{ color: '#6366f1' }} fill="none" viewBox="0 0 24 24">
+                        <div className="flex items-center gap-3 text-sm rounded-xl p-4" style={{ background: 'rgba(18,64,204,0.06)', border: '1px solid rgba(18,64,204,0.15)', color: 'rgba(255,255,255,0.5)' }}>
+                            <svg className="animate-spin w-4 h-4 shrink-0" style={{ color: '#1240CC' }} fill="none" viewBox="0 0 24 24">
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                             </svg>
-                            <span>Cargando escáner <span style={{ color: '#6366f1' }}>(OpenCV.js)</span>...</span>
+                            <span>Cargando escáner <span style={{ color: '#1240CC' }}>(OpenCV.js)</span>...</span>
                         </div>
                     )}
 
@@ -351,7 +350,7 @@ export default function DocumentScanner({ onConfirm, onCancel, initialImage }: D
                         <label
                             className="flex flex-col items-center justify-center gap-3 rounded-xl p-10 cursor-pointer transition-all"
                             style={{ border: '2px dashed rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.02)' }}
-                            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(99,102,241,0.4)'; (e.currentTarget as HTMLElement).style.background = 'rgba(99,102,241,0.04)'; }}
+                            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(18,64,204,0.4)'; (e.currentTarget as HTMLElement).style.background = 'rgba(18,64,204,0.04)'; }}
                             onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.12)'; (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.02)'; }}
                         >
                             <svg className="w-12 h-12" style={{ color: 'rgba(255,255,255,0.2)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -374,7 +373,7 @@ export default function DocumentScanner({ onConfirm, onCancel, initialImage }: D
                                         Original
                                     </span>
                                     {corners && cvStatus === "ready" && (
-                                        <span className="text-[9px] font-bold px-2 py-0.5 rounded uppercase" style={{ color: '#6366f1', background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.18)' }}>
+                                        <span className="text-[9px] font-bold px-2 py-0.5 rounded uppercase" style={{ color: '#1240CC', background: 'rgba(18,64,204,0.1)', border: '1px solid rgba(18,64,204,0.18)' }}>
                                             Arrastra las esquinas
                                         </span>
                                     )}
@@ -409,8 +408,8 @@ export default function DocumentScanner({ onConfirm, onCancel, initialImage }: D
                                                 position: "absolute",
                                                 width: '24px',
                                                 height: '24px',
-                                                background: '#6366f1',
-                                                boxShadow: '0 0 10px rgba(99,102,241,0.6)',
+                                                background: '#1240CC',
+                                                boxShadow: '0 0 10px rgba(18,64,204,0.6)',
                                                 cursor: 'grab',
                                                 touchAction: 'none',
                                             }}
@@ -443,11 +442,11 @@ export default function DocumentScanner({ onConfirm, onCancel, initialImage }: D
 
                                     {scanState === "scanning" && (
                                         <div className="text-center p-6 flex flex-col items-center gap-3">
-                                            <svg className="animate-spin w-8 h-8" style={{ color: '#6366f1' }} fill="none" viewBox="0 0 24 24">
+                                            <svg className="animate-spin w-8 h-8" style={{ color: '#1240CC' }} fill="none" viewBox="0 0 24 24">
                                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                                             </svg>
-                                            <p className="text-xs font-bold animate-pulse" style={{ color: '#6366f1' }}>Corrigiendo perspectiva...</p>
+                                            <p className="text-xs font-bold animate-pulse" style={{ color: '#1240CC' }}>Corrigiendo perspectiva...</p>
                                         </div>
                                     )}
 
@@ -518,9 +517,9 @@ export default function DocumentScanner({ onConfirm, onCancel, initialImage }: D
                             onClick={handleScan}
                             disabled={!imageDataUrl || !corners || scanState === "scanning" || cvStatus !== "ready"}
                             className="px-6 py-2.5 text-sm font-black rounded-xl transition-all flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
-                            style={{ background: '#6366f1', color: '#020617', boxShadow: '0 0 16px rgba(99,102,241,0.25)' }}
-                            onMouseEnter={e => { if (!e.currentTarget.disabled) (e.currentTarget as HTMLElement).style.boxShadow = '0 0 28px rgba(99,102,241,0.45)'; }}
-                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 0 16px rgba(99,102,241,0.25)'; }}
+                            style={{ background: '#1240CC', color: '#020617', boxShadow: '0 0 16px rgba(18,64,204,0.25)' }}
+                            onMouseEnter={e => { if (!e.currentTarget.disabled) (e.currentTarget as HTMLElement).style.boxShadow = '0 0 28px rgba(18,64,204,0.45)'; }}
+                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 0 16px rgba(18,64,204,0.25)'; }}
                         >
                             {scanState === "scanning" ? (
                                 <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">

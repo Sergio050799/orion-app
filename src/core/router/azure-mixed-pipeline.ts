@@ -95,7 +95,7 @@ export async function processMixedDocument(fileBuffer: Buffer, mimeType: string,
                 if (postRes.ok) break;
 
                 if (postRes.status === 429 && attempt < maxPostRetries - 1) {
-                    console.warn(`[Azure Mixed] 429 Rate Limit. Retrying page ${pObjIndex + 1} in ${delays[attempt]}ms...`);
+                    // 429 Rate Limit — retrying
                     await new Promise(r => setTimeout(r, delays[attempt]));
                     attempt++;
                     continue;
@@ -285,8 +285,8 @@ export async function processMixedDocument(fileBuffer: Buffer, mimeType: string,
                 seg.extractedData = extracted;
                 seg.extractionStatus = "done";
             }
-        } catch (e) {
-            console.error("Extraction error on segment", e);
+        } catch {
+            // Extraction error on segment
             seg.extractionStatus = "failed";
         }
     }

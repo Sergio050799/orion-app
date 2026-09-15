@@ -1,50 +1,89 @@
 // ─── CORREDOR — Entidad comercial que agrupa flotas ───────────────────────────
 
 export type Periodicidad = 'mensual' | 'trimestral' | 'semestral' | 'anual';
+export type Sucursal = 'TITAN' | 'MEDIACION';
 
 export interface Corredor {
   id: string;
+  codigo: string;
   nombre: string;
   cif: string;
-  domicilio?: string;            // Dirección fiscal del corredor (para factura)
-  porcentajeComision: number;   // ej: 15 (= 15%)
+  domicilio?: string;
+  porcentajeComision: number;
   periodicidad: Periodicidad;
-  formaPago: string;            // texto libre: "Transferencia", "Domiciliación", etc.
-  contacto: string;             // nombre del contacto principal
+  formaPago: string;
+  contacto: string;
   email: string;
   telefono: string;
   observaciones: string;
-  creadoEn: string;             // ISO
-  actualizadoEn: string;        // ISO
+  sucursal?: Sucursal;
+  comercial?: string;
+  creado_por?: string;   // username de quien lo creó
+  creadoEn: string;
+  actualizadoEn: string;
 }
 
-const STORAGE_KEY = 'flotas_corredores_v1';
+// ─── Session cache ────────────────────────────────────────────────────────────
+
+let memCache: Corredor[] | null = null;
 
 function loadAll(): Corredor[] {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '[]');
-  } catch { return []; }
+  return memCache ?? [];
 }
 
 function saveAll(corredores: Corredor[]): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(corredores));
+  memCache = corredores;
 }
+
+// ─── Server sync ──────────────────────────────────────────────────────────────
+
+function syncUpsert(corredor: Corredor): void {
+  fetch('/api/flotas/corredores', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'upsert', corredor }),
+  }).catch(() => {});
+}
+
+function syncDelete(id: string): void {
+  fetch('/api/flotas/corredores', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'delete', id }),
+  }).catch(() => {});
+}
+
+/** Carga corredores desde el servidor e inicializa el caché en memoria. */
+export async function cargarCorredoresDelServidor(signal?: AbortSignal): Promise<Corredor[]> {
+  const res = await fetch('/api/flotas/corredores', { signal });
+  if (!res.ok) throw new Error('Server error');
+  const data: Corredor[] = await res.json();
+  memCache = data;
+  return data;
+}
+
+// ─── CRUD ─────────────────────────────────────────────────────────────────────
 
 export function listarCorredores(): Corredor[] {
   return loadAll().sort((a, b) => a.nombre.localeCompare(b.nombre));
 }
 
-export function crearCorredor(datos: Omit<Corredor, 'id' | 'creadoEn' | 'actualizadoEn'>): Corredor {
+export function crearCorredor(
+  datos: Omit<Corredor, 'id' | 'codigo' | 'creadoEn' | 'actualizadoEn'> & { codigo?: string }
+): Corredor {
   const now = new Date().toISOString();
+  const all = loadAll();
+  const nextNum = all.length + 1;
   const corredor: Corredor = {
     ...datos,
     id: `corredor_${Date.now()}`,
+    codigo: datos.codigo || `COR-${String(nextNum).padStart(3, '0')}`,
     creadoEn: now,
     actualizadoEn: now,
   };
-  const all = loadAll();
   all.push(corredor);
   saveAll(all);
+  syncUpsert(corredor);
   return corredor;
 }
 
@@ -52,9 +91,9 @@ export function guardarCorredor(corredor: Corredor): void {
   corredor.actualizadoEn = new Date().toISOString();
   const all = loadAll();
   const idx = all.findIndex(c => c.id === corredor.id);
-  if (idx >= 0) all[idx] = corredor;
-  else all.push(corredor);
+  if (idx >= 0) all[idx] = corredor; else all.push(corredor);
   saveAll(all);
+  syncUpsert(corredor);
 }
 
 export function cargarCorredor(id: string): Corredor | null {
@@ -63,4 +102,5 @@ export function cargarCorredor(id: string): Corredor | null {
 
 export function eliminarCorredor(id: string): void {
   saveAll(loadAll().filter(c => c.id !== id));
+  syncDelete(id);
 }

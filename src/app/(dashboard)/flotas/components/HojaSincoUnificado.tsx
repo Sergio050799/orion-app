@@ -4,7 +4,7 @@ import React, { useState, useCallback, useRef, useMemo, useEffect } from 'react'
 import {
   consolidarSinco, mergeSincoToTrabajo,
   contarVehiculos, contarVehiculosConSinco,
-  calcularAntiguedadMedia, calcularSiniestrosPorAnio, calcularFrecuencia,
+  calcularAntiguedad, calcularAntiguedadMedia, calcularSiniestrosPorAnio, calcularFrecuencia,
   normalizarPoliza,
 } from '@/core/flotas';
 import type { FlotaCarpeta } from '@/core/flotas';
@@ -50,31 +50,31 @@ const pillBase: React.CSSProperties = {
   letterSpacing: '0.06em', transition: 'all 0.15s',
 };
 const pillActive: React.CSSProperties = {
-  ...pillBase, background: 'rgba(99,102,241,0.2)', color: '#818cf8',
+  ...pillBase, background: 'rgba(18,64,204,0.2)', color: '#3366FF',
 };
 const pillInactive: React.CSSProperties = {
-  ...pillBase, background: 'transparent', color: 'rgba(255,255,255,0.35)',
+  ...pillBase, background: 'transparent', color: 'rgba(178,198,245,0.6)',
 };
 
 const sectionTitle: React.CSSProperties = {
-  fontSize: 10, fontWeight: 900, color: 'rgba(255,255,255,0.3)',
+  fontSize: 10, fontWeight: 900, color: 'rgba(178,198,245,0.5)',
   textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14,
 };
 
 const inputStyle: React.CSSProperties = {
   width: '100%', fontSize: 12, padding: '7px 10px', borderRadius: 8,
-  background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
-  color: '#e2e8f0', outline: 'none', fontFamily: 'inherit',
+  background: 'rgba(6,14,50,0.55)', border: '1px solid rgba(61,112,255,0.22)',
+  color: '#FFFFFF', outline: 'none', fontFamily: 'inherit',
 };
 
 const labelStyle: React.CSSProperties = {
-  display: 'block', fontSize: 10, fontWeight: 800, color: 'rgba(129,140,248,0.8)',
+  display: 'block', fontSize: 10, fontWeight: 800, color: 'rgba(51,102,255,0.8)',
   textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4,
 };
 
 const kpiBox: React.CSSProperties = {
   borderRadius: 8, padding: '10px 14px',
-  background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
+  background: 'rgba(6,14,50,0.4)', border: '1px solid rgba(61,112,255,0.16)',
 };
 
 const thS: React.CSSProperties = {
@@ -86,7 +86,7 @@ const tdS: React.CSSProperties = {
 };
 
 const fmt = (n: number) => isNaN(n) || !isFinite(n) ? '—' : n.toFixed(2);
-const fmtFreq = (n: number) => isNaN(n) || !isFinite(n) ? '—' : `${n.toFixed(2)}%`;
+const fmtFreq = (n: number) => isNaN(n) || !isFinite(n) ? '—' : `${(n * 100).toFixed(1)}%`;
 
 // ─── KPI Panel ──────────────────────────────────────────────────────────────
 
@@ -97,8 +97,8 @@ function KpiPanel({ label, kpis }: { label: string; kpis: { label: string; value
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
         {kpis.map(k => (
           <div key={k.label} style={kpiBox}>
-            <div style={{ fontSize: 9, fontWeight: 800, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{k.label}</div>
-            <div style={{ fontSize: 18, fontWeight: 900, color: '#e2e8f0', fontFamily: 'monospace', marginTop: 2 }}>{k.value}</div>
+            <div style={{ fontSize: 9, fontWeight: 800, color: 'rgba(178,198,245,0.6)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{k.label}</div>
+            <div style={{ fontSize: 18, fontWeight: 900, color: '#FFFFFF', fontFamily: 'monospace', marginTop: 2 }}>{k.value}</div>
           </div>
         ))}
       </div>
@@ -110,10 +110,11 @@ function KpiPanel({ label, kpis }: { label: string; kpis: { label: string; value
 
 function ModoAutomatico({ header, trabajoRows, sincoResultRows, onSincoResultChange, onTrabajoChange }: Pick<Props, 'header' | 'trabajoRows' | 'sincoResultRows' | 'onSincoResultChange' | 'onTrabajoChange'>) {
   const fileRef = useRef<HTMLInputElement>(null);
+  const [dragCounter, setDragCounter] = useState(0);
 
   // Generar Excel de consulta
   const handleExport = useCallback(async () => {
-    const XLSX = await import('xlsx');
+    const ExcelJS = (await import('exceljs')).default;
     function inferTipoDocumento(cif: string): string {
       if (!cif) return 'C';
       const first = cif[0].toUpperCase();
@@ -122,23 +123,48 @@ function ModoAutomatico({ header, trabajoRows, sincoResultRows, onSincoResultCha
       return 'C';
     }
     const tipoDoc = inferTipoDocumento(header.cif);
-    const rows = trabajoRows
+    const wb = new ExcelJS.Workbook();
+    wb.creator = 'MMT Seguros';
+    const ws = wb.addWorksheet('SINCO');
+    ws.columns = SINCO_COL_NAMES.map(() => ({ width: 18 }));
+
+    const headerRow = ws.addRow(SINCO_COL_NAMES);
+    headerRow.height = 24;
+    headerRow.eachCell(cell => {
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF002F82' } };
+      cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, name: 'Calibri', size: 9 };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      cell.border = { bottom: { style: 'medium', color: { argb: 'FF002F82' } }, right: { style: 'thin', color: { argb: 'FFFFFFFF' } } };
+    });
+
+    trabajoRows
       .filter(r => r['matricula']?.trim())
-      .map(r => {
-        const row: string[] = Array(15).fill('');
-        row[0] = 'MMT';
-        row[1] = tipoDoc;
-        row[2] = header.cif;
-        row[3] = r['poliza_sinco']?.trim() || normalizarPoliza(r['num_poliza_actual'] ?? '');
-        row[4] = r['matricula'] ?? '';
-        return row;
+      .forEach((r, i) => {
+        const rowData: string[] = Array(16).fill('');
+        rowData[0] = 'MMT';
+        rowData[1] = tipoDoc;
+        rowData[2] = header.cif;
+        const polizaRaw = r['num_poliza_actual']?.trim() || r['n_poliza_actual']?.trim() || r['poliza_sinco']?.trim() || '';
+        rowData[3] = polizaRaw ? normalizarPoliza(polizaRaw) : '';
+        rowData[4] = (r['matricula'] ?? '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+        const row = ws.addRow(rowData);
+        row.height = 18;
+        row.eachCell({ includeEmpty: true }, cell => {
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: i % 2 === 0 ? 'FFFFFFFF' : 'FFF0F4FA' } };
+          cell.font = { name: 'Calibri', size: 9, color: { argb: 'FF0A1628' } };
+          cell.alignment = { horizontal: 'left', vertical: 'middle' };
+          cell.border = { bottom: { style: 'thin', color: { argb: 'FFB8C8E8' } }, right: { style: 'thin', color: { argb: 'FFB8C8E8' } } };
+        });
       });
-    const wsData = [SINCO_COL_NAMES, ...rows];
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.aoa_to_sheet(wsData);
-    ws['!cols'] = SINCO_COL_NAMES.map(() => ({ wch: 18 }));
-    XLSX.utils.book_append_sheet(wb, ws, 'SINCO');
-    XLSX.writeFile(wb, `SINCO_${header.cif || 'flota'}.xlsx`);
+
+    const buffer = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `SINCO_${header.cif || 'flota'}.xlsx`;
+    a.click();
+    URL.revokeObjectURL(url);
   }, [header, trabajoRows]);
 
   // Importar resultado
@@ -150,16 +176,16 @@ function ModoAutomatico({ header, trabajoRows, sincoResultRows, onSincoResultCha
     reader.onload = (ev) => {
       const wb = XLSX.read(ev.target?.result, { type: 'binary' });
       const ws = wb.Sheets[wb.SheetNames[0]];
-      const raw: string[][] = XLSX.utils.sheet_to_json(ws, { header: 1 });
-      const dataRows = raw.slice(1);
-      const parsed = dataRows
-        .map(r => r.map(c => String(c ?? '')))
-        .filter(r => r.some(c => c.trim() !== ''));
-      const asRecords = parsed.map(r => {
-        const obj: Record<string, string> = {};
-        SINCO_COL_NAMES.forEach((name, i) => { obj[name] = r[i] ?? ''; });
-        return obj;
-      });
+      // Parse by actual column headers from the file (not positional)
+      // This handles SINCO responses that include Num_Anios_Asegurado or other extra columns
+      const rawRows = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: '', raw: false });
+      const asRecords = rawRows
+        .filter(r => Object.values(r).some(v => String(v ?? '').trim() !== ''))
+        .map(r => {
+          const obj: Record<string, string> = {};
+          for (const [k, v] of Object.entries(r)) obj[k.trim()] = String(v ?? '');
+          return obj;
+        });
       onSincoResultChange(asRecords);
     };
     reader.readAsBinaryString(file);
@@ -172,17 +198,32 @@ function ModoAutomatico({ header, trabajoRows, sincoResultRows, onSincoResultCha
     onTrabajoChange(merged);
   }, [trabajoRows, sincoResultRows, onTrabajoChange]);
 
-  // Métricas del resultado importado
+  // Métricas del resultado importado — fórmula correcta MMT
   const matriculas = sincoResultRows.map(r => r['Matrícula'] ?? r['matricula'] ?? '').filter(Boolean);
-  const codigosRet = sincoResultRows.map(r => r['Codigo_Retorno'] ?? r['codigo_retorno'] ?? '');
-  const fecInis = sincoResultRows.map(r => r['Fec_Ini_Cobertura'] ?? r['fec_ini_cobertura'] ?? '').filter(Boolean);
-  const numSiniestros = sincoResultRows.reduce((acc, r) => acc + (parseInt(r['Num_Siniestros'] ?? r['num_siniestros'] ?? '') || 0), 0);
+  const numSiniestros = sincoResultRows.reduce((acc, r) => acc + (parseInt(r['Num_Siniestros'] ?? r['num_siniestros'] ?? '0') || 0), 0);
   const totalVeh = contarVehiculos(matriculas);
-  const conSinco = contarVehiculosConSinco(codigosRet);
-  const antiguedMedia = calcularAntiguedadMedia(fecInis.map(f => {
-    const d = new Date(f.includes('/') ? f.split('/').reverse().join('-') : f);
-    return isNaN(d.getTime()) ? 0 : (Date.now() - d.getTime()) / (1000 * 60 * 60 * 24 * 365.25);
-  }));
+  // Exitosas = Codigo_Retorno vacío
+  const exitosas = sincoResultRows.filter(r => {
+    const c = r['Codigo_Retorno'] ?? r['codigo_retorno'] ?? '';
+    return !c || c.trim() === '' || c.trim() === '0';
+  });
+  const conSinco = exitosas.length;
+  // Antigüedad: Num_Anios_Asegurado si existe; si no, calcular desde Fec_Ini_Cobertura
+  const numAniosList = exitosas.map(r => {
+    const aniosRaw = r['Num_Anios_Asegurado'] ?? r['num_anios_asegurado'] ?? '';
+    if (aniosRaw.trim()) {
+      const n = parseFloat(aniosRaw);
+      // Reject near-zero values (< ~1 month) — they inflate frequency x100+
+      if (!isNaN(n) && n >= 0.08) return n;
+    }
+    const fec = r['Fec_Ini_Cobertura'] ?? r['fec_ini_cobertura'] ?? '';
+    if (fec.trim()) {
+      const y = calcularAntiguedad(fec);
+      if (y > 0) return y;
+    }
+    return 0;
+  }).filter(n => n > 0);
+  const antiguedMedia = numAniosList.length > 0 ? numAniosList.reduce((a, b) => a + b, 0) / numAniosList.length : 0;
   const sinAnio = calcularSiniestrosPorAnio(numSiniestros, antiguedMedia);
   const freq = calcularFrecuencia(sinAnio, conSinco);
 
@@ -199,7 +240,7 @@ function ModoAutomatico({ header, trabajoRows, sincoResultRows, onSincoResultCha
               style={{ ...pillBase, background: 'rgba(22,163,74,0.1)', color: '#16a34a', border: '1px solid rgba(22,163,74,0.25)', fontSize: 11, padding: '8px 16px' }}>
               Descargar consulta SINCO (.xlsx)
             </button>
-            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>
+            <span style={{ fontSize: 11, color: 'rgba(178,198,245,0.6)' }}>
               {vehiculosSinco} vehículos preparados
             </span>
           </div>
@@ -208,11 +249,33 @@ function ModoAutomatico({ header, trabajoRows, sincoResultRows, onSincoResultCha
         {/* Sección importar */}
         <section style={{ marginBottom: 28 }}>
           <p style={sectionTitle}>Importar resultado SINCO</p>
-          <input ref={fileRef} type="file" accept=".xlsx,.xls" style={{ display: 'none' }} onChange={handleImport} />
-          <button onClick={() => fileRef.current?.click()}
-            style={{ ...pillBase, background: 'rgba(124,58,237,0.1)', color: '#7c3aed', border: '1px solid rgba(124,58,237,0.25)', fontSize: 11, padding: '8px 16px' }}>
-            Importar resultado SINCO (.xlsx)
-          </button>
+          <div
+            style={{
+              padding: '16px 20px', borderRadius: 10,
+              border: dragCounter > 0 ? '2px dashed #3366FF' : '2px dashed transparent',
+              background: dragCounter > 0 ? 'rgba(61,112,255,0.10)' : 'transparent',
+              transition: 'border 0.15s, background 0.15s',
+            }}
+            onDragEnter={e => { e.preventDefault(); e.stopPropagation(); if (e.dataTransfer.types.includes('Files')) setDragCounter(c => c + 1); }}
+            onDragLeave={e => { e.preventDefault(); e.stopPropagation(); setDragCounter(c => c - 1); }}
+            onDragOver={e => { e.preventDefault(); e.stopPropagation(); }}
+            onDrop={e => {
+              e.preventDefault(); e.stopPropagation(); setDragCounter(0);
+              const file = e.dataTransfer.files?.[0];
+              if (file && (file.name.endsWith('.xlsx') || file.name.endsWith('.xls'))) {
+                const dt = new DataTransfer();
+                dt.items.add(file);
+                const syntheticEvent = { target: { files: dt.files, value: '' } } as unknown as React.ChangeEvent<HTMLInputElement>;
+                handleImport(syntheticEvent);
+              }
+            }}
+          >
+            <input ref={fileRef} type="file" accept=".xlsx,.xls" style={{ display: 'none' }} onChange={handleImport} />
+            <button onClick={() => fileRef.current?.click()}
+              style={{ ...pillBase, background: 'rgba(124,58,237,0.1)', color: '#7c3aed', border: '1px solid rgba(124,58,237,0.25)', fontSize: 11, padding: '8px 16px' }}>
+              {dragCounter > 0 ? 'Suelta el archivo aqui' : 'Importar resultado SINCO (.xlsx)'}
+            </button>
+          </div>
         </section>
 
         {/* Métricas + tabla */}
@@ -229,7 +292,7 @@ function ModoAutomatico({ header, trabajoRows, sincoResultRows, onSincoResultCha
 
             <div style={{ marginBottom: 16, display: 'flex', gap: 10 }}>
               <button onClick={handleMerge}
-                style={{ ...pillBase, background: 'rgba(99,102,241,0.15)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.3)', fontSize: 11, padding: '8px 16px' }}>
+                style={{ ...pillBase, background: 'rgba(18,64,204,0.15)', color: '#3366FF', border: '1px solid rgba(18,64,204,0.3)', fontSize: 11, padding: '8px 16px' }}>
                 Volcar a TRABAJO
               </button>
             </div>
@@ -325,7 +388,7 @@ function ModoPorMatricula({ trabajoRows, carpetaActiva, onCarpetaChange }: Pick<
         )}
 
         {matriculas.length === 0 ? (
-          <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12, textAlign: 'center', padding: '40px 0' }}>
+          <p style={{ color: 'rgba(178,198,245,0.6)', fontSize: 12, textAlign: 'center', padding: '40px 0' }}>
             Sin matrículas en TRABAJO. Añade vehículos primero.
           </p>
         ) : (
@@ -335,10 +398,10 @@ function ModoPorMatricula({ trabajoRows, carpetaActiva, onCarpetaChange }: Pick<
               const entry = getEntry(mat);
               const hasSiniestros = entry.num_siniestros > 0;
               return (
-                <div key={mat} style={{ borderRadius: 10, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.02)', overflow: 'hidden' }}>
+                <div key={mat} style={{ borderRadius: 10, border: '1px solid rgba(61,112,255,0.16)', background: 'rgba(3,10,42,0.3)', overflow: 'hidden' }}>
                   {/* Header row */}
                   <button onClick={() => setExpanded(isOpen ? null : mat)}
-                    style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', background: 'transparent', border: 'none', cursor: 'pointer', color: '#e2e8f0' }}>
+                    style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', background: 'transparent', border: 'none', cursor: 'pointer', color: '#FFFFFF' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                       <span style={{ fontSize: 13, fontWeight: 800, fontFamily: 'monospace' }}>{mat}</span>
                       {hasSiniestros && (
@@ -347,7 +410,7 @@ function ModoPorMatricula({ trabajoRows, carpetaActiva, onCarpetaChange }: Pick<
                         </span>
                       )}
                     </div>
-                    <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>▼</span>
+                    <span style={{ fontSize: 10, color: 'rgba(178,198,245,0.5)', transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>▼</span>
                   </button>
 
                   {/* Expanded form */}
@@ -356,24 +419,24 @@ function ModoPorMatricula({ trabajoRows, carpetaActiva, onCarpetaChange }: Pick<
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 12 }}>
                         <div>
                           <label style={labelStyle}>Nº Siniestros</label>
-                          <input type="number" min="0" style={inputStyle} value={entry.num_siniestros}
-                            onChange={e => saveEntry({ ...entry, num_siniestros: parseInt(e.target.value) || 0 })}
-                            onFocus={e => (e.currentTarget.style.borderColor = 'rgba(99,102,241,0.5)')}
-                            onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')} />
+                          <input inputMode="numeric" style={inputStyle} value={entry.num_siniestros}
+                            onChange={e => { const v = e.target.value; if (v === '' || /^\d+$/.test(v)) saveEntry({ ...entry, num_siniestros: parseInt(v) || 0 }); }}
+                            onFocus={e => (e.currentTarget.style.borderColor = 'rgba(18,64,204,0.5)')}
+                            onBlur={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.22)')} />
                         </div>
                         <div>
                           <label style={labelStyle}>Inicio cobertura</label>
                           <input type="date" style={inputStyle} value={entry.fec_ini_cobertura}
                             onChange={e => saveEntry({ ...entry, fec_ini_cobertura: e.target.value })}
-                            onFocus={e => (e.currentTarget.style.borderColor = 'rgba(99,102,241,0.5)')}
-                            onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')} />
+                            onFocus={e => (e.currentTarget.style.borderColor = 'rgba(18,64,204,0.5)')}
+                            onBlur={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.22)')} />
                         </div>
                         <div>
                           <label style={labelStyle}>Vencimiento</label>
                           <input type="date" style={inputStyle} value={entry.fec_vcto}
                             onChange={e => saveEntry({ ...entry, fec_vcto: e.target.value })}
-                            onFocus={e => (e.currentTarget.style.borderColor = 'rgba(99,102,241,0.5)')}
-                            onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')} />
+                            onFocus={e => (e.currentTarget.style.borderColor = 'rgba(18,64,204,0.5)')}
+                            onBlur={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.22)')} />
                         </div>
                       </div>
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
@@ -381,23 +444,23 @@ function ModoPorMatricula({ trabajoRows, carpetaActiva, onCarpetaChange }: Pick<
                           <label style={labelStyle}>Código retorno</label>
                           <input style={inputStyle} value={entry.codigo_retorno}
                             onChange={e => saveEntry({ ...entry, codigo_retorno: e.target.value })}
-                            onFocus={e => (e.currentTarget.style.borderColor = 'rgba(99,102,241,0.5)')}
-                            onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')} />
+                            onFocus={e => (e.currentTarget.style.borderColor = 'rgba(18,64,204,0.5)')}
+                            onBlur={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.22)')} />
                         </div>
                         <div>
                           <label style={labelStyle}>Garantías</label>
                           <input style={inputStyle} value={entry.garantias}
                             onChange={e => saveEntry({ ...entry, garantias: e.target.value })}
-                            onFocus={e => (e.currentTarget.style.borderColor = 'rgba(99,102,241,0.5)')}
-                            onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')} />
+                            onFocus={e => (e.currentTarget.style.borderColor = 'rgba(18,64,204,0.5)')}
+                            onBlur={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.22)')} />
                         </div>
                       </div>
                       <div>
                         <label style={labelStyle}>Observaciones</label>
                         <textarea style={{ ...inputStyle, minHeight: 48, resize: 'vertical' }} value={entry.observaciones}
                           onChange={e => saveEntry({ ...entry, observaciones: e.target.value })}
-                          onFocus={e => (e.currentTarget.style.borderColor = 'rgba(99,102,241,0.5)')}
-                          onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')} />
+                          onFocus={e => (e.currentTarget.style.borderColor = 'rgba(18,64,204,0.5)')}
+                          onBlur={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.22)')} />
                       </div>
                     </div>
                   )}
@@ -457,22 +520,22 @@ function ModoGlobalFlota({ carpetaActiva, onCarpetaChange, sincoResultRows }: Pi
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
             <div>
               <label style={labelStyle}>Siniestros totales flota</label>
-              <input type="number" min="0" style={inputStyle} value={global.siniestrosTotales}
-                onChange={e => save({ siniestrosTotales: parseInt(e.target.value) || 0 })}
-                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(99,102,241,0.5)')}
-                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')} />
+              <input inputMode="numeric" style={inputStyle} value={global.siniestrosTotales}
+                onChange={e => { const v = e.target.value; if (v === '' || /^\d+$/.test(v)) save({ siniestrosTotales: parseInt(v) || 0 }); }}
+                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(18,64,204,0.5)')}
+                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.22)')} />
             </div>
             <div>
               <label style={labelStyle}>Años de experiencia flota</label>
-              <input type="number" min="0" step="0.1" style={inputStyle} value={global.anyosExperiencia}
-                onChange={e => save({ anyosExperiencia: parseFloat(e.target.value) || 0 })}
-                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(99,102,241,0.5)')}
-                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')} />
+              <input inputMode="decimal" style={inputStyle} value={global.anyosExperiencia}
+                onChange={e => { const v = e.target.value; if (v === '' || /^\d*\.?\d*$/.test(v)) save({ anyosExperiencia: parseFloat(v) || 0 }); }}
+                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(18,64,204,0.5)')}
+                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.22)')} />
             </div>
           </div>
           <div style={{ marginBottom: 14 }}>
             <label style={labelStyle}>Frecuencia global (calculada)</label>
-            <div style={{ ...inputStyle, background: 'rgba(255,255,255,0.02)', color: freqCalc > 0 ? '#818cf8' : 'rgba(255,255,255,0.3)', fontWeight: 800, fontFamily: 'monospace' }}>
+            <div style={{ ...inputStyle, background: 'rgba(3,10,42,0.3)', color: freqCalc > 0 ? '#3366FF' : 'rgba(255,255,255,0.3)', fontWeight: 800, fontFamily: 'monospace' }}>
               {freqCalc > 0 ? `${freqCalc.toFixed(2)}%` : '—'}
             </div>
           </div>
@@ -480,8 +543,8 @@ function ModoGlobalFlota({ carpetaActiva, onCarpetaChange, sincoResultRows }: Pi
             <label style={labelStyle}>Observaciones</label>
             <textarea style={{ ...inputStyle, minHeight: 60, resize: 'vertical' }} value={global.observaciones}
               onChange={e => save({ observaciones: e.target.value })}
-              onFocus={e => (e.currentTarget.style.borderColor = 'rgba(99,102,241,0.5)')}
-              onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')} />
+              onFocus={e => (e.currentTarget.style.borderColor = 'rgba(18,64,204,0.5)')}
+              onBlur={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.22)')} />
           </div>
         </section>
 
@@ -492,24 +555,24 @@ function ModoGlobalFlota({ carpetaActiva, onCarpetaChange, sincoResultRows }: Pi
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {autoResumen && (
                 <div style={{ ...kpiBox, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.5)' }}>SINCO por vehículo</span>
-                  <span style={{ fontSize: 12, fontWeight: 800, color: '#e2e8f0', fontFamily: 'monospace' }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(178,198,245,0.7)' }}>SINCO por vehículo</span>
+                  <span style={{ fontSize: 12, fontWeight: 800, color: '#FFFFFF', fontFamily: 'monospace' }}>
                     {autoResumen.totalSiniestros} siniestros, freq {fmtFreq(autoResumen.frecuencia)}
                   </span>
                 </div>
               )}
               {manualResumen && (
                 <div style={{ ...kpiBox, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.5)' }}>SINCO manual</span>
-                  <span style={{ fontSize: 12, fontWeight: 800, color: '#e2e8f0', fontFamily: 'monospace' }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(178,198,245,0.7)' }}>SINCO manual</span>
+                  <span style={{ fontSize: 12, fontWeight: 800, color: '#FFFFFF', fontFamily: 'monospace' }}>
                     {manualResumen.totalSiniestros} siniestros, freq {fmtFreq(manualResumen.frecuencia)}
                   </span>
                 </div>
               )}
               {freqCalc > 0 && (
                 <div style={{ ...kpiBox, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.5)' }}>Global flota</span>
-                  <span style={{ fontSize: 12, fontWeight: 800, color: '#e2e8f0', fontFamily: 'monospace' }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(178,198,245,0.7)' }}>Global flota</span>
+                  <span style={{ fontSize: 12, fontWeight: 800, color: '#FFFFFF', fontFamily: 'monospace' }}>
                     {global.siniestrosTotales} siniestros, freq {`${freqCalc.toFixed(2)}%`}
                   </span>
                 </div>
@@ -581,7 +644,7 @@ function ModoConsolidado({ sincoResultRows, carpetaActiva }: Pick<Props, 'sincoR
     <div style={{ flex: 1, overflowY: 'auto', padding: '24px 32px' }} className="custom-scrollbar">
       <div style={{ maxWidth: 800, margin: '0 auto' }}>
         {noData ? (
-          <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12, textAlign: 'center', padding: '60px 0' }}>
+          <p style={{ color: 'rgba(178,198,245,0.6)', fontSize: 12, textAlign: 'center', padding: '60px 0' }}>
             Sin datos SINCO. Usa los modos Automático, Por matrícula o Global para cargar información.
           </p>
         ) : (
@@ -611,7 +674,7 @@ function ModoConsolidado({ sincoResultRows, carpetaActiva }: Pick<Props, 'sincoR
               <KpiPanel label="Global Flota" kpis={[
                 { label: 'Siniestros totales', value: String(globalData.siniestrosTotales) },
                 { label: 'Años experiencia', value: fmt(globalData.anyosExperiencia) },
-                { label: 'Frecuencia', value: globalData.frecuencia > 0 ? `${globalData.frecuencia.toFixed(2)}%` : '—' },
+                { label: 'Frecuencia', value: globalData.frecuencia > 0 ? `${(globalData.frecuencia * 100).toFixed(1)}%` : '—' },
               ]} />
             )}
 
@@ -634,8 +697,8 @@ function ModoConsolidado({ sincoResultRows, carpetaActiva }: Pick<Props, 'sincoR
                           <td style={tdS}>
                             <span style={{
                               fontSize: 9, fontWeight: 800, padding: '1px 6px', borderRadius: 4,
-                              background: row.fuente === 'Auto' ? 'rgba(99,102,241,0.1)' : 'rgba(234,179,8,0.1)',
-                              color: row.fuente === 'Auto' ? '#818cf8' : '#fbbf24',
+                              background: row.fuente === 'Auto' ? 'rgba(18,64,204,0.1)' : 'rgba(234,179,8,0.1)',
+                              color: row.fuente === 'Auto' ? '#3366FF' : '#fbbf24',
                             }}>{row.fuente}</span>
                           </td>
                           <td style={tdS}>{row.siniestros || '—'}</td>
@@ -661,8 +724,8 @@ function ModoConsolidado({ sincoResultRows, carpetaActiva }: Pick<Props, 'sincoR
 export default function HojaSincoUnificado(props: Props) {
   const [modo, setModo] = useState<Modo>('AUTOMATICO');
 
-  const modos: { id: Modo; label: string }[] = [
-    { id: 'AUTOMATICO', label: 'Automático' },
+  const modos: { id: Modo; label: string; offline?: boolean }[] = [
+    { id: 'AUTOMATICO', label: 'Automático', offline: true },
     { id: 'POR_MATRICULA', label: 'Por matrícula' },
     { id: 'GLOBAL_FLOTA', label: 'Global flota' },
     { id: 'CONSOLIDADO', label: 'Consolidado' },
@@ -673,17 +736,47 @@ export default function HojaSincoUnificado(props: Props) {
       {/* Selector de modo */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 4, padding: '10px 24px',
-        borderBottom: '1px solid rgba(255,255,255,0.08)', background: 'rgba(0,0,0,0.2)', flexShrink: 0,
+        borderBottom: '1px solid rgba(61,112,255,0.16)', background: 'rgba(0,7,45,0.6)', flexShrink: 0,
       }}>
         {modos.map(m => (
           <button key={m.id} onClick={() => setModo(m.id)}
             style={modo === m.id ? pillActive : pillInactive}
-            onMouseEnter={e => { if (modo !== m.id) (e.currentTarget.style.color = 'rgba(255,255,255,0.6)'); }}
+            onMouseEnter={e => { if (modo !== m.id) (e.currentTarget.style.color = 'rgba(178,198,245,0.78)'); }}
             onMouseLeave={e => { if (modo !== m.id) (e.currentTarget.style.color = 'rgba(255,255,255,0.35)'); }}>
             {m.label}
+            {m.offline && (
+              <span style={{
+                marginLeft: 6, fontSize: 8, fontWeight: 900, padding: '1px 5px', borderRadius: 4,
+                background: 'rgba(234,179,8,0.15)', border: '1px solid rgba(234,179,8,0.3)',
+                color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.04em', verticalAlign: 'middle',
+              }}>SIN VPS</span>
+            )}
           </button>
         ))}
       </div>
+
+      {/* Banner offline para modo automático */}
+      {modo === 'AUTOMATICO' && (
+        <div style={{
+          flexShrink: 0, display: 'flex', alignItems: 'center', gap: 10,
+          padding: '10px 24px',
+          background: 'rgba(234,179,8,0.06)',
+          borderBottom: '1px solid rgba(234,179,8,0.2)',
+        }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth="2">
+            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          <span style={{ fontSize: 11, color: '#fbbf24', flex: 1 }}>
+            <strong>Servidor SINCO no conectado.</strong> El modo automático requiere VPS. Usa <em>Por matrícula</em> para entrada manual o <em>Global flota</em> para datos agregados.
+          </span>
+          <button onClick={() => setModo('POR_MATRICULA')} style={{
+            fontSize: 10, fontWeight: 700, padding: '5px 12px', borderRadius: 6,
+            background: 'rgba(234,179,8,0.15)', border: '1px solid rgba(234,179,8,0.35)',
+            color: '#fbbf24', cursor: 'pointer', whiteSpace: 'nowrap',
+          }}>Ir a entrada manual</button>
+        </div>
+      )}
 
       {/* Contenido del modo */}
       {modo === 'AUTOMATICO' && (

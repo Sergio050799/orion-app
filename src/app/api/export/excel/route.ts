@@ -79,7 +79,6 @@ export async function POST(req: NextRequest) {
         });
 
     } catch (error: any) {
-        console.error("[EXPORT EXCEL] Error:", error);
         return NextResponse.json({ ok: false, error: error.message || "Error interno" }, { status: 500 });
     }
 }

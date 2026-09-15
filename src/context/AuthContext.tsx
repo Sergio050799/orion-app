@@ -13,16 +13,28 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
     const [user, setUser] = useState<string | null>(null);
     const router = useRouter();
 
     useEffect(() => {
-        const storedUser = localStorage.getItem("orion_user");
-        if (storedUser) {
-            setUser(storedUser);
-            setIsAuthenticated(true);
-        }
+        fetch('/api/auth/me')
+            .then(r => r.json())
+            .then((data: { authenticated: boolean; username?: string }) => {
+                if (data.authenticated && data.username) {
+                    localStorage.setItem('orion_user', data.username);
+                    setUser(data.username);
+                    setIsAuthenticated(true);
+                } else {
+                    localStorage.removeItem('orion_user');
+                    setUser(null);
+                    setIsAuthenticated(false);
+                }
+            })
+            .catch(() => {
+                const storedUser = localStorage.getItem('orion_user');
+                if (storedUser) { setUser(storedUser); setIsAuthenticated(true); }
+            });
     }, []);
 
     const login = (username: string) => {
@@ -36,6 +48,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.removeItem("orion_user");
         setUser(null);
         setIsAuthenticated(false);
+        fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
         router.push("/login");
     };
 

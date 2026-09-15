@@ -49,7 +49,6 @@ export async function GET() {
         const summary = await readSummary();
         return NextResponse.json({ ok: true, summary }, { status: 200 });
     } catch (e: any) {
-        console.error("[ORION API] GET History Error:", e);
         return NextResponse.json({ ok: false, error: e.message }, { status: 500 });
     }
 }
@@ -94,7 +93,6 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ ok: true, summary }, { status: 200 });
 
     } catch (e: any) {
-        console.error("[ORION API] POST History Error:", e);
         return NextResponse.json({ ok: false, error: e.message }, { status: 500 });
     }
 }

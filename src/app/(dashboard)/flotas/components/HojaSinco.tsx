@@ -7,7 +7,7 @@ import { normalizarPoliza } from '@/core/flotas';
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
 
-type SincoRow = string[]; // 15 valores
+type SincoRow = string[]; // 16 valores
 
 interface Props {
   header: FlotaHeader;
@@ -34,13 +34,16 @@ function buildSincoRows(header: FlotaHeader, trabajoRows: Record<string, string>
   return trabajoRows
     .filter(r => r['matricula']?.trim())
     .map(r => {
-      const row: string[] = Array(15).fill('');
+      const row: string[] = Array(16).fill('');
       row[0] = 'MMT';
       row[1] = tipoDoc;
       row[2] = header.cif;
-      row[3] = r['poliza_sinco']?.trim() || normalizarPoliza(r['num_poliza_actual'] ?? '');
+      // Use full póliza — SINCO truncates to last 5 automatically
+      const polizaFull = r['num_poliza_actual']?.trim() || '';
+      const polizaComp = r['poliza_sinco']?.trim() || '';
+      row[3] = polizaFull || (polizaComp !== '00000' ? polizaComp : '');
       row[4] = r['matricula'] ?? '';
-      // cols 5-14: empty (filled by SINCO)
+      // cols 5-15: empty (filled by SINCO)
       return row;
     });
 }

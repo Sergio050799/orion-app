@@ -22,6 +22,92 @@ export const LUNAS_OPTS = ['Sí', 'No'];
 
 export const ASISTENCIA_OPTS = ['no', 'oro', 'oro_plus'];
 
+// ─── Diccionario de alias → tipo canónico ────────────────────────────────────
+
+const TIPO_ALIAS: Record<string, string> = {};
+
+function addAliases(canonical: string, aliases: string[]) {
+  for (const a of aliases) TIPO_ALIAS[a] = canonical;
+}
+
+addAliases('Turismo', [
+  'turismo', 'turismos', 'turis', 'tur', 'turism',
+  'derivado de turismo', 'derivado turismo', 'deriv turismo', 'deriv. turismo',
+  'turismo derivado', 'automovil', 'automóvil', 'auto', 'coche', 'pkw',
+  'todo terreno', 'todoterreno', 'suv', 'monovolumen', 'berlina', 'sedan',
+  'familiar', 'coupe', 'descapotable', 'cabrio', 'cabriolet', 'hatchback',
+  'microcar', 'microcoche', 'cuadriciclo', 'quad',
+]);
+
+addAliases('Furgoneta', [
+  'furgoneta', 'furgonetas', 'furgon', 'furgo', 'furg',
+  'furgón', 'van', 'combi', 'mixto', 'mixta', 'furgon mixto',
+  'furgoneta mixta', 'vehiculo mixto', 'vehículo mixto',
+  'derivado de camion', 'derivado camion', 'deriv camion', 'deriv. camion',
+  'derivado de furgoneta', 'pick up', 'pickup', 'pick-up',
+  'vehiculo comercial', 'vehículo comercial', 'comercial',
+]);
+
+addAliases('Cabeza tractora', [
+  'cabeza tractora', 'tractora', 'cabeza', 'tractor', 'tractocamion',
+  'cab tractora', 'cab. tractora', 'c. tractora', 'ct',
+]);
+
+addAliases('Camión rígido', [
+  'camion rigido', 'camión rígido', 'camion', 'camión', 'camiones',
+  'rigido', 'rígido', 'truck', 'lkw',
+]);
+
+addAliases('Semirremolque', [
+  'semirremolque', 'semirremolques', 'semiremolque', 'semiremolques',
+  'semi', 'remolque', 'trailer', 'semitrailer', 'semi-remolque', 'sr', 's/r',
+]);
+
+addAliases('Industrial matriculado', [
+  'industrial matriculado', 'ind matriculado', 'ind. matriculado',
+  'industrial matr', 'industrial mat',
+]);
+
+addAliases('Industrial no matriculado', [
+  'industrial no matriculado', 'ind no matriculado', 'ind. no matriculado',
+  'industrial sin matricular', 'industrial no matr',
+]);
+
+// Moto / Ciclomotor (opciones extra que pueden llegar de DGT/Silverdat)
+addAliases('Motocicleta', [
+  'motocicleta', 'motocicletas', 'moto', 'motos', 'motorcycle',
+]);
+
+addAliases('Ciclomotor', [
+  'ciclomotor', 'ciclomotores', 'scooter', 'velomotor',
+]);
+
+addAliases('Autobús', [
+  'autobus', 'autobús', 'autobuses', 'bus', 'microbus', 'microbús',
+  'minibus', 'minibús',
+]);
+
+/**
+ * Normaliza tipo de vehículo usando el diccionario de alias.
+ * Primero intenta alias exacto, luego el normalizeToOption genérico.
+ */
+export function normalizeTipoVehiculo(raw: string): string {
+  if (!raw || !raw.trim()) return '';
+  const key = clean(raw);
+
+  // 1. Alias directo
+  if (TIPO_ALIAS[key]) return TIPO_ALIAS[key];
+
+  // 2. Alias parcial: el input contiene un alias o un alias contiene el input
+  for (const [alias, canonical] of Object.entries(TIPO_ALIAS)) {
+    if (key.includes(alias) || alias.includes(key)) return canonical;
+  }
+
+  // 3. Fallback al matching genérico con las opciones canónicas
+  const { value, matched } = normalizeToOption(raw, TIPO_VEHICULO_OPTS);
+  return matched ? value : raw.trim();
+}
+
 // ─── Mapas de columna ─────────────────────────────────────────────────────────
 
 const COLUMN_OPTS: Record<string, string[]> = {
@@ -88,10 +174,32 @@ export function normalizeColumnValue(
   colId: string,
   raw: string,
 ): { value: string; matched: boolean } {
+  if (colId === 'coberturas_solicitadas') {
+    const v = raw.trim().normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+    // Garantías como "3ºS+ASIST", "3º+LUNAS+ASIST", "TERCEROS", "T.A.", "TR"
+    if (v.startsWith('tr') || v.includes('todo riesgo') || v.includes('all risk')) {
+      return { value: 'Todo Riesgo con Franquicia', matched: true };
+    }
+    if (v.startsWith('3') || v.includes('tercero')) {
+      if (v.includes('ampliado') || v.includes('amp') || v.match(/3[oa][^\w]*a/)) {
+        return { value: 'Terceros Ampliado', matched: true };
+      }
+      return { value: 'Terceros', matched: true };
+    }
+  }
   if (colId === 'lunas') {
     const v = raw.trim().toLowerCase();
     if (['s', 'si', 'sí', 'yes', '1', 'true', 'x'].includes(v)) return { value: 'Sí', matched: true };
     if (['n', 'no', '0', 'false', ''].includes(v)) return { value: 'No', matched: true };
+  }
+  if (colId === 'asistencia') {
+    const v = raw.trim().toLowerCase();
+    if (['s', 'si', 'sí', 'yes', '1', 'true', 'x'].includes(v)) return { value: 'oro', matched: true };
+    if (['n', 'no', '0', 'false', ''].includes(v)) return { value: 'no', matched: true };
+  }
+  if (colId === 'tipo_vehiculo') {
+    const v = normalizeTipoVehiculo(raw);
+    return { value: v, matched: v !== raw.trim() || !raw.trim() };
   }
   const opts = COLUMN_OPTS[colId];
   if (!opts) return { value: raw.trim(), matched: true };

@@ -47,8 +47,8 @@ export function TechnicalFieldItem({ field, label, unit, onEdit }: FieldProps) {
                     className="w-full rounded px-1 py-0.5 text-sm text-white focus:outline-none"
                     style={{
                         background: 'rgba(2,6,23,0.8)',
-                        border: '1px solid #6366f1',
-                        caretColor: '#6366f1',
+                        border: '1px solid #1240CC',
+                        caretColor: '#1240CC',
                     }}
                     value={tempValue}
                     onChange={(e) => setTempValue(e.target.value)}

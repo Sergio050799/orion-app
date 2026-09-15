@@ -1,6 +1,7 @@
 // ─── PARSER EXCEL — Flotas ────────────────────────────────────────────────────
 
 import * as XLSX from 'xlsx';
+import { normalizeColumnValue } from './normalizador';
 
 // Mapa: variantes de nombre de columna → id interno del grid
 // Todas las claves ya están normalizadas (sin acentos, minúsculas, espacios simples)
@@ -19,13 +20,31 @@ const HEADER_MAP: Record<string, string> = {
   'uso': 'uso', 'use': 'uso',
   // KW
   'kw': 'kw', 'potencia': 'kw', 'kw (din)': 'kw',
+  // CV
+  'cv': 'cv', 'caballos': 'cv', 'potencia cv': 'cv',
+  // Cilindrada
+  'cilindrada': 'cilindrada', 'cc': 'cilindrada', 'cilind': 'cilindrada',
+  'motorizacion': 'cilindrada', 'cubicaje': 'cilindrada',
+  // Plazas
+  'plazas': 'plazas', 'num plazas': 'plazas', 'numero plazas': 'plazas', 'seats': 'plazas',
+  // Combustible
+  'combustible': 'combustible', 'fuel': 'combustible', 'carburante': 'combustible',
+  'tipo combustible': 'combustible', 'energia': 'combustible',
+  // Año
+  'ano': 'anyo', 'anyo': 'anyo', 'year': 'anyo', 'ano matriculacion': 'anyo',
+  'fecha matriculacion': 'anyo', 'ano fabricacion': 'anyo',
+  // Puertas
+  'puertas': 'puertas', 'num puertas': 'puertas', 'doors': 'puertas',
   // TN
   'tn': 'tn', 'toneladas': 'tn', 'tara': 'tn', 'mma': 'tn',
+  // PMA
+  'pma': 'pma', 'peso maximo': 'pma', 'peso maximo autorizado': 'pma',
   // Ámbito
   'ambito': 'ambito', 'scope': 'ambito',
   // Coberturas
   'coberturas': 'coberturas_solicitadas', 'coberturas solicitadas': 'coberturas_solicitadas',
   'cobertura': 'coberturas_solicitadas',
+  'garantias': 'coberturas_solicitadas', 'garantia': 'coberturas_solicitadas',
   // Lunas
   'lunas': 'lunas', 'luna': 'lunas', 'cristales': 'lunas',
   // FRQ / Franquicia
@@ -34,24 +53,33 @@ const HEADER_MAP: Record<string, string> = {
   'asistencia': 'asistencia', 'assistance': 'asistencia',
   // Prima referencia
   'prima referencia': 'prima_referencia', 'prima': 'prima_referencia', 'importe': 'prima_referencia',
+  'tirea': 'prima_referencia', 'prima actual': 'prima_referencia',
   // Compañía / póliza
   'cia actual': 'cia_actual', 'cia': 'cia_actual', 'compania': 'cia_actual', 'aseguradora': 'cia_actual',
-  'num poliza actual': 'num_poliza_actual', 'poliza': 'num_poliza_actual',
-  'no poliza': 'num_poliza_actual', 'numero poliza': 'num_poliza_actual',
-  'nº poliza actual': 'num_poliza_actual',
+  'num poliza actual': 'num_poliza_actual', 'n poliza actual': 'num_poliza_actual',
+  'poliza': 'num_poliza_actual', 'no poliza': 'num_poliza_actual',
+  'numero poliza': 'num_poliza_actual', 'nº poliza actual': 'num_poliza_actual',
+  'n poliza': 'num_poliza_actual', 'npoliza': 'num_poliza_actual',
+  // variantes adicionales (nº → "n" tras cleanHeader v2)
+  'nro poliza': 'num_poliza_actual', 'nro poliza actual': 'num_poliza_actual',
+  'numero de poliza': 'num_poliza_actual', 'n de poliza': 'num_poliza_actual',
+  'nro de poliza': 'num_poliza_actual', 'poliza actual': 'num_poliza_actual',
+  'cod poliza': 'num_poliza_actual', 'codigo poliza': 'num_poliza_actual',
+  'poliza n': 'num_poliza_actual', 'num de poliza': 'num_poliza_actual',
   // Vencimiento
   'fecha vencimiento': 'fecha_vencimiento', 'vencimiento': 'fecha_vencimiento', 'vcto': 'fecha_vencimiento',
 };
 
 // Columnas calculadas: no se importan (se recalculan en el grid desde otros campos)
-const SKIP_HEADERS = new Set(['cv']);
+const SKIP_HEADERS = new Set<string>();
 
 /** Normaliza un nombre de cabecera para matching */
 function cleanHeader(h: string): string {
   return h
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')   // quita tildes
+    .replace(/[^a-z0-9\s]/gi, ' ')                       // \u00ba, ., -, N\u00ba \u2192 letra + espacio
     .toLowerCase().trim()
-    .replace(/[_\s]+/g, ' ');
+    .replace(/\s+/g, ' ');
 }
 
 export interface ParseResult {
@@ -100,11 +128,20 @@ export async function parseExcelTemplate(file: File): Promise<ParseResult> {
     else if (!SKIP_HEADERS.has(key)) unmapped.push(String(cell));
   });
 
+  // Columnas que se normalizan al importar
+  const NORMALIZE_COLS = new Set(['tipo_vehiculo', 'uso', 'ambito', 'coberturas_solicitadas', 'lunas']);
+
   // Convertir filas
   const rows: Record<string, string>[] = dataRows.map(row => {
     const r: Record<string, string> = {};
     for (const [idxStr, colId] of Object.entries(headerMapping)) {
-      r[colId] = String((row as unknown[])[Number(idxStr)] ?? '').trim();
+      let val = String((row as unknown[])[Number(idxStr)] ?? '').trim();
+      if (colId === 'matricula' && val) {
+        val = val.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+      } else if (val && NORMALIZE_COLS.has(colId)) {
+        val = normalizeColumnValue(colId, val).value;
+      }
+      r[colId] = val;
     }
     return r;
   });

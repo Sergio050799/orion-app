@@ -347,33 +347,50 @@ export const catalogoDataSource: CatalogoDataSource = {
             if (bucket && bucket.length > 0) {
                 candidates = bucket;
             } else {
-                console.warn('[CATALOGO] marca sin bucket en índice:', marcaKey, '— scanning all');
+                // marca sin bucket en índice — scanning all
             }
         }
 
-        // Filtro duro por año — excluye vehículos fuera del rango comercial
+        // Filtro por año — primero intenta con filtro duro, si no hay resultados reintenta sin él
+        let filteredByYear = candidates;
         if (params.anyo) {
-            candidates = candidates.filter(veh => {
+            filteredByYear = candidates.filter(veh => {
                 const ini = veh.fec_ini_comerc ? parseInt(veh.fec_ini_comerc.substring(0, 4)) : 0;
                 const fin = veh.fec_fin_comerc ? parseInt(veh.fec_fin_comerc.substring(0, 4)) : 9999;
                 return params.anyo! >= ini && params.anyo! <= fin;
             });
         }
 
-        const t0 = Date.now();
-        const scored: CatalogoCandidato[] = [];
-        for (const veh of candidates) {
-            const { score, detail } = scoreVehiculo(veh, params);
-            if (score >= 70) {
-                const candidato: CatalogoCandidato = { ...veh, score };
-                if (params.scoreDebug) candidato.scoreDetail = detail;
-                scored.push(candidato);
+        const scoreAndCollect = (pool: CatalogoVehiculo[], p: SearchParams, minScore = 70): CatalogoCandidato[] => {
+            const scored: CatalogoCandidato[] = [];
+            for (const veh of pool) {
+                const { score, detail } = scoreVehiculo(veh, p);
+                if (score >= minScore) {
+                    const candidato: CatalogoCandidato = { ...veh, score };
+                    if (p.scoreDebug) candidato.scoreDetail = detail;
+                    scored.push(candidato);
+                }
             }
-        }
-        console.log(`[CATALOGO] scored ${candidates.length} candidatos → ${scored.length} pasan umbral (${Date.now() - t0}ms)`);
+            scored.sort((a, b) => b.score - a.score);
+            return scored.slice(0, 20); // cap results
+        };
 
-        scored.sort((a, b) => b.score - a.score);
-        return scored;
+        // Intento 1: con filtro de año, score >= 70
+        let results = scoreAndCollect(filteredByYear, params);
+
+        // Fallback 1: sin filtro de año, score >= 70
+        if (results.length === 0 && params.anyo && filteredByYear.length < candidates.length) {
+            const paramsNoYear = { ...params, anyo: undefined };
+            results = scoreAndCollect(candidates, paramsNoYear);
+        }
+
+        // Fallback 2: sin año + score rebajado a 50 (mejor que nada)
+        if (results.length === 0) {
+            const paramsNoYear = { ...params, anyo: undefined };
+            results = scoreAndCollect(candidates, paramsNoYear, 50);
+        }
+
+        return results;
     },
 
     async getById(id_veh: string): Promise<CatalogoVehiculo | null> {

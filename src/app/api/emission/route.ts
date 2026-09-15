@@ -51,15 +51,13 @@ export async function POST(req: NextRequest) {
         const emision = EmisionService.create(documentosPendientes);
 
         // Process batch async — fire and forget per document
-        processBatch(emision.id, metaItems, formData).catch(err => {
-            console.error(`[EMISSION] Batch error for emision ${emision.id}:`, err);
+        processBatch(emision.id, metaItems, formData).catch(() => {
             EmisionService.update(emision.id, { estado: 'error' });
         });
 
         return NextResponse.json({ ok: true, emisionId: emision.id });
 
     } catch (error: any) {
-        console.error("[EMISSION POST] Error:", error);
         return NextResponse.json({ ok: false, error: error.message || "Error interno" }, { status: 500 });
     }
 }
@@ -122,8 +120,8 @@ async function processBatch(
                     if (Object.keys(searchParams).length > 0) {
                         catalogoCandidatos = await catalogoDataSource.search(searchParams);
                     }
-                } catch (catErr) {
-                    console.warn('[EMISSION] Catálogo search falló (no crítico):', catErr);
+                } catch {
+                    // Catálogo search falló (no crítico)
                 }
             }
 
@@ -141,7 +139,6 @@ async function processBatch(
             });
 
         } catch (err: any) {
-            console.error(`[EMISSION] Error procesando doc ${meta.id}:`, err);
             EmisionService.updateDocumento(emisionId, meta.id, {
                 estado: 'error',
                 error: err.message || 'Error desconocido',

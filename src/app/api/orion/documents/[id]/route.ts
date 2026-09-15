@@ -54,7 +54,6 @@ export async function PATCH(
         );
 
     } catch (error: any) {
-        console.error("[DOCUMENTS PATCH] Error:", error);
         return NextResponse.json({ ok: false, error: error.message || "Error interno" }, { status: 500 });
     }
 }

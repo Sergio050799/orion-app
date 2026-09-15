@@ -133,6 +133,9 @@ export function calcularPrima(params: CalcPrimaParams): number | null {
         total += primaBase * AJUSTES.isotermo_pct;
     }
     if (perdidaTotal) total += primaBase * AJUSTES.perdida_total_pct;
+    if (asistencia === 'oro' || asistencia === 'oro_plus') {
+        total += ambito === 'internacional' ? AJUSTES.asistencia_internacional : AJUSTES.asistencia_nacional;
+    }
 
     return Math.round(total);
 }

@@ -40,10 +40,11 @@ export function contarVehiculos(matriculas: string[]): number {
 
 /**
  * Vehículos con registro SINCO: aquellos cuyo código de retorno
- * no es vacío ni indica ausencia de datos.
+ * es vacío (consulta exitosa, el vehículo existe en SINCO).
+ * Errores (01, 21, etc.) = no tienen datos SINCO.
  */
 export function contarVehiculosConSinco(codigosRetorno: string[]): number {
-    return codigosRetorno.filter(c => c && c.trim() !== '' && c.trim() !== '0').length;
+    return codigosRetorno.filter(c => !c || c.trim() === '' || c.trim() === '0').length;
 }
 
 /** Filtra las filas reales (con al menos un campo no vacío) */
@@ -62,37 +63,56 @@ export interface ResumenSinco {
     frecuencia: number;           // calcularFrecuencia(siniestrosPorAnio, vehiculosConSinco)
 }
 
-/** Resume una flota SINCO entera a estadísticas listas para la UI. */
+/** Resume una flota SINCO entera a estadísticas listas para la UI.
+ *  Fórmula correcta MMT:
+ *  - TOTAL_CONSULTAS = filas sin código de error (exitosas)
+ *  - ANTIGÜEDAD = media de Num_Anios_Asegurado de las filas exitosas
+ *  - SINIESTROS = suma de Num_Siniestros de todas las filas
+ *  - FRECUENCIA = (SINIESTROS / ANTIGÜEDAD) / TOTAL_CONSULTAS
+ */
 export function consolidarSinco(rows: Record<string, string>[]): ResumenSinco {
     const reales = filtrarFilasReales(rows);
 
     let totalSiniestros = 0;
-    const antiguedades: number[] = [];
+    const numAniosList: number[] = [];
     const codigosRetorno: string[] = [];
 
     for (const row of reales) {
-        // Siniestros
+        const cod = row['cod_retorno'] ?? row['codigo_retorno'] ?? row['Codigo_Retorno'] ?? '';
+        codigosRetorno.push(cod);
+
+        // Siniestros — suma todos (incluidas filas con error que llevan 0)
         const sinRaw = row['num_siniestros'] ?? row['Num_Siniestros'];
-        if (sinRaw !== undefined) {
+        if (sinRaw !== undefined && sinRaw !== '') {
             const n = parseFloat(sinRaw);
             if (!isNaN(n)) totalSiniestros += n;
         }
 
-        // Antigüedad
-        const fecha = row['fec_ini_cobertura'] ?? row['Fec_Ini_Cobertura']
-            ?? row['fecha_ini_cobertura'];
-        if (fecha && fecha.trim() !== '') {
-            antiguedades.push(calcularAntiguedad(fecha.trim()));
+        // Antigüedad — solo filas exitosas (sin código de error)
+        const isOk = !cod || cod.trim() === '' || cod.trim() === '0';
+        if (isOk) {
+            const anyosRaw = row['Num_Anios_Asegurado'] ?? row['num_anios_asegurado'];
+            let pushed = false;
+            if (anyosRaw !== undefined && anyosRaw !== '') {
+                const n = parseFloat(anyosRaw);
+                // Reject suspiciously small values (< ~1 month) — they inflate frequency x100+
+                if (!isNaN(n) && n >= 0.08) { numAniosList.push(n); pushed = true; }
+            }
+            if (!pushed) {
+                // Fallback: calcular desde Fec_Ini_Cobertura
+                const fec = row['Fec_Ini_Cobertura'] ?? row['fec_ini_cobertura'] ?? '';
+                if (fec.trim()) {
+                    const years = calcularAntiguedad(fec);
+                    if (years > 0) numAniosList.push(years);
+                }
+            }
         }
-
-        // Código de retorno
-        const cod = row['cod_retorno'] ?? row['codigo_retorno']
-            ?? row['Codigo_Retorno'] ?? '';
-        codigosRetorno.push(cod);
     }
 
-    const antiguedadMedia    = calcularAntiguedadMedia(antiguedades);
     const vehiculosConSinco  = contarVehiculosConSinco(codigosRetorno);
+    const antiguedadMedia    = numAniosList.length > 0
+        ? numAniosList.reduce((a, b) => a + b, 0) / numAniosList.length
+        : 0;
     const siniestrosPorAnio  = calcularSiniestrosPorAnio(totalSiniestros, antiguedadMedia);
     const frecuencia         = calcularFrecuencia(siniestrosPorAnio, vehiculosConSinco);
 

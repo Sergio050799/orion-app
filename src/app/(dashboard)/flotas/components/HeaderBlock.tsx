@@ -23,11 +23,11 @@ const HeaderBlock = React.memo(function HeaderBlock({ header, onChange }: Props)
   return (
     <div
       className="flex items-center gap-3 px-4 py-2 shrink-0 flex-wrap"
-      style={{ background: 'rgba(99,102,241,0.08)', borderBottom: '1px solid rgba(99,102,241,0.2)' }}
+      style={{ background: 'rgba(18,64,204,0.08)', borderBottom: '1px solid rgba(18,64,204,0.2)' }}
     >
       {FIELDS.map(f => (
         <div key={f.key} className="flex flex-col gap-0.5 min-w-[120px]">
-          <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: 'rgba(129,140,248,0.8)' }}>
+          <span className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'rgba(70,120,255,0.8)' }}>
             {f.label}
           </span>
           <input
@@ -35,10 +35,10 @@ const HeaderBlock = React.memo(function HeaderBlock({ header, onChange }: Props)
             value={header[f.key]}
             onChange={e => set(f.key, e.target.value)}
             placeholder={f.placeholder}
-            className="text-[11px] font-mono font-bold outline-none bg-transparent border-b"
-            style={{ color: '#e0e7ff', borderColor: 'rgba(129,140,248,0.3)', width: '100%', padding: '1px 0' }}
-            onFocus={e => (e.currentTarget.style.borderColor = '#818cf8')}
-            onBlur={e => (e.currentTarget.style.borderColor = 'rgba(129,140,248,0.3)')}
+            className="text-[13px] font-mono font-bold outline-none bg-transparent border-b"
+            style={{ color: '#FFFFFF', borderColor: 'rgba(51,102,255,0.3)', width: '100%', padding: '1px 0' }}
+            onFocus={e => (e.currentTarget.style.borderColor = '#3366FF')}
+            onBlur={e => (e.currentTarget.style.borderColor = 'rgba(51,102,255,0.3)')}
           />
         </div>
       ))}

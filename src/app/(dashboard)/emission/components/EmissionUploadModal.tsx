@@ -26,7 +26,7 @@ interface EmissionUploadModalProps {
 }
 
 const PAGE_LABELS: { key: PageLabel; label: string; color: string }[] = [
-    { key: 'ficha_moderna',  label: 'Ficha Moderna',  color: '#6366f1' },
+    { key: 'ficha_moderna',  label: 'Ficha Moderna',  color: '#1240CC' },
     { key: 'ficha_antigua',  label: 'Ficha Antigua',  color: '#60A5FA' },
     { key: 'permiso',        label: 'Permiso',         color: '#34D399' },
     { key: 'autorizacion',   label: 'Autorización',    color: '#A78BFA' },
@@ -313,20 +313,20 @@ export default function EmissionUploadModal({ onConfirm, onCancel }: EmissionUpl
         >
             <div
                 className="w-full max-w-3xl max-h-[90vh] rounded-2xl flex flex-col shadow-2xl animate-in zoom-in-95 duration-200"
-                style={{ background: 'rgba(2,6,23,0.98)', border: '1px solid rgba(255,255,255,0.1)' }}
+                style={{ background: 'rgba(0,7,45,0.98)', border: '1px solid rgba(61,112,255,0.22)' }}
                 onClick={e => e.stopPropagation()}
             >
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-5" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+                <div className="flex items-center justify-between px-6 py-5" style={{ borderBottom: '1px solid rgba(51,102,255,0.1)' }}>
                     <div>
                         <h2 className="text-base font-black text-white uppercase tracking-wider">Nueva Emisión</h2>
-                        <p className="text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                        <p className="text-[11px] mt-0.5" style={{ color: 'rgba(178,198,245,0.6)' }}>
                             {step === 'upload' ? 'Paso 1 — Sube los archivos de la emisión' : 'Paso 2 — Etiqueta cada página'}
                         </p>
                     </div>
-                    <button onClick={onCancel} className="p-1.5 rounded-lg transition-colors" style={{ color: 'rgba(255,255,255,0.3)' }}
-                        onMouseEnter={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.7)')}
-                        onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.3)')}
+                    <button onClick={onCancel} className="p-1.5 rounded-lg transition-colors" style={{ color: 'rgba(178,198,245,0.5)' }}
+                        onMouseEnter={e => (e.currentTarget.style.color = '#BDD4FF')}
+                        onMouseLeave={e => (e.currentTarget.style.color = 'rgba(178,198,245,0.5)')}
                     >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12" /></svg>
                     </button>
@@ -337,30 +337,30 @@ export default function EmissionUploadModal({ onConfirm, onCancel }: EmissionUpl
                     <div className="flex-1 flex flex-col items-center justify-center p-8 gap-6">
                         {loading ? (
                             <div className="flex flex-col items-center gap-4">
-                                <svg className="animate-spin w-8 h-8" style={{ color: '#6366f1' }} fill="none" viewBox="0 0 24 24">
+                                <svg className="animate-spin w-8 h-8" style={{ color: '#1240CC' }} fill="none" viewBox="0 0 24 24">
                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                                 </svg>
-                                <p className="text-sm font-bold" style={{ color: '#6366f1' }}>{loadingMsg}</p>
+                                <p className="text-sm font-bold" style={{ color: '#1240CC' }}>{loadingMsg}</p>
                             </div>
                         ) : (
                             <>
                                 <div
                                     className="rounded-xl p-4 text-center max-w-sm"
-                                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
+                                    style={{ background: 'rgba(12,28,82,0.45)', border: '1px solid rgba(61,112,255,0.16)' }}
                                 >
-                                    <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: 'rgba(255,255,255,0.4)' }}>Tipos aceptados</p>
+                                    <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: 'rgba(178,198,245,0.6)' }}>Tipos aceptados</p>
                                     <div className="flex flex-wrap gap-2 justify-center">
                                         {['Ficha Técnica', 'Permiso', 'Autorización'].map(t => (
-                                            <span key={t} className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ color: '#6366f1', background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.15)' }}>{t}</span>
+                                            <span key={t} className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ color: '#1240CC', background: 'rgba(18,64,204,0.08)', border: '1px solid rgba(18,64,204,0.15)' }}>{t}</span>
                                         ))}
                                     </div>
                                 </div>
                                 <label
                                     className="flex flex-col items-center gap-3 px-12 py-8 rounded-xl cursor-pointer transition-all font-bold text-sm"
-                                    style={{ border: '2px dashed rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.5)' }}
-                                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(99,102,241,0.5)'; (e.currentTarget as HTMLElement).style.color = '#6366f1'; }}
-                                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.15)'; (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.5)'; }}
+                                    style={{ border: '2px dashed rgba(51,102,255,0.25)', color: 'rgba(178,198,245,0.7)' }}
+                                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(18,64,204,0.5)'; (e.currentTarget as HTMLElement).style.color = '#1240CC'; }}
+                                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(51,102,255,0.25)'; (e.currentTarget as HTMLElement).style.color = 'rgba(178,198,245,0.7)'; }}
                                 >
                                     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" />
@@ -378,7 +378,7 @@ export default function EmissionUploadModal({ onConfirm, onCancel }: EmissionUpl
                     <>
                         {/* Summary strip */}
                         <div className="px-6 py-3 flex items-center gap-4 flex-wrap" style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                            <span className="text-[11px] font-bold" style={{ color: 'rgba(255,255,255,0.4)' }}>{pages.length} páginas</span>
+                            <span className="text-[11px] font-bold" style={{ color: 'rgba(178,198,245,0.6)' }}>{pages.length} páginas</span>
                             {summary.map(s => (
                                 <span key={s.key} className="text-[11px] font-bold" style={{ color: s.color }}>
                                     {s.count} {s.label.toLowerCase()}{s.count !== 1 ? 's' : ''}
@@ -391,16 +391,16 @@ export default function EmissionUploadModal({ onConfirm, onCancel }: EmissionUpl
                             )}
                             {/* Toggle auto-preprocesar */}
                             <label className="flex items-center gap-2 ml-auto cursor-pointer">
-                                <span className="text-[10px] font-bold" style={{ color: 'rgba(255,255,255,0.4)' }}>Auto-preprocesar (solo imágenes)</span>
+                                <span className="text-[10px] font-bold" style={{ color: 'rgba(178,198,245,0.6)' }}>Auto-preprocesar (solo imágenes)</span>
                                 <div
                                     onClick={() => setAutoPreprocess(p => !p)}
                                     className="w-8 h-4 rounded-full transition-colors relative cursor-pointer"
-                                    style={{ background: autoPreprocess ? 'rgba(99,102,241,0.4)' : 'rgba(255,255,255,0.1)' }}
+                                    style={{ background: autoPreprocess ? 'rgba(18,64,204,0.4)' : 'rgba(61,112,255,0.22)' }}
                                 >
                                     <div
                                         className="absolute top-0.5 w-3 h-3 rounded-full transition-all"
                                         style={{
-                                            background: autoPreprocess ? '#6366f1' : 'rgba(255,255,255,0.3)',
+                                            background: autoPreprocess ? '#1240CC' : 'rgba(178,198,245,0.5)',
                                             left: autoPreprocess ? '17px' : '2px',
                                         }}
                                     />
@@ -420,18 +420,18 @@ export default function EmissionUploadModal({ onConfirm, onCancel }: EmissionUpl
                                             <div
                                                 className="aspect-[3/4] rounded-lg overflow-hidden flex items-center justify-center relative"
                                                 style={{
-                                                    background: 'rgba(255,255,255,0.04)',
-                                                    border: `1px solid ${labelDef ? labelDef.color + '55' : 'rgba(255,255,255,0.1)'}`,
+                                                    background: 'rgba(6,14,50,0.55)',
+                                                    border: `1px solid ${labelDef ? labelDef.color + '55' : 'rgba(61,112,255,0.22)'}`,
                                                 }}
                                             >
                                                 {/* Botón escáner — esquina superior izquierda */}
                                                 <button
                                                     onClick={() => setScannerPage(page.pageIndex)}
                                                     className="absolute top-1.5 left-1.5 p-1 rounded-lg transition-all z-10"
-                                                    style={{ background: 'rgba(0,0,0,0.5)', color: 'rgba(255,255,255,0.6)' }}
+                                                    style={{ background: 'rgba(0,0,0,0.5)', color: 'rgba(178,198,245,0.78)' }}
                                                     title="Corregir perspectiva"
-                                                    onMouseEnter={e => (e.currentTarget.style.color = '#6366f1')}
-                                                    onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.6)')}
+                                                    onMouseEnter={e => (e.currentTarget.style.color = '#1240CC')}
+                                                    onMouseLeave={e => (e.currentTarget.style.color = 'rgba(178,198,245,0.78)')}
                                                 >
                                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                                                         <rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M9 21V9" />
@@ -442,10 +442,10 @@ export default function EmissionUploadModal({ onConfirm, onCancel }: EmissionUpl
                                                 <button
                                                     onClick={() => rotate(page.pageIndex)}
                                                     className="absolute top-1.5 right-1.5 p-1 rounded-lg transition-all z-10"
-                                                    style={{ background: 'rgba(0,0,0,0.5)', color: 'rgba(255,255,255,0.6)' }}
+                                                    style={{ background: 'rgba(0,0,0,0.5)', color: 'rgba(178,198,245,0.78)' }}
                                                     title="Rotar 90°"
-                                                    onMouseEnter={e => (e.currentTarget.style.color = '#6366f1')}
-                                                    onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.6)')}
+                                                    onMouseEnter={e => (e.currentTarget.style.color = '#1240CC')}
+                                                    onMouseLeave={e => (e.currentTarget.style.color = 'rgba(178,198,245,0.78)')}
                                                 >
                                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                                                         <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38" />
@@ -462,10 +462,10 @@ export default function EmissionUploadModal({ onConfirm, onCancel }: EmissionUpl
                                                     />
                                                 ) : (
                                                     <div className="flex flex-col items-center gap-2 p-3">
-                                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5">
+                                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(178,198,245,0.5)" strokeWidth="1.5">
                                                             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" />
                                                         </svg>
-                                                        <span className="text-[9px] font-mono text-center" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                                                        <span className="text-[9px] font-mono text-center" style={{ color: 'rgba(178,198,245,0.5)' }}>
                                                             {page.fileName.slice(0, 20)}
                                                         </span>
                                                     </div>
@@ -491,9 +491,9 @@ export default function EmissionUploadModal({ onConfirm, onCancel }: EmissionUpl
                                                             background: l.color + '20',
                                                             border: `1px solid ${l.color}50`,
                                                         } : {
-                                                            color: 'rgba(255,255,255,0.3)',
-                                                            background: 'rgba(255,255,255,0.03)',
-                                                            border: '1px solid rgba(255,255,255,0.08)',
+                                                            color: 'rgba(178,198,245,0.5)',
+                                                            background: 'rgba(12,28,82,0.45)',
+                                                            border: '1px solid rgba(61,112,255,0.16)',
                                                         }}
                                                     >
                                                         {l.label.split(' ')[0]}
@@ -507,11 +507,11 @@ export default function EmissionUploadModal({ onConfirm, onCancel }: EmissionUpl
                         </div>
 
                         {/* Footer */}
-                        <div className="flex gap-3 px-6 py-4" style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+                        <div className="flex gap-3 px-6 py-4" style={{ borderTop: '1px solid rgba(51,102,255,0.1)' }}>
                             <button
                                 onClick={() => setStep('upload')}
                                 className="px-5 text-xs font-bold rounded-xl transition-colors"
-                                style={{ color: 'rgba(255,255,255,0.5)', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)' }}
+                                style={{ color: 'rgba(178,198,245,0.7)', background: 'rgba(6,14,50,0.55)', border: '1px solid rgba(61,112,255,0.22)' }}
                             >
                                 ← Volver
                             </button>
@@ -519,9 +519,9 @@ export default function EmissionUploadModal({ onConfirm, onCancel }: EmissionUpl
                                 onClick={handleConfirm}
                                 disabled={!allLabeled || confirming}
                                 className="flex-1 text-sm font-black py-2.5 px-4 rounded-xl transition-all disabled:opacity-30 flex items-center justify-center gap-2"
-                                style={{ background: '#6366f1', color: '#020617' }}
+                                style={{ background: '#1240CC', color: '#00072d' }}
                                 onMouseEnter={e => { if (allLabeled && !confirming) (e.currentTarget as HTMLElement).style.background = '#5AEAFF'; }}
-                                onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = '#6366f1'}
+                                onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = '#1240CC'}
                             >
                                 {confirming ? (
                                     <>

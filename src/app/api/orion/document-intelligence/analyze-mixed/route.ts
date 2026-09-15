@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { processMixedDocument } from "@/core/router/azure-mixed-pipeline";
-import { PDFDocument } from 'pdf-lib';
 import { readSummary, writeSummaryAtomic } from "../history/route";
 
 export const runtime = "nodejs";
@@ -72,8 +71,6 @@ export async function POST(req: NextRequest) {
         return NextResponse.json(finalData, { status: 200 });
 
     } catch (error: any) {
-        console.error("[ORION MIXED API] Error:", error);
-
         let status = 500;
         let errorMessage = error.message || "Internal server error";
         let errorCode = "500";

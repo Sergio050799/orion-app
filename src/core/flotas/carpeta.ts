@@ -2,65 +2,141 @@
 
 import type { Periodicidad } from './corredor';
 
-export type EstadoFlota = 'EN ESTUDIO' | 'CONTRATADA' | 'RECHAZADA';
+export type EstadoFlota = 'EN ESTUDIO' | 'OFERTADA' | 'CONTRATADA' | 'RECHAZADA';
 
 export interface HistoricoEntry {
   fecha: string;        // ISO
-  accion: string;       // ej: "Cambio de estado", "Creación", "Datos actualizados"
+  accion: string;
   estadoAnterior?: EstadoFlota;
   estadoNuevo?: EstadoFlota;
   motivo?: string;
   observaciones?: string;
 }
 
+export interface TarifaEntry {
+  tipo: string;
+  cobertura: string;
+  precio: number;
+}
+
 export interface FlotaCarpeta {
-  id: string;                              // `carpeta_${Date.now()}`
-  nombre: string;                          // nombre que da el usuario
-  creadaEn: string;                        // ISO
-  actualizadaEn: string;                   // ISO
+  id: string;
+  nombre: string;
+  creadaEn: string;
+  actualizadaEn: string;
 
-  // ─── Nuevos campos v2 ────────────────────────────────────────────────────
-  corredor_id?: string;                    // referencia a Corredor.id
-  estado: EstadoFlota;                     // control MANUAL — no automatizar
-  historico: HistoricoEntry[];             // registro de cambios
+  creado_por?: string;          // username de quien creó la carpeta
+  estudiando_por?: string[];    // usernames con sesión activa (solo viene del servidor)
 
-  // ─── Datos generales del estudio ─────────────────────────────────────────
+  corredor_id?: string;
+  porcentajeComision?: number;
+  estado: EstadoFlota;
+  historico: HistoricoEntry[];
+
+  tarifaFlota?: TarifaEntry[];
+  primaClienteTotal?: number;
+  primaClientePorVehiculo?: number;
+  descuentoOferta?: number;
+  descuentosCoberturas?: Record<string, number>;
+
   header: {
     cif: string;
     tomador: string;
     actividad: string;
     formaPago: string;
     efecto: string;
-    // Nuevos campos datos generales
     polizaActual?: string;
     ciaActual?: string;
     fechaInicio?: string;
     fechaVencimiento?: string;
-    cifTomador?: string;        // CIF del tomador del seguro (para factura)
-    fechaEmision?: string;      // Fecha en que se emitió la póliza (ISO string)
-    periodicidad?: Periodicidad; // 'mensual' | 'trimestral' | 'semestral' | 'anual'
+    cifTomador?: string;
+    fechaEmision?: string;
+    periodicidad?: Periodicidad;
   };
 
-  original:        Record<string, string>[];  // datos hoja ORIGINAL (solo lectura)
-  trabajo:         Record<string, string>[];  // datos hoja TRABAJO
-  sincoResultados: Record<string, string>[];  // resultado importado de SINCO
+  observaciones?: string;
+  original:        Record<string, string>[];
+  trabajo:         Record<string, string>[];
+  sincoResultados: Record<string, string>[];
   sincoManual?:    { matricula: string; num_siniestros: number; fec_ini_cobertura: string; fec_vcto: string; codigo_retorno: string; garantias: string; observaciones: string; }[];
   sincoGlobal?:    { siniestrosTotales: number; anyosExperiencia: number; frecuencia: number; observaciones: string; };
-  oferta:          Record<string, string>[];  // datos hoja OFERTA con coberturas
-  primasMmtInforme?: Record<string, number>;   // tipo_vehiculo → prima MMT editada en Informe
-  catalogoSeleccion?: Record<string, string>;   // matricula → id_veh seleccionado en Pre-Emisión
+  oferta:          Record<string, string>[];
+  primasMmtInforme?: Record<string, number>;
+  catalogoSeleccion?: Record<string, string>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  automaticoVehicles?: Record<string, any>[];
 }
 
-const STORAGE_KEY = 'flotas_carpetas_v1';
+// ─── Session cache (in-memory, lives while the tab is open) ──────────────────
+// Server is source of truth. initMemCache() is called after each server fetch.
+
+let memCache: FlotaCarpeta[] | null = null;
 
 function loadAll(): FlotaCarpeta[] {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '[]');
-  } catch { return []; }
+  return memCache ?? [];
 }
 
 function saveAll(carpetas: FlotaCarpeta[]): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(carpetas));
+  memCache = carpetas;
+}
+
+export function initMemCache(carpetas: FlotaCarpeta[]): void {
+  memCache = [...carpetas];
+}
+
+// ─── Server sync ─────────────────────────────────────────────────────────────
+
+function syncUpsert(carpeta: FlotaCarpeta): void {
+  fetch('/api/flotas/carpetas', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'upsert', carpeta }),
+  }).catch(() => {});
+}
+
+function syncDelete(id: string): void {
+  fetch('/api/flotas/carpetas', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'delete', id }),
+  }).catch(() => {});
+}
+
+// ─── Session tracking ─────────────────────────────────────────────────────────
+
+export function sesionJoin(carpeta_id: string): void {
+  fetch('/api/flotas/sesion', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'join', carpeta_id }),
+  }).catch(() => {});
+}
+
+export function sesionLeave(carpeta_id: string): void {
+  fetch('/api/flotas/sesion', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'leave', carpeta_id }),
+  }).catch(() => {});
+}
+
+export function sesionHeartbeat(carpeta_id: string): void {
+  fetch('/api/flotas/sesion', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'heartbeat', carpeta_id }),
+  }).catch(() => {});
+}
+
+// ─── Public API ──────────────────────────────────────────────────────────────
+
+/** Carga carpetas desde el servidor e inicializa el caché en memoria. */
+export async function cargarCarpetasDelServidor(signal?: AbortSignal): Promise<FlotaCarpeta[]> {
+  const res = await fetch('/api/flotas/carpetas', { signal });
+  if (!res.ok) throw new Error('Server error');
+  const data: FlotaCarpeta[] = await res.json();
+  initMemCache(data);
+  return data;
 }
 
 export function listarCarpetas(): FlotaCarpeta[] {
@@ -69,7 +145,7 @@ export function listarCarpetas(): FlotaCarpeta[] {
   );
 }
 
-export function crearCarpeta(nombre: string, corredor_id?: string): FlotaCarpeta {
+export function crearCarpeta(nombre: string, corredor_id?: string, creado_por?: string): FlotaCarpeta {
   const now = new Date().toISOString();
   const carpeta: FlotaCarpeta = {
     id: `carpeta_${Date.now()}`,
@@ -77,6 +153,7 @@ export function crearCarpeta(nombre: string, corredor_id?: string): FlotaCarpeta
     creadaEn: now,
     actualizadaEn: now,
     corredor_id,
+    creado_por: creado_por ?? '',
     estado: 'EN ESTUDIO',
     historico: [{ fecha: now, accion: 'Creación', estadoNuevo: 'EN ESTUDIO' }],
     header: { cif: '', tomador: '', actividad: '', formaPago: '', efecto: '' },
@@ -85,10 +162,10 @@ export function crearCarpeta(nombre: string, corredor_id?: string): FlotaCarpeta
   const all = loadAll();
   all.push(carpeta);
   saveAll(all);
+  syncUpsert(carpeta);
   return carpeta;
 }
 
-/** Cambia el estado de la flota MANUALMENTE. Registra en histórico. */
 export function cambiarEstado(
   id: string,
   nuevoEstado: EstadoFlota,
@@ -111,6 +188,7 @@ export function cambiarEstado(
   carpeta.historico = [...(carpeta.historico ?? []), entry];
   carpeta.actualizadaEn = entry.fecha;
   saveAll(all);
+  syncUpsert(carpeta);
   return carpeta;
 }
 
@@ -121,6 +199,7 @@ export function guardarCarpeta(carpeta: FlotaCarpeta): void {
   if (idx >= 0) all[idx] = carpeta;
   else all.push(carpeta);
   saveAll(all);
+  syncUpsert(carpeta);
 }
 
 export function cargarCarpeta(id: string): FlotaCarpeta | null {
@@ -129,4 +208,5 @@ export function cargarCarpeta(id: string): FlotaCarpeta | null {
 
 export function eliminarCarpeta(id: string): void {
   saveAll(loadAll().filter(c => c.id !== id));
+  syncDelete(id);
 }

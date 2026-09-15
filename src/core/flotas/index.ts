@@ -24,22 +24,25 @@ export {
 export type { FlotaSession, CoberturaAsignacion, Row } from './sesion';
 export { guardarSesion, cargarSesion, listarSesiones, eliminarSesion } from './sesion';
 
-export type { FlotaCarpeta, EstadoFlota, HistoricoEntry } from './carpeta';
-export { listarCarpetas, crearCarpeta, guardarCarpeta, cargarCarpeta, eliminarCarpeta, cambiarEstado } from './carpeta';
+export type { FlotaCarpeta, EstadoFlota, HistoricoEntry, TarifaEntry } from './carpeta';
+export { listarCarpetas, crearCarpeta, guardarCarpeta, cargarCarpeta, eliminarCarpeta, cambiarEstado, cargarCarpetasDelServidor, initMemCache, sesionJoin, sesionLeave, sesionHeartbeat } from './carpeta';
 
-export type { Corredor, Periodicidad } from './corredor';
-export { listarCorredores, crearCorredor, guardarCorredor, cargarCorredor, eliminarCorredor } from './corredor';
+export type { Corredor, Periodicidad, Sucursal } from './corredor';
+export { listarCorredores, crearCorredor, guardarCorredor, cargarCorredor, eliminarCorredor, cargarCorredoresDelServidor } from './corredor';
 
 export type { ParseResult } from './parser';
 export { parseExcelTemplate } from './parser';
 
 export { generarPlantillaExcel } from './plantilla';
 
+export { seedIfEmpty } from './seed';
+
 export {
     normalizeToOption,
     normalizeColumnValue,
     normalizePlate,
     normalizePoliza,
+    normalizeTipoVehiculo,
     TIPO_VEHICULO_OPTS,
     USO_OPTS,
     AMBITO_OPTS,

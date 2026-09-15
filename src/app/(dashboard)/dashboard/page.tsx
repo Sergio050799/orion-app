@@ -4,13 +4,12 @@ import React, { useMemo } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { listarCarpetas, listarCorredores, cargarCorredor, type FlotaCarpeta, type Corredor } from '@/core/flotas';
+import { useAuth } from '@/context/AuthContext';
 
 const DashboardCharts = dynamic(() => import('./components/DashboardCharts'), {
-    loading: () => <div className="h-64 animate-pulse rounded-xl bg-white/5" />,
+    loading: () => <div className="h-64 animate-pulse rounded-xl" style={{ background: 'rgba(8,22,72,0.3)' }} />,
     ssr: false,
 });
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function diasHastaVencimiento(fechaStr: string): number {
   const fecha = new Date(fechaStr);
@@ -26,72 +25,121 @@ function formatFecha(fechaStr: string): string {
   return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
-// ─── Estilos ──────────────────────────────────────────────────────────────────
-
-const glassCard: React.CSSProperties = {
-  background: 'rgba(255,255,255,0.03)',
-  backdropFilter: 'blur(24px)',
-  border: '1px solid rgba(255,255,255,0.08)',
-  borderRadius: 16,
-  padding: 20,
+const glass: React.CSSProperties = {
+  background: 'rgba(12, 28, 82, 0.75)',
+  border: '1px solid rgba(61, 112, 255, 0.22)',
+  borderRadius: 22,
+  boxShadow: '0 30px 80px -20px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.08) inset, 0 0 0 1px rgba(61,112,255,0.12) inset',
 };
-
-// ─── KPI Card ─────────────────────────────────────────────────────────────────
 
 function KpiCard({ title, value, color }: { title: string; value: string; color?: string }) {
   return (
-    <div style={glassCard}>
-      <p style={{ fontSize: 10, fontWeight: 800, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>
-        {title}
-      </p>
-      <p style={{ fontSize: 28, fontWeight: 900, color: color ?? '#fff', fontFamily: 'monospace', lineHeight: 1 }}>
+    <div style={{ ...glass, padding: '24px 26px', position: 'relative', overflow: 'hidden' }}>
+      {/* Corner glow */}
+      <div style={{
+        position: 'absolute', top: 0, right: 0,
+        width: 80, height: 80,
+        background: 'radial-gradient(circle, rgba(51,102,255,0.22), transparent 70%)',
+        filter: 'blur(20px)',
+        pointerEvents: 'none',
+      }} />
+      <div className="grain-subtle" />
+      <strong style={{
+        fontFamily: 'var(--font-display), Inter, sans-serif',
+        fontWeight: 700, fontSize: 28, color: color ?? '#FFFFFF',
+        letterSpacing: '-0.01em', display: 'block',
+      }}>
         {value}
-      </p>
+      </strong>
+      <em style={{
+        fontStyle: 'normal',
+        fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.10em',
+        color: 'rgba(80,130,255,0.75)', fontWeight: 600,
+        display: 'block', marginTop: 8,
+      }}>
+        {title}
+      </em>
     </div>
   );
 }
 
-// ─── Urgencia Badge ─────────────────────────────────────────────────────────
-
 function UrgenciaBadge({ dias }: { dias: number }) {
-  let bg: string, border: string, color: string, text: string;
+  let cls: string, text: string;
 
   if (dias < 0) {
-    bg = 'rgba(127,29,29,0.2)';
-    border = 'rgba(185,28,28,0.5)';
-    color = '#fca5a5';
-    text = `VENCIDA HACE ${Math.abs(dias)} DÍAS`;
+    cls = 'urg-red';
+    text = 'Vencida';
   } else if (dias < 30) {
-    bg = 'rgba(239,68,68,0.15)';
-    border = 'rgba(239,68,68,0.35)';
-    color = '#f87171';
-    text = `VENCE EN ${dias} DÍAS`;
-  } else if (dias < 60) {
-    bg = 'rgba(234,179,8,0.15)';
-    border = 'rgba(234,179,8,0.35)';
-    color = '#fbbf24';
-    text = `VENCE EN ${dias} DÍAS`;
+    cls = 'urg-orange';
+    text = `${dias} días`;
+  } else if (dias <= 60) {
+    cls = 'urg-yellow';
+    text = `${dias} días`;
   } else {
-    bg = 'rgba(34,197,94,0.15)';
-    border = 'rgba(34,197,94,0.35)';
-    color = '#34d399';
-    text = `VENCE EN ${dias} DÍAS`;
+    cls = 'urg-green';
+    text = `${dias} días`;
   }
+
+  const styles: Record<string, React.CSSProperties> = {
+    'urg-red': { color: '#fecaca', background: 'rgba(239,68,68,0.18)', border: '1px solid rgba(239,68,68,0.4)' },
+    'urg-orange': { color: '#fed7aa', background: 'rgba(249,115,22,0.18)', border: '1px solid rgba(249,115,22,0.4)' },
+    'urg-yellow': { color: '#fef3c7', background: 'rgba(234,179,8,0.18)', border: '1px solid rgba(234,179,8,0.4)' },
+    'urg-green': { color: '#bbf7d0', background: 'rgba(16,185,129,0.18)', border: '1px solid rgba(16,185,129,0.4)' },
+  };
 
   return (
     <span style={{
-      fontSize: 9, fontWeight: 900, padding: '2px 8px', borderRadius: 4,
-      background: bg, border: `1px solid ${border}`, color,
-      textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap',
+      display: 'inline-flex', alignItems: 'center',
+      padding: '4px 10px', borderRadius: 999,
+      fontSize: 11, fontWeight: 500,
+      ...styles[cls],
     }}>
       {text}
     </span>
   );
 }
 
-// ─── Dashboard Page ─────────────────────────────────────────────────────────
+/** Extrae nombre legible del email: "sergio.garcia@..." → "Sergio" */
+function displayName(email: string | null): string {
+  if (!email) return 'Usuario';
+  const local = email.split('@')[0]; // "sergio.garcia"
+  const first = local.split(/[._-]/)[0]; // "sergio"
+  return first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
+}
+
+/** Normaliza tipo de vehículo: singular, primera letra mayúscula */
+const TIPO_NORMALIZE: Record<string, string> = {
+  'furgoneta': 'Furgoneta',
+  'furgonetas': 'Furgoneta',
+  'furgon': 'Furgoneta',
+  'furgones': 'Furgoneta',
+  'turismo': 'Turismo',
+  'turismos': 'Turismo',
+  'cabeza tractora': 'Cabeza tractora',
+  'cabezas tractoras': 'Cabeza tractora',
+  'camion rigido': 'Camión rígido',
+  'camión rígido': 'Camión rígido',
+  'camiones rigidos': 'Camión rígido',
+  'semirremolque': 'Semirremolque',
+  'semirremolques': 'Semirremolque',
+  'derivado de turismo': 'Derivado de turismo',
+  'industrial matriculado': 'Industrial matriculado',
+  'industrial no matriculado': 'Industrial no matriculado',
+  'motocicleta': 'Motocicleta',
+  'motocicletas': 'Motocicleta',
+  'ciclomotor': 'Ciclomotor',
+  'ciclomotores': 'Ciclomotor',
+  'autobus': 'Autobús',
+  'autobuses': 'Autobús',
+};
+
+function normalizeTipo(raw: string): string {
+  const key = raw.toLowerCase().trim();
+  return TIPO_NORMALIZE[key] ?? (raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase());
+}
 
 export default function DashboardPage() {
+  const { user } = useAuth();
   const carpetas = useMemo(() => listarCarpetas(), []);
   const corredores = useMemo(() => listarCorredores(), []);
   const corredorMap = useMemo(() => {
@@ -100,28 +148,20 @@ export default function DashboardPage() {
     return map;
   }, [corredores]);
 
-  // ── KPIs ──────────────────────────────────────────────────────────────────
-
   const flotasActivas = carpetas.filter(c => c.estado !== 'RECHAZADA').length;
-
   const totalVehiculos = carpetas.reduce((sum, c) => {
     const rows = c.trabajo?.length > 0 ? c.trabajo : c.original;
     return sum + (rows?.length ?? 0);
   }, 0);
-
   const totalCorredores = corredores.length;
-
   const contratadas = carpetas.filter(c => c.estado === 'CONTRATADA').length;
   const rechazadas = carpetas.filter(c => c.estado === 'RECHAZADA').length;
   const tasaContratacion = (contratadas + rechazadas) > 0
-    ? Math.round((contratadas / (contratadas + rechazadas)) * 100)
-    : null;
+    ? Math.round((contratadas / (contratadas + rechazadas)) * 100) : null;
   const tasaColor = tasaContratacion === null ? '#fff' : tasaContratacion >= 50 ? '#34d399' : '#f87171';
 
-  // ── Gráficos ──────────────────────────────────────────────────────────────
-
   const flotasPorEstado = useMemo(() => {
-    const counts: Record<string, number> = { 'EN ESTUDIO': 0, 'CONTRATADA': 0, 'RECHAZADA': 0 };
+    const counts: Record<string, number> = { 'EN ESTUDIO': 0, 'OFERTADA': 0, 'CONTRATADA': 0, 'RECHAZADA': 0 };
     carpetas.forEach(c => { counts[c.estado] = (counts[c.estado] ?? 0) + 1; });
     return Object.entries(counts).map(([name, value]) => ({ name, value }));
   }, [carpetas]);
@@ -131,16 +171,17 @@ export default function DashboardPage() {
     carpetas.forEach(c => {
       const rows = c.trabajo?.length > 0 ? c.trabajo : c.original;
       (rows ?? []).forEach(r => {
-        const tipo = r['tipo_vehiculo']?.trim();
-        if (tipo) counts[tipo] = (counts[tipo] ?? 0) + 1;
+        const raw = r['tipo_vehiculo']?.trim();
+        if (raw) {
+          const tipo = normalizeTipo(raw);
+          counts[tipo] = (counts[tipo] ?? 0) + 1;
+        }
       });
     });
     return Object.entries(counts)
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value);
   }, [carpetas]);
-
-  // ── Alertas de renovación ─────────────────────────────────────────────────
 
   const alertas = useMemo(() => {
     return carpetas
@@ -154,100 +195,103 @@ export default function DashboardPage() {
       .sort((a, b) => a.dias - b.dias);
   }, [carpetas, corredorMap]);
 
-  // ── Render ────────────────────────────────────────────────────────────────
-
   return (
-    <div className="h-full overflow-y-auto custom-scrollbar animate-in fade-in duration-500">
-      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 8px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }} className="animate-in fade-in duration-500">
 
-        {/* Header */}
-        <div className="glass-card flex items-center justify-between px-5 py-3 rounded-2xl">
-          <div>
-            <h1 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2">
-              <div className="w-1.5 h-4 rounded-full" style={{ background: '#6366f1' }} />
-              Dashboard
-            </h1>
-            <p className="text-[10px] mt-0.5 uppercase tracking-widest font-bold" style={{ color: 'rgba(255,255,255,0.3)' }}>
-              Vista general del negocio
-            </p>
-          </div>
-        </div>
+      {/* Greeting */}
+      <div>
+        <h2 style={{
+          fontFamily: 'var(--font-display), Inter, sans-serif',
+          fontWeight: 700, fontSize: 24, margin: 0, color: '#FFFFFF',
+          letterSpacing: '-0.01em',
+        }}>
+          {(() => { const h = new Date().getHours(); return h < 14 ? 'Buenos días' : h < 21 ? 'Buenas tardes' : 'Buenas noches'; })()}, {displayName(user)}
+        </h2>
+        <span style={{ fontSize: 14, color: 'rgba(178,206,255,0.65)' }}>
+          {new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+        </span>
+      </div>
 
-        {/* KPIs */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
-          <KpiCard title="Flotas activas" value={String(flotasActivas)} />
-          <KpiCard title="Vehículos" value={totalVehiculos.toLocaleString('es-ES')} />
-          <KpiCard title="Corredores" value={String(totalCorredores)} />
-          <KpiCard title="Tasa contratación" value={tasaContratacion !== null ? `${tasaContratacion}%` : '—'} color={tasaColor} />
-        </div>
+      {/* KPIs */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+        <KpiCard title="Flotas activas" value={String(flotasActivas)} />
+        <KpiCard title="Vehículos totales" value={totalVehiculos.toLocaleString('es-ES')} />
+        <KpiCard title="Corredores" value={String(totalCorredores)} />
+        <KpiCard title="Tasa contratación" value={tasaContratacion !== null ? `${tasaContratacion}%` : '—'} color={tasaColor} />
+      </div>
 
-        {/* Gráficos */}
-        <DashboardCharts
-          flotasPorEstado={flotasPorEstado}
-          vehiculosPorTipo={vehiculosPorTipo}
-          hasCarpetas={carpetas.length > 0}
-        />
+      {/* Charts */}
+      <DashboardCharts
+        flotasPorEstado={flotasPorEstado}
+        vehiculosPorTipo={vehiculosPorTipo}
+        hasCarpetas={carpetas.length > 0}
+      />
 
-        {/* Alertas de renovación */}
-        <div style={{ ...glassCard, marginBottom: 24 }}>
-          <p style={{ fontSize: 10, fontWeight: 900, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 16 }}>
+      {/* Renewal alerts */}
+      <div style={{ ...glass, padding: '24px 26px', position: 'relative', overflow: 'hidden' }}>
+        <div className="grain-subtle" />
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 22 }}>
+          <h3 style={{
+            fontFamily: 'var(--font-display), Inter, sans-serif',
+            fontWeight: 600, fontSize: 17, margin: 0, color: '#FFFFFF',
+          }}>
             Próximas renovaciones
-          </p>
-
-          {alertas.length === 0 ? (
-            <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: 12, textAlign: 'center', padding: '30px 0' }}>
-              Sin renovaciones próximas en los siguientes 90 días.
-            </p>
-          ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
-                <thead>
-                  <tr>
-                    {['Flota', 'Corredor', 'Vencimiento', 'Periodicidad', 'Estado'].map(h => (
-                      <th key={h} style={{
-                        textAlign: 'left', padding: '8px 12px', fontSize: 10, fontWeight: 800,
-                        color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em',
-                        borderBottom: '1px solid rgba(255,255,255,0.06)',
-                      }}>
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {alertas.map(({ carpeta, dias, corredor }) => (
-                    <tr key={carpeta.id}
-                      style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
-                      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.02)')}
-                      onMouseLeave={e => (e.currentTarget.style.background = '')}>
-                      <td style={{ padding: '10px 12px' }}>
-                        <Link href={`/flotas?id=${carpeta.id}`}
-                          style={{ color: '#818cf8', fontWeight: 700, textDecoration: 'none', fontSize: 12 }}
-                          onMouseEnter={e => (e.currentTarget.style.textDecoration = 'underline')}
-                          onMouseLeave={e => (e.currentTarget.style.textDecoration = 'none')}>
-                          {carpeta.nombre}
-                        </Link>
-                      </td>
-                      <td style={{ padding: '10px 12px', color: corredor ? '#e2e8f0' : 'rgba(255,255,255,0.3)', fontWeight: 600 }}>
-                        {corredor?.nombre ?? 'Sin corredor'}
-                      </td>
-                      <td style={{ padding: '10px 12px', color: '#e2e8f0', fontFamily: 'monospace', fontWeight: 600 }}>
-                        {formatFecha(carpeta.header.fechaVencimiento!)}
-                      </td>
-                      <td style={{ padding: '10px 12px', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>
-                        {corredor?.periodicidad ? corredor.periodicidad.charAt(0).toUpperCase() + corredor.periodicidad.slice(1) : '—'}
-                      </td>
-                      <td style={{ padding: '10px 12px' }}>
-                        <UrgenciaBadge dias={dias} />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          </h3>
+          <span style={{ fontSize: 12, color: 'rgba(178,206,255,0.65)', letterSpacing: '0.06em' }}>
+            Distribución actual
+          </span>
         </div>
 
+        {alertas.length === 0 ? (
+          <p style={{ color: 'rgba(178,198,245,0.38)', fontSize: 12, textAlign: 'center', padding: '30px 0', margin: 0 }}>
+            Sin renovaciones próximas en los siguientes 90 días.
+          </p>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <thead>
+              <tr>
+                {['Flota', 'Corredor', 'Vencimiento', 'Periodicidad', 'Estado'].map(h => (
+                  <th key={h} style={{
+                    textAlign: 'left', padding: '10px 14px', fontSize: 11, fontWeight: 600,
+                    textTransform: 'uppercase', letterSpacing: '0.10em',
+                    color: 'rgba(80,130,255,0.75)',
+                    borderBottom: '1px solid rgba(61,112,255,0.22)',
+                  }}>
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {alertas.map(({ carpeta, dias, corredor }) => (
+                <tr key={carpeta.id} style={{ transition: 'background 180ms' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'rgba(51,102,255,0.04)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = '')}>
+                  <td style={{ padding: '14px', fontSize: 13, borderBottom: '1px solid rgba(51,102,255,0.08)' }}>
+                    <Link href={`/flotas?id=${carpeta.id}`}
+                      style={{ color: '#6699FF', fontWeight: 600, textDecoration: 'none' }}
+                      onMouseEnter={e => (e.currentTarget.style.color = '#FFFFFF')}
+                      onMouseLeave={e => (e.currentTarget.style.color = '#6699FF')}>
+                      {carpeta.nombre}
+                    </Link>
+                  </td>
+                  <td style={{ padding: '14px', fontSize: 13, color: '#D0DFFF', borderBottom: '1px solid rgba(51,102,255,0.08)' }}>
+                    {corredor?.nombre ?? 'Sin corredor'}
+                  </td>
+                  <td style={{ padding: '14px', fontSize: 13, color: '#D0DFFF', fontFamily: 'monospace', borderBottom: '1px solid rgba(51,102,255,0.08)' }}>
+                    {formatFecha(carpeta.header.fechaVencimiento!)}
+                  </td>
+                  <td style={{ padding: '14px', fontSize: 13, color: 'rgba(188,216,255,0.7)', borderBottom: '1px solid rgba(51,102,255,0.08)' }}>
+                    {corredor?.periodicidad ? corredor.periodicidad.charAt(0).toUpperCase() + corredor.periodicidad.slice(1) : '—'}
+                  </td>
+                  <td style={{ padding: '14px', borderBottom: '1px solid rgba(51,102,255,0.08)' }}>
+                    <UrgenciaBadge dias={dias} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );

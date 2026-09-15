@@ -6,14 +6,129 @@ import { catalogoDataSource } from "@/core/catalogo/catalogoDataSource.csv";
 import type { SearchParams } from "@/core/catalogo/catalogoDataSource";
 
 export const runtime = "nodejs";
-export const maxDuration = 60; // Extend generic Vercel timeouts if eventually hosted
+export const maxDuration = 120;
 
 const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15MB
 const ALLOWED_MIME_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
 
+const OCR_ENGINE = process.env.OCR_ENGINE || "azure"; // "azure" | "donut"
+const OCR_SERVER_URL = process.env.OCR_SERVER_URL || "http://127.0.0.1:5050";
+
+/**
+ * Llama al servidor Python Donut OCR y devuelve campos extraidos.
+ */
+async function processWithDonut(
+    buffer: Buffer,
+    mimeType: string,
+    fileName: string,
+    tipoDocumento: string
+): Promise<{ campos: Record<string, unknown>; tipo_documento: string; tiempo_ms: number }> {
+    const blob = new Blob([new Uint8Array(buffer)], { type: mimeType });
+    const form = new FormData();
+    form.append("file", blob, fileName);
+    form.append("tipo_documento", tipoDocumento);
+
+    const res = await fetch(`${OCR_SERVER_URL}/extract`, {
+        method: "POST",
+        body: form,
+    });
+
+    if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`Donut OCR server error (${res.status}): ${errText}`);
+    }
+
+    return await res.json();
+}
+
+/**
+ * Mapea los campos Donut al formato extractedFields que espera el frontend.
+ */
+function mapDonutToExtractedFields(campos: Record<string, unknown>, tipoDoc: string): Record<string, unknown> {
+    const tipo = String(tipoDoc).toUpperCase();
+
+    if (tipo.includes("FICHA")) {
+        return {
+            plate: campos.matricula ?? null,
+            D1: campos.D1_marca ?? null,
+            D3: campos.D3_modelo ?? null,
+            E: campos.E_bastidor ?? null,
+            J: campos.J_categoria ?? null,
+            J1: campos.J1_carroceria ?? null,
+            R: campos.R_color ?? null,
+            P1: campos.P1_cilindrada ?? null,
+            P2: campos.P2_potencia_kw ?? null,
+            combustible: campos.P3_combustible ?? null,
+            S1: campos.S1_plazas ?? null,
+            F1: campos.F1_masa_maxima ?? null,
+            F2: campos.F2_masa_servicio ?? null,
+            V7: campos.V7_co2 ?? null,
+            V9: campos.V9_euro ?? null,
+            fechaEmision: campos.fecha_emision ?? null,
+            modelo: campos.D3_modelo ?? null,
+        };
+    }
+
+    if (tipo.includes("PERMISO")) {
+        return {
+            plate: campos.A_matricula ?? null,
+            titular: campos.titular ?? null,
+            D1: campos.D1_marca ?? null,
+            D2: campos.D2_tipo_variante ?? null,
+            D3: campos.D3_denominacion ?? null,
+            D4: campos.D4_uso ?? null,
+            E: campos.E_bastidor ?? null,
+            F1: campos.F1_masa_maxima ?? null,
+            F2: campos.F2_masa_servicio ?? null,
+            G: campos.G_masa_orden_marcha ?? null,
+            P1: campos.P1_cilindrada ?? null,
+            P2: campos.P2_potencia ?? null,
+            combustible: campos.P3_combustible ?? null,
+            S1: campos.S1_plazas ?? null,
+            fechaMatriculacion: campos.I_fecha_matriculacion ?? null,
+            fechaPermiso: campos.I1_fecha_permiso ?? null,
+            localidad: campos.I2_localidad ?? null,
+            modelo: campos.D3_denominacion ?? null,
+        };
+    }
+
+    if (tipo.includes("CARNET")) {
+        return {
+            apellidos: campos.campo_1_apellidos ?? null,
+            nombre: campos.campo_2_nombre ?? null,
+            fechaNacimiento: campos.campo_3_nacimiento ?? null,
+            paisNacimiento: campos.campo_3_pais ?? null,
+            fechaExpedicion: campos.campo_4a_expedicion ?? null,
+            fechaCaducidad: campos.campo_4b_caducidad ?? null,
+            autoridadExpedicion: campos.campo_4c_autoridad ?? null,
+            numeroDocumento: campos.campo_5_numero ?? null,
+            categorias: campos.campo_9_categorias ?? null,
+            cara: campos.cara ?? null,
+            // Pasar tambien campos crudos de categorias trasera
+            ...Object.fromEntries(
+                Object.entries(campos).filter(([k]) => k.startsWith("cat_"))
+            ),
+        };
+    }
+
+    // Fallback: devolver tal cual
+    return campos as Record<string, unknown>;
+}
+
+/**
+ * Mapea tipo Donut a SingleDocType del frontend.
+ */
+function mapDonutDocType(tipoDoc: string): string {
+    const tipo = String(tipoDoc).toUpperCase();
+    if (tipo.includes("FICHA")) return "FICHA_TECNICA";
+    if (tipo.includes("PERMISO")) return "PERMISO_V2";
+    if (tipo.includes("CARNET")) return "CARNET_CONDUCIR";
+    return "UNKNOWN";
+}
+
 export async function POST(req: NextRequest) {
     let docIdForHistory: string | null = null;
-    if (process.env.ENABLE_OCR !== 'true') {
+    if (process.env.ENABLE_OCR !== 'true' && OCR_ENGINE === 'azure') {
         return NextResponse.json({ ok: false, error: 'OCR desactivado temporalmente.', errorCode: 'OCR_DISABLED' }, { status: 503 });
     }
     try {
@@ -63,6 +178,75 @@ export async function POST(req: NextRequest) {
         let finalMimeType = file.type;
         let optResult = null;
 
+        // =====================================================================
+        // DONUT ENGINE: Si OCR_ENGINE=donut, usar servidor Python local
+        // =====================================================================
+        if (OCR_ENGINE === 'donut') {
+            // Donut solo acepta imagenes — PDFs no soportados en este motor
+            if (file.type === 'application/pdf') {
+                return NextResponse.json(
+                    { ok: false, error: 'El motor Donut solo acepta imagenes (JPG/PNG). Para PDFs, usa OCR_ENGINE=azure.', errorCode: 'DONUT_PDF_UNSUPPORTED' },
+                    { status: 400 }
+                );
+            }
+
+            // Mapear docCategory a tipo_documento para Donut
+            const DONUT_TYPE_MAP: Record<string, string> = {
+                ficha: 'ficha_tecnica_moderna',
+                permiso: 'permiso_circulacion',
+                carnet: 'carnet_conducir',
+            };
+            const tipoDocumento = docCategory ? (DONUT_TYPE_MAP[docCategory] ?? 'auto') : 'auto';
+
+            const donutResult = await processWithDonut(buffer, finalMimeType, file.name, tipoDocumento);
+            const tipoDetectado = donutResult.tipo_documento || 'DESCONOCIDO';
+            const extractedFields = mapDonutToExtractedFields(donutResult.campos, tipoDetectado);
+            const documentType = mapDonutDocType(tipoDetectado);
+
+            const finalData: Record<string, unknown> = {
+                ok: true,
+                docId: docIdForHistory || crypto.randomUUID(),
+                usedModel: 'donut-orion',
+                detectedType: documentType,
+                documentType: documentType,
+                extractorUsed: 'donut',
+                pagesTotalDetected: 1,
+                pipelineUsed: 'simple',
+                pipelineReason: 'OCR_ENGINE=donut',
+                extractedFields,
+                donutRaw: donutResult.campos,
+                donutTiempoMs: donutResult.tiempo_ms,
+                docCategory: docCategory || undefined,
+                docSubtype: docSubtype || undefined,
+            };
+
+            // Persistir en historial si hay docId
+            if (docIdForHistory) {
+                try {
+                    const summary = await readSummary();
+                    const idx = summary.records.findIndex((r: { id: string }) => r.id === docIdForHistory);
+                    if (idx >= 0) {
+                        summary.records[idx] = {
+                            ...summary.records[idx],
+                            ...finalData,
+                            status: "completed",
+                            progress: 100,
+                            updatedAt: Date.now()
+                        };
+                        await writeSummaryAtomic(summary);
+                    }
+                } catch {
+                    // TODO: production logger
+                }
+            }
+
+            return NextResponse.json(finalData, { status: 200 });
+        }
+
+        // =====================================================================
+        // AZURE ENGINE: Flujo original
+        // =====================================================================
+
         // FIX 1: Si llega pageNumber y el archivo es un PDF multi-página,
         // extraer esa página específica como PDF de 1 página antes de enviarlo a Azure.
         // Esto preserva la resolución nativa — sin rasterización.
@@ -78,10 +262,10 @@ export async function POST(req: NextRequest) {
                     const singlePageBytes = await singlePageDoc.save();
                     buffer = Buffer.from(singlePageBytes);
                 } else {
-                    console.warn(`[ORION API] pageNumber ${pageNumber} fuera de rango (${srcDoc.getPageCount()} páginas)`);
+                    // pageNumber fuera de rango
                 }
-            } catch (pageErr) {
-                console.warn('[ORION API] No se pudo extraer página del PDF, enviando PDF completo:', pageErr);
+            } catch {
+                // No se pudo extraer página del PDF, enviando PDF completo
             }
         }
 
@@ -100,7 +284,7 @@ export async function POST(req: NextRequest) {
                 if (optError instanceof Error && 'code' in optError && (optError as Error & { code: string }).code === "AZURE_INPUT_TOO_LARGE_AFTER_OPTIMIZE") {
                     return NextResponse.json({ ok: false, error: (optError as Error).message, errorCode: (optError as Error & { code: string }).code }, { status: 400 });
                 }
-                console.warn("[ORION API] Optimization failed/skipped:", optError);
+                // Optimization failed/skipped
             }
         }
 
@@ -112,8 +296,8 @@ export async function POST(req: NextRequest) {
                 const { PDFDocument } = require('pdf-lib');
                 const pdfDoc = await PDFDocument.load(buffer, { ignoreEncryption: true });
                 pagesTotalDetected = pdfDoc.getPageCount();
-            } catch (e) {
-                console.warn("[ORION API] Could not parse PDF page count, defaulting to 1.");
+            } catch {
+                // Could not parse PDF page count, defaulting to 1
             }
 
             if (pagesTotalDetected > 1) {
@@ -170,8 +354,8 @@ export async function POST(req: NextRequest) {
                         replayResult = JSON.parse(rawJsonStr);
                     }
                 }
-            } catch (e) {
-                console.warn("[ORION API] REPLAY/LOCK failed to read previous JSON.", e);
+            } catch {
+                // REPLAY/LOCK failed to read previous JSON
             }
         }
 
@@ -182,8 +366,8 @@ export async function POST(req: NextRequest) {
             const fsp = require('fs').promises;
             try {
                 reportMarkdown = await fsp.readFile(result.paths.mdPath, 'utf8');
-            } catch (e) {
-                console.warn("[ORION API] Could not read report.md", e);
+            } catch {
+                // Could not read report.md
             }
         }
 
@@ -214,15 +398,12 @@ export async function POST(req: NextRequest) {
                 if (Object.keys(searchParams).length > 0) {
                     catalogoCandidatos = await catalogoDataSource.search(searchParams);
                 }
-            } catch (catErr) {
-                console.warn('[ORION API] Matching catálogo falló (no crítico):', catErr);
+            } catch {
+                // Matching catálogo falló (no crítico)
             }
         }
 
         const azurePages = result.extractedPreview?.pageCount || 1;
-        if (azurePages !== pagesTotalDetected) {
-            console.warn(`[ORION API] Page count discrepancy: PDF-lib=${pagesTotalDetected}, Azure=${azurePages}`);
-        }
 
         const efKeys = Object.keys(result.extractedFields || {});
         const noFieldsExtracted = efKeys.length === 0;
@@ -298,16 +479,14 @@ export async function POST(req: NextRequest) {
                     };
                     await writeSummaryAtomic(summary);
                 }
-            } catch (histErr) {
-                console.error("[ORION API] Failed to persist completion to history DB", histErr);
+            } catch {
+                // TODO: production logger
             }
         }
 
         return NextResponse.json(finalData, { status: noFieldsExtracted ? 207 : 200 });
 
     } catch (error: unknown) {
-        console.error("[ORION API] Azure Document Intelligence Analyze Error:", error);
-
         let status = 500;
         let errorMessage = (error instanceof Error ? error.message : null) || "Internal server error";
 

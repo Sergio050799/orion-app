@@ -1,8 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
 import { catalogoDataSource } from "@/core/catalogo/catalogoDataSource.csv";
-import type { SearchParams } from "@/core/catalogo/catalogoDataSource";
+import type { SearchParams, CatalogoCandidato } from "@/core/catalogo/catalogoDataSource";
 
 export const runtime = "nodejs";
+
+function normalizeCandidato(c: CatalogoCandidato) {
+    const iniYear = c.fec_ini_comerc ? parseInt(c.fec_ini_comerc.substring(0, 4)) : 0;
+    return {
+        id_veh: c.id_veh,
+        marca: c.marca,
+        modelo: c.modelo,
+        version: c.version,
+        combustible: c.combustible,
+        kw: c.kw,
+        cv: c.cv,
+        cilindrada: c.cilindrada,
+        plazas: c.num_plazas_max,
+        tara: c.tara,
+        pma: c.pma ?? 0,
+        puertas: c.num_puertas,
+        anyo: iniYear,
+        pvp: c.pvp || undefined,
+        score: c.score,
+    };
+}
 
 export async function GET(req: NextRequest) {
     try {
@@ -47,12 +68,12 @@ export async function GET(req: NextRequest) {
             );
         }
 
-        const candidatos = await catalogoDataSource.search(params);
+        const raw = await catalogoDataSource.search(params);
+        const candidatos = raw.map(normalizeCandidato);
 
         return NextResponse.json({ ok: true, candidatos }, { status: 200 });
 
     } catch (error: any) {
-        console.error("[CATALOGO API] Error en search:", error);
         return NextResponse.json({ ok: false, error: error.message || "Error interno" }, { status: 500 });
     }
 }
@@ -81,12 +102,12 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        const candidates = await catalogoDataSource.search(params);
+        const raw = await catalogoDataSource.search(params);
+        const candidates = raw.map(normalizeCandidato);
 
         return NextResponse.json({ candidates }, { status: 200 });
 
     } catch (error: any) {
-        console.error("[CATALOGO API POST] Error en search:", error);
         return NextResponse.json({ ok: false, error: error.message || "Error interno" }, { status: 500 });
     }
 }

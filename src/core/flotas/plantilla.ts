@@ -1,45 +1,36 @@
 import ExcelJS from 'exceljs';
 import type { FlotaCarpeta } from './carpeta';
 
-// ─── Colores corporativos ─────────────────────────────────────────────────────
+// ─── Paleta MMT ────────────────────────────────────────────────────────────
 const C = {
-  indigo:       '6366F1',
-  indigo_dark:  '4338CA',
-  indigo_light: 'EEF2FF',
-  white:        'FFFFFF',
-  gray_50:      'F9FAFB',
-  gray_100:     'F3F4F6',
-  gray_300:     'D1D5DB',
-  gray_700:     '374151',
-  text:         '111827',
-  border:       'E5E7EB',
+  azul_mmt:   '002F82',   // azul corporativo MMT
+  verde:      '00B050',   // verde MMT (headers tabla)
+  white:      'FFFFFF',
+  gray_50:    'F0F4FA',   // zebra clara
+  gray_100:   'E4EAF4',
+  text:       '0A1628',
+  border:     'B8C8E8',
 };
 
 // ─── Columnas de datos ────────────────────────────────────────────────────────
 const COLUMNS = [
   { key: 'cia_actual',            header: 'CIA ACTUAL',            width: 18 },
-  { key: 'num_poliza_actual',     header: 'Nº PÓLIZA ACTUAL',      width: 20 },
+  { key: 'num_poliza_actual',     header: 'N POLIZA ACTUAL',       width: 20 },
   { key: 'fecha_vencimiento',     header: 'FECHA VENCIMIENTO',     width: 18 },
-  { key: 'matricula',             header: 'MATRÍCULA',             width: 12 },
+  { key: 'matricula',             header: 'MATRICULA',             width: 12 },
   { key: 'marca',                 header: 'MARCA',                 width: 14 },
   { key: 'modelo',                header: 'MODELO',                width: 18 },
-  { key: 'tipo_vehiculo',         header: 'TIPO VEHÍCULO',         width: 26 },
+  { key: 'tipo_vehiculo',         header: 'TIPO VEHICULO',         width: 26 },
   { key: 'uso',                   header: 'USO',                   width: 22 },
-  { key: 'kw',                    header: 'KW',                    width: 8  },
-  { key: 'cv',                    header: 'CV',                    width: 8  },
-  { key: 'tn',                    header: 'TN',                    width: 8  },
-  { key: 'ambito',                header: 'ÁMBITO',                width: 14 },
+  { key: 'ambito',                header: 'AMBITO',                width: 14 },
   { key: 'coberturas_solicitadas',header: 'COBERTURAS SOLICITADAS',width: 28 },
-  { key: 'lunas',                 header: 'LUNAS',                 width: 8  },
+  { key: 'lunas',                 header: 'LUNAS',                 width: 10 },
   { key: 'frq',                   header: 'FRQ',                   width: 8  },
-  { key: 'asistencia',            header: 'ASISTENCIA',            width: 14 },
+  { key: 'asistencia',            header: 'ASISTENCIA',            width: 16 },
   { key: 'prima_referencia',      header: 'PRIMA REFERENCIA',      width: 16 },
 ];
 
-// Fila de datos empieza en la 7 (rows 1-2: título, 3-4: header empresa, 5: separador, 6: cabeceras)
-const DATA_START_ROW = 7;
-const KW_COL_INDEX   = COLUMNS.findIndex(c => c.key === 'kw') + 1;   // posición 1-based
-const CV_COL_INDEX   = COLUMNS.findIndex(c => c.key === 'cv') + 1;
+const DATA_START_ROW = 6; // filas 1-2: título+info, 3: info, 4: separador, 5: cabeceras
 
 function colLetter(n: number): string {
   let s = '';
@@ -51,11 +42,19 @@ function colLetter(n: number): string {
   return s;
 }
 
-// ─── Función principal ────────────────────────────────────────────────────────
+
+// ─── Aplicar estilo a fila completa (sin merge) ────────────────────────────
+function fillRow(ws: ExcelJS.Worksheet, row: number, fill: ExcelJS.Fill) {
+  for (let c = 1; c <= COLUMNS.length; c++) {
+    ws.getCell(row, c).fill = fill;
+  }
+}
+
+// ─── Funcion principal ────────────────────────────────────────────────────────
 
 export async function generarPlantillaExcel(carpeta?: Pick<FlotaCarpeta, 'nombre' | 'header'>): Promise<Blob> {
   const wb = new ExcelJS.Workbook();
-  wb.creator = 'Orion';
+  wb.creator = 'MMT Seguros';
   wb.created = new Date();
 
   const ws = wb.addWorksheet('Estudio de Flotas', {
@@ -63,99 +62,106 @@ export async function generarPlantillaExcel(carpeta?: Pick<FlotaCarpeta, 'nombre
     pageSetup: { orientation: 'landscape', fitToPage: true, fitToWidth: 1 },
   });
 
-  // ── Anchos de columna ──────────────────────────────────────────────────────
   ws.columns = COLUMNS.map(col => ({ key: col.key, width: col.width }));
 
-  // ── Fila 1: Título principal ───────────────────────────────────────────────
-  ws.mergeCells(1, 1, 1, COLUMNS.length);
-  const titleCell = ws.getCell('A1');
-  titleCell.value = 'ESTUDIO DE FLOTAS — ORION';
-  titleCell.font   = { name: 'Calibri', size: 16, bold: true, color: { argb: 'FF' + C.white } };
-  titleCell.fill   = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + C.indigo_dark } };
-  titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
-  ws.getRow(1).height = 32;
+  const azulFill: ExcelJS.Fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + C.azul_mmt } };
 
-  // ── Fila 2: Subtítulo / info empresa ──────────────────────────────────────
+  // ── Fila 1: Titulo principal (fondo azul MMT) ─────────────────────────────
+  fillRow(ws, 1, azulFill);
+  const titleCell = ws.getCell('C1');
+  titleCell.value = 'ESTUDIO DE FLOTAS';
+  titleCell.font = { name: 'Calibri', size: 16, bold: true, color: { argb: 'FF' + C.white } };
+  titleCell.alignment = { horizontal: 'left', vertical: 'middle' };
+  ws.getRow(1).height = 42;
+  for (let c = 1; c <= COLUMNS.length; c++) {
+    ws.getCell(1, c).fill = azulFill;
+  }
+
+  // ── Logo MMT en la cabecera (esquina izquierda) ──────────────────────────
+  try {
+    const res = await fetch('/LOGOMMT.jpg');
+    if (res.ok) {
+      const buf = await res.arrayBuffer();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const logoId = wb.addImage({ buffer: Buffer.from(buf) as any, extension: 'jpeg' });
+      ws.addImage(logoId, {
+        tl: { col: 0, row: 0 },
+        ext: { width: 119, height: 53 },  // 3.15cm x 1.4cm
+      });
+    }
+  } catch { /* logo not found — continue without it */ }
+
+  // ── Fila 2: Info empresa ───────────────────────────────────────────────────
   const nombreEstudio = carpeta?.nombre ?? 'NUEVO ESTUDIO';
-  ws.mergeCells(2, 1, 2, COLUMNS.length);
-  const subtitleCell = ws.getCell('A2');
-  subtitleCell.value = nombreEstudio.toUpperCase();
-  subtitleCell.font  = { name: 'Calibri', size: 11, bold: true, color: { argb: 'FF' + C.indigo } };
-  subtitleCell.fill  = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + C.indigo_light } };
-  subtitleCell.alignment = { horizontal: 'center', vertical: 'middle' };
   ws.getRow(2).height = 22;
+  fillRow(ws, 2, { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + C.gray_100 } });
 
-  // ── Fila 3: Datos de la empresa (etiquetas) ────────────────────────────────
-  const labelStyle = (cell: ExcelJS.Cell, label: string) => {
-    cell.value = label;
-    cell.font  = { name: 'Calibri', size: 9, bold: true, color: { argb: 'FF' + C.gray_700 } };
-    cell.fill  = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + C.gray_100 } };
-    cell.alignment = { horizontal: 'left', vertical: 'middle' };
-  };
-  const valueStyle = (cell: ExcelJS.Cell, value: string) => {
-    cell.value = value || '';
-    cell.font  = { name: 'Calibri', size: 9, color: { argb: 'FF' + C.text } };
-    cell.fill  = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + C.white } };
-    cell.border = { bottom: { style: 'thin', color: { argb: 'FF' + C.indigo } } };
-    cell.alignment = { horizontal: 'left', vertical: 'middle' };
-  };
+  const labelFont: Partial<ExcelJS.Font> = { name: 'Calibri', size: 9, bold: true, color: { argb: 'FF' + C.azul_mmt } };
+  const valueFont: Partial<ExcelJS.Font> = { name: 'Calibri', size: 9, color: { argb: 'FF' + C.text } };
+  const leftAlign: Partial<ExcelJS.Alignment> = { horizontal: 'left', vertical: 'middle' };
 
-  // CIF | TOMADOR | ACTIVIDAD
-  ws.mergeCells(3, 1, 3, 2);  labelStyle(ws.getCell(3, 1), 'CIF:');
-  ws.mergeCells(3, 3, 3, 5);  valueStyle(ws.getCell(3, 3), carpeta?.header.cif ?? '');
-  ws.mergeCells(3, 6, 3, 7);  labelStyle(ws.getCell(3, 6), 'TOMADOR:');
-  ws.mergeCells(3, 8, 3, 12); valueStyle(ws.getCell(3, 8), carpeta?.header.tomador ?? '');
-  ws.mergeCells(3, 13, 3, 14);labelStyle(ws.getCell(3, 13), 'ACTIVIDAD:');
-  ws.mergeCells(3, 15, 3, COLUMNS.length); valueStyle(ws.getCell(3, 15), carpeta?.header.actividad ?? '');
-  ws.getRow(3).height = 18;
+  ws.getCell(2, 1).value = 'CIF:';        ws.getCell(2, 1).font = labelFont; ws.getCell(2, 1).alignment = leftAlign;
+  ws.getCell(2, 2).value = carpeta?.header.cif ?? '';   ws.getCell(2, 2).font = valueFont; ws.getCell(2, 2).alignment = leftAlign;
+  ws.getCell(2, 3).value = 'TOMADOR:';    ws.getCell(2, 3).font = labelFont; ws.getCell(2, 3).alignment = leftAlign;
+  ws.getCell(2, 4).value = carpeta?.header.tomador ?? '';  ws.getCell(2, 4).font = valueFont; ws.getCell(2, 4).alignment = leftAlign;
+  ws.getCell(2, 6).value = 'ACTIVIDAD:';  ws.getCell(2, 6).font = labelFont; ws.getCell(2, 6).alignment = leftAlign;
+  ws.getCell(2, 7).value = carpeta?.header.actividad ?? ''; ws.getCell(2, 7).font = valueFont; ws.getCell(2, 7).alignment = leftAlign;
+  ws.getCell(2, 9).value = 'ESTUDIO:';    ws.getCell(2, 9).font = labelFont; ws.getCell(2, 9).alignment = leftAlign;
+  ws.getCell(2, 10).value = nombreEstudio.toUpperCase(); ws.getCell(2, 10).font = { ...valueFont, bold: true }; ws.getCell(2, 10).alignment = leftAlign;
 
-  // FORMA DE PAGO | EFECTO
-  ws.mergeCells(4, 1, 4, 2);  labelStyle(ws.getCell(4, 1), 'FORMA DE PAGO:');
-  ws.mergeCells(4, 3, 4, 5);  valueStyle(ws.getCell(4, 3), carpeta?.header.formaPago ?? '');
-  ws.mergeCells(4, 6, 4, 7);  labelStyle(ws.getCell(4, 6), 'EFECTO:');
-  ws.mergeCells(4, 8, 4, 12); valueStyle(ws.getCell(4, 8), carpeta?.header.efecto ?? '');
-  ws.mergeCells(4, 13, 4, COLUMNS.length); // vacío
-  ws.getRow(4).height = 18;
+  // ── Fila 3: Mas info ──────────────────────────────────────────────────────
+  ws.getRow(3).height = 22;
+  fillRow(ws, 3, { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + C.gray_100 } });
 
-  // ── Fila 5: Separador ─────────────────────────────────────────────────────
-  ws.mergeCells(5, 1, 5, COLUMNS.length);
-  ws.getCell('A5').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + C.indigo } };
-  ws.getRow(5).height = 3;
+  ws.getCell(3, 1).value = 'FORMA DE PAGO:'; ws.getCell(3, 1).font = labelFont; ws.getCell(3, 1).alignment = leftAlign;
+  ws.getCell(3, 2).value = carpeta?.header.formaPago ?? ''; ws.getCell(3, 2).font = valueFont; ws.getCell(3, 2).alignment = leftAlign;
+  ws.getCell(3, 3).value = 'EFECTO:';     ws.getCell(3, 3).font = labelFont; ws.getCell(3, 3).alignment = leftAlign;
+  ws.getCell(3, 4).value = carpeta?.header.efecto ?? ''; ws.getCell(3, 4).font = valueFont; ws.getCell(3, 4).alignment = leftAlign;
 
-  // ── Fila 6: Cabeceras de columnas ─────────────────────────────────────────
-  const headerRow = ws.getRow(6);
+  // ── Fila 4: Separador (azul MMT) ──────────────────────────────────────────
+  fillRow(ws, 4, azulFill);
+  ws.getRow(4).height = 3;
+
+  // ── Fila 5: Cabeceras de columnas (verde MMT) ─────────────────────────────
+  const headerRow = ws.getRow(5);
   headerRow.height = 28;
   COLUMNS.forEach((col, i) => {
     const cell = headerRow.getCell(i + 1);
     cell.value = col.header;
-    cell.font  = { name: 'Calibri', size: 9, bold: true, color: { argb: 'FF' + C.white } };
-    cell.fill  = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + C.indigo } };
+    cell.font = { name: 'Calibri', size: 9, bold: true, color: { argb: 'FF' + C.white } };
+    cell.fill = azulFill;
     cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: false };
     cell.border = {
-      right:  { style: 'thin', color: { argb: 'FF' + C.indigo_light } },
-      bottom: { style: 'medium', color: { argb: 'FF' + C.indigo_dark } },
+      right:  { style: 'thin', color: { argb: 'FFFFFFFF' } },
+      bottom: { style: 'medium', color: { argb: 'FF' + C.azul_mmt } },
     };
   });
 
-  // ── Filas de datos (100 filas) ────────────────────────────────────────────
-  const TIPO_OPTIONS   = '"Turismo,Furgoneta,Cabeza tractora,Camión rígido,Semirremolque,Industrial matriculado,Industrial no matriculado"';
-  const USO_OPTIONS    = '"Particular,Servicio público,Transportes propios"';
+  // ── Filas de datos (100 filas) ───────────────────────────────────────────
+  const TIPO_OPTIONS   = '"Turismo,Furgoneta,Cabeza tractora,Camion rigido,Semirremolque,Industrial matriculado,Industrial no matriculado"';
+  const USO_OPTIONS    = '"Particular,Servicio publico,Transportes propios"';
   const AMBITO_OPTIONS = '"Nacional,Internacional"';
   const COB_OPTIONS    = '"Terceros,Terceros Ampliado,Todo Riesgo con Franquicia"';
-  const LUNAS_OPTIONS  = '"Sí,No"';
-  const ASIST_OPTIONS  = '"no,oro,oro_plus"';
+  const LUNAS_OPTIONS  = '"Si,No"';
+  const ASIST_OPTIONS  = '"Si,No"';
 
-  const kwCol = colLetter(KW_COL_INDEX);
+  const dvMap: Record<string, string> = {
+    tipo_vehiculo:          TIPO_OPTIONS,
+    uso:                    USO_OPTIONS,
+    ambito:                 AMBITO_OPTIONS,
+    coberturas_solicitadas: COB_OPTIONS,
+    lunas:                  LUNAS_OPTIONS,
+    asistencia:             ASIST_OPTIONS,
+  };
 
   for (let r = DATA_START_ROW; r < DATA_START_ROW + 100; r++) {
     const row = ws.getRow(r);
     row.height = 18;
+    const isEven = (r - DATA_START_ROW) % 2 === 0;
 
     COLUMNS.forEach((col, i) => {
       const cell = row.getCell(i + 1);
 
-      // Estilos alternados
-      const isEven = (r - DATA_START_ROW) % 2 === 0;
       cell.fill = { type: 'pattern', pattern: 'solid',
         fgColor: { argb: 'FF' + (isEven ? C.white : C.gray_50) } };
       cell.font = { name: 'Calibri', size: 9, color: { argb: 'FF' + C.text } };
@@ -165,23 +171,7 @@ export async function generarPlantillaExcel(carpeta?: Pick<FlotaCarpeta, 'nombre
         right:  { style: 'thin', color: { argb: 'FF' + C.border } },
       };
 
-      // CV: fórmula automática desde KW
-      if (col.key === 'cv') {
-        cell.value = { formula: `IF(${kwCol}${r}="","",ROUND(${kwCol}${r}*1.35962,0))` };
-        cell.font  = { name: 'Calibri', size: 9, color: { argb: 'FF6366F1' }, italic: true };
-        cell.fill  = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEEF2FF' } };
-        return;
-      }
-
       // Validaciones dropdown
-      const dvMap: Record<string, string> = {
-        tipo_vehiculo:          TIPO_OPTIONS,
-        uso:                    USO_OPTIONS,
-        ambito:                 AMBITO_OPTIONS,
-        coberturas_solicitadas: COB_OPTIONS,
-        lunas:                  LUNAS_OPTIONS,
-        asistencia:             ASIST_OPTIONS,
-      };
       if (dvMap[col.key]) {
         cell.dataValidation = {
           type: 'list',
@@ -198,13 +188,12 @@ export async function generarPlantillaExcel(carpeta?: Pick<FlotaCarpeta, 'nombre
 
   // ── Nota al pie ───────────────────────────────────────────────────────────
   const noteRow = DATA_START_ROW + 101;
-  ws.mergeCells(noteRow, 1, noteRow, COLUMNS.length);
   const noteCell = ws.getCell(noteRow, 1);
-  noteCell.value = 'Plantilla generada por Orion · La columna CV se calcula automáticamente desde KW · Guarda el archivo y súbelo en Orion para importar los datos';
-  noteCell.font  = { name: 'Calibri', size: 8, italic: true, color: { argb: 'FF9CA3AF' } };
-  noteCell.alignment = { horizontal: 'center' };
+  noteCell.value = 'MMT Seguros | LUNAS y ASISTENCIA: escribe Si o No';
+  noteCell.font = { name: 'Calibri', size: 8, italic: true, color: { argb: 'FF9CA3AF' } };
+  noteCell.alignment = { horizontal: 'left' };
 
-  // ── Generar blob ──────────────────────────────────────────────────────────
+  // ── Generar blob ────────────────────────────────────────────────────────
   const buffer = await wb.xlsx.writeBuffer();
   return new Blob([buffer], {
     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',

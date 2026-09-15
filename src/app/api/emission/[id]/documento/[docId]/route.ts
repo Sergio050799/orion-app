@@ -45,7 +45,6 @@ export async function PATCH(
 
         return NextResponse.json({ ok: true, documento: updated });
     } catch (error: any) {
-        console.error("[EMISSION PATCH DOC] Error:", error);
         return NextResponse.json({ ok: false, error: error.message || "Error interno" }, { status: 500 });
     }
 }

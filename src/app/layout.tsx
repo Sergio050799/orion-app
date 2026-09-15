@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
-import { ThemeProvider } from "@/components/ThemeProvider";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-display" });
 
 export const metadata: Metadata = {
-    title: "ORION SaaS | Advanced Vehicle Analysis",
-    description: "Next-generation vehicle document processing and analysis platform.",
+    title: "ORION | Del Caos al Orden",
+    description: "Plataforma de seguros de flotas vehiculares.",
+    icons: { icon: '/ORION_LOGO.png' },
 };
 
 export default function RootLayout({
@@ -17,13 +18,11 @@ export default function RootLayout({
     children: React.ReactNode;
 }>) {
     return (
-        <html lang="en" suppressHydrationWarning>
-            <body className={`${inter.className} antialiased bg-slate-100 text-slate-900 dark:bg-[#0F172A] dark:text-slate-200 transition-colors`}>
-                <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-                    <AuthProvider>
-                        {children}
-                    </AuthProvider>
-                </ThemeProvider>
+        <html lang="es" className="dark">
+            <body className={`${inter.variable} ${spaceGrotesk.variable} font-[var(--font-inter)] antialiased`}>
+                <AuthProvider>
+                    {children}
+                </AuthProvider>
             </body>
         </html>
     );

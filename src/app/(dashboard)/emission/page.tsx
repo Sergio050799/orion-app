@@ -1,620 +1,643 @@
 "use client";
 
-import React, { useState, useCallback, useRef, useMemo } from 'react';
-import ExcelJS from 'exceljs';
-import { saveAs } from 'file-saver';
+import React, { useState, useMemo, useCallback, lazy, Suspense } from 'react';
+import { listarCarpetas, normalizeTipoVehiculo, type FlotaCarpeta, type TarifaEntry } from '@/core/flotas';
 
-// ─── Tipos ───────────────────────────────────────────────────────────────────
+const CalibradorPrecios = lazy(() => import('./CalibradorPrecios'));
 
-interface CatalogoEntry {
-  id_veh: string;
-  marca: string;
-  modelo: string;
-  version: string;
-  combustible: string;
-  kw: number;
-  cilindrada: number;
-  plazas: number;
-  anyo: number;
-  pvp?: number;
-}
-
-interface VehiculoEmision {
-  matricula: string;
-  datos_originales: Record<string, string>;
-  identificado: boolean;
-  score?: number;
-  catalogo?: CatalogoEntry;
-  candidatos?: CatalogoEntry[];
-}
-
-type EstadoFila = 'IDENTIFICADO' | 'REVISAR' | 'SIN MATCH' | 'MANUAL';
-
-interface FilaVehiculo {
-  _id: number;
-  matricula: string;
-  marca: string;
-  modelo: string;
-  kw: string;
-  combustible: string;
-  anyo: string;
-  cilindrada: string;
-  plazas: string;
-  estado: EstadoFila;
-  score?: number;
-  datos_originales: Record<string, string>;
-  catalogo?: CatalogoEntry;
-  candidatos: CatalogoEntry[];
-  expanded: boolean;
-  searching: boolean;
-}
-
-const COMBUSTIBLES = [
-  { value: '', label: 'Seleccionar...' },
-  { value: 'D', label: 'Diésel' },
-  { value: 'G', label: 'Gasolina' },
-  { value: 'E', label: 'Eléctrico' },
-  { value: 'X', label: 'Híbrido Diésel' },
-  { value: 'Y', label: 'Híbrido Gasolina' },
-  { value: 'L', label: 'GLP' },
-  { value: 'P', label: 'GNC' },
-];
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function getEstado(v: VehiculoEmision): EstadoFila {
-  if (!v.identificado) return 'SIN MATCH';
-  if ((v.score ?? 0) >= 70) return 'IDENTIFICADO';
-  return 'REVISAR';
-}
-
-const ESTADO_CONFIG: Record<EstadoFila, { label: string; color: string; bg: string; border: string }> = {
-  'IDENTIFICADO': { label: 'Identificado', color: '#10b981', bg: 'rgba(16,185,129,0.1)', border: 'rgba(16,185,129,0.3)' },
-  'REVISAR':      { label: 'Revisar',      color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.3)' },
-  'SIN MATCH':    { label: 'Sin match',    color: '#ef4444', bg: 'rgba(239,68,68,0.1)',   border: 'rgba(239,68,68,0.3)' },
-  'MANUAL':       { label: 'Manual',       color: '#818cf8', bg: 'rgba(99,102,241,0.1)',  border: 'rgba(99,102,241,0.3)' },
-};
-
-function EstadoBadge({ estado }: { estado: EstadoFila }) {
-  const cfg = ESTADO_CONFIG[estado];
-  return (
-    <span style={{
-      fontSize: 10, fontWeight: 900, padding: '3px 10px', borderRadius: 4,
-      background: cfg.bg, border: `1px solid ${cfg.border}`, color: cfg.color,
-      textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap',
-    }}>
-      {cfg.label}
-    </span>
-  );
-}
+type EmisionTab = 'flotas' | 'calibrador';
 
 // ─── Estilos ─────────────────────────────────────────────────────────────────
 
 const glassCard: React.CSSProperties = {
-  background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(24px)',
-  border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16,
+  background: 'rgba(12, 28, 82, 0.75)',
+  border: '1px solid rgba(61, 112, 255, 0.22)',
+  borderRadius: 22,
+  boxShadow: '0 30px 80px -20px rgba(0,0,0,0.6), 0 1px 0 rgba(255,255,255,0.06) inset',
 };
 
-const inputStyle: React.CSSProperties = {
-  fontSize: 12, padding: '6px 10px', borderRadius: 6,
-  background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
-  color: '#e2e8f0', outline: 'none', fontFamily: 'inherit', width: '100%',
+const ESTADO_CFG: Record<string, { bg: string; border: string; color: string }> = {
+  'OFERTADA': { bg: 'rgba(245,158,11,0.15)', border: 'rgba(245,158,11,0.35)', color: '#f59e0b' },
+  'CONTRATADA': { bg: 'rgba(16,185,129,0.15)', border: 'rgba(16,185,129,0.35)', color: '#10b981' },
 };
 
-const labelStyle: React.CSSProperties = {
-  fontSize: 9, fontWeight: 800, color: 'rgba(129,140,248,0.7)',
-  textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 3, display: 'block',
+const thStyle: React.CSSProperties = {
+  padding: '10px 10px', fontSize: 10, fontWeight: 800,
+  color: 'rgba(70,120,255,0.6)', textTransform: 'uppercase',
+  letterSpacing: '0.1em', textAlign: 'left',
+  borderBottom: '1px solid rgba(51,102,255,0.1)',
+  background: 'rgba(6,14,50,0.4)',
+  position: 'sticky', top: 0, zIndex: 2,
+  whiteSpace: 'nowrap',
 };
 
-const btnPrimary: React.CSSProperties = {
-  fontSize: 11, fontWeight: 800, padding: '10px 20px', borderRadius: 10,
-  background: 'rgba(99,102,241,0.15)', color: '#818cf8',
-  border: '1px solid rgba(99,102,241,0.3)', cursor: 'pointer',
-  textTransform: 'uppercase', letterSpacing: '0.06em',
+const cellInput: React.CSSProperties = {
+  fontSize: 12, fontWeight: 500, padding: '4px 8px', borderRadius: 6,
+  background: 'rgba(6,14,50,0.55)', border: '1px solid rgba(51,102,255,0.12)',
+  color: '#FFFFFF', outline: 'none', width: '100%',
+  transition: 'border-color 0.15s',
 };
 
-// ─── Página principal ────────────────────────────────────────────────────────
+// ─── Tipos fila emisión ─────────────────────────────────────────────────────
 
-export default function EmissionPage() {
-  const [filas, setFilas] = useState<FilaVehiculo[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [loadingMsg, setLoadingMsg] = useState('');
-  const fileRef = useRef<HTMLInputElement>(null);
-  const nextId = useRef(0);
+interface FilaEmision {
+  idx: number;
+  matricula: string;
+  id_catalogo: string;
+  marca: string;
+  modelo: string;
+  tipo: string;
+  uso: string;
+  precio_objetivo: string;
+  precio_reutilizado: boolean; // true si el precio vino de un vehículo previo
+  id_reutilizado: boolean;     // true si el id_catalogo vino de un match previo
+}
 
-  const tieneFilas = filas.length > 0;
-  const identificados = filas.filter(f => f.catalogo).length;
-  const sinMatch = filas.filter(f => f.estado === 'SIN MATCH').length;
+// ─── Auto-asignación de USO según tipo de vehículo ──────────────────────────
 
-  // ── Paso 1A: Subir Excel ────────────────────────────────────────────────
+function normalizeTipo(raw: string): string {
+  return normalizeTipoVehiculo(raw);
+}
 
-  const handleExcelUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    e.target.value = '';
+const USO_PARTICULAR = new Set(['Turismo', 'Derivado de turismo', 'Motocicleta', 'Ciclomotor']);
+const USO_TRANSPORTES = new Set(['Furgoneta', 'Camión rígido', 'Cabeza tractora', 'Semirremolque', 'Industrial matriculado', 'Industrial no matriculado']);
 
-    setLoading(true);
-    setLoadingMsg('Procesando vehículos...');
+function autoUso(tipo: string): string {
+  if (USO_PARTICULAR.has(tipo)) return 'Particular';
+  if (USO_TRANSPORTES.has(tipo)) return 'Transportes propios';
+  return '';
+}
 
-    try {
-      const form = new FormData();
-      form.append('file', file);
-      const res = await fetch('/api/flotas/emision', { method: 'POST', body: form });
-      const data = await res.json();
+// ─── Buscar vehículo reutilizable en todas las carpetas ─────────────────────
 
-      if (!data.ok) {
-        alert(data.error ?? 'Error procesando el archivo');
-        return;
-      }
+interface VehiculoPrevio {
+  id_catalogo: string;
+  precio: string;
+}
 
-      setLoadingMsg(`${data.identificados} de ${data.total} identificados`);
+function buildHistorico(allCarpetas: FlotaCarpeta[]): Map<string, VehiculoPrevio> {
+  // Clave: "MARCA|MODELO|KW|COMBUSTIBLE" normalizado → { id_catalogo, precio }
+  const map = new Map<string, VehiculoPrevio>();
 
-      const nuevas: FilaVehiculo[] = (data.vehiculos as VehiculoEmision[]).map(v => ({
-        _id: nextId.current++,
-        matricula: v.matricula,
-        marca: v.catalogo?.marca ?? v.datos_originales['marca'] ?? '',
-        modelo: v.catalogo?.modelo ?? v.datos_originales['modelo'] ?? '',
-        kw: String(v.catalogo?.kw ?? v.datos_originales['kw'] ?? ''),
-        combustible: v.catalogo?.combustible ?? v.datos_originales['combustible'] ?? '',
-        anyo: String(v.catalogo?.anyo ?? v.datos_originales['anyo'] ?? ''),
-        cilindrada: String(v.catalogo?.cilindrada ?? v.datos_originales['cilindrada'] ?? ''),
-        plazas: String(v.catalogo?.plazas ?? v.datos_originales['plazas'] ?? ''),
-        estado: getEstado(v),
-        score: v.score,
-        datos_originales: v.datos_originales,
-        catalogo: v.catalogo,
-        candidatos: v.candidatos ?? (v.catalogo ? [v.catalogo] : []),
-        expanded: false,
-        searching: false,
-      }));
+  for (const c of allCarpetas) {
+    const catSel = c.catalogoSeleccion ?? {};
+    const precioMap = new Map<string, string>();
+    (c.oferta ?? []).forEach(o => {
+      const mat = o['matricula']?.trim()?.toUpperCase();
+      const prima = o['oferta_prima_mmt']?.trim();
+      if (mat && prima) precioMap.set(mat, prima);
+    });
 
-      setFilas(prev => [...prev, ...nuevas]);
-    } catch (err) {
-      alert('Error de conexión al procesar el Excel');
-    } finally {
-      setLoading(false);
-      setLoadingMsg('');
-    }
-  }, []);
+    const rows = c.trabajo?.length > 0 ? c.trabajo : c.original;
+    (rows ?? []).forEach(r => {
+      const mat = r['matricula']?.trim()?.toUpperCase() ?? '';
+      const idCat = catSel[r['matricula']?.trim() ?? ''] ?? '';
+      if (!idCat) return; // solo interesa si tiene id de catálogo
 
-  // ── Paso 1B: Entrada manual ─────────────────────────────────────────────
+      const marca = (r['marca'] ?? '').trim().toUpperCase();
+      const modelo = (r['modelo'] ?? '').trim().toUpperCase();
+      const kw = (r['kw'] ?? '').trim();
+      const combustible = (r['combustible'] ?? '').trim().toUpperCase();
 
-  const addManual = useCallback(() => {
-    setFilas(prev => [...prev, {
-      _id: nextId.current++,
-      matricula: '', marca: '', modelo: '', kw: '',
-      combustible: '', anyo: '', cilindrada: '', plazas: '',
-      estado: 'MANUAL' as EstadoFila,
-      datos_originales: {},
-      candidatos: [],
-      expanded: true,
-      searching: false,
-    }]);
-  }, []);
+      if (!marca || !modelo) return;
+      const key = `${marca}|${modelo}|${kw}|${combustible}`;
+      // Guardar el más reciente (iteramos de viejo a nuevo, el último gana)
+      map.set(key, { id_catalogo: idCat, precio: precioMap.get(mat) ?? '' });
+    });
+  }
+  return map;
+}
 
-  // ── Editar fila ─────────────────────────────────────────────────────────
+// ─── Construir filas de emisión ─────────────────────────────────────────────
 
-  const updateFila = useCallback((id: number, patch: Partial<FilaVehiculo>) => {
-    setFilas(prev => prev.map(f => f._id === id ? { ...f, ...patch } : f));
-  }, []);
+function buildFilas(flota: FlotaCarpeta, historico: Map<string, VehiculoPrevio>): FilaEmision[] {
+  const rows = flota.trabajo?.length > 0 ? flota.trabajo : flota.original;
+  if (!rows || rows.length === 0) return [];
 
-  const deleteFila = useCallback((id: number) => {
-    setFilas(prev => prev.filter(f => f._id !== id));
-  }, []);
+  const catSel = flota.catalogoSeleccion ?? {};
+  const tarifa = flota.tarifaFlota ?? [];
 
-  const toggleExpand = useCallback((id: number) => {
-    setFilas(prev => prev.map(f => f._id === id ? { ...f, expanded: !f.expanded } : f));
-  }, []);
+  // Mapa precios oferta
+  const precioOferta = new Map<string, string>();
+  (flota.oferta ?? []).forEach(o => {
+    const mat = o['matricula']?.trim();
+    const prima = o['oferta_prima_mmt']?.trim();
+    if (mat && prima) precioOferta.set(mat.toUpperCase(), prima);
+  });
 
-  // ── Buscar catálogo manual ──────────────────────────────────────────────
+  // Mapa cobertura por matrícula (de la oferta)
+  const coberturaMap = new Map<string, string>();
+  (flota.oferta ?? []).forEach(o => {
+    const mat = o['matricula']?.trim();
+    const cob = o['coberturas']?.trim();
+    if (mat && cob) coberturaMap.set(mat.toUpperCase(), cob);
+  });
 
-  const searchTimers = useRef<Record<number, NodeJS.Timeout>>({});
+  return rows.map((r, i) => {
+    const mat = r['matricula']?.trim() ?? '';
+    const matUp = mat.toUpperCase();
+    const tipo = normalizeTipo(r['tipo_vehiculo']?.trim() ?? '');
+    const uso = autoUso(tipo);
 
-  const triggerSearch = useCallback((fila: FilaVehiculo) => {
-    if (searchTimers.current[fila._id]) clearTimeout(searchTimers.current[fila._id]);
+    // ID catálogo: primero de la selección, luego del histórico
+    let idCat = catSel[mat] ?? '';
+    let idReutilizado = false;
+    let precioObj = precioOferta.get(matUp) ?? '';
+    let precioReutilizado = false;
 
-    const marca = fila.marca.trim();
-    const modelo = fila.modelo.trim();
-    if (!marca && !modelo) return;
-
-    searchTimers.current[fila._id] = setTimeout(async () => {
-      updateFila(fila._id, { searching: true });
-      try {
-        const params = new URLSearchParams();
-        if (marca) params.set('marca', marca);
-        if (modelo) params.set('modelo', modelo);
-        if (fila.kw) params.set('kw', fila.kw);
-        if (fila.combustible) params.set('combustible', fila.combustible);
-        if (fila.anyo) params.set('anyo', fila.anyo);
-        if (fila.cilindrada) params.set('cilindrada', fila.cilindrada);
-        if (fila.plazas) params.set('plazas', fila.plazas);
-        const res = await fetch(`/api/catalogo/search?${params}`);
-        const data = await res.json();
-        const candidatos = data.candidatos ?? data.candidates ?? [];
-        updateFila(fila._id, { candidatos: candidatos.slice(0, 5), searching: false });
-      } catch {
-        updateFila(fila._id, { searching: false });
-      }
-    }, 600);
-  }, [updateFila]);
-
-  const handleFieldChange = useCallback(async (fila: FilaVehiculo, field: string, value: string) => {
-    const updated = { ...fila, [field]: value };
-    updateFila(fila._id, { [field]: value });
-    if (field === 'marca' || field === 'modelo') {
-      triggerSearch(updated);
-    }
-    // Auto-calcular año desde matrícula
-    if (field === 'matricula' && value.length >= 7) {
-      try {
-        const res = await fetch('/api/plates/resolve', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ plates: [value] }),
-        });
-        const data = await res.json();
-        if (data.results?.[0]?.estimatedDate) {
-          const year = new Date(data.results[0].estimatedDate).getFullYear();
-          updateFila(fila._id, { anyo: String(year) });
+    // Si no tiene id, buscar en histórico por match de campos clave
+    if (!idCat) {
+      const marca = (r['marca'] ?? '').trim().toUpperCase();
+      const modelo = (r['modelo'] ?? '').trim().toUpperCase();
+      const kw = (r['kw'] ?? '').trim();
+      const combustible = (r['combustible'] ?? '').trim().toUpperCase();
+      if (marca && modelo) {
+        const key = `${marca}|${modelo}|${kw}|${combustible}`;
+        const prev = historico.get(key);
+        if (prev) {
+          idCat = prev.id_catalogo;
+          idReutilizado = true;
+          if (!precioObj && prev.precio) {
+            precioObj = prev.precio;
+            precioReutilizado = true;
+          }
         }
-      } catch { /* silencioso — el usuario puede ponerlo a mano */ }
+      }
     }
-  }, [updateFila, triggerSearch]);
 
-  // ── Seleccionar catálogo ────────────────────────────────────────────────
+    // Si aún no tiene precio, buscar en tarifa de la flota
+    if (!precioObj && tipo && tarifa.length > 0) {
+      const cobertura = coberturaMap.get(matUp) ?? '';
+      const tarifaMatch = tarifa.find(t =>
+        t.tipo.toLowerCase() === tipo.toLowerCase() &&
+        (!cobertura || t.cobertura.toLowerCase() === cobertura.toLowerCase())
+      );
+      // Si no hay match con cobertura específica, buscar solo por tipo
+      const tarifaTipo = tarifaMatch ?? tarifa.find(t => t.tipo.toLowerCase() === tipo.toLowerCase());
+      if (tarifaTipo && tarifaTipo.precio > 0) {
+        precioObj = String(tarifaTipo.precio);
+      }
+    }
 
-  const selectCatalogo = useCallback((filaId: number, cat: CatalogoEntry) => {
-    updateFila(filaId, {
-      catalogo: cat,
-      marca: cat.marca,
-      modelo: cat.modelo,
-      kw: String(cat.kw),
-      estado: 'IDENTIFICADO',
-      score: 100,
+    return {
+      idx: i,
+      matricula: mat,
+      id_catalogo: idCat,
+      marca: r['marca']?.trim() ?? '',
+      modelo: r['modelo']?.trim() ?? '',
+      tipo,
+      uso,
+      precio_objetivo: precioObj,
+      precio_reutilizado: precioReutilizado,
+      id_reutilizado: idReutilizado,
+    };
+  });
+}
+
+// ─── Componente ──────────────────────────────────────────────────────────────
+
+export default function EmisionPage() {
+  const [emisionTab, setEmisionTab] = useState<EmisionTab>('flotas');
+  const [selectedFlotaId, setSelectedFlotaId] = useState<string | null>(null);
+  const [editedFilas, setEditedFilas] = useState<FilaEmision[] | null>(null);
+  const [copyToast, setCopyToast] = useState('');
+
+  const carpetas = useMemo(() => listarCarpetas(), []);
+
+  const flotasEmision = useMemo(() =>
+    carpetas.filter(c => c.estado === 'OFERTADA' || c.estado === 'CONTRATADA')
+      .sort((a, b) => {
+        if (a.estado !== b.estado) return a.estado === 'OFERTADA' ? -1 : 1;
+        return a.nombre.localeCompare(b.nombre);
+      }),
+    [carpetas]
+  );
+
+  const selectedFlota = useMemo(() =>
+    flotasEmision.find(f => f.id === selectedFlotaId) ?? null,
+    [flotasEmision, selectedFlotaId]
+  );
+
+  // Histórico de vehículos de TODAS las carpetas (para reusar IDs)
+  const historico = useMemo(() => buildHistorico(carpetas), [carpetas]);
+
+  // Filas de emisión
+  const filas = useMemo(() => {
+    if (editedFilas) return editedFilas;
+    if (!selectedFlota) return [];
+    return buildFilas(selectedFlota, historico);
+  }, [selectedFlota, editedFilas, historico]);
+
+  const handleSelectFlota = useCallback((id: string) => {
+    if (selectedFlotaId === id) {
+      setSelectedFlotaId(null);
+      setEditedFilas(null);
+    } else {
+      setSelectedFlotaId(id);
+      setEditedFilas(null);
+    }
+  }, [selectedFlotaId]);
+
+  const handleCellChange = useCallback((idx: number, field: keyof FilaEmision, value: string) => {
+    setEditedFilas(prev => {
+      const base = prev ?? filas;
+      const updated = [...base];
+      const fila = { ...updated[idx], [field]: value };
+      // Si cambian el tipo, auto-recalcular uso
+      if (field === 'tipo') {
+        const tipoNorm = normalizeTipo(value);
+        fila.tipo = tipoNorm;
+        fila.uso = autoUso(tipoNorm);
+      }
+      updated[idx] = fila;
+      return updated;
     });
-  }, [updateFila]);
-
-  // ── Paso 3: Exportar Excel ──────────────────────────────────────────────
-
-  const handleExport = useCallback(async () => {
-    const wb = new ExcelJS.Workbook();
-    const ws = wb.addWorksheet('Emisión');
-
-    const headers = ['MATRÍCULA', 'MARCA', 'MODELO', 'VERSIÓN', 'AÑO', 'COMBUSTIBLE', 'KW', 'CV', 'CILINDRADA', 'PLAZAS', 'PVP', 'ID_CATÁLOGO'];
-    const headerRow = ws.addRow(headers);
-    headerRow.eachCell(cell => {
-      cell.font = { bold: true, size: 11 };
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E7FF' } };
-      cell.border = { bottom: { style: 'thin' } };
-    });
-
-    filas.forEach(f => {
-      const cat = f.catalogo;
-      ws.addRow([
-        f.matricula,
-        cat?.marca ?? f.marca,
-        cat?.modelo ?? f.modelo,
-        cat?.version ?? '',
-        cat?.anyo ?? (parseInt(f.anyo) || ''),
-        cat?.combustible ?? f.combustible,
-        cat?.kw ?? (parseInt(f.kw) || ''),
-        cat?.kw ? Math.round(cat.kw * 1.36) : '',
-        cat?.cilindrada ?? (parseInt(f.cilindrada) || ''),
-        cat?.plazas ?? (parseInt(f.plazas) || ''),
-        cat?.pvp ?? '',
-        cat?.id_veh ?? '',
-      ]);
-    });
-
-    // Auto-width
-    ws.columns.forEach(col => {
-      let max = 12;
-      col.eachCell?.({ includeEmpty: true }, cell => {
-        const len = String(cell.value ?? '').length + 2;
-        if (len > max) max = len;
-      });
-      col.width = Math.min(max, 30);
-    });
-
-    const buf = await wb.xlsx.writeBuffer();
-    saveAs(new Blob([buf]), `emision_plantilla_${new Date().toLocaleDateString('es-ES').replace(/\//g, '-')}.xlsx`);
   }, [filas]);
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  // Copiar columna
+  const copyColumn = useCallback((label: string, getter: (f: FilaEmision) => string) => {
+    const values = filas.map(getter);
+    navigator.clipboard.writeText(values.join('\n'));
+    setCopyToast(`${label} copiado (${filas.length})`);
+    setTimeout(() => setCopyToast(''), 1800);
+  }, [filas]);
+
+  // Copiar todo
+  const copyAll = useCallback(() => {
+    const headers = ['MATRÍCULA', 'ID_CATÁLOGO', 'MARCA', 'MODELO', 'TIPO', 'USO', 'PRECIO_OBJETIVO'];
+    const rows = filas.map(f =>
+      [f.matricula, f.id_catalogo, f.marca, f.modelo, f.tipo, f.uso, f.precio_objetivo].join('\t')
+    );
+    navigator.clipboard.writeText([headers.join('\t'), ...rows].join('\n'));
+    setCopyToast(`Todo copiado (${filas.length} filas)`);
+    setTimeout(() => setCopyToast(''), 1800);
+  }, [filas]);
+
+  // Datos para el calibrador
+  const calibradorData = useMemo(() =>
+    filas.filter(f => f.matricula).map(f => ({
+      matricula: f.matricula,
+      precio_objetivo: f.precio_objetivo,
+    })),
+    [filas]
+  );
+
+  const handleGoCalibrador = useCallback(() => {
+    setEmisionTab('calibrador');
+  }, []);
+
+  // Columnas mínimas
+  const COLS: { key: keyof FilaEmision; label: string; width: number; editable: boolean; mono?: boolean }[] = [
+    { key: 'matricula',       label: 'Matrícula',    width: 105, editable: false, mono: true },
+    { key: 'id_catalogo',     label: 'ID Catálogo',  width: 95,  editable: true, mono: true },
+    { key: 'marca',           label: 'Marca',        width: 110, editable: true },
+    { key: 'modelo',          label: 'Modelo',       width: 130, editable: true },
+    { key: 'tipo',            label: 'Tipo',         width: 130, editable: true },
+    { key: 'uso',             label: 'Uso',          width: 130, editable: true },
+    { key: 'precio_objetivo', label: 'Precio Obj.',  width: 105, editable: true, mono: true },
+  ];
+
+  // Stats
+  const conId = filas.filter(f => f.id_catalogo).length;
+  const conPrecio = filas.filter(f => f.precio_objetivo).length;
+  const reutilizados = filas.filter(f => f.id_reutilizado).length;
 
   return (
     <div className="h-full overflow-y-auto custom-scrollbar animate-in fade-in duration-500">
-      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 8px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 16px', display: 'flex', flexDirection: 'column', gap: 20 }}>
 
-        {/* Header */}
-        <div className="glass-card flex items-center justify-between px-5 py-3 rounded-2xl">
-          <div>
-            <h1 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2">
-              <div className="w-1.5 h-4 rounded-full" style={{ background: '#6366f1' }} />
-              Centro de Emisión
-            </h1>
-            <p className="text-[10px] mt-0.5 uppercase tracking-widest font-bold" style={{ color: 'rgba(255,255,255,0.3)' }}>
-              Identificación y plantilla de emisión masiva
-            </p>
+        {/* Zone Header */}
+        <div style={{ ...glassCard, padding: '20px 28px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{ width: 4, height: 36, borderRadius: 2, background: 'linear-gradient(180deg, #3366FF 0%, #1240CC 100%)' }} />
+              <div>
+                <h1 style={{ fontSize: 15, fontWeight: 900, color: '#FFFFFF', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>
+                  Centro de Emisión
+                </h1>
+                <p style={{ fontSize: 11, fontWeight: 600, color: 'rgba(178,198,245,0.6)', margin: '4px 0 0 0' }}>
+                  {emisionTab === 'calibrador'
+                    ? (selectedFlota
+                        ? (<>Calibrador — <span style={{ color: '#BDD4FF' }}>{selectedFlota.nombre}</span> · {calibradorData.length} vehículos con precio</>)
+                        : 'Calibrador de precios — ajusta el precio de entrada para obtener el objetivo')
+                    : selectedFlota
+                      ? (<>
+                          <span style={{ color: '#BDD4FF' }}>{selectedFlota.nombre}</span>
+                          <span style={{ margin: '0 6px', opacity: 0.3 }}>|</span>
+                          <span>{filas.length} vehículos</span>
+                          {conId > 0 && <>
+                            <span style={{ margin: '0 6px', opacity: 0.3 }}>|</span>
+                            <span style={{ color: '#10b981' }}>{conId} con ID</span>
+                          </>}
+                          {reutilizados > 0 && <>
+                            <span style={{ margin: '0 6px', opacity: 0.3 }}>|</span>
+                            <span style={{ color: '#a78bfa' }}>{reutilizados} reutilizados</span>
+                          </>}
+                          {conPrecio > 0 && <>
+                            <span style={{ margin: '0 6px', opacity: 0.3 }}>|</span>
+                            <span style={{ color: '#f59e0b' }}>{conPrecio} con precio</span>
+                          </>}
+                        </>)
+                      : 'Selecciona una flota ofertada o contratada para emitir'
+                  }
+                </p>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              {emisionTab === 'flotas' && selectedFlota && filas.length > 0 && (
+                <>
+                  <button onClick={copyAll} style={{
+                    fontSize: 11, fontWeight: 700, padding: '8px 14px', borderRadius: 10,
+                    background: 'rgba(61,112,255,0.12)', color: '#3366FF',
+                    border: '1px solid rgba(51,102,255,0.25)', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', gap: 6,
+                  }}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+                    </svg>
+                    Copiar todo
+                  </button>
+                  <button onClick={handleGoCalibrador} style={{
+                    fontSize: 11, fontWeight: 800, padding: '8px 18px', borderRadius: 10,
+                    background: 'linear-gradient(135deg, #1240CC, #3366FF)',
+                    color: '#fff', border: 'none', cursor: 'pointer',
+                    boxShadow: '0 8px 24px -8px rgba(18,64,204,0.4)',
+                    display: 'flex', alignItems: 'center', gap: 6,
+                  }}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <polyline points="23 4 23 10 17 10" />
+                      <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                    </svg>
+                    Calibrar precios
+                  </button>
+                </>
+              )}
+            </div>
           </div>
-          {tieneFilas && (
-            <button onClick={() => { setFilas([]); }} style={{ ...btnPrimary, fontSize: 10, padding: '6px 14px' }}>
-              + Nueva emisión
-            </button>
-          )}
+
+          {/* Tabs */}
+          <div style={{ display: 'flex', gap: 4, marginTop: 16, borderTop: '1px solid rgba(61,112,255,0.12)', paddingTop: 14 }}>
+            {([
+              { key: 'flotas' as EmisionTab, label: 'Hoja de Emisión' },
+              { key: 'calibrador' as EmisionTab, label: 'Calibrador de Precios' },
+            ]).map(t => {
+              const active = emisionTab === t.key;
+              return (
+                <button key={t.key} onClick={() => setEmisionTab(t.key)} style={{
+                  fontSize: 12, fontWeight: 700, padding: '8px 18px', borderRadius: 10,
+                  cursor: 'pointer', border: 'none',
+                  background: active ? 'rgba(18,64,204,0.35)' : 'transparent',
+                  color: active ? '#FFFFFF' : 'rgba(178,198,245,0.55)',
+                  boxShadow: active ? '0 0 0 1px rgba(70,120,255,0.5) inset' : 'none',
+                  transition: 'all 180ms',
+                }}
+                  onMouseEnter={e => { if (!active) e.currentTarget.style.color = '#BDD4FF'; }}
+                  onMouseLeave={e => { if (!active) e.currentTarget.style.color = 'rgba(178,198,245,0.55)'; }}
+                >{t.label}</button>
+              );
+            })}
+          </div>
         </div>
 
-        {/* Paso 1: Entrada de datos */}
-        {!tieneFilas && !loading && (
-          <div style={{ ...glassCard, padding: 32, textAlign: 'center' }}>
-            <p style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.5)', marginBottom: 24 }}>
-              Selecciona un método de entrada
-            </p>
-            <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-              <input ref={fileRef} type="file" accept=".xlsx,.xls" style={{ display: 'none' }} onChange={handleExcelUpload} />
-              <button onClick={() => fileRef.current?.click()}
-                style={{ ...glassCard, padding: '28px 36px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, minWidth: 200 }}
-                onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(99,102,241,0.4)')}
-                onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)')}>
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#818cf8" strokeWidth="2">
-                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" />
-                </svg>
-                <span style={{ fontSize: 12, fontWeight: 800, color: '#818cf8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Subir Excel</span>
-                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>Archivo .xlsx con datos de vehículos</span>
-              </button>
-              <button onClick={addManual}
-                style={{ ...glassCard, padding: '28px 36px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, minWidth: 200 }}
-                onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(99,102,241,0.4)')}
-                onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)')}>
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#818cf8" strokeWidth="2">
-                  <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-                </svg>
-                <span style={{ fontSize: 12, fontWeight: 800, color: '#818cf8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Entrada manual</span>
-                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>Añadir vehículos uno a uno</span>
-              </button>
-            </div>
-          </div>
+        {/* ── Calibrador de Precios ── */}
+        {emisionTab === 'calibrador' && (
+          <Suspense fallback={<div style={{ padding: 40, textAlign: 'center', color: 'rgba(178,198,245,0.4)' }}>Cargando calibrador...</div>}>
+            <CalibradorPrecios initialData={calibradorData.length > 0 ? calibradorData : undefined} />
+          </Suspense>
         )}
 
-        {/* Spinner */}
-        {loading && (
-          <div style={{ ...glassCard, padding: 40, textAlign: 'center' }}>
-            <div style={{ width: 32, height: 32, border: '3px solid rgba(99,102,241,0.2)', borderTopColor: '#818cf8', borderRadius: '50%', margin: '0 auto 12px', animation: 'spin 0.8s linear infinite' }} />
-            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', fontWeight: 700 }}>{loadingMsg}</p>
-            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-          </div>
-        )}
-
-        {/* Paso 2: Tabla de revisión */}
-        {tieneFilas && (
+        {/* ── Hoja de Emisión ── */}
+        {emisionTab === 'flotas' && (
           <>
-            {/* Resumen */}
-            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-              <span style={{ fontSize: 11, fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                Total: {filas.length}
-              </span>
-              <span style={{ fontSize: 11, fontWeight: 800, color: '#10b981' }}>
-                Identificados: {identificados}
-              </span>
-              {sinMatch > 0 && (
-                <span style={{ fontSize: 11, fontWeight: 800, color: '#ef4444' }}>
-                  Sin match: {sinMatch}
-                </span>
-              )}
-              <div style={{ flex: 1 }} />
-              <input ref={fileRef} type="file" accept=".xlsx,.xls" style={{ display: 'none' }} onChange={handleExcelUpload} />
-              <button onClick={() => fileRef.current?.click()}
-                style={{ ...btnPrimary, fontSize: 9, padding: '5px 12px' }}>
-                + Añadir Excel
-              </button>
-              <button onClick={addManual}
-                style={{ ...btnPrimary, fontSize: 9, padding: '5px 12px' }}>
-                + Manual
-              </button>
-            </div>
+            {/* Fleet selector */}
+            {flotasEmision.length === 0 ? (
+              <div style={{ ...glassCard, padding: '60px 40px', textAlign: 'center' }}>
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="rgba(178,198,245,0.25)" strokeWidth="1.5" style={{ margin: '0 auto 16px' }}>
+                  <path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z" />
+                  <polyline points="13 2 13 9 20 9" />
+                </svg>
+                <p style={{ fontSize: 14, fontWeight: 700, color: '#BDD4FF', margin: '0 0 8px 0' }}>
+                  No hay flotas listas para emisión
+                </p>
+                <p style={{ fontSize: 12, color: 'rgba(178,198,245,0.5)', margin: 0 }}>
+                  Las flotas aparecerán aquí cuando su estado sea <strong style={{ color: '#f59e0b' }}>OFERTADA</strong> o <strong style={{ color: '#10b981' }}>CONTRATADA</strong>.
+                </p>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 4 }} className="custom-scrollbar">
+                {flotasEmision.map(flota => {
+                  const rows = flota.trabajo?.length > 0 ? flota.trabajo : flota.original;
+                  const nVeh = rows?.length ?? 0;
+                  const cfg = ESTADO_CFG[flota.estado] ?? ESTADO_CFG['OFERTADA'];
+                  const isSelected = selectedFlotaId === flota.id;
 
-            {/* Tabla */}
-            <div style={{ ...glassCard, padding: 0, overflow: 'hidden' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr>
-                    {['Matrícula', 'Marca', 'Modelo', 'kW', 'Estado', 'Catálogo', 'Score', ''].map(h => (
-                      <th key={h} style={{
-                        textAlign: 'left', padding: '10px 12px', fontSize: 10, fontWeight: 800,
-                        color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em',
-                        borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(0,0,0,0.2)',
-                      }}>
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {filas.map(fila => (
-                    <React.Fragment key={fila._id}>
-                      {/* Fila principal */}
-                      <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
-                        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.02)')}
-                        onMouseLeave={e => (e.currentTarget.style.background = '')}>
-                        <td style={{ padding: '8px 12px' }}>
-                          {fila.estado === 'MANUAL' ? (
-                            <input style={{ ...inputStyle, width: 100 }} value={fila.matricula} placeholder="0000XXX"
-                              onChange={e => handleFieldChange(fila, 'matricula', e.target.value)} />
-                          ) : (
-                            <span style={{ fontSize: 12, fontWeight: 700, color: '#e2e8f0', fontFamily: 'monospace' }}>{fila.matricula}</span>
-                          )}
-                        </td>
-                        <td style={{ padding: '8px 12px' }}>
-                          {fila.estado === 'MANUAL' || fila.estado === 'SIN MATCH' ? (
-                            <input style={{ ...inputStyle, width: 120 }} value={fila.marca} placeholder="Marca"
-                              onChange={e => handleFieldChange(fila, 'marca', e.target.value)} />
-                          ) : (
-                            <span style={{ fontSize: 12, color: '#e2e8f0' }}>{fila.marca}</span>
-                          )}
-                        </td>
-                        <td style={{ padding: '8px 12px' }}>
-                          {fila.estado === 'MANUAL' || fila.estado === 'SIN MATCH' ? (
-                            <input style={{ ...inputStyle, width: 140 }} value={fila.modelo} placeholder="Modelo"
-                              onChange={e => handleFieldChange(fila, 'modelo', e.target.value)} />
-                          ) : (
-                            <span style={{ fontSize: 12, color: '#e2e8f0' }}>{fila.modelo}</span>
-                          )}
-                        </td>
-                        <td style={{ padding: '8px 12px' }}>
-                          {fila.estado === 'MANUAL' ? (
-                            <input type="number" style={{ ...inputStyle, width: 60 }} value={fila.kw} placeholder="kW"
-                              onChange={e => handleFieldChange(fila, 'kw', e.target.value)} />
-                          ) : (
-                            <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', fontFamily: 'monospace' }}>{fila.kw}</span>
-                          )}
-                        </td>
-                        <td style={{ padding: '8px 12px' }}>
-                          <EstadoBadge estado={fila.estado} />
-                        </td>
-                        <td style={{ padding: '8px 12px' }}>
-                          {fila.catalogo ? (
-                            <button onClick={() => toggleExpand(fila._id)}
-                              style={{ fontSize: 11, color: '#818cf8', fontWeight: 700, background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
-                              {fila.catalogo.marca} {fila.catalogo.modelo} {fila.catalogo.version ? `(${fila.catalogo.version})` : ''} {fila.catalogo.anyo || ''}
-                            </button>
-                          ) : (
-                            <button onClick={() => toggleExpand(fila._id)}
-                              style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', background: 'none', border: 'none', cursor: 'pointer' }}>
-                              {fila.candidatos.length > 0 ? `${fila.candidatos.length} candidatos` : 'Buscar...'}
-                            </button>
-                          )}
-                        </td>
-                        <td style={{ padding: '8px 12px', fontSize: 11, fontWeight: 700, fontFamily: 'monospace', color: (fila.score ?? 0) >= 70 ? '#10b981' : (fila.score ?? 0) >= 50 ? '#f59e0b' : 'rgba(255,255,255,0.3)' }}>
-                          {fila.score != null ? fila.score : '—'}
-                        </td>
-                        <td style={{ padding: '8px 12px' }}>
-                          <div style={{ display: 'flex', gap: 6 }}>
-                            <button onClick={() => toggleExpand(fila._id)}
-                              style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', background: 'none', border: 'none', cursor: 'pointer', transform: fila.expanded ? 'rotate(180deg)' : 'none', transition: '0.15s' }}>
-                              ▼
-                            </button>
-                            <button onClick={() => deleteFila(fila._id)}
-                              style={{ fontSize: 10, color: 'rgba(239,68,68,0.5)', background: 'none', border: 'none', cursor: 'pointer' }}
-                              onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')}
-                              onMouseLeave={e => (e.currentTarget.style.color = 'rgba(239,68,68,0.5)')}>
-                              ✕
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
+                  return (
+                    <button
+                      key={flota.id}
+                      onClick={() => handleSelectFlota(flota.id)}
+                      style={{
+                        flex: '0 0 auto', minWidth: 220,
+                        padding: '16px 20px', borderRadius: 16, cursor: 'pointer', textAlign: 'left',
+                        background: isSelected ? cfg.bg : 'rgba(12, 28, 82, 0.75)',
+                        border: isSelected ? `1px solid ${cfg.border}` : '1px solid rgba(61,112,255,0.22)',
+                        transition: 'all 0.2s',
+                      }}
+                      onMouseEnter={e => { if (!isSelected) e.currentTarget.style.borderColor = 'rgba(70,120,255,0.5)'; }}
+                      onMouseLeave={e => { if (!isSelected) e.currentTarget.style.borderColor = isSelected ? cfg.border : 'rgba(61,112,255,0.22)'; }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 6 }}>
+                        <span style={{ fontSize: 13, fontWeight: 800, color: '#FFFFFF' }}>{flota.nombre}</span>
+                        <span style={{
+                          fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 6,
+                          background: cfg.bg, border: `1px solid ${cfg.border}`, color: cfg.color,
+                          textTransform: 'uppercase', letterSpacing: '0.06em',
+                        }}>
+                          {flota.estado}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: 11, color: 'rgba(178,198,245,0.6)' }}>
+                        <strong style={{ color: '#BDD4FF' }}>{nVeh}</strong> vehículos
+                        {flota.tarifaFlota && flota.tarifaFlota.length > 0 && (
+                          <span> · <span style={{ color: '#10b981' }}>{flota.tarifaFlota.length} tarifas</span></span>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
 
-                      {/* Fila expandida */}
-                      {fila.expanded && (
-                        <tr>
-                          <td colSpan={8} style={{ padding: 0 }}>
-                            <div style={{ padding: '12px 24px 16px', background: 'rgba(0,0,0,0.15)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                              {/* Campos adicionales */}
-                              {(fila.estado === 'MANUAL' || fila.estado === 'SIN MATCH') && (
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 12, marginBottom: 16 }}>
-                                  <div>
-                                    <label style={labelStyle}>Combustible</label>
-                                    <select style={{ ...inputStyle, cursor: 'pointer' }} value={fila.combustible}
-                                      onChange={e => handleFieldChange(fila, 'combustible', e.target.value)}>
-                                      {COMBUSTIBLES.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                                    </select>
-                                  </div>
-                                  <div>
-                                    <label style={labelStyle}>Año</label>
-                                    <input type="number" style={inputStyle} value={fila.anyo} placeholder="2019"
-                                      onChange={e => handleFieldChange(fila, 'anyo', e.target.value)} />
-                                  </div>
-                                  <div>
-                                    <label style={labelStyle}>Cilindrada (cc)</label>
-                                    <input type="number" style={inputStyle} value={fila.cilindrada} placeholder="1968"
-                                      onChange={e => handleFieldChange(fila, 'cilindrada', e.target.value)} />
-                                  </div>
-                                  <div>
-                                    <label style={labelStyle}>Plazas</label>
-                                    <input type="number" style={inputStyle} value={fila.plazas} placeholder="5"
-                                      onChange={e => handleFieldChange(fila, 'plazas', e.target.value)} />
-                                  </div>
-                                </div>
-                              )}
-                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-                                {/* Datos originales */}
-                                {Object.keys(fila.datos_originales).length > 0 && (
-                                  <div>
-                                    <p style={{ fontSize: 9, fontWeight: 900, color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>
-                                      Datos originales
-                                    </p>
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 16px' }}>
-                                      {Object.entries(fila.datos_originales).map(([k, v]) => (
-                                        <div key={k} style={{ fontSize: 11 }}>
-                                          <span style={{ color: 'rgba(255,255,255,0.3)', fontWeight: 700 }}>{k}: </span>
-                                          <span style={{ color: '#e2e8f0' }}>{v || '—'}</span>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
+            {/* ── Resumen presupuesto comparativo ── */}
+            {selectedFlota && (() => {
+              const primaMMT = (selectedFlota.oferta ?? []).reduce((s, r) => s + (parseFloat(r['oferta_prima_mmt'] ?? '') || 0), 0);
+              const primaCliente = selectedFlota.primaClienteTotal ?? 0;
+              const descuento = selectedFlota.descuentoOferta ?? 0;
+              const primaNeta = primaMMT > 0 && descuento > 0 ? primaMMT * (1 - descuento / 100) : primaMMT;
+              const fmtE = (n: number) => n.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+              const nVeh = filas.length || 1;
 
-                                {/* Candidatos catálogo */}
-                                <div>
-                                  <p style={{ fontSize: 9, fontWeight: 900, color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>
-                                    Catálogo {fila.searching && <span style={{ color: '#818cf8' }}>buscando...</span>}
-                                  </p>
-                                  {fila.candidatos.length === 0 && !fila.searching ? (
-                                    <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)' }}>Sin candidatos. Escribe marca y modelo para buscar.</p>
-                                  ) : (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                      {fila.candidatos.map((c, ci) => {
-                                        const selected = fila.catalogo?.id_veh === c.id_veh;
-                                        return (
-                                          <button key={ci} onClick={() => selectCatalogo(fila._id, c)}
-                                            style={{
-                                              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                              padding: '6px 10px', borderRadius: 6, fontSize: 11, textAlign: 'left',
-                                              background: selected ? 'rgba(99,102,241,0.15)' : 'rgba(255,255,255,0.02)',
-                                              border: selected ? '1px solid rgba(99,102,241,0.4)' : '1px solid rgba(255,255,255,0.06)',
-                                              color: '#e2e8f0', cursor: 'pointer', width: '100%',
-                                            }}
-                                            onMouseEnter={e => { if (!selected) e.currentTarget.style.borderColor = 'rgba(99,102,241,0.3)'; }}
-                                            onMouseLeave={e => { if (!selected) e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; }}>
-                                            <span>
-                                              <strong>{c.marca} {c.modelo}</strong>
-                                              {c.version && <span style={{ color: 'rgba(255,255,255,0.4)' }}> {c.version}</span>}
-                                              {c.anyo && <span style={{ color: 'rgba(255,255,255,0.35)' }}> ({c.anyo})</span>}
-                                            </span>
-                                            <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', whiteSpace: 'nowrap', marginLeft: 8 }}>
-                                              {c.kw}kW · {c.combustible} {c.pvp ? `· ${c.pvp.toLocaleString('es-ES')}€` : ''}
-                                            </span>
-                                          </button>
-                                        );
-                                      })}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </React.Fragment>
+              if (primaMMT === 0 && primaCliente === 0) return null;
+
+              const items = [
+                ...(primaCliente > 0 ? [{
+                  label: 'Prima cliente actual', value: fmtE(primaCliente),
+                  sub: `${fmtE(primaCliente / nVeh)} / veh.`,
+                  color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.25)',
+                }] : []),
+                ...(primaMMT > 0 ? [{
+                  label: 'Prima ofertada MMT', value: fmtE(primaMMT),
+                  sub: `${fmtE(primaMMT / nVeh)} / veh.`,
+                  color: '#3366FF', bg: 'rgba(51,102,255,0.1)', border: 'rgba(51,102,255,0.25)',
+                }] : []),
+                ...(descuento > 0 && primaMMT > 0 ? [{
+                  label: `Prima neta (−${descuento}%)`, value: fmtE(primaNeta),
+                  sub: `${fmtE(primaNeta / nVeh)} / veh.`,
+                  color: '#10b981', bg: 'rgba(16,185,129,0.1)', border: 'rgba(16,185,129,0.25)',
+                }] : []),
+                ...(primaCliente > 0 && primaMMT > 0 ? (() => {
+                  const base = primaCliente;
+                  const compare = primaNeta > 0 ? primaNeta : primaMMT;
+                  const diff = compare - base;
+                  const pct = ((diff / base) * 100).toFixed(1);
+                  return [{
+                    label: 'Diferencia', value: `${diff <= 0 ? '' : '+'}${fmtE(diff)}`,
+                    sub: `${pct}%`,
+                    color: diff <= 0 ? '#10b981' : '#ef4444',
+                    bg: diff <= 0 ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)',
+                    border: diff <= 0 ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)',
+                  }];
+                })() : []),
+              ];
+
+              return (
+                <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(items.length, 4)}, 1fr)`, gap: 12 }}>
+                  {items.map((item, i) => (
+                    <div key={i} style={{
+                      padding: '16px 20px', borderRadius: 14,
+                      background: item.bg, border: `1px solid ${item.border}`,
+                    }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(178,198,245,0.6)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>
+                        {item.label}
+                      </div>
+                      <div style={{ fontSize: 20, fontWeight: 900, color: item.color, fontFamily: 'monospace' }}>
+                        {item.value}
+                      </div>
+                      <div style={{ fontSize: 10, color: 'rgba(178,198,245,0.5)', fontFamily: 'monospace', marginTop: 3 }}>
+                        {item.sub}
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </table>
-            </div>
+                </div>
+              );
+            })()}
 
-            {/* Paso 3: Exportar */}
-            <div style={{ display: 'flex', justifyContent: 'center', paddingBottom: 24 }}>
-              <button onClick={handleExport}
-                disabled={filas.length === 0}
-                style={{
-                  ...btnPrimary, fontSize: 12, padding: '12px 28px',
-                  background: identificados > 0 ? 'rgba(22,163,74,0.15)' : 'rgba(255,255,255,0.03)',
-                  color: identificados > 0 ? '#16a34a' : 'rgba(255,255,255,0.25)',
-                  borderColor: identificados > 0 ? 'rgba(22,163,74,0.3)' : 'rgba(255,255,255,0.08)',
-                  cursor: filas.length > 0 ? 'pointer' : 'not-allowed',
-                }}>
-                Descargar plantilla emisión (.xlsx)
-              </button>
-            </div>
+            {/* Data table */}
+            {selectedFlota && filas.length > 0 && (
+              <div style={{ ...glassCard, padding: 0, overflow: 'hidden' }}>
+                <div style={{ overflowX: 'auto', maxHeight: 'calc(100vh - 340px)' }} className="custom-scrollbar">
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr>
+                        <th style={{ ...thStyle, textAlign: 'center', width: 40 }}>#</th>
+                        {COLS.map(col => (
+                          <th key={col.key}
+                            onClick={() => copyColumn(col.label, f => String(f[col.key] ?? ''))}
+                            style={{ ...thStyle, width: col.width, cursor: 'pointer', userSelect: 'none' }}
+                            title={`Click para copiar columna ${col.label}`}
+                          >
+                            {col.label}
+                            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+                              style={{ display: 'inline-block', marginLeft: 4, verticalAlign: 'middle', opacity: 0.4 }}>
+                              <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+                            </svg>
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filas.map((fila, i) => (
+                        <tr key={i}
+                          style={{ borderBottom: '1px solid rgba(61,112,255,0.08)', transition: 'background 0.15s' }}
+                          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(51,102,255,0.04)')}
+                          onMouseLeave={e => (e.currentTarget.style.background = '')}
+                        >
+                          <td style={{ padding: '6px 10px', fontSize: 11, color: 'rgba(178,198,245,0.4)', textAlign: 'center', fontWeight: 700 }}>
+                            {i + 1}
+                          </td>
+                          {COLS.map(col => {
+                            const value = String(fila[col.key] ?? '');
+                            // Indicadores visuales para datos reutilizados/auto
+                            let indicator: React.ReactNode = null;
+                            if (col.key === 'id_catalogo' && fila.id_reutilizado) {
+                              indicator = <span title="ID reutilizado de vehículo previo" style={{ fontSize: 8, color: '#a78bfa', marginLeft: 4 }}>R</span>;
+                            }
+                            if (col.key === 'precio_objetivo' && fila.precio_reutilizado) {
+                              indicator = <span title="Precio de emisión anterior" style={{ fontSize: 8, color: '#a78bfa', marginLeft: 4 }}>R</span>;
+                            }
+
+                            return (
+                              <td key={col.key} style={{ padding: '4px 4px' }}>
+                                {col.editable ? (
+                                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                                    <input
+                                      style={{
+                                        ...cellInput,
+                                        fontFamily: col.mono ? 'monospace' : 'inherit',
+                                        fontWeight: col.key === 'precio_objetivo' ? 700 : 500,
+                                        color: col.key === 'precio_objetivo' && value
+                                          ? (fila.precio_reutilizado ? '#a78bfa' : '#f59e0b')
+                                          : col.key === 'id_catalogo' && fila.id_reutilizado
+                                            ? '#a78bfa'
+                                            : '#FFFFFF',
+                                      }}
+                                      value={value}
+                                      onChange={e => handleCellChange(i, col.key, e.target.value)}
+                                      onFocus={e => (e.currentTarget.style.borderColor = '#3366FF')}
+                                      onBlur={e => (e.currentTarget.style.borderColor = 'rgba(51,102,255,0.12)')}
+                                    />
+                                    {indicator}
+                                  </div>
+                                ) : (
+                                  <span style={{
+                                    fontSize: 12, fontWeight: 700, color: '#FFFFFF',
+                                    fontFamily: col.mono ? 'monospace' : 'inherit',
+                                    padding: '4px 8px', display: 'block',
+                                  }}>
+                                    {value || '—'}
+                                  </span>
+                                )}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {selectedFlota && filas.length === 0 && (
+              <div style={{ ...glassCard, padding: '40px', textAlign: 'center' }}>
+                <p style={{ fontSize: 13, color: 'rgba(178,198,245,0.5)', margin: 0 }}>
+                  Esta flota no tiene vehículos cargados.
+                </p>
+              </div>
+            )}
           </>
+        )}
+
+        {/* Toast */}
+        {copyToast && (
+          <div style={{
+            position: 'fixed', bottom: 32, left: '50%', transform: 'translateX(-50%)',
+            background: 'rgba(16,185,129,0.95)', color: '#fff', padding: '10px 24px',
+            borderRadius: 10, fontSize: 13, fontWeight: 700, zIndex: 9999,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+          }}>
+            {copyToast}
+          </div>
         )}
       </div>
     </div>

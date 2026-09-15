@@ -102,26 +102,56 @@ export const ANYO_MATRICULA_DEF: ColDef = {
   },
 };
 
-/** ColDefs para TRABAJO = BASE + POLIZA_SINCO (tras num_poliza_actual) + ANYO_MATRICULA (tras matricula) */
-export function makeTrabajoColDefs(baseColDefs: ColDef[] = BASE_COL_DEFS): ColDef[] {
-  let result = [...baseColDefs];
+// ─── Columnas TRABAJO — Orden definido por el jefe ──────────────────────────
 
-  // Insertar Nº_POLIZA_SINCO después de num_poliza_actual
-  const polizaIdx = result.findIndex(c => c.id === 'num_poliza_actual');
-  if (polizaIdx >= 0) result.splice(polizaIdx + 1, 0, POLIZA_SINCO_DEF);
-
-  // Insertar AÑO después de matricula (buscamos en el array ya modificado)
-  const matriculaIdx = result.findIndex(c => c.id === 'matricula');
-  if (matriculaIdx >= 0) result.splice(matriculaIdx + 1, 0, ANYO_MATRICULA_DEF);
-
-  return result;
+/** Helper: pick a ColDef from BASE_COL_DEFS by id, with optional overrides */
+function base(id: string, overrides?: Partial<ColDef>): ColDef {
+  const col = BASE_COL_DEFS.find(c => c.id === id)!;
+  return overrides ? { ...col, ...overrides } : col;
 }
 
-// ─── Columnas SINCO (15 columnas fijas) ──────────────────────────────────────
+export function makeTrabajoColDefs(): ColDef[] {
+  return [
+    // ── Póliza ────────────────────────────────────────────────────
+    base('cia_actual',        { name: 'CIA ACTUAL',            width: 120 }),
+    base('num_poliza_actual', { name: 'Nº PÓLIZA ACTUAL',     width: 150 }),
+    { ...POLIZA_SINCO_DEF,      name: 'Nº PÓLIZA SINCO',      width: 140 },
+    base('fecha_vencimiento', { name: 'VENCIMIENTO',           width: 120 }),
+
+    // ── Identificación ────────────────────────────────────────────
+    base('matricula',         { name: 'MATRÍCULA',             width: 100 }),
+    { ...ANYO_MATRICULA_DEF,    name: 'AÑO MATR.',             width: 80  },
+    { id: 'anyo_fabricacion',   name: 'AÑO FAB.',              width: 80  },
+
+    // ── Vehículo ──────────────────────────────────────────────────
+    base('tipo_vehiculo',     { name: 'TIPO',                  width: 185 }),
+    base('uso',               { name: 'USO',                   width: 145 }),
+    base('marca',             { name: 'MARCA',                 width: 110 }),
+    base('modelo',            { name: 'MODELO',                width: 150 }),
+    base('kw',                { name: 'KW',                    width: 65  }),
+    { id: 'tn',                 name: 'TN',                    width: 65  },
+    { id: 'combustible',        name: 'COMBUSTIBLE',           width: 105 },
+    { id: 'plazas',             name: 'PLAZAS',                width: 70  },
+    { id: 'puertas',            name: 'PUERTAS',               width: 70  },
+    { id: 'precio_nuevo',       name: 'PRECIO NUEVO',          width: 110 },
+    { id: 'valor_venta',        name: 'VALOR VENTA',           width: 110 },
+    { id: 'valor_compra',       name: 'VALOR COMPRA',          width: 110 },
+
+    // ── Cotización ────────────────────────────────────────────────
+    base('ambito',            { name: 'ÁMBITO',                width: 120 }),
+    base('coberturas_solicitadas', { name: 'COBERTURAS',       width: 195 }),
+    base('lunas',             { name: 'LUNAS',                 width: 75  }),
+    base('frq',               { name: 'FRQ',                   width: 75  }),
+    base('asistencia',        { name: 'ASISTENCIA',            width: 120 }),
+    base('prima_referencia',  { name: 'PRIMA REF.',            width: 110 }),
+  ];
+}
+
+// ─── Columnas SINCO (16 columnas fijas — template v46) ───────────────────────
 
 export const SINCO_COL_NAMES = [
   'Grupo_Consultante', 'Tipo_Documento', 'Documento', 'Póliza', 'Matrícula',
-  'Codigo_Retorno', 'Mensaje', 'Num_Siniestros', 'Fec_Ini_Cobertura',
+  'Codigo_Retorno', 'Mensaje', 'Num_Anios_Asegurado', 'Num_Siniestros', 'Fec_Ini_Cobertura',
   'Fec_Vcto', 'Tipo_Vehiculo', 'Tipo', 'Num_Garantias', 'Garantias', 'Siniestros',
 ];
 

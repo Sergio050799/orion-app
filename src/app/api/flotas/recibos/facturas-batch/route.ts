@@ -97,7 +97,6 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (e: unknown) {
-    console.error("[RECIBOS] Facturas batch error:", e);
     return NextResponse.json(
       { error: (e instanceof Error ? e.message : "Error desconocido") },
       { status: 500 }

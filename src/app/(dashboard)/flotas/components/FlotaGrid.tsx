@@ -6,8 +6,9 @@ import type { Column, FillEvent, CellCopyArgs, CellPasteArgs, CellMouseArgs, Ren
 import 'react-data-grid/lib/styles.css';
 import type { ColDef, FlotaGridHandle } from './types';
 import { TIPO_VEHICULO_OPTS, USO_OPTS, AMBITO_OPTS, COBERTURA_OPTS, ASISTENCIA_OPTS, LUNAS_OPTS } from '@/core/flotas';
+import { parseExcelTemplate } from '@/core/flotas/parser';
 
-const INITIAL_ROWS = 100;
+const EMPTY_ROWS_PADDING = 5;
 
 // ─── Tipos internos ────────────────────────────────────────────────────────────
 
@@ -67,9 +68,11 @@ const FlotaGrid = forwardRef<FlotaGridHandle, FlotaGridProps>(function FlotaGrid
   const [colDefs] = useState<ColDef[]>(initialColDefs);
   const [rows, setRows] = useState<GridRow[]>(() => {
     if (initialData && initialData.length > 0) {
-      return initialData.map((r, i) => ({ ...emptyRow(i, initialColDefs), ...r }));
+      const dataRows = initialData.map((r, i) => ({ ...emptyRow(i, initialColDefs), ...r }));
+      const nextId = dataRows.length;
+      return [...dataRows, ...Array.from({ length: EMPTY_ROWS_PADDING }, (_, i) => emptyRow(nextId + i, initialColDefs))];
     }
-    return Array.from({ length: INITIAL_ROWS }, (_, i) => emptyRow(i, initialColDefs));
+    return Array.from({ length: EMPTY_ROWS_PADDING }, (_, i) => emptyRow(i, initialColDefs));
   });
   const [selectedRows, setSelectedRows] = useState<ReadonlySet<number>>(new Set());
   const [lastColKey, setLastColKey] = useState<string | null>(null);
@@ -77,6 +80,11 @@ const FlotaGrid = forwardRef<FlotaGridHandle, FlotaGridProps>(function FlotaGrid
   const [selRange, setSelRange] = useState<{ r0: number; r1: number; c0: number; c1: number } | null>(null);
   const [bulkValue, setBulkValue] = useState('');
   const [confirmDelRow, setConfirmDelRow] = useState<number | null>(null);
+  const [copiedRange, setCopiedRange] = useState<{ r0: number; r1: number; c0: number; c1: number } | null>(null);
+
+  // Drag-to-select refs
+  const isDraggingRef = useRef(false);
+  const dragStartRef = useRef<{ row: number; col: number } | null>(null);
 
   // ─── Refs para event handlers estables ────────────────────────────────────
 
@@ -92,6 +100,8 @@ const FlotaGrid = forwardRef<FlotaGridHandle, FlotaGridProps>(function FlotaGrid
   selRangeRef.current = selRange;
   const rowsRef = useRef(rows);
   rowsRef.current = rows;
+  const copiedRangeRef = useRef(copiedRange);
+  copiedRangeRef.current = copiedRange;
 
   // ─── Debounced onDataChange ─────────────────────────────────────────────────
 
@@ -119,6 +129,7 @@ const FlotaGrid = forwardRef<FlotaGridHandle, FlotaGridProps>(function FlotaGrid
       const selRange     = selRangeRef.current;
 
       if (!lastColKey) return;
+      setCopiedRange(null);
 
       const text = e.clipboardData?.getData('text/plain') ?? '';
       if (!text.trim()) return;
@@ -158,15 +169,15 @@ const FlotaGrid = forwardRef<FlotaGridHandle, FlotaGridProps>(function FlotaGrid
 
       const pasteData = lines.map(line => line.split('\t'));
 
-      const startKey = lastColKey ?? colDefs[0]?.id;
-      const startColIdx = colDefs.findIndex(c => c.id === startKey);
+      const startRowIdx = selRange ? selRange.r0 : focusedRowIdx;
+      const startColIdx = selRange ? selRange.c0 : colDefs.findIndex(c => c.id === (lastColKey ?? colDefs[0]?.id));
       if (startColIdx < 0) return;
 
       setRows(prev => {
         const next = prev.map(r => ({ ...r }));
 
         pasteData.forEach((pasteRow, rowOffset) => {
-          const rowIdx = focusedRowIdx + rowOffset;
+          const rowIdx = startRowIdx + rowOffset;
           if (rowIdx >= next.length) return;
 
           pasteRow.forEach((rawValue, colOffset) => {
@@ -230,11 +241,184 @@ const FlotaGrid = forwardRef<FlotaGridHandle, FlotaGridProps>(function FlotaGrid
       if (tsv && window.isSecureContext) {
         e.preventDefault();
         navigator.clipboard.writeText(tsv);
+        setCopiedRange({ r0, r1, c0, c1 });
       }
     };
 
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ─── Ctrl+D Fill Down / Ctrl+R Fill Right ──────────────────────────────────
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      if (e.key !== 'd' && e.key !== 'r') return;
+
+      const range = selRangeRef.current;
+      if (!range) return;
+
+      e.preventDefault();
+      const colDefs = colDefsRef.current;
+
+      if (e.key === 'd') {
+        // Fill Down: copy first row value to all rows below in range
+        setRows(prev => {
+          const next = prev.map(r => ({ ...r }));
+          for (let ci = range.c0; ci <= range.c1; ci++) {
+            const col = colDefs[ci];
+            if (!col || col.isComputed) continue;
+            const sourceVal = String(next[range.r0][col.id] ?? '');
+            for (let ri = range.r0 + 1; ri <= range.r1; ri++) {
+              let val = sourceVal;
+              if (col.normalizeFn && val.trim()) val = col.normalizeFn(val).value;
+              next[ri][col.id] = val;
+            }
+          }
+          // Auto-fill USO/LUNAS if tipo_vehiculo is in the range
+          const tipoIdx = colDefs.findIndex(c => c.id === 'tipo_vehiculo');
+          if (tipoIdx >= range.c0 && tipoIdx <= range.c1) {
+            for (let ri = range.r0 + 1; ri <= range.r1; ri++) {
+              const tipo = String(next[ri]['tipo_vehiculo'] ?? '');
+              if (tipo && USO_DEFAULT[tipo]) next[ri]['uso'] = USO_DEFAULT[tipo];
+              if (tipo === 'Semirremolque') next[ri]['lunas'] = 'No';
+            }
+          }
+          return next;
+        });
+      } else {
+        // Fill Right: copy first column value to all columns right in range
+        setRows(prev => {
+          const next = prev.map(r => ({ ...r }));
+          for (let ri = range.r0; ri <= range.r1; ri++) {
+            const sourceCol = colDefs[range.c0];
+            if (!sourceCol) continue;
+            const sourceVal = String(next[ri][sourceCol.id] ?? '');
+            for (let ci = range.c0 + 1; ci <= range.c1; ci++) {
+              const col = colDefs[ci];
+              if (!col || col.isComputed) continue;
+              let val = sourceVal;
+              if (col.normalizeFn && val.trim()) val = col.normalizeFn(val).value;
+              next[ri][col.id] = val;
+            }
+          }
+          return next;
+        });
+      }
+    };
+
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ─── Shift+Arrows: extender selección ─────────────────────────────────────
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (!e.shiftKey) return;
+      if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) return;
+
+      const range = selRangeRef.current;
+      if (!range) return;
+
+      e.preventDefault();
+      const maxRow = rowsRef.current.length - 1;
+      const maxCol = colDefsRef.current.length - 1;
+
+      const newRange = { ...range };
+      switch (e.key) {
+        case 'ArrowDown':
+          newRange.r1 = e.ctrlKey || e.metaKey ? maxRow : Math.min(newRange.r1 + 1, maxRow);
+          break;
+        case 'ArrowUp':
+          newRange.r0 = e.ctrlKey || e.metaKey ? 0 : Math.max(newRange.r0 - 1, 0);
+          break;
+        case 'ArrowRight':
+          newRange.c1 = e.ctrlKey || e.metaKey ? maxCol : Math.min(newRange.c1 + 1, maxCol);
+          break;
+        case 'ArrowLeft':
+          newRange.c0 = e.ctrlKey || e.metaKey ? 0 : Math.max(newRange.c0 - 1, 0);
+          break;
+      }
+      setSelRange(newRange);
+    };
+
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ─── Escape: clear copiedRange ──────────────────────────────────────────────
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setCopiedRange(null);
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, []);
+
+  // ─── Drag-to-select ──────────────────────────────────────────────────────
+
+  useEffect(() => {
+    const getCellFromPoint = (x: number, y: number) => {
+      const cell = document.elementFromPoint(x, y)?.closest('[role="gridcell"]');
+      if (!cell) return null;
+      const row = cell.closest('[role="row"]');
+      if (!row) return null;
+      const rowIdx = parseInt(row.getAttribute('aria-rowindex') ?? '', 10) - 2; // 1-based + header
+      const colIdx = parseInt(cell.getAttribute('aria-colindex') ?? '', 10) - 2; // 1-based, minus # column
+      if (rowIdx < 0 || colIdx < 0) return null;
+      return { row: rowIdx, col: colIdx };
+    };
+
+    const onMouseMove = (e: MouseEvent) => {
+      if (!isDraggingRef.current || !dragStartRef.current) return;
+      const pos = getCellFromPoint(e.clientX, e.clientY);
+      if (!pos) return;
+      const start = dragStartRef.current;
+      setSelRange({
+        r0: Math.min(start.row, pos.row),
+        r1: Math.max(start.row, pos.row),
+        c0: Math.min(start.col, pos.col),
+        c1: Math.max(start.col, pos.col),
+      });
+    };
+
+    const onMouseUp = () => {
+      if (isDraggingRef.current) {
+        isDraggingRef.current = false;
+        dragStartRef.current = null;
+      }
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+
+    const onMouseDown = (e: MouseEvent) => {
+      // Only left button, not on inputs or the # column
+      if (e.button !== 0) return;
+      if ((e.target as HTMLElement).closest('input, select, button')) return;
+      if (e.shiftKey) return; // let Shift+Click handle range extension
+
+      const pos = getCellFromPoint(e.clientX, e.clientY);
+      if (!pos) return;
+
+      isDraggingRef.current = true;
+      dragStartRef.current = pos;
+
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', onMouseUp);
+    };
+
+    document.addEventListener('mousedown', onMouseDown);
+    return () => {
+      document.removeEventListener('mousedown', onMouseDown);
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -364,11 +548,23 @@ const FlotaGrid = forwardRef<FlotaGridHandle, FlotaGridProps>(function FlotaGrid
           && rowIdx >= selRange.r0 && rowIdx <= selRange.r1
           && colIdx >= selRange.c0 && colIdx <= selRange.c1;
 
+        // Marching ants: borders for copied range
+        const inCopied = copiedRange !== null
+          && rowIdx >= copiedRange.r0 && rowIdx <= copiedRange.r1
+          && colIdx >= copiedRange.c0 && colIdx <= copiedRange.c1;
+        const copiedBorder = inCopied ? {
+          borderTop: rowIdx === copiedRange!.r0 ? '2px dashed #3366FF' : undefined,
+          borderBottom: rowIdx === copiedRange!.r1 ? '2px dashed #3366FF' : undefined,
+          borderLeft: colIdx === copiedRange!.c0 ? '2px dashed #3366FF' : undefined,
+          borderRight: colIdx === copiedRange!.c1 ? '2px dashed #3366FF' : undefined,
+          animation: 'pulse-outline 1s ease-in-out infinite',
+        } : {};
+
         if (col.isComputed) {
           const rec = rowToRecord(row);
           const computed = col.computeFn ? col.computeFn(rec) : value;
           return (
-            <div style={{ height: '100%', display: 'flex', alignItems: 'center', paddingLeft: 8, fontSize: 12, color: '#374151', background: inRange ? 'rgba(99,102,241,0.12)' : '#f9fafb', outline: inRange ? '1px solid rgba(99,102,241,0.4)' : 'none', outlineOffset: '-1px' }}>
+            <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0 4px', fontSize: 13, color: '#374151', background: inRange ? 'rgba(18,64,204,0.12)' : '#f9fafb', outline: inRange ? '1px solid rgba(18,64,204,0.4)' : 'none', outlineOffset: '-1px', ...copiedBorder }}>
               {computed}
             </div>
           );
@@ -393,13 +589,16 @@ const FlotaGrid = forwardRef<FlotaGridHandle, FlotaGridProps>(function FlotaGrid
             height: '100%',
             display: 'flex',
             alignItems: 'center',
-            paddingLeft: 8,
-            fontSize: 12,
-            background: inRange ? 'rgba(99,102,241,0.12)' : (unmatched ? '#fffbeb' : 'transparent'),
+            justifyContent: 'center',
+            textAlign: 'center',
+            padding: '0 4px',
+            fontSize: 13,
+            background: inRange ? 'rgba(18,64,204,0.12)' : (unmatched ? '#fffbeb' : 'transparent'),
             color: (isFrqDisabled || isLunasDisabled) ? '#9ca3af' : (unmatched ? '#92400e' : '#111827'),
             fontStyle: (isFrqDisabled || isLunasDisabled) ? 'italic' : 'normal',
-            outline: inRange ? '1px solid rgba(99,102,241,0.4)' : 'none',
+            outline: inRange ? '1px solid rgba(18,64,204,0.4)' : 'none',
             outlineOffset: '-1px',
+            ...copiedBorder,
           }}>
             {value}
           </div>
@@ -408,7 +607,7 @@ const FlotaGrid = forwardRef<FlotaGridHandle, FlotaGridProps>(function FlotaGrid
     }));
 
     return [rowNumCol, ...dataCols];
-  }, [colDefs, selRange, confirmDelRow, deleteRow]);
+  }, [colDefs, selRange, copiedRange, confirmDelRow, deleteRow]);
 
   // ─── onRowsChange: normalización + auto-fill ───────────────────────────────
 
@@ -416,6 +615,7 @@ const FlotaGrid = forwardRef<FlotaGridHandle, FlotaGridProps>(function FlotaGrid
     newRows: GridRow[],
     { indexes }: RowsChangeData<GridRow>,
   ) => {
+    setCopiedRange(null);
     const updated = newRows.map((newRow, idx) => {
       if (!indexes.includes(idx)) return newRow;
 
@@ -546,29 +746,133 @@ const FlotaGrid = forwardRef<FlotaGridHandle, FlotaGridProps>(function FlotaGrid
     });
   }, [colDefs]);
 
+  // ─── Drag & drop + Import Excel ─────────────────────────────────────────────
+
+  const [isDragOver, setIsDragOver] = useState(false);
+  const dragCounterRef = useRef(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImportFile = useCallback(async (file: File) => {
+    const result = await parseExcelTemplate(file);
+    if (result.rows.length === 0) return;
+    const dataRows = result.rows.map((r, i) => ({ ...emptyRow(i, colDefs), ...r }));
+    const nextId = dataRows.length;
+    const padding = Array.from({ length: EMPTY_ROWS_PADDING }, (_, i) => emptyRow(nextId + i, colDefs));
+    setRows([...dataRows, ...padding]);
+    setSelRange(null);
+    setSelectedRows(new Set());
+  }, [colDefs]);
+
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current++;
+    if (e.dataTransfer.types.includes('Files')) {
+      setIsDragOver(true);
+    }
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current--;
+    if (dragCounterRef.current === 0) {
+      setIsDragOver(false);
+    }
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current = 0;
+    setIsDragOver(false);
+
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    if (ext === 'xlsx' || ext === 'csv') {
+      handleImportFile(file);
+    }
+  }, [handleImportFile]);
+
+  const handleImportClick = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  const handleFileInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleImportFile(file);
+    e.target.value = '';
+  }, [handleImportFile]);
+
   // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
     <div className="flex flex-col h-full min-h-0">
       {/* Toolbar */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 16px', borderBottom: '1px solid #e5e7eb', background: '#f9fafb', flexShrink: 0 }}>
-        <span style={{ fontSize: 11, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-          {filledRows} vehículos · {colDefs.length} columnas
+        <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.5)' }}>
+          <span style={{ color: '#3366FF' }}>{filledRows}</span> vehículos cargados
         </span>
         <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={handleImportClick}
+            style={{ fontSize: 11, fontWeight: 700, padding: '5px 12px', borderRadius: 8, background: 'rgba(18,64,204,0.08)', color: '#3366FF', border: '1px solid rgba(18,64,204,0.2)', cursor: 'pointer', gap: 4, display: 'inline-flex', alignItems: 'center' }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            Importar Excel
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".xlsx,.csv"
+            style={{ display: 'none' }}
+            onChange={handleFileInputChange}
+          />
           <button onClick={() => addRows(10)}
-            style={{ fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 6, color: '#6366f1', background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)', cursor: 'pointer' }}>
+            style={{ fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 6, color: '#1240CC', background: 'rgba(18,64,204,0.08)', border: '1px solid rgba(18,64,204,0.2)', cursor: 'pointer' }}>
             + 10 filas
           </button>
           <button onClick={() => addRows(50)}
-            style={{ fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 6, color: '#6366f1', background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)', cursor: 'pointer' }}>
+            style={{ fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 6, color: '#1240CC', background: 'rgba(18,64,204,0.08)', border: '1px solid rgba(18,64,204,0.2)', cursor: 'pointer' }}>
             + 50 filas
           </button>
         </div>
       </div>
 
-      {/* Grid */}
-      <div className="flex-1 min-h-0" style={{ position: 'relative' }}>
+      {/* Grid with drag & drop zone */}
+      <div
+        className="flex-1 min-h-0"
+        style={{ position: 'relative' }}
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+      >
+        {/* Drag overlay */}
+        {isDragOver && (
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            zIndex: 50,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'rgba(61,112,255,0.10)',
+            border: '2px dashed #3366FF',
+            borderRadius: 8,
+            pointerEvents: 'none',
+          }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: '#3366FF' }}>
+              Soltar archivo .xlsx o .csv para importar
+            </span>
+          </div>
+        )}
         <DataGrid
           columns={columns}
           rows={rows}
@@ -594,30 +898,42 @@ const FlotaGrid = forwardRef<FlotaGridHandle, FlotaGridProps>(function FlotaGrid
             }
           }}
           enableVirtualization
-          style={{ height: '100%', fontFamily: 'ui-sans-serif, system-ui, sans-serif', fontSize: 12 }}
-          className="rdg-light"
+          rowHeight={32}
+          headerRowHeight={36}
+          style={{ height: '100%', fontFamily: 'ui-sans-serif, system-ui, sans-serif', fontSize: 13 }}
+          className="rdg-light rdg-centered"
           defaultColumnOptions={{ resizable: true, sortable: false }}
         />
 
         {/* Bulk assign toolbar */}
         {bulkInfo && (
-          <div style={{ position: 'sticky', bottom: 12, left: '50%', transform: 'translateX(-50%)', display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: 'rgba(2,6,23,0.95)', border: '1px solid rgba(99,102,241,0.4)', borderRadius: 10, boxShadow: '0 4px 20px rgba(0,0,0,0.5)', zIndex: 100, whiteSpace: 'nowrap' }}>
+          <div style={{ position: 'sticky', bottom: 12, left: '50%', transform: 'translateX(-50%)', display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: 'rgba(0,7,45,0.95)', border: '1px solid rgba(18,64,204,0.4)', borderRadius: 10, boxShadow: '0 4px 20px rgba(0,0,0,0.5)', zIndex: 100, whiteSpace: 'nowrap' }}>
             <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.6)' }}>
               {bulkInfo.rowIds.length} filas · {bulkInfo.colName}
             </span>
             <select value={bulkValue} onChange={e => setBulkValue(e.target.value)}
-              style={{ fontSize: 11, fontWeight: 600, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6, color: '#e0e7ff', padding: '4px 8px', outline: 'none', cursor: 'pointer' }}>
+              style={{ fontSize: 11, fontWeight: 600, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6, color: 'rgba(178,198,245,0.28)', padding: '4px 8px', outline: 'none', cursor: 'pointer' }}>
               <option value="">— elegir valor —</option>
               {bulkInfo.options.map(o => <option key={o} value={o}>{o}</option>)}
             </select>
             <button onClick={handleBulkApply} disabled={!bulkValue}
-              style={{ fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 6, background: bulkValue ? '#6366f1' : 'rgba(99,102,241,0.3)', color: '#ffffff', border: 'none', cursor: bulkValue ? 'pointer' : 'not-allowed', transition: 'background 0.15s' }}>
+              style={{ fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 6, background: bulkValue ? '#1240CC' : 'rgba(18,64,204,0.3)', color: '#ffffff', border: 'none', cursor: bulkValue ? 'pointer' : 'not-allowed', transition: 'background 0.15s' }}>
               Aplicar a todas
             </button>
             <button onClick={() => { setSelectedRows(new Set()); setBulkValue(''); }}
               style={{ fontSize: 13, lineHeight: 1, color: 'rgba(255,255,255,0.4)', background: 'none', border: 'none', cursor: 'pointer', padding: '0 4px' }}>×</button>
           </div>
         )}
+      </div>
+
+      {/* Añadir filas button */}
+      <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0', flexShrink: 0 }}>
+        <button
+          onClick={() => addRows(10)}
+          style={{ fontSize: 11, fontWeight: 700, padding: '6px 14px', borderRadius: 8, background: 'rgba(18,64,204,0.1)', color: '#3366FF', border: '1px solid rgba(18,64,204,0.25)', cursor: 'pointer' }}
+        >
+          + Añadir filas
+        </button>
       </div>
     </div>
   );

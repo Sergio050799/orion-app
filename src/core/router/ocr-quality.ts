@@ -237,10 +237,10 @@ export function computeOcrQuality(analyzeResult: AzureAnalyzeResult, lockedType?
 
     // Phase B: UNKNOWN fallback — try best-effort extraction before giving up
     // documentType stays UNKNOWN regardless of how many fields are found
-    console.warn(`[ORION] Classifier returned UNKNOWN or forced to it. Attempting best-effort extraction.`);
+    // Classifier returned UNKNOWN — attempting best-effort extraction
     const { extractedFields: unknownFields, fieldsFoundCount: unknownFieldCount } = extractFields(fullText, allLines, analyzeResult);
     if (unknownFieldCount >= 4) {
-        console.warn(`[ORION] UNKNOWN best-effort found ${unknownFieldCount} fields.`);
+        // UNKNOWN best-effort extraction succeeded
         return {
             documentType: "UNKNOWN",
             extractorUsed: "best_effort",

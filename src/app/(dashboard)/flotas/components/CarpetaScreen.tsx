@@ -1,23 +1,32 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   listarCarpetas, crearCarpeta, eliminarCarpeta, generarPlantillaExcel,
-  listarCorredores, crearCorredor,
-  type FlotaCarpeta, type Corredor, type Periodicidad,
+  listarCorredores, crearCorredor, cambiarEstado,
+  cargarCarpetasDelServidor, cargarCorredoresDelServidor,
+  type FlotaCarpeta, type Corredor, type Periodicidad, type EstadoFlota,
 } from '@/core/flotas';
+import { useAuth } from '@/context/AuthContext';
 
-// ─── Normalización legacy ──────────────────────────────────────────────────────
+// ─── Design tokens ──────────────────────────────────────────────────────────
+
+const glass: React.CSSProperties = {
+  background: 'rgba(12, 28, 82, 0.75)',
+  border: '1px solid rgba(61, 112, 255, 0.22)',
+  borderRadius: 22,
+  boxShadow: '0 30px 80px -20px rgba(0,0,0,0.6), 0 1px 0 rgba(255,255,255,0.06) inset, 0 0 0 1px rgba(61,112,255,0.14) inset',
+};
+
+const ESTADOS: EstadoFlota[] = ['EN ESTUDIO', 'OFERTADA', 'CONTRATADA', 'RECHAZADA'];
+
+// ─── Normalización ──────────────────────────────────────────────────────────
 
 function normalizarCarpeta(c: FlotaCarpeta): FlotaCarpeta {
-  return {
-    ...c,
-    estado: c.estado ?? 'EN ESTUDIO',
-    historico: c.historico ?? [],
-  };
+  return { ...c, estado: c.estado ?? 'EN ESTUDIO', historico: c.historico ?? [] };
 }
 
-// ─── Formulario crear corredor ─────────────────────────────────────────────────
+// ─── Formulario crear corredor ──────────────────────────────────────────────
 
 const EMPTY_CORREDOR = {
   nombre: '', cif: '', porcentajeComision: '', periodicidad: 'anual' as Periodicidad,
@@ -25,8 +34,7 @@ const EMPTY_CORREDOR = {
 };
 
 function CrearCorredorForm({ onCreado, onCancelar }: {
-  onCreado: (c: Corredor) => void;
-  onCancelar: () => void;
+  onCreado: (c: Corredor) => void; onCancelar: () => void;
 }) {
   const [form, setForm] = useState(EMPTY_CORREDOR);
   const set = (k: keyof typeof EMPTY_CORREDOR, v: string) => setForm(f => ({ ...f, [k]: v }));
@@ -34,114 +42,201 @@ function CrearCorredorForm({ onCreado, onCancelar }: {
   const handleSubmit = () => {
     if (!form.nombre.trim()) return;
     const corredor = crearCorredor({
-      nombre: form.nombre.trim(),
-      cif: form.cif.trim(),
+      nombre: form.nombre.trim(), cif: form.cif.trim(),
       porcentajeComision: parseFloat(form.porcentajeComision) || 0,
-      periodicidad: form.periodicidad,
-      formaPago: form.formaPago.trim(),
-      contacto: form.contacto.trim(),
-      email: form.email.trim(),
-      telefono: form.telefono.trim(),
-      observaciones: '',
+      periodicidad: form.periodicidad, formaPago: form.formaPago.trim(),
+      contacto: form.contacto.trim(), email: form.email.trim(),
+      telefono: form.telefono.trim(), observaciones: '',
     });
     onCreado(corredor);
   };
 
-  const inputStyle: React.CSSProperties = {
-    width: '100%', fontSize: 11, padding: '5px 8px', borderRadius: 6,
-    background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
-    color: '#fff', outline: 'none',
-  };
-
   return (
-    <div style={{ marginTop: 10, padding: 12, borderRadius: 10, background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)' }}>
-      <p style={{ fontSize: 10, fontWeight: 900, color: '#818cf8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
+    <div style={{ marginTop: 10, padding: 14, borderRadius: 12, background: 'rgba(61,112,255,0.10)', border: '1px solid rgba(51,102,255,0.15)' }}>
+      <p style={{ fontSize: 10, fontWeight: 700, color: '#3366FF', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
         Nuevo corredor
       </p>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
         <div style={{ gridColumn: '1 / -1' }}>
-          <input placeholder="Nombre *" value={form.nombre} onChange={e => set('nombre', e.target.value)} style={inputStyle} />
+          <input placeholder="Nombre *" value={form.nombre} onChange={e => set('nombre', e.target.value)} className="orion-input" style={{ fontSize: 12 }} />
         </div>
-        <input placeholder="CIF" value={form.cif} onChange={e => set('cif', e.target.value)} style={inputStyle} />
-        <input placeholder="% Comisión" type="number" min="0" max="100" value={form.porcentajeComision} onChange={e => set('porcentajeComision', e.target.value)} style={inputStyle} />
-        <select value={form.periodicidad} onChange={e => set('periodicidad', e.target.value as Periodicidad)}
-          style={{ ...inputStyle, cursor: 'pointer' }}>
-          <option value="mensual">Mensual</option>
-          <option value="trimestral">Trimestral</option>
-          <option value="semestral">Semestral</option>
-          <option value="anual">Anual</option>
+        <input placeholder="CIF" value={form.cif} onChange={e => set('cif', e.target.value)} className="orion-input" style={{ fontSize: 12 }} />
+        <input placeholder="% Comision" inputMode="decimal" value={form.porcentajeComision} onChange={e => { const v = e.target.value; if (v === '' || /^\d*\.?\d*$/.test(v)) set('porcentajeComision', v); }} className="orion-input" style={{ fontSize: 12 }} />
+        <select value={form.periodicidad} onChange={e => set('periodicidad', e.target.value as Periodicidad)} className="orion-input" style={{ fontSize: 12 }}>
+          <option value="mensual">Mensual</option><option value="trimestral">Trimestral</option>
+          <option value="semestral">Semestral</option><option value="anual">Anual</option>
         </select>
-        <input placeholder="Forma de pago" value={form.formaPago} onChange={e => set('formaPago', e.target.value)} style={inputStyle} />
-        <input placeholder="Contacto" value={form.contacto} onChange={e => set('contacto', e.target.value)} style={inputStyle} />
-        <input placeholder="Email" type="email" value={form.email} onChange={e => set('email', e.target.value)} style={inputStyle} />
-        <input placeholder="Teléfono" value={form.telefono} onChange={e => set('telefono', e.target.value)} style={inputStyle} />
+        <input placeholder="Forma de pago" value={form.formaPago} onChange={e => set('formaPago', e.target.value)} className="orion-input" style={{ fontSize: 12 }} />
       </div>
-      <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
-        <button onClick={handleSubmit} disabled={!form.nombre.trim()}
-          style={{ fontSize: 10, fontWeight: 800, padding: '4px 14px', borderRadius: 6, background: form.nombre.trim() ? '#6366f1' : 'rgba(99,102,241,0.3)', color: '#fff', border: 'none', cursor: form.nombre.trim() ? 'pointer' : 'not-allowed' }}>
-          Crear corredor
-        </button>
-        <button onClick={onCancelar}
-          style={{ fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 6, background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)', border: 'none', cursor: 'pointer' }}>
-          Cancelar
-        </button>
+      <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+        <button onClick={handleSubmit} disabled={!form.nombre.trim()} style={{
+          fontSize: 12, fontWeight: 600, padding: '6px 16px', borderRadius: 8,
+          background: form.nombre.trim() ? 'linear-gradient(135deg, #1240CC, #3366FF)' : 'rgba(18,64,204,0.3)',
+          color: '#fff', border: 'none', cursor: form.nombre.trim() ? 'pointer' : 'not-allowed',
+        }}>Crear corredor</button>
+        <button onClick={onCancelar} style={{
+          fontSize: 12, fontWeight: 500, padding: '6px 14px', borderRadius: 8,
+          background: 'rgba(6,14,50,0.5)', color: '#BDD4FF',
+          border: '1px solid rgba(61,112,255,0.22)', cursor: 'pointer',
+        }}>Cancelar</button>
       </div>
     </div>
   );
 }
 
-// ─── CarpetaScreen ─────────────────────────────────────────────────────────────
+// ─── EstadoBadge ────────────────────────────────────────────────────────────
+
+export function EstadoBadge({ estado, small }: { estado: string; small?: boolean }) {
+  const cfg: Record<string, { bg: string; border: string; color: string }> = {
+    'EN ESTUDIO': { bg: 'rgba(51,102,255,0.15)', border: 'rgba(51,102,255,0.35)', color: '#3366FF' },
+    'OFERTADA': { bg: 'rgba(245,158,11,0.15)', border: 'rgba(245,158,11,0.35)', color: '#f59e0b' },
+    'CONTRATADA': { bg: 'rgba(16,185,129,0.15)', border: 'rgba(16,185,129,0.35)', color: '#10b981' },
+    'RECHAZADA': { bg: 'rgba(239,68,68,0.15)', border: 'rgba(239,68,68,0.35)', color: '#ef4444' },
+  };
+  const s = cfg[estado] ?? cfg['EN ESTUDIO'];
+  return (
+    <span style={{
+      fontSize: small ? 9 : 10, fontWeight: 700,
+      padding: small ? '2px 6px' : '3px 10px',
+      borderRadius: 999, textTransform: 'uppercase', letterSpacing: '0.06em',
+      background: s.bg, border: `1px solid ${s.border}`, color: s.color,
+      whiteSpace: 'nowrap',
+    }}>
+      {estado}
+    </span>
+  );
+}
+
+// ─── CarpetaScreen ──────────────────────────────────────────────────────────
 
 interface Props {
   onSelect: (carpeta: FlotaCarpeta) => void;
 }
 
 export default function CarpetaScreen({ onSelect }: Props) {
-  const [carpetas, setCarpetas]         = useState<FlotaCarpeta[]>([]);
-  const [nombre, setNombre]             = useState('');
-  const [confirmDel, setConfirmDel]     = useState<string | null>(null);
-  const [corredores, setCorredores]     = useState<Corredor[]>([]);
-  const [corredorId, setCorredorId]     = useState<string>('');  // '' = sin corredor
+  const { user } = useAuth();
+  const [carpetas, setCarpetas] = useState<FlotaCarpeta[]>([]);
+  const [nombre, setNombre] = useState('');
+  const [confirmDel, setConfirmDel] = useState<string | null>(null);
+  const [corredores, setCorredores] = useState<Corredor[]>([]);
+  const [corredorId, setCorredorId] = useState<string>('');
   const [showCrearCorredor, setShowCrearCorredor] = useState(false);
+  const [query, setQuery] = useState('');
+  const [corredorFilter, setCorredorFilter] = useState('TODOS');
+  const [estadoFilter, setEstadoFilter] = useState('TODAS');
+  const [sucursalFilter, setSucursalFilter] = useState('');
+  const [comercialFilter, setComercialFilter] = useState('');
+  const [creating, setCreating] = useState(false);
+  const sseRef = useRef<EventSource | null>(null);
+  const cargarAbortRef = useRef<AbortController | null>(null);
+
+  // Estado change confirmation per row
+  const [pendingEstado, setPendingEstado] = useState<{ id: string; estado: EstadoFlota } | null>(null);
+
+  const cargar = async () => {
+    // Cancel any in-flight fetch before starting a new one
+    cargarAbortRef.current?.abort();
+    const ctrl = new AbortController();
+    cargarAbortRef.current = ctrl;
+
+    cargarCorredoresDelServidor(ctrl.signal)
+      .then(data => { if (!ctrl.signal.aborted) setCorredores(data); })
+      .catch(() => { if (!ctrl.signal.aborted) setCorredores(listarCorredores()); });
+
+    try {
+      const serverCarpetas = await cargarCarpetasDelServidor(ctrl.signal);
+      if (!ctrl.signal.aborted) setCarpetas(serverCarpetas.map(normalizarCarpeta));
+    } catch {
+      if (!ctrl.signal.aborted) setCarpetas(listarCarpetas().map(normalizarCarpeta));
+    }
+  };
 
   useEffect(() => {
-    setCarpetas(listarCarpetas().map(normalizarCarpeta));
-    setCorredores(listarCorredores());
-  }, []);
+    cargar();
+
+    // SSE — actualizaciones al instante cuando alguien crea/guarda/elimina
+    const es = new EventSource('/api/flotas/eventos');
+    sseRef.current = es;
+    es.onmessage = (e) => { if (e.data === 'update') cargar(); };
+    es.onerror = () => es.close(); // el fallback polling cubre la reconexión
+
+    // Fallback polling cada 30s por si el SSE falla
+    const interval = setInterval(cargar, 30_000);
+    return () => {
+      clearInterval(interval);
+      es.close();
+      sseRef.current = null;
+      cargarAbortRef.current?.abort();
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const corredorMap = useMemo(() => {
+    const m = new Map<string, Corredor>();
+    corredores.forEach(c => m.set(c.id, c));
+    return m;
+  }, [corredores]);
+
+  const counts = useMemo(() => ({
+    'TODAS': carpetas.length,
+    'EN ESTUDIO': carpetas.filter(c => c.estado === 'EN ESTUDIO').length,
+    'OFERTADA': carpetas.filter(c => c.estado === 'OFERTADA').length,
+    'CONTRATADA': carpetas.filter(c => c.estado === 'CONTRATADA').length,
+    'RECHAZADA': carpetas.filter(c => c.estado === 'RECHAZADA').length,
+  }), [carpetas]);
+
+  // Opciones dinamicas de corredor para el filtro
+  const corredorNames = useMemo(() => ['TODOS', ...Array.from(new Set(carpetas.map(c => {
+    const corr = c.corredor_id ? corredorMap.get(c.corredor_id) : null;
+    return corr?.nombre ?? 'Sin corredor';
+  })))], [carpetas, corredorMap]);
+
+  // Sucursales y comerciales unicos de los corredores existentes
+  const sucursalesUnicas = useMemo(() => {
+    const set = new Set(corredores.map(c => c.sucursal).filter(Boolean) as string[]);
+    return Array.from(set).sort();
+  }, [corredores]);
+
+  const comercialesUnicos = useMemo(() => {
+    const set = new Set(corredores.map(c => c.comercial).filter(Boolean) as string[]);
+    return Array.from(set).sort();
+  }, [corredores]);
+
+  const filtered = useMemo(() => {
+    return carpetas.filter(c => {
+      const corr = c.corredor_id ? corredorMap.get(c.corredor_id) : null;
+      const corrName = corr?.nombre ?? 'Sin corredor';
+
+      if (corredorFilter !== 'TODOS' && corrName !== corredorFilter) return false;
+      if (estadoFilter !== 'TODAS' && c.estado !== estadoFilter) return false;
+      if (sucursalFilter && corr?.sucursal !== sucursalFilter) return false;
+      if (comercialFilter && (corr?.comercial ?? '').toLowerCase() !== comercialFilter.toLowerCase()) return false;
+      const q = query.trim().toLowerCase();
+      if (q && !c.nombre.toLowerCase().includes(q) && !corrName.toLowerCase().includes(q)) return false;
+      return true;
+    });
+  }, [carpetas, query, corredorFilter, estadoFilter, sucursalFilter, comercialFilter, corredorMap]);
 
   const handleCrear = () => {
     const n = nombre.trim();
     if (!n) return;
-    const carpeta = crearCarpeta(n, corredorId || undefined);
-    setNombre('');
-    setCorredorId('');
-    setShowCrearCorredor(false);
+    const carpeta = crearCarpeta(n, corredorId || undefined, user ?? undefined);
+    setNombre(''); setCorredorId(''); setShowCrearCorredor(false); setCreating(false);
     onSelect(normalizarCarpeta(carpeta));
   };
 
   const handleCorredorChange = (val: string) => {
-    if (val === '__crear__') {
-      setShowCrearCorredor(true);
-      setCorredorId('');
-    } else {
-      setShowCrearCorredor(false);
-      setCorredorId(val);
-    }
+    if (val === '__crear__') { setShowCrearCorredor(true); setCorredorId(''); }
+    else { setShowCrearCorredor(false); setCorredorId(val); }
   };
 
   const handleCorredorCreado = (c: Corredor) => {
-    setCorredores(listarCorredores());
-    setCorredorId(c.id);
-    setShowCrearCorredor(false);
+    setCorredores(listarCorredores()); setCorredorId(c.id); setShowCrearCorredor(false);
   };
 
   const handleDescargarPlantilla = async () => {
     const blob = await generarPlantillaExcel();
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'Plantilla_Flotas.xlsx';
-    a.click();
+    const a = document.createElement('a'); a.href = url; a.download = 'Plantilla_Flotas.xlsx'; a.click();
     URL.revokeObjectURL(url);
   };
 
@@ -151,165 +246,330 @@ export default function CarpetaScreen({ onSelect }: Props) {
     setConfirmDel(null);
   };
 
-  const selectStyle: React.CSSProperties = {
-    width: '100%', fontSize: 11, padding: '6px 8px', borderRadius: 8,
-    background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
-    color: corredorId ? '#fff' : 'rgba(255,255,255,0.35)',
-    outline: 'none', cursor: 'pointer',
+  const handleConfirmarEstado = () => {
+    if (!pendingEstado) return;
+    cambiarEstado(pendingEstado.id, pendingEstado.estado);
+    setCarpetas(listarCarpetas().map(normalizarCarpeta));
+    setPendingEstado(null);
   };
 
   return (
-    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 20px' }}>
-      <div style={{ width: '100%', maxWidth: 560 }}>
+    <div className="animate-in fade-in duration-500" style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: '24px 28px', height: '100%', overflowY: 'auto' }}>
 
-        {/* Título */}
-        <div style={{ marginBottom: 32 }}>
-          <h2 style={{ fontSize: 13, fontWeight: 900, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 4 }}>
-            Estudio de Flotas
-          </h2>
-          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-            Selecciona o crea una carpeta de trabajo
-          </p>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+          <div style={{
+            width: 4, height: 40, borderRadius: 2, marginTop: 2,
+            background: 'linear-gradient(180deg, #1240CC, #3366FF)',
+            boxShadow: '0 0 12px rgba(70,120,255,0.5)',
+          }} />
+          <div>
+            <h1 style={{
+              margin: 0, fontSize: 22, color: '#FFFFFF',
+              fontFamily: 'var(--font-display), Inter, sans-serif',
+              fontWeight: 700, letterSpacing: '-0.01em',
+            }}>Estudio de Flotas</h1>
+            <p style={{ margin: '4px 0 0', fontSize: 12, color: 'rgba(178,198,245,0.6)' }}>
+              {filtered.length} de {carpetas.length} carpeta{carpetas.length === 1 ? '' : 's'}
+            </p>
+          </div>
         </div>
-
-        {/* Descargar plantilla */}
-        <div style={{ marginBottom: 20 }}>
-          <button
-            onClick={handleDescargarPlantilla}
-            style={{ fontSize: 11, fontWeight: 700, padding: '6px 14px', borderRadius: 8, color: '#059669', background: 'rgba(5,150,105,0.08)', border: '1px solid rgba(5,150,105,0.25)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
-            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(5,150,105,0.15)')}
-            onMouseLeave={e => (e.currentTarget.style.background = 'rgba(5,150,105,0.08)')}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-              <polyline points="7 10 12 15 17 10"/>
-              <line x1="12" y1="15" x2="12" y2="3"/>
-            </svg>
-            Descargar plantilla Excel
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={handleDescargarPlantilla} style={{
+            background: 'rgba(6,14,50,0.5)', border: '1px solid rgba(61,112,255,0.22)',
+            borderRadius: 10, padding: '8px 16px', color: '#BDD4FF', fontSize: 12,
+            cursor: 'pointer', fontWeight: 500,
+          }}>
+            Plantilla
           </button>
+          <button onClick={() => setCreating(true)} style={{
+            background: 'linear-gradient(135deg, #1240CC, #3366FF)',
+            border: 'none', borderRadius: 10, padding: '8px 20px',
+            color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+            boxShadow: '0 0 20px rgba(18,64,204,0.4)',
+          }}>+ Nueva carpeta</button>
+        </div>
+      </div>
+
+      {/* Filtros */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+        {/* Busqueda */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          background: 'rgba(6,14,50,0.5)', border: '1px solid rgba(61,112,255,0.22)',
+          borderRadius: 10, padding: '0 14px', flex: 1, maxWidth: 280,
+        }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(70,120,255,0.5)" strokeWidth="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+          <input placeholder="Buscar..." value={query} onChange={e => setQuery(e.target.value)} style={{
+            background: 'none', border: 'none', outline: 'none', color: '#FFFFFF', fontSize: 12, padding: '8px 0', width: '100%',
+          }} />
         </div>
 
-        {/* Nueva carpeta */}
-        <div style={{ marginBottom: 28 }}>
-          <p style={{ fontSize: 10, fontWeight: 800, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>
+        {/* Corredor */}
+        <select value={corredorFilter} onChange={e => setCorredorFilter(e.target.value)} style={{
+          background: 'rgba(6,14,50,0.5)', border: '1px solid rgba(61,112,255,0.22)',
+          borderRadius: 10, padding: '8px 12px', color: corredorFilter !== 'TODOS' ? '#FFFFFF' : 'rgba(178,198,245,0.5)',
+          fontSize: 12, outline: 'none', cursor: 'pointer',
+        }}>
+          {corredorNames.map(c => <option key={c} value={c}>{c === 'TODOS' ? 'Todos los corredores' : c}</option>)}
+        </select>
+
+        {/* Sucursal */}
+        {sucursalesUnicas.length > 0 && (
+          <select value={sucursalFilter} onChange={e => setSucursalFilter(e.target.value)} style={{
+            background: 'rgba(6,14,50,0.5)', border: '1px solid rgba(61,112,255,0.22)',
+            borderRadius: 10, padding: '8px 12px', color: sucursalFilter ? '#FFFFFF' : 'rgba(178,198,245,0.5)',
+            fontSize: 12, outline: 'none', cursor: 'pointer',
+          }}>
+            <option value="">Todas las sucursales</option>
+            {sucursalesUnicas.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+        )}
+
+        {/* Comercial */}
+        {comercialesUnicos.length > 0 && (
+          <select value={comercialFilter} onChange={e => setComercialFilter(e.target.value)} style={{
+            background: 'rgba(6,14,50,0.5)', border: '1px solid rgba(61,112,255,0.22)',
+            borderRadius: 10, padding: '8px 12px', color: comercialFilter ? '#FFFFFF' : 'rgba(178,198,245,0.5)',
+            fontSize: 12, outline: 'none', cursor: 'pointer',
+          }}>
+            <option value="">Todos los comerciales</option>
+            {comercialesUnicos.map(com => <option key={com} value={com}>{com}</option>)}
+          </select>
+        )}
+
+        <span style={{ flex: 1 }} />
+        <span style={{ fontSize: 11, color: 'rgba(178,198,245,0.5)' }}>
+          {filtered.length} resultado{filtered.length !== 1 ? 's' : ''}
+        </span>
+      </div>
+
+      {/* Filtro de estado (pills) */}
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        {([
+          ['TODAS', 'Todas'],
+          ['EN ESTUDIO', 'En estudio'],
+          ['OFERTADA', 'Ofertadas'],
+          ['CONTRATADA', 'Contratadas'],
+          ['RECHAZADA', 'Rechazadas'],
+        ] as const).map(([k, l]) => (
+          <button key={k} onClick={() => setEstadoFilter(k)} style={{
+            padding: '6px 14px', borderRadius: 999, fontSize: 12, fontWeight: 500,
+            border: 'none', cursor: 'pointer',
+            background: estadoFilter === k ? 'rgba(18,64,204,0.35)' : 'rgba(6,14,50,0.5)',
+            color: estadoFilter === k ? '#FFFFFF' : 'rgba(178,198,245,0.6)',
+            boxShadow: estadoFilter === k ? '0 0 0 1px rgba(70,120,255,0.5) inset' : 'none',
+            transition: 'all 180ms',
+          }}>{l} <span style={{ opacity: 0.6 }}>({counts[k]})</span></button>
+        ))}
+      </div>
+
+      {/* Confirmacion cambio de estado */}
+      {pendingEstado && (
+        <div style={{
+          padding: '12px 16px', borderRadius: 12,
+          background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.3)',
+          display: 'flex', alignItems: 'center', gap: 12,
+        }}>
+          <span style={{ fontSize: 12, color: '#fbbf24', flex: 1 }}>
+            Cambiar estado a <b>{pendingEstado.estado}</b>. Confirmar?
+          </span>
+          <button onClick={handleConfirmarEstado} style={{
+            background: '#f59e0b', border: 'none', borderRadius: 8,
+            padding: '5px 16px', color: '#000', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+          }}>Confirmar</button>
+          <button onClick={() => setPendingEstado(null)} style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            color: 'rgba(178,198,245,0.5)', fontSize: 12, padding: '5px 8px',
+          }}>Cancelar</button>
+        </div>
+      )}
+
+      {/* Formulario nueva carpeta */}
+      {creating && (
+        <div style={{ ...glass, padding: '20px 24px' }}>
+          <h3 style={{ margin: '0 0 12px', fontSize: 14, color: '#FFFFFF', fontFamily: 'var(--font-display), Inter, sans-serif', fontWeight: 500 }}>
             Nueva carpeta
-          </p>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-            <input
-              type="text"
-              value={nombre}
-              onChange={e => setNombre(e.target.value)}
+          </h3>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+            <input autoFocus value={nombre} onChange={e => setNombre(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter' && !showCrearCorredor) handleCrear(); }}
               placeholder="Nombre del estudio (ej. FRILESA S.L.)"
-              className="orion-input"
-              style={{ flex: 1, fontSize: 12 }}
-              autoFocus
-            />
-            <button
-              onClick={handleCrear}
-              disabled={!nombre.trim()}
-              className="btn-primary"
-              style={{ padding: '0 20px', fontSize: 11, fontWeight: 800, opacity: nombre.trim() ? 1 : 0.4 }}>
-              Crear
-            </button>
+              className="orion-input" style={{ flex: 1, fontSize: 13 }} />
+            <button onClick={handleCrear} disabled={!nombre.trim()} style={{
+              background: nombre.trim() ? 'linear-gradient(135deg, #1240CC, #3366FF)' : 'rgba(18,64,204,0.3)',
+              border: 'none', borderRadius: 10, padding: '0 20px', color: '#fff', fontSize: 12, fontWeight: 600,
+              cursor: nombre.trim() ? 'pointer' : 'not-allowed',
+            }}>Crear</button>
+            <button onClick={() => setCreating(false)} style={{
+              background: 'rgba(6,14,50,0.5)', border: '1px solid rgba(61,112,255,0.22)',
+              borderRadius: 10, padding: '0 14px', color: '#BDD4FF', fontSize: 12, cursor: 'pointer',
+            }}>Cancelar</button>
           </div>
+          <select value={showCrearCorredor ? '__crear__' : corredorId}
+            onChange={e => handleCorredorChange(e.target.value)} className="orion-input" style={{ fontSize: 12, maxWidth: 320 }}>
+            <option value="">Sin corredor</option>
+            {corredores.map(c => <option key={c.id} value={c.id}>{c.nombre}{c.cif ? ` — ${c.cif}` : ''}</option>)}
+            <option value="__crear__">+ Crear nuevo corredor</option>
+          </select>
+          {showCrearCorredor && (
+            <CrearCorredorForm onCreado={handleCorredorCreado} onCancelar={() => { setShowCrearCorredor(false); setCorredorId(''); }} />
+          )}
+        </div>
+      )}
 
-          {/* Selector corredor */}
-          <div>
-            <select
-              value={showCrearCorredor ? '__crear__' : corredorId}
-              onChange={e => handleCorredorChange(e.target.value)}
-              style={selectStyle}>
-              <option value="">Sin corredor</option>
-              {corredores.map(c => (
-                <option key={c.id} value={c.id}>{c.nombre}{c.cif ? ` — ${c.cif}` : ''}</option>
-              ))}
-              <option value="__crear__">+ Crear nuevo corredor</option>
-            </select>
-            {showCrearCorredor && (
-              <CrearCorredorForm
-                onCreado={handleCorredorCreado}
-                onCancelar={() => { setShowCrearCorredor(false); setCorredorId(''); }}
-              />
-            )}
-          </div>
+      {/* Lista */}
+      <div style={{
+        background: 'rgba(12,28,82,0.42)',
+        border: '1px solid rgba(61,112,255,0.16)',
+        borderRadius: 16, overflowX: 'auto',
+      }}>
+        <div style={{ minWidth: 700 }}>
+        {/* Cabecera */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 160px 80px 80px 110px 130px 36px',
+          gap: 0, padding: '10px 18px',
+          borderBottom: '1px solid rgba(51,102,255,0.15)',
+          background: 'rgba(6,14,50,0.4)',
+        }}>
+          {['Nombre', 'Corredor', 'Sucursal', 'Veh.', 'Estado', 'Modificada', ''].map(h => (
+            <span key={h} style={{
+              fontSize: 10, fontWeight: 700, textTransform: 'uppercase',
+              letterSpacing: '0.10em', color: '#3366FF',
+            }}>{h}</span>
+          ))}
         </div>
 
-        {/* Carpetas existentes */}
-        {carpetas.length > 0 && (
-          <div>
-            <p style={{ fontSize: 10, fontWeight: 800, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>
-              Continuar con una existente
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 320, overflowY: 'auto' }} className="custom-scrollbar">
-              {carpetas.map(c => (
-                <div key={c.id}
-                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 10, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', cursor: 'pointer', transition: 'background 0.12s' }}
-                  onMouseEnter={e => (e.currentTarget.style.background = 'rgba(99,102,241,0.12)')}
-                  onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.04)')}>
-
-                  <button type="button" onClick={() => onSelect(c)}
-                    style={{ flex: 1, background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: '#fff' }}>{c.nombre}</span>
-                      <EstadoBadge estado={c.estado} small />
-                    </div>
-                    <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontWeight: 600 }}>
-                      {new Date(c.actualizadaEn).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}
-                      {' · '}
-                      {c.original.length > 0 ? `${c.original.filter(r => r['matricula']?.trim()).length} vehículos` : 'vacía'}
-                    </span>
-                  </button>
-
-                  {confirmDel === c.id ? (
-                    <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
-                      <span style={{ fontSize: 10, color: '#fca5a5', fontWeight: 700 }}>¿Eliminar?</span>
-                      <button onClick={() => handleEliminar(c.id)}
-                        style={{ fontSize: 10, fontWeight: 800, padding: '2px 8px', borderRadius: 4, background: '#ef4444', color: '#fff', border: 'none', cursor: 'pointer' }}>Sí</button>
-                      <button onClick={() => setConfirmDel(null)}
-                        style={{ fontSize: 10, fontWeight: 800, padding: '2px 8px', borderRadius: 4, background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)', border: 'none', cursor: 'pointer' }}>No</button>
-                    </div>
-                  ) : (
-                    <button onClick={e => { e.stopPropagation(); setConfirmDel(c.id); }}
-                      style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.25)', fontSize: 16, lineHeight: 1, padding: '0 4px', marginLeft: 8 }}
-                      onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')}
-                      onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.25)')}>
-                      ×
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {carpetas.length === 0 && (
-          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)', textAlign: 'center', paddingTop: 12 }}>
-            No hay carpetas guardadas todavía.
+        {filtered.length === 0 ? (
+          <p style={{ color: 'rgba(178,198,245,0.4)', fontSize: 12, textAlign: 'center', padding: '40px 0', margin: 0 }}>
+            {carpetas.length === 0 ? 'Sin carpetas. Crea la primera.' : 'Sin resultados.'}
           </p>
+        ) : (
+          filtered.map(c => {
+            const corr = c.corredor_id ? corredorMap.get(c.corredor_id) : null;
+            const numVeh = (c.trabajo?.length > 0 ? c.trabajo : c.original)?.filter(r => r['matricula']?.trim()).length ?? 0;
+            const isDelConfirm = confirmDel === c.id;
+
+            return (
+              <div key={c.id} style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 160px 80px 80px 110px 130px 36px',
+                alignItems: 'center', gap: 0,
+                padding: '11px 18px',
+                borderBottom: '1px solid rgba(61,112,255,0.08)',
+                transition: 'background 180ms',
+                cursor: 'pointer',
+              }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(51,102,255,0.04)')}
+                onMouseLeave={e => (e.currentTarget.style.background = '')}
+              >
+                {/* Nombre + metadatos */}
+                <span onClick={() => onSelect(c)} style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontSize: 13, color: '#FFFFFF', fontWeight: 500 }}>
+                      {c.nombre || '(sin nombre)'}
+                    </span>
+                    {/* Siendo estudiado */}
+                    {Array.isArray(c.estudiando_por) && c.estudiando_por.length > 0 && (
+                      <span style={{ display: 'flex', gap: 3 }}>
+                        {c.estudiando_por.map((u: string) => (
+                          <span key={u} style={{
+                            fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 999,
+                            background: u === user ? 'rgba(16,185,129,0.18)' : 'rgba(245,158,11,0.18)',
+                            color: u === user ? '#10b981' : '#f59e0b',
+                            border: `1px solid ${u === user ? 'rgba(16,185,129,0.35)' : 'rgba(245,158,11,0.35)'}`,
+                          }}>● {u}</span>
+                        ))}
+                      </span>
+                    )}
+                  </span>
+                  {/* Creado por */}
+                  {c.creado_por && (
+                    <span style={{ fontSize: 10, color: 'rgba(178,198,245,0.38)', fontWeight: 400 }}>
+                      por {c.creado_por}
+                    </span>
+                  )}
+                </span>
+
+                {/* Corredor + comercial */}
+                <span onClick={() => onSelect(c)} style={{ fontSize: 12, color: '#BDD4FF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {corr?.nombre ?? <span style={{ color: 'rgba(178,198,245,0.3)' }}>—</span>}
+                  {corr?.comercial && <span style={{ color: 'rgba(178,198,245,0.45)', marginLeft: 4, fontSize: 11 }}>· {corr.comercial}</span>}
+                </span>
+
+                {/* Sucursal */}
+                <span onClick={() => onSelect(c)}>
+                  {corr?.sucursal ? (
+                    <span style={{
+                      fontSize: 9, fontWeight: 700,
+                      color: corr.sucursal === 'TITAN' ? '#60a5fa' : '#a78bfa',
+                      background: corr.sucursal === 'TITAN' ? 'rgba(96,165,250,0.12)' : 'rgba(167,139,250,0.12)',
+                      border: `1px solid ${corr.sucursal === 'TITAN' ? 'rgba(96,165,250,0.3)' : 'rgba(167,139,250,0.3)'}`,
+                      borderRadius: 999, padding: '2px 6px',
+                    }}>{corr.sucursal}</span>
+                  ) : <span style={{ color: 'rgba(178,198,245,0.25)', fontSize: 12 }}>—</span>}
+                </span>
+
+                {/* Vehiculos */}
+                <span onClick={() => onSelect(c)} style={{ fontSize: 12, color: '#BDD4FF' }}>{numVeh}</span>
+
+                {/* Estado — clickable para cambiar */}
+                <span style={{ position: 'relative' }} onClick={e => e.stopPropagation()}>
+                  <select
+                    value={c.estado}
+                    onChange={e => {
+                      const nuevo = e.target.value as EstadoFlota;
+                      if (nuevo !== c.estado) setPendingEstado({ id: c.id, estado: nuevo });
+                    }}
+                    style={{
+                      background: 'transparent', border: 'none', cursor: 'pointer',
+                      color: 'transparent', fontSize: 10, width: '100%',
+                      position: 'absolute', inset: 0, opacity: 0,
+                    }}
+                  >
+                    {ESTADOS.map(e => <option key={e} value={e}>{e}</option>)}
+                  </select>
+                  <EstadoBadge estado={c.estado} />
+                </span>
+
+                {/* Fecha */}
+                <span onClick={() => onSelect(c)} style={{ fontSize: 11, color: 'rgba(178,198,245,0.5)' }}>
+                  {new Date(c.actualizadaEn).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}
+                </span>
+
+                {/* Eliminar */}
+                <span onClick={e => e.stopPropagation()}>
+                  {!isDelConfirm ? (
+                    <button onClick={() => setConfirmDel(c.id)} style={{
+                      background: 'none', border: 'none', cursor: 'pointer',
+                      color: 'rgba(178,198,245,0.3)', fontSize: 14, lineHeight: 1,
+                      padding: '4px 6px', borderRadius: 6, transition: 'color 150ms',
+                    }}
+                      onMouseEnter={e => (e.currentTarget.style.color = '#f87171')}
+                      onMouseLeave={e => (e.currentTarget.style.color = 'rgba(178,198,245,0.3)')}
+                    >x</button>
+                  ) : (
+                    <div style={{ display: 'flex', gap: 4 }}>
+                      <button onClick={() => handleEliminar(c.id)} style={{
+                        fontSize: 10, padding: '2px 6px', borderRadius: 4,
+                        background: '#ef4444', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700,
+                      }}>Si</button>
+                      <button onClick={() => setConfirmDel(null)} style={{
+                        fontSize: 10, padding: '2px 6px', borderRadius: 4,
+                        background: 'rgba(6,14,50,0.5)', color: '#BDD4FF',
+                        border: '1px solid rgba(61,112,255,0.22)', cursor: 'pointer',
+                      }}>No</button>
+                    </div>
+                  )}
+                </span>
+              </div>
+            );
+          })
         )}
+        </div>
       </div>
     </div>
-  );
-}
-
-// ─── EstadoBadge ──────────────────────────────────────────────────────────────
-
-export function EstadoBadge({ estado, small }: { estado: string; small?: boolean }) {
-  const cfg: Record<string, { bg: string; border: string; color: string }> = {
-    'EN ESTUDIO': { bg: 'rgba(99,102,241,0.15)',  border: 'rgba(99,102,241,0.35)',  color: '#818cf8' },
-    'CONTRATADA':  { bg: 'rgba(22,163,74,0.15)',   border: 'rgba(22,163,74,0.35)',   color: '#4ade80' },
-    'RECHAZADA':   { bg: 'rgba(239,68,68,0.15)',   border: 'rgba(239,68,68,0.35)',   color: '#f87171' },
-  };
-  const s = cfg[estado] ?? cfg['EN ESTUDIO'];
-  return (
-    <span style={{
-      fontSize: small ? 8 : 9, fontWeight: 900,
-      padding: small ? '1px 5px' : '2px 7px',
-      borderRadius: 4, textTransform: 'uppercase', letterSpacing: '0.06em',
-      background: s.bg, border: `1px solid ${s.border}`, color: s.color,
-      whiteSpace: 'nowrap',
-    }}>
-      {estado}
-    </span>
   );
 }

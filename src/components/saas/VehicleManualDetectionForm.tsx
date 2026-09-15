@@ -303,7 +303,7 @@ export default function VehicleManualDetectionForm() {
                 {/* Header */}
                 <div className="p-5" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.02)' }}>
                     <h2 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2">
-                        <div className="w-1.5 h-4 rounded-full" style={{ background: '#6366f1' }} />
+                        <div className="w-1.5 h-4 rounded-full" style={{ background: '#1240CC' }} />
                         Variables Semánticas
                     </h2>
                     <p className="text-[10px] mt-1 uppercase tracking-widest font-bold" style={{ color: 'rgba(255,255,255,0.3)' }}>
@@ -407,7 +407,7 @@ export default function VehicleManualDetectionForm() {
                                                 const kw = parseFloat(formData.P2.replace(',', '.'));
                                                 setFormData(prev => ({ ...prev, powerCv: !isNaN(kw) ? String(Math.round(kw * 1.35962)) : "" }));
                                             }}
-                                            style={{ color: '#6366f1' }}
+                                            style={{ color: '#1240CC' }}
                                             title="Recalcular automáticamente desde kW"
                                         >
                                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -463,8 +463,8 @@ export default function VehicleManualDetectionForm() {
                                                     className="w-full text-left px-3 py-2 text-xs font-bold font-mono transition-colors"
                                                     style={{
                                                         color: isSelected ? 'white' : 'rgba(255,255,255,0.65)',
-                                                        background: isSelected ? 'rgba(99,102,241,0.1)' : 'transparent',
-                                                        borderLeft: isSelected ? '2px solid #6366f1' : '2px solid transparent',
+                                                        background: isSelected ? 'rgba(18,64,204,0.1)' : 'transparent',
+                                                        borderLeft: isSelected ? '2px solid #1240CC' : '2px solid transparent',
                                                     }}
                                                     onMouseEnter={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)'; }}
                                                     onMouseLeave={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
@@ -487,16 +487,16 @@ export default function VehicleManualDetectionForm() {
                                     type="button"
                                     onClick={() => setFormData(prev => ({ ...prev, esHibridoManual: !prev.esHibridoManual }))}
                                     className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest transition-colors"
-                                    style={{ color: formData.esHibridoManual ? '#6366f1' : 'rgba(255,255,255,0.3)' }}
+                                    style={{ color: formData.esHibridoManual ? '#1240CC' : 'rgba(255,255,255,0.3)' }}
                                 >
                                     <div
                                         className="w-8 h-4 rounded-full transition-colors relative"
-                                        style={{ background: formData.esHibridoManual ? 'rgba(99,102,241,0.4)' : 'rgba(255,255,255,0.1)' }}
+                                        style={{ background: formData.esHibridoManual ? 'rgba(18,64,204,0.4)' : 'rgba(255,255,255,0.1)' }}
                                     >
                                         <div
                                             className="absolute top-0.5 w-3 h-3 rounded-full transition-all"
                                             style={{
-                                                background: formData.esHibridoManual ? '#6366f1' : 'rgba(255,255,255,0.4)',
+                                                background: formData.esHibridoManual ? '#1240CC' : 'rgba(255,255,255,0.4)',
                                                 left: formData.esHibridoManual ? '18px' : '2px'
                                             }}
                                         />
@@ -533,10 +533,10 @@ export default function VehicleManualDetectionForm() {
                         className="w-full py-3 rounded-lg flex items-center justify-center gap-2 text-sm font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                         style={saved
                             ? { background: '#10B981', color: '#020617' }
-                            : { background: '#6366f1', color: '#020617' }
+                            : { background: '#1240CC', color: '#020617' }
                         }
                         onMouseEnter={e => { if (!isLoading && !saved && formData.plate) (e.currentTarget as HTMLElement).style.background = '#5AEAFF'; }}
-                        onMouseLeave={e => { if (!isLoading && !saved) (e.currentTarget as HTMLElement).style.background = saved ? '#10B981' : '#6366f1'; }}
+                        onMouseLeave={e => { if (!isLoading && !saved) (e.currentTarget as HTMLElement).style.background = saved ? '#10B981' : '#1240CC'; }}
                     >
                         {isLoading ? (
                             <div className="w-4 h-4 border-2 border-[#020617]/30 border-t-[#020617] rounded-full animate-spin" />
@@ -572,7 +572,7 @@ export default function VehicleManualDetectionForm() {
                                     setSaved(false);
                                 }}
                                 className="text-[10px] font-bold uppercase tracking-widest transition-colors"
-                                style={{ color: '#6366f1' }}
+                                style={{ color: '#1240CC' }}
                             >
                                 + Nueva entrada
                             </button>
@@ -602,12 +602,12 @@ export default function VehicleManualDetectionForm() {
                                     Catálogo
                                 </span>
                                 {catalogoLoading ? (
-                                    <svg className="animate-spin w-3 h-3" style={{ color: '#6366f1' }} fill="none" viewBox="0 0 24 24">
+                                    <svg className="animate-spin w-3 h-3" style={{ color: '#1240CC' }} fill="none" viewBox="0 0 24 24">
                                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                                     </svg>
                                 ) : (
-                                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ color: versionesUnicas.length > 0 ? '#6366f1' : 'rgba(255,255,255,0.2)', background: versionesUnicas.length > 0 ? 'rgba(99,102,241,0.12)' : 'rgba(255,255,255,0.04)' }}>
+                                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ color: versionesUnicas.length > 0 ? '#1240CC' : 'rgba(255,255,255,0.2)', background: versionesUnicas.length > 0 ? 'rgba(18,64,204,0.12)' : 'rgba(255,255,255,0.04)' }}>
                                         {versionesUnicas.length > 0 ? `${versionesUnicas.length} ${versionesUnicas.length === 1 ? 'versión' : 'versiones'}` : 'Sin versiones'}
                                     </span>
                                 )}
@@ -629,13 +629,13 @@ export default function VehicleManualDetectionForm() {
                                 {catalogoSeleccionadoData && (
                                     <div
                                         className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg mb-1"
-                                        style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.3)' }}
+                                        style={{ background: 'rgba(18,64,204,0.12)', border: '1px solid rgba(18,64,204,0.3)' }}
                                     >
                                         <div className="flex items-center gap-2 min-w-0">
-                                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="3">
+                                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#1240CC" strokeWidth="3">
                                                 <polyline points="20 6 9 17 4 12" />
                                             </svg>
-                                            <span className="text-[11px] font-bold truncate" style={{ color: '#818cf8' }}>
+                                            <span className="text-[11px] font-bold truncate" style={{ color: '#3366FF' }}>
                                                 {catalogoSeleccionadoData.marca} {catalogoSeleccionadoData.modelo} {catalogoSeleccionadoData.version}
                                                 {catalogoSeleccionadoData.fec_ini_comerc ? ` · ${new Date(catalogoSeleccionadoData.fec_ini_comerc).getFullYear()}` : ''}
                                                 {catalogoSeleccionadoData.fec_fin_comerc ? `–${new Date(catalogoSeleccionadoData.fec_fin_comerc).getFullYear()}` : ''}
@@ -675,7 +675,7 @@ export default function VehicleManualDetectionForm() {
                                         ? `${(Math.round(c.pvp * 10) / 10).toLocaleString('es-ES')}K €`
                                         : null;
                                     const isSelected = catalogoSeleccionado === c.id_veh;
-                                    const scoreColor = c.score >= 80 ? '#10B981' : c.score >= 70 ? '#F59E0B' : '#6366f1';
+                                    const scoreColor = c.score >= 80 ? '#10B981' : c.score >= 70 ? '#F59E0B' : '#1240CC';
                                     const infoLine = [
                                         yearStr,
                                         c.kw ? `${c.kw} kW` : null,
@@ -688,10 +688,10 @@ export default function VehicleManualDetectionForm() {
                                             className="flex items-center justify-between gap-3 py-2.5 px-3 rounded-lg cursor-pointer transition-colors"
                                             style={{
                                                 borderBottom: i < versionesUnicas.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
-                                                background: isSelected ? 'rgba(99,102,241,0.15)' : 'rgba(255,255,255,0.02)',
-                                                borderLeft: isSelected ? '3px solid #6366f1' : '3px solid transparent',
+                                                background: isSelected ? 'rgba(18,64,204,0.15)' : 'rgba(255,255,255,0.02)',
+                                                borderLeft: isSelected ? '3px solid #1240CC' : '3px solid transparent',
                                             }}
-                                            onMouseEnter={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = 'rgba(99,102,241,0.08)'; }}
+                                            onMouseEnter={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = 'rgba(18,64,204,0.08)'; }}
                                             onMouseLeave={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.02)'; }}
                                         >
                                             <div className="flex flex-col min-w-0 gap-0.5">

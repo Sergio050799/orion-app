@@ -16,8 +16,10 @@ interface OfertaRow {
   tipo_vehiculo: string;
   uso: string;
   cv: string;
+  prima_referencia: string;
   coberturas: string;
   lunas: string;
+  asistencia: string;    // 'oro' | 'oro_plus' | 'no' | ''
   ambito: string;
   frq: string;
   animales: string;      // 'true' | ''
@@ -32,11 +34,23 @@ export interface HojaOfertaHandle {
   setData: (data: Record<string, string>[]) => void;
 }
 
+interface OfertaFields {
+  primaClienteTotal?: number;
+  descuentoOferta?: number;
+  descuentosCoberturas?: Record<string, number>;
+}
+
 interface Props {
   trabajoRows: Record<string, string>[];
   header?: { cif: string; tomador: string; actividad: string; formaPago: string; efecto: string };
   carpetaNombre?: string;
+  primasMmt?: Record<string, number>;  // key: "TIPO||COBERTURA", value: prima media (from Informe)
   onDataChange?: (data: Record<string, string>[]) => void;
+  // Campos de carpeta para descuentos y prima cliente
+  primaClienteTotal?: number;
+  descuentoOferta?: number;
+  descuentosCoberturas?: Record<string, number>;
+  onOfertaFieldsChange?: (fields: OfertaFields) => void;
 }
 
 // ─── Mapeos para calcularPrima ──────────────────────────────────────────────
@@ -71,6 +85,7 @@ const AMBITO_MAP: Record<string, CalcPrimaParams['ambito']> = {
 };
 
 // Tipos que aplican a cada checkbox
+const NO_LUNAS_TIPOS = new Set(['semirremolque', 'industrial no matriculado']);
 const ANIMALES_TIPOS = new Set(['turismo', 'furgoneta']);
 const ISOTERMO_TIPOS = new Set(['camion_rigido', 'semirremolque']);
 const PERDIDA_TOTAL_TIPOS = new Set(['cabeza_tractora', 'camion_rigido', 'semirremolque']);
@@ -91,7 +106,8 @@ function rowToPrimaParams(row: OfertaRow): CalcPrimaParams | null {
   if (!producto) return null;
 
   // Terceros + Lunas Sí → terceros_con_luna
-  if (producto === 'terceros' && row.lunas.toLowerCase() === 'sí') {
+  const lunasActive = ['sí', 'si', 'true', 's', 'oro'].includes((row.lunas ?? '').toLowerCase());
+  if (producto === 'terceros' && lunasActive) {
     producto = 'terceros_con_luna';
   }
 
@@ -99,12 +115,19 @@ function rowToPrimaParams(row: OfertaRow): CalcPrimaParams | null {
   const ambito = AMBITO_MAP[row.ambito.toLowerCase()];
   const franquicia = producto === 'todo_riesgo' ? (parseFloat(row.frq) || undefined) : undefined;
 
+  // Asistencia: 'oro' | 'oro_plus' | 'no'
+  const asistVal = (row.asistencia ?? '').toLowerCase();
+  const asistencia: 'no' | 'oro' | 'oro_plus' =
+    asistVal === 'oro_plus' ? 'oro_plus' :
+    ['oro', 'sí', 'si', 'true', 's'].includes(asistVal) ? 'oro' : 'no';
+
   return {
     tipoVehiculo,
     producto,
     uso,
     ambito,
     franquicia,
+    asistencia,
     animales: row.animales === 'true',
     isotermo: row.isotermo === 'true',
     perdidaTotal: row.perdida_total === 'true',
@@ -158,8 +181,8 @@ function CheckboxCell({ row, columnKey, enabled, onToggle }: {
       onClick={() => onToggle(row, columnKey)}>
       <div style={{
         width: 16, height: 16, borderRadius: 4,
-        border: checked ? '2px solid #6366f1' : '2px solid #d1d5db',
-        background: checked ? '#6366f1' : '#fff',
+        border: checked ? '2px solid #1240CC' : '2px solid #d1d5db',
+        background: checked ? '#1240CC' : '#fff',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         transition: 'all 0.1s',
       }}>
@@ -175,24 +198,43 @@ function CheckboxCell({ row, columnKey, enabled, onToggle }: {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+function parseFecha(raw: unknown): string {
+  if (!raw) return '';
+  const s = String(raw);
+  if (!s || s === 'undefined' || s === 'null') return '';
+  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(s)) return s;
+  const n = Number(s);
+  if (!isNaN(n) && Number.isInteger(n) && n > 40000 && n < 70000) {
+    const d = new Date((n - 25569) * 86400 * 1000);
+    return `${String(d.getUTCDate()).padStart(2, '0')}/${String(d.getUTCMonth() + 1).padStart(2, '0')}/${d.getUTCFullYear()}`;
+  }
+  const d = new Date(s);
+  if (!isNaN(d.getTime())) {
+    return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+  }
+  return s;
+}
+
 function trabajoToOferta(rows: Record<string, string>[]): OfertaRow[] {
   return rows
     .filter(r => r['matricula']?.trim())
     .map((r, i) => ({
       _id: i,
-      matricula:       r['matricula']             ?? '',
+      matricula:       (r['matricula'] ?? '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase(),
       marca_modelo:    `${r['marca'] ?? ''} ${r['modelo'] ?? ''}`.trim(),
       tipo_vehiculo:   r['tipo_vehiculo']          ?? '',
       uso:             r['uso']                    ?? '',
       cv:              r['cv']                     ?? '',
+      prima_referencia: r['prima_referencia']       ?? '',
       coberturas:      r['coberturas_solicitadas'] ?? '',
-      lunas:           r['lunas']                  ?? '',
+      lunas:           NO_LUNAS_TIPOS.has((r['tipo_vehiculo'] ?? '').toLowerCase()) ? 'No' : (r['lunas'] ?? ''),
+      asistencia:      r['asistencia']             ?? '',
       ambito:          r['ambito']                 ?? '',
       frq:             r['frq']                    ?? '',
       animales:        '',
       isotermo:        '',
       perdida_total:   '',
-      oferta_prima_mmt: '',
+      oferta_prima_mmt: r['prima_referencia'] ?? '',
       _primaOverride:  '',
     }));
 }
@@ -207,36 +249,114 @@ function rowToRecord(row: OfertaRow): Record<string, string> {
 // ─── HojaOferta ───────────────────────────────────────────────────────────────
 
 const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
-  { trabajoRows, header, carpetaNombre, onDataChange },
+  { trabajoRows, header, carpetaNombre, primasMmt, onDataChange, primaClienteTotal, descuentoOferta, descuentosCoberturas, onOfertaFieldsChange },
   ref,
 ) {
   const [rows, setRows] = useState<OfertaRow[]>([]);
   const [seeded, setSeeded] = useState(false);
   const onDataChangeRef = useRef(onDataChange);
   onDataChangeRef.current = onDataChange;
+  // Saved user edits from carpeta (keyed by matrícula)
+  const savedEditsRef = useRef<Map<string, Partial<OfertaRow>>>(new Map());
+  const [editsVersion, setEditsVersion] = useState(0);
 
-  // Seed from trabajoRows on first non-empty load + resync nuevos vehículos
+  // ─── Ajustes de oferta ────────────────────────────────────────────────────
+  const [showAjustes, setShowAjustes] = useState(false);
+  const [localPrimaCliente, setLocalPrimaCliente] = useState('');
+  const [localDescuento, setLocalDescuento] = useState('');
+  const [localDescCob, setLocalDescCob] = useState<Record<string, string>>({});
+  const onOfertaFieldsRef = useRef(onOfertaFieldsChange);
+  onOfertaFieldsRef.current = onOfertaFieldsChange;
+
+  // Sync props → local state cuando cambia la carpeta
+  useEffect(() => {
+    setLocalPrimaCliente(primaClienteTotal != null ? String(primaClienteTotal) : '');
+    setLocalDescuento(descuentoOferta != null ? String(descuentoOferta) : '');
+    const cobMap: Record<string, string> = {};
+    if (descuentosCoberturas) {
+      for (const [k, v] of Object.entries(descuentosCoberturas)) cobMap[k] = String(v);
+    }
+    setLocalDescCob(cobMap);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [primaClienteTotal, descuentoOferta, descuentosCoberturas]);
+
+  const emitAjustes = useCallback((fields: OfertaFields) => {
+    onOfertaFieldsRef.current?.(fields);
+  }, []);
+
+  // Coberturas únicas presentes en la oferta
+  const coberturasList = useMemo(() => {
+    const seen = new Set<string>();
+    for (const r of rows) if (r.coberturas) seen.add(r.coberturas);
+    return [...seen].sort();
+  }, [rows]);
+
+  // Always rebuild oferta from trabajo + merge user edits
   useEffect(() => {
     if (trabajoRows.length === 0) return;
 
-    if (!seeded) {
-      setRows(trabajoToOferta(trabajoRows));
-      setSeeded(true);
-      return;
-    }
+    const fromTrabajo = trabajoToOferta(trabajoRows);
+    const savedEdits = savedEditsRef.current;
 
-    // Resync: añadir vehículos nuevos que no estén en rows
-    const existingMats = new Set(rows.map(r => r.matricula));
-    const newFromTrabajo = trabajoToOferta(trabajoRows)
-      .filter(r => r.matricula && !existingMats.has(r.matricula));
+    // On first seed or always: rebuild from trabajo, merging user edits
+    const existingByMat = new Map(rows.map(r => [r.matricula, r]));
 
-    if (newFromTrabajo.length > 0) {
-      setRows(prev => [
-        ...prev,
-        ...newFromTrabajo.map((r, i) => ({ ...r, _id: prev.length + i })),
-      ]);
-    }
-  }, [trabajoRows, seeded]);
+    const rebuilt = fromTrabajo.map((src, i) => {
+      // Check if we have user edits from saved oferta data
+      const saved = savedEdits.get(src.matricula);
+      // Check if we have existing row with user edits made in this session
+      const existing = existingByMat.get(src.matricula);
+
+      const row: OfertaRow = {
+        ...src,
+        _id: i,
+        // Prefer trabajo data for identification fields (always fresh)
+        matricula: src.matricula,
+        marca_modelo: src.marca_modelo,
+        tipo_vehiculo: src.tipo_vehiculo,
+        uso: src.uso,
+        cv: src.cv,
+        // For cotización fields: existing session edit > saved edit > trabajo data
+        coberturas: existing?.coberturas || saved?.coberturas || src.coberturas,
+        lunas: existing?.lunas || saved?.lunas || src.lunas,
+        asistencia: existing?.asistencia || saved?.asistencia || src.asistencia,
+        ambito: existing?.ambito || saved?.ambito || src.ambito,
+        frq: existing?.frq || saved?.frq || src.frq,
+        // Checkboxes + prima: only from existing/saved (not in trabajo)
+        animales: existing?.animales || saved?.animales || '',
+        isotermo: existing?.isotermo || saved?.isotermo || '',
+        perdida_total: existing?.perdida_total || saved?.perdida_total || '',
+        oferta_prima_mmt: existing?.oferta_prima_mmt || saved?.oferta_prima_mmt || src.prima_referencia || '',
+        _primaOverride: existing?._primaOverride || saved?._primaOverride || '',
+      };
+
+      // Force lunas='No' for types that can't have lunas
+      if (NO_LUNAS_TIPOS.has(row.tipo_vehiculo.toLowerCase())) row.lunas = 'No';
+
+      // Prima priority: manual override > prima_referencia (individual) > informe MMT (group avg) > auto-calc
+      if (!row._primaOverride) {
+        if (!row.oferta_prima_mmt) {
+          const tipoKey = (row.tipo_vehiculo || '').toUpperCase().trim() || 'SIN TIPO';
+          const normTipo = tipoKey === 'DERIVADO DE TURISMO' ? 'TURISMO' : tipoKey;
+          const cobKey = row.coberturas || 'Sin cobertura';
+          const informeKey = `${normTipo}||${cobKey}`;
+          const informePrima = primasMmt?.[informeKey];
+          if (informePrima != null) {
+            // Use group avg from Informe only when no individual prima_referencia exists
+            row.oferta_prima_mmt = String(informePrima);
+          } else if (row.coberturas) {
+            row.oferta_prima_mmt = calcPrimaForRow(row);
+          }
+        }
+      }
+
+      return row;
+    });
+
+    setRows(rebuilt);
+    if (!seeded) setSeeded(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trabajoRows, editsVersion, primasMmt]);
 
   // Notify parent of changes
   useEffect(() => {
@@ -250,25 +370,27 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
   useImperativeHandle(ref, () => ({
     getData: () => rows.map(rowToRecord),
     setData: (data) => {
-      const ofertaRows: OfertaRow[] = data.map((r, i) => ({
-        _id: i,
-        matricula:        r['matricula']        ?? '',
-        marca_modelo:     r['marca_modelo']     ?? '',
-        tipo_vehiculo:    r['tipo_vehiculo']     ?? '',
-        uso:              r['uso']              ?? '',
-        cv:               r['cv']               ?? '',
-        coberturas:       r['coberturas']        ?? '',
-        lunas:            r['lunas']             ?? '',
-        ambito:           r['ambito']            ?? '',
-        frq:              r['frq']               ?? '',
-        animales:         r['animales']          ?? '',
-        isotermo:         r['isotermo']          ?? '',
-        perdida_total:    r['perdida_total']     ?? '',
-        oferta_prima_mmt: r['oferta_prima_mmt']  ?? '',
-        _primaOverride:   r['_primaOverride']    ?? '',
-      }));
-      setRows(ofertaRows);
-      setSeeded(true);
+      // Store saved user edits keyed by matrícula — the useEffect will merge them
+      const edits = new Map<string, Partial<OfertaRow>>();
+      for (const r of data) {
+        const mat = (r['matricula'] ?? '').trim();
+        if (!mat) continue;
+        edits.set(mat, {
+          coberturas:       r['coberturas']        ?? '',
+          lunas:            r['lunas']             ?? '',
+          asistencia:       r['asistencia']        ?? '',
+          ambito:           r['ambito']            ?? '',
+          frq:              r['frq']               ?? '',
+          animales:         r['animales']          ?? '',
+          isotermo:         r['isotermo']          ?? '',
+          perdida_total:    r['perdida_total']     ?? '',
+          oferta_prima_mmt: r['oferta_prima_mmt']  ?? '',
+          _primaOverride:   r['_primaOverride']    ?? '',
+        });
+      }
+      savedEditsRef.current = edits;
+      // Bump version to trigger useEffect rebuild with these edits merged
+      setEditsVersion(v => v + 1);
     },
   }));
 
@@ -329,108 +451,93 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
     }, 0);
   }, [rows]);
 
-  // ─── Generar Oferta Excel ──────────────────────────────────────────────────
+  // Prima neta con descuentos aplicados
+  const primaNetaTotal = useMemo(() => {
+    const descG = parseFloat(localDescuento) || 0;
+    return rows.reduce((sum, r) => {
+      const v = parseFloat(r.oferta_prima_mmt);
+      if (isNaN(v)) return sum;
+      const descCob = parseFloat(localDescCob[r.coberturas] ?? '') || 0;
+      const desc = descCob > 0 ? descCob : descG;
+      return sum + v * (1 - desc / 100);
+    }, 0);
+  }, [rows, localDescuento, localDescCob]);
+
+  // ─── Generar Oferta Excel (via endpoint con formato MMT) ───────────────────
+  const [exporting, setExporting] = useState(false);
+
   const handleExportOferta = useCallback(async () => {
-    const ExcelJS = (await import('exceljs')).default;
-    const wb = new ExcelJS.Workbook();
-    const ws = wb.addWorksheet('Oferta');
-
-    // Colores corporativos
-    const indigo = '6366F1';
-    const headerBg = 'EEF2FF';
-    const grayBg = 'F9FAFB';
-    const borderColor = 'D1D5DB';
-
-    // Cabecera
-    ws.mergeCells('A1:H1');
-    const titleCell = ws.getCell('A1');
-    titleCell.value = 'OFERTA DE SEGURO DE FLOTAS — ORION';
-    titleCell.font = { bold: true, size: 14, color: { argb: indigo } };
-    titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
-    ws.getRow(1).height = 30;
-
-    ws.mergeCells('A2:H2');
-    const subtitleCell = ws.getCell('A2');
-    subtitleCell.value = `${carpetaNombre ?? 'Sin nombre'} — ${new Date().toLocaleDateString('es-ES')}`;
-    subtitleCell.font = { size: 10, color: { argb: '6B7280' } };
-    subtitleCell.alignment = { horizontal: 'center' };
-
-    // Datos empresa
-    if (header) {
-      ws.getCell('A4').value = 'CIF:';
-      ws.getCell('B4').value = header.cif;
-      ws.getCell('A5').value = 'Tomador:';
-      ws.getCell('B5').value = header.tomador;
-      ws.getCell('A6').value = 'Actividad:';
-      ws.getCell('B6').value = header.actividad;
-      for (let r = 4; r <= 6; r++) {
-        ws.getCell(`A${r}`).font = { bold: true, size: 10, color: { argb: '374151' } };
-        ws.getCell(`B${r}`).font = { size: 10, color: { argb: '111827' } };
-      }
-    }
-
-    // Tabla de vehículos
-    const startRow = header ? 8 : 4;
-    const headers = ['Matrícula', 'Marca / Modelo', 'Tipo Vehículo', 'Coberturas', 'Ámbito', 'FRQ', 'Prima MMT'];
-    const headerRow = ws.getRow(startRow);
-    headers.forEach((h, i) => {
-      const cell = headerRow.getCell(i + 1);
-      cell.value = h;
-      cell.font = { bold: true, size: 10, color: { argb: '374151' } };
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: headerBg } };
-      cell.border = { bottom: { style: 'thin', color: { argb: borderColor } } };
-      cell.alignment = { horizontal: i >= 5 ? 'right' : 'left', vertical: 'middle' };
-    });
-    headerRow.height = 22;
-
-    rows.forEach((r, idx) => {
-      const row = ws.getRow(startRow + 1 + idx);
-      const vals = [r.matricula, r.marca_modelo, r.tipo_vehiculo, r.coberturas, r.ambito, r.frq, r.oferta_prima_mmt];
-      vals.forEach((v, i) => {
-        const cell = row.getCell(i + 1);
-        if (i === 6 && v) {
-          cell.value = parseFloat(v) || 0;
-          cell.numFmt = '#,##0" €"';
-        } else {
-          cell.value = v;
-        }
-        cell.font = { size: 10, color: { argb: '111827' } };
-        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: idx % 2 === 0 ? 'FFFFFF' : grayBg } };
-        cell.border = { bottom: { style: 'hair', color: { argb: borderColor } } };
-        cell.alignment = { horizontal: i >= 5 ? 'right' : 'left', vertical: 'middle' };
+    if (exporting) return;
+    setExporting(true);
+    try {
+      const vehiculos = rows.map(r => {
+        const marcaModelo = r.marca_modelo ?? '';
+        const [marca, ...modeloParts] = marcaModelo.split(' ');
+        return {
+          tomador: (header?.tomador ?? '').toUpperCase(),
+          tipologia: (r.tipo_vehiculo ?? '').toUpperCase(),
+          matricula: (r.matricula ?? '').toUpperCase(),
+          marca: (marca ?? '').toUpperCase(),
+          modelo: modeloParts.join(' ').toUpperCase(),
+          coberturas: (r.coberturas ?? '').toUpperCase(),
+          prima_actual: parseFloat(r.prima_referencia) || 0,
+          forma_pago: (header?.formaPago ?? 'ANUAL').toUpperCase(),
+          fecha_vencimiento: parseFecha(header?.efecto),
+          prima_ofertada: parseFloat(r.oferta_prima_mmt) || 0,
+        };
       });
-    });
 
-    // Fila total
-    const totalRow = ws.getRow(startRow + 1 + rows.length);
-    totalRow.getCell(1).value = 'TOTAL FLOTA';
-    totalRow.getCell(1).font = { bold: true, size: 11, color: { argb: indigo } };
-    totalRow.getCell(7).value = primaTotal;
-    totalRow.getCell(7).numFmt = '#,##0" €"';
-    totalRow.getCell(7).font = { bold: true, size: 11, color: { argb: '111827' } };
-    for (let i = 1; i <= 7; i++) {
-      totalRow.getCell(i).border = { top: { style: 'medium', color: { argb: indigo } } };
-      totalRow.getCell(i).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: headerBg } };
+      const payload = {
+        flota_nombre: (carpetaNombre ?? 'FLOTA').toUpperCase(),
+        empresa_nombre: (header?.tomador ?? '').toUpperCase(),
+        empresa_cif: (header?.cif ?? '').toUpperCase(),
+        vehiculos,
+      };
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+      let res: Response;
+      try {
+        res = await fetch('/api/flotas/oferta/excel', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          signal: controller.signal,
+        });
+      } finally {
+        clearTimeout(timeoutId);
+      }
+
+      if (!res.ok) {
+        let errMsg = `HTTP ${res.status}`;
+        try {
+          const err = await res.json();
+          errMsg = err.error || err.message || errMsg;
+        } catch {
+          try { errMsg += ': ' + (await res.text()).slice(0, 200); } catch { /* noop */ }
+        }
+        alert(`Error generando oferta: ${errMsg}`);
+        return;
+      }
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `OFERTA_${(carpetaNombre ?? 'FLOTA').replace(/[^a-zA-Z0-9_\- ]/g, '').trim().toUpperCase()}.xlsx`;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error('[Oferta Excel]', err);
+      alert(`Error generando la oferta: ${msg}`);
+    } finally {
+      setExporting(false);
     }
-
-    // Column widths
-    ws.getColumn(1).width = 14;
-    ws.getColumn(2).width = 24;
-    ws.getColumn(3).width = 20;
-    ws.getColumn(4).width = 26;
-    ws.getColumn(5).width = 14;
-    ws.getColumn(6).width = 10;
-    ws.getColumn(7).width = 14;
-
-    const buffer = await wb.xlsx.writeBuffer();
-    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Oferta_${carpetaNombre ?? 'flota'}_${new Date().toLocaleDateString('es-ES').replace(/\//g, '-')}.xlsx`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }, [rows, primaTotal, header, carpetaNombre]);
+  }, [rows, header, carpetaNombre, exporting]);
 
   const columns = useMemo((): Column<OfertaRow>[] => [
     {
@@ -462,7 +569,7 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
       editable: true,
       renderEditCell: (props) => <DropdownEditor {...props} options={COBERTURA_OPTS} />,
       renderCell: ({ row }: RenderCellProps<OfertaRow>) => (
-        <div style={{ height: '100%', display: 'flex', alignItems: 'center', paddingLeft: 8, fontSize: 12, color: row.coberturas ? '#111827' : '#9ca3af', fontStyle: row.coberturas ? 'normal' : 'italic' }}>
+        <div style={{ height: '100%', display: 'flex', alignItems: 'center', paddingLeft: 8, fontSize: 12, color: row.coberturas ? '#000000' : '#9ca3af', fontStyle: row.coberturas ? 'normal' : 'italic' }}>
           {row.coberturas || '—'}
         </div>
       ),
@@ -470,19 +577,28 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
     {
       key: 'lunas', name: 'LUNAS', width: 70,
       editable: true,
-      renderEditCell: (props) => <DropdownEditor {...props} options={LUNAS_OPTS} />,
-      renderCell: ({ row }: RenderCellProps<OfertaRow>) => (
-        <div style={{ height: '100%', display: 'flex', alignItems: 'center', paddingLeft: 8, fontSize: 12, color: row.lunas ? '#111827' : '#9ca3af' }}>
-          {row.lunas || '—'}
-        </div>
-      ),
+      renderEditCell: (props) => NO_LUNAS_TIPOS.has(props.row.tipo_vehiculo.toLowerCase()) ? <div /> : <DropdownEditor {...props} options={LUNAS_OPTS} />,
+      renderCell: ({ row }: RenderCellProps<OfertaRow>) => {
+        if (NO_LUNAS_TIPOS.has(row.tipo_vehiculo.toLowerCase())) {
+          return (
+            <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f3f4f6' }}>
+              <span style={{ color: '#d1d5db', fontSize: 10 }}>N/A</span>
+            </div>
+          );
+        }
+        return (
+          <div style={{ height: '100%', display: 'flex', alignItems: 'center', paddingLeft: 8, fontSize: 12, color: row.lunas ? '#000000' : '#9ca3af' }}>
+            {row.lunas || '—'}
+          </div>
+        );
+      },
     },
     {
       key: 'ambito', name: 'ÁMBITO', width: 110,
       editable: true,
       renderEditCell: (props) => <DropdownEditor {...props} options={AMBITO_OPTS} />,
       renderCell: ({ row }: RenderCellProps<OfertaRow>) => (
-        <div style={{ height: '100%', display: 'flex', alignItems: 'center', paddingLeft: 8, fontSize: 12, color: row.ambito ? '#111827' : '#9ca3af' }}>
+        <div style={{ height: '100%', display: 'flex', alignItems: 'center', paddingLeft: 8, fontSize: 12, color: row.ambito ? '#000000' : '#9ca3af' }}>
           {row.ambito || '—'}
         </div>
       ),
@@ -494,7 +610,7 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
       renderCell: ({ row }: RenderCellProps<OfertaRow>) => {
         const disabled = row.coberturas !== 'Todo Riesgo con Franquicia';
         return (
-          <div style={{ height: '100%', display: 'flex', alignItems: 'center', paddingLeft: 8, fontSize: 12, color: disabled ? '#9ca3af' : '#111827', fontStyle: disabled ? 'italic' : 'normal' }}>
+          <div style={{ height: '100%', display: 'flex', alignItems: 'center', paddingLeft: 8, fontSize: 12, color: disabled ? '#9ca3af' : '#000000', fontStyle: disabled ? 'italic' : 'normal' }}>
             {row.frq || ''}
           </div>
         );
@@ -535,7 +651,7 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
           <div style={{
             height: '100%', display: 'flex', alignItems: 'center', paddingLeft: 8, fontSize: 12,
             fontWeight: hasValue ? 700 : 400,
-            color: hasValue ? '#111827' : '#9ca3af',
+            color: hasValue ? '#000000' : '#9ca3af',
             fontFamily: hasValue ? 'monospace' : 'inherit',
             borderLeft: isOverride ? '3px solid #f59e0b' : 'none',
             background: isOverride ? 'rgba(245,158,11,0.05)' : undefined,
@@ -550,25 +666,61 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
 
   const filledRows = rows.filter(r => r.matricula.trim()).length;
 
+  // ─── Preview mode toggle ───────────────────────────────────────────────────
+  const [showPreview, setShowPreview] = useState(true);
+
+  const fmtEUR = (n: number) => n.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+
+  // Handle inline prima edit in preview
+  const handlePreviewPrimaChange = useCallback((id: number, value: string) => {
+    setRows(prev => prev.map(r => {
+      if (r._id !== id) return r;
+      if (value.trim() === '') {
+        const auto = calcPrimaForRow(r);
+        return { ...r, oferta_prima_mmt: auto, _primaOverride: '' };
+      }
+      return { ...r, oferta_prima_mmt: value, _primaOverride: 'true' };
+    }));
+  }, []);
+
   return (
     <div className="flex flex-col h-full min-h-0">
       {/* Toolbar */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 16px', borderBottom: '1px solid #e5e7eb', background: '#f9fafb', flexShrink: 0 }}>
-        <span style={{ fontSize: 11, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-          {filledRows} vehículos · Coberturas y precios de oferta
-        </span>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 16px', borderBottom: showAjustes ? 'none' : '1px solid #e5e7eb', background: '#f9fafb', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <span style={{ color: '#002F82', fontWeight: 900 }}>{filledRows}</span> vehículos seleccionados
+          </span>
           {primaTotal > 0 && (
-            <span style={{ fontSize: 12, fontWeight: 900, color: '#111827', fontFamily: 'monospace', background: '#e0e7ff', padding: '3px 10px', borderRadius: 6, border: '1px solid #c7d2fe' }}>
-              TOTAL FLOTA: {primaTotal.toLocaleString('es-ES')} €
+            <span style={{ fontSize: 12, fontWeight: 900, color: '#111827', fontFamily: 'monospace', background: 'rgba(178,198,245,0.28)', padding: '3px 10px', borderRadius: 6, border: '1px solid rgba(178,198,245,0.5)' }}>
+              TOTAL: {fmtEUR(primaTotal)}
             </span>
           )}
+          {primaNetaTotal > 0 && primaNetaTotal !== primaTotal && (
+            <span style={{ fontSize: 12, fontWeight: 900, color: '#16a34a', fontFamily: 'monospace', background: 'rgba(22,163,74,0.08)', padding: '3px 10px', borderRadius: 6, border: '1px solid rgba(22,163,74,0.2)' }}>
+              NETO: {fmtEUR(primaNetaTotal)}
+            </span>
+          )}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {/* Ajustes toggle */}
+          <button
+            onClick={() => setShowAjustes(!showAjustes)}
+            style={{ fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 6, background: showAjustes ? 'rgba(245,158,11,0.12)' : 'rgba(0,0,0,0.04)', color: showAjustes ? '#b45309' : '#6b7280', border: '1px solid ' + (showAjustes ? 'rgba(245,158,11,0.35)' : '#e5e7eb'), cursor: 'pointer' }}>
+            Ajustes
+          </button>
+          {/* Toggle preview/grid */}
+          <button
+            onClick={() => setShowPreview(!showPreview)}
+            style={{ fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 6, background: showPreview ? 'rgba(0,48,132,0.1)' : 'rgba(0,0,0,0.04)', color: showPreview ? '#002F82' : '#6b7280', border: '1px solid ' + (showPreview ? 'rgba(0,48,132,0.25)' : '#e5e7eb'), cursor: 'pointer' }}>
+            {showPreview ? 'Vista previa' : 'Editar datos'}
+          </button>
           {rows.length > 0 && (
             <button onClick={handleExportOferta}
-              style={{ fontSize: 10, fontWeight: 800, padding: '4px 12px', borderRadius: 6, background: 'rgba(22,163,74,0.1)', color: '#16a34a', border: '1px solid rgba(22,163,74,0.25)', cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.05em' }}
-              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(22,163,74,0.2)')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'rgba(22,163,74,0.1)')}>
-              Generar Oferta
+              disabled={exporting}
+              style={{ fontSize: 10, fontWeight: 800, padding: '4px 12px', borderRadius: 6, background: exporting ? 'rgba(22,163,74,0.05)' : 'rgba(22,163,74,0.1)', color: '#16a34a', border: '1px solid rgba(22,163,74,0.25)', cursor: exporting ? 'wait' : 'pointer', textTransform: 'uppercase', letterSpacing: '0.05em', opacity: exporting ? 0.6 : 1, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              {exporting ? 'Generando...' : 'Descargar Excel'}
             </button>
           )}
           {rows.length === 0 && trabajoRows.length === 0 && (
@@ -577,25 +729,237 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
         </div>
       </div>
 
-      {/* Grid */}
-      <div className="flex-1 min-h-0">
-        <DataGrid
-          columns={columns}
-          rows={rows}
-          onRowsChange={handleRowsChange}
-          rowKeyGetter={(row: OfertaRow) => row._id}
-          style={{ height: '100%', fontFamily: 'ui-sans-serif, system-ui, sans-serif', fontSize: 12 }}
-          className="rdg-light"
-          defaultColumnOptions={{ resizable: true, sortable: false }}
-        />
-      </div>
+      {/* Ajustes panel */}
+      {showAjustes && (
+        <div style={{ padding: '10px 16px', borderBottom: '1px solid #e5e7eb', background: '#fffbf0', display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start', flexShrink: 0 }}>
+          {/* Prima cliente */}
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Prima cliente actual</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <input
+                type="number" min="0" step="0.01" placeholder="0.00"
+                value={localPrimaCliente}
+                onChange={e => setLocalPrimaCliente(e.target.value)}
+                onBlur={() => emitAjustes({ primaClienteTotal: localPrimaCliente ? parseFloat(localPrimaCliente) : undefined, descuentoOferta: localDescuento ? parseFloat(localDescuento) : undefined, descuentosCoberturas: Object.fromEntries(Object.entries(localDescCob).filter(([,v]) => v).map(([k,v]) => [k, parseFloat(v)])) })}
+                style={{ width: 110, padding: '4px 8px', borderRadius: 6, border: '1px solid #d97706', fontSize: 12, fontFamily: 'monospace', outline: 'none' }}
+              />
+              <span style={{ fontSize: 11, color: '#6b7280' }}>€</span>
+              {localPrimaCliente && filledRows > 0 && (
+                <span style={{ fontSize: 10, color: '#92400e', fontFamily: 'monospace', background: 'rgba(245,158,11,0.1)', padding: '2px 6px', borderRadius: 4 }}>
+                  {fmtEUR(parseFloat(localPrimaCliente) / filledRows)} / veh.
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Descuento global */}
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Descuento global</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <input
+                type="number" min="0" max="100" step="0.1" placeholder="0"
+                value={localDescuento}
+                onChange={e => setLocalDescuento(e.target.value)}
+                onBlur={() => emitAjustes({ primaClienteTotal: localPrimaCliente ? parseFloat(localPrimaCliente) : undefined, descuentoOferta: localDescuento ? parseFloat(localDescuento) : undefined, descuentosCoberturas: Object.fromEntries(Object.entries(localDescCob).filter(([,v]) => v).map(([k,v]) => [k, parseFloat(v)])) })}
+                style={{ width: 70, padding: '4px 8px', borderRadius: 6, border: '1px solid #d97706', fontSize: 12, fontFamily: 'monospace', outline: 'none' }}
+              />
+              <span style={{ fontSize: 11, color: '#6b7280' }}>%</span>
+              {localDescuento && primaTotal > 0 && (
+                <span style={{ fontSize: 10, color: '#16a34a', fontFamily: 'monospace', background: 'rgba(22,163,74,0.1)', padding: '2px 6px', borderRadius: 4 }}>
+                  = {fmtEUR(primaTotal * (1 - (parseFloat(localDescuento)||0) / 100))}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Descuentos por cobertura */}
+          {coberturasList.length > 0 && (
+            <div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Desc. por cobertura</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {coberturasList.map(cob => (
+                  <div key={cob} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ fontSize: 10, color: '#374151', maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={cob}>{cob}</span>
+                    <input
+                      type="number" min="0" max="100" step="0.1" placeholder="0"
+                      value={localDescCob[cob] ?? ''}
+                      onChange={e => setLocalDescCob(prev => ({ ...prev, [cob]: e.target.value }))}
+                      onBlur={() => emitAjustes({ primaClienteTotal: localPrimaCliente ? parseFloat(localPrimaCliente) : undefined, descuentoOferta: localDescuento ? parseFloat(localDescuento) : undefined, descuentosCoberturas: Object.fromEntries(Object.entries({ ...localDescCob }).filter(([,v]) => v).map(([k,v]) => [k, parseFloat(v)])) })}
+                      style={{ width: 50, padding: '2px 6px', borderRadius: 4, border: '1px solid #d97706', fontSize: 11, fontFamily: 'monospace', outline: 'none' }}
+                    />
+                    <span style={{ fontSize: 10, color: '#6b7280' }}>%</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {showPreview ? (
+        /* ─── Excel Preview ─────────────────────────────────────────────────── */
+        <div className="flex-1 min-h-0" style={{ overflow: 'auto', padding: '24px 32px', background: '#eef1f6' }}>
+          <div style={{ maxWidth: 1400, margin: '0 auto', boxShadow: '0 8px 40px rgba(0,0,0,0.18)', borderRadius: 10, overflow: 'hidden', background: '#fff' }}>
+
+            {/* Header azul */}
+            <div style={{ background: '#002F82', padding: '36px 40px', position: 'relative', minHeight: 110, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <img
+                src="/LOGOMMT.jpg"
+                alt="Logo MMT"
+                style={{ position: 'absolute', left: 28, top: '50%', transform: 'translateY(-50%)', height: 60, objectFit: 'contain' }}
+                onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+              />
+              <span style={{ color: '#fff', fontSize: 26, fontWeight: 800, textAlign: 'center', letterSpacing: '0.03em', fontFamily: "'Space Grotesk', Calibri, sans-serif" }}>
+                OFERTA PARA LA FLOTA {(carpetaNombre ?? 'FLOTA').toUpperCase()}
+              </span>
+            </div>
+
+            {/* Subtítulo empresa */}
+            <div style={{ padding: '14px 40px', textAlign: 'center', borderBottom: '2px solid #e5e7eb', background: '#fafbfc' }}>
+              <span style={{ fontSize: 16, fontWeight: 700, color: '#000', letterSpacing: '0.02em' }}>
+                {(header?.tomador ?? '').toUpperCase()}
+                {header?.cif ? ` — ${header.cif.toUpperCase()}` : ''}
+              </span>
+            </div>
+
+            {/* Tabla de vehículos */}
+            <div style={{ overflowX: 'auto', padding: '0' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+                <thead>
+                  <tr style={{ background: '#00B050' }}>
+                    {['Tomador', 'Tipología', 'Matrícula', 'Marca', 'Modelo', 'Coberturas', 'Total Actual', 'Forma Pago', 'F.Vencimiento', 'Prima Ofertada MMT'].map(h => (
+                      <th key={h} style={{ padding: '14px 12px', color: '#fff', fontWeight: 800, fontSize: 12, textTransform: 'uppercase', textAlign: 'center', borderBottom: '3px solid #009040', whiteSpace: 'nowrap', letterSpacing: '0.04em' }}>
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.filter(r => r.matricula.trim()).map((r, idx) => {
+                    const [marca, ...modeloParts] = r.marca_modelo.split(' ');
+                    const isOverride = r._primaOverride === 'true';
+                    const stripe = idx % 2 === 1 ? '#f7f8fa' : '#fff';
+                    return (
+                      <tr key={r._id} style={{ borderBottom: '1px solid #e8eaed', background: stripe, transition: 'background 0.15s' }}
+                        onMouseEnter={e => { e.currentTarget.style.background = '#eef3ff'; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = stripe; }}>
+                        <td style={{ padding: '12px 10px', textAlign: 'center', color: '#000', fontSize: 13 }}>{(header?.tomador ?? '').toUpperCase()}</td>
+                        <td style={{ padding: '12px 10px', textAlign: 'center', color: '#000', fontSize: 13, fontWeight: 600 }}>{r.tipo_vehiculo.toUpperCase()}</td>
+                        <td style={{ padding: '12px 10px', textAlign: 'center', fontWeight: 800, color: '#002F82', fontSize: 14, letterSpacing: '0.04em' }}>{r.matricula.toUpperCase()}</td>
+                        <td style={{ padding: '12px 10px', textAlign: 'center', color: '#000', fontSize: 13, fontWeight: 600 }}>{(marca ?? '').toUpperCase()}</td>
+                        <td style={{ padding: '12px 10px', textAlign: 'center', color: '#000', fontSize: 13 }}>{modeloParts.join(' ').toUpperCase()}</td>
+                        <td style={{ padding: '12px 10px', textAlign: 'center', color: '#000', fontSize: 13, fontWeight: 600 }}>{r.coberturas.toUpperCase()}</td>
+                        <td style={{ padding: '12px 10px', textAlign: 'center', fontFamily: 'monospace', color: '#000', fontWeight: 700, fontSize: 14 }}>{r.prima_referencia ? `${r.prima_referencia} €` : '—'}</td>
+                        <td style={{ padding: '12px 10px', textAlign: 'center', color: '#000', fontSize: 13 }}>{(header?.formaPago ?? 'ANUAL').toUpperCase()}</td>
+                        <td style={{ padding: '12px 10px', textAlign: 'center', color: '#000', fontSize: 13, fontWeight: 600 }}>{parseFecha(header?.efecto)}</td>
+                        <td style={{ padding: '10px 8px', textAlign: 'center' }}>
+                          <input
+                            type="text"
+                            value={r.oferta_prima_mmt}
+                            onChange={e => handlePreviewPrimaChange(r._id, e.target.value)}
+                            style={{
+                              width: 110, textAlign: 'right', fontSize: 14, fontWeight: 800, fontFamily: 'monospace',
+                              padding: '6px 10px', borderRadius: 6, color: '#000',
+                              border: isOverride ? '2px solid #f59e0b' : '2px solid #d1d5db',
+                              background: isOverride ? 'rgba(245,158,11,0.06)' : '#fff',
+                              outline: 'none', transition: 'border-color 0.15s',
+                            }}
+                            onFocus={e => { e.target.style.borderColor = '#002F82'; e.target.style.boxShadow = '0 0 0 3px rgba(0,48,132,0.12)'; }}
+                            onBlur={e => { e.target.style.borderColor = isOverride ? '#f59e0b' : '#d1d5db'; e.target.style.boxShadow = 'none'; }}
+                            placeholder="0.00"
+                          />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {/* Totals row */}
+                  <tr style={{ background: '#f0f2f5', borderTop: '3px solid #002F82' }}>
+                    <td colSpan={6} style={{ padding: '16px 12px', textAlign: 'right', fontWeight: 900, fontSize: 15, color: '#000', letterSpacing: '0.03em' }}>TOTALES</td>
+                    <td style={{ padding: '16px 12px', textAlign: 'center', fontWeight: 800, fontFamily: 'monospace', fontSize: 15, color: '#000' }}>
+                      {(() => { const t = rows.reduce((s, r) => s + (parseFloat(r.prima_referencia) || 0), 0); return t > 0 ? fmtEUR(t) : '—'; })()}
+                    </td>
+                    <td colSpan={2}></td>
+                    <td style={{ padding: '16px 12px', textAlign: 'center', fontWeight: 900, fontFamily: 'monospace', fontSize: 16, color: '#002F82' }}>
+                      {fmtEUR(primaTotal)}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* Resumen inferior */}
+            <div style={{ padding: '20px 40px', borderTop: '2px solid #e5e7eb', background: '#fafbfc', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap' }}>
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Vehículos</div>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: '#002F82', fontFamily: 'monospace' }}>{filledRows}</div>
+                </div>
+                {localPrimaCliente && parseFloat(localPrimaCliente) > 0 && (
+                  <div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Prima Cliente Actual</div>
+                    <div style={{ fontSize: 22, fontWeight: 900, color: '#b45309', fontFamily: 'monospace' }}>{fmtEUR(parseFloat(localPrimaCliente))}</div>
+                    {filledRows > 0 && <div style={{ fontSize: 10, color: '#92400e', fontFamily: 'monospace' }}>{fmtEUR(parseFloat(localPrimaCliente)/filledRows)} / veh.</div>}
+                  </div>
+                )}
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Prima Ofertada MMT</div>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: '#002F82', fontFamily: 'monospace' }}>{fmtEUR(primaTotal)}</div>
+                </div>
+                {primaNetaTotal > 0 && primaNetaTotal !== primaTotal && (
+                  <div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: '#15803d', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                      Prima Neta ({localDescuento}% dto.)
+                    </div>
+                    <div style={{ fontSize: 22, fontWeight: 900, color: '#16a34a', fontFamily: 'monospace' }}>{fmtEUR(primaNetaTotal)}</div>
+                  </div>
+                )}
+                {(() => {
+                  const base = localPrimaCliente && parseFloat(localPrimaCliente) > 0 ? parseFloat(localPrimaCliente) : rows.reduce((s, r) => s + (parseFloat(r.prima_referencia) || 0), 0);
+                  const comparar = primaNetaTotal > 0 && primaNetaTotal !== primaTotal ? primaNetaTotal : primaTotal;
+                  if (base <= 0 || comparar <= 0) return null;
+                  const diff = comparar - base;
+                  const pct = ((diff / base) * 100).toFixed(1);
+                  return (
+                    <div>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Diferencia</div>
+                      <div style={{ fontSize: 22, fontWeight: 900, fontFamily: 'monospace', color: diff <= 0 ? '#16a34a' : '#dc2626' }}>
+                        {diff <= 0 ? '' : '+'}{fmtEUR(diff)} <span style={{ fontSize: 14, fontWeight: 700 }}>({pct}%)</span>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div style={{ padding: '14px 40px', textAlign: 'center', borderTop: '1px solid #e5e7eb', background: '#f5f6f8' }}>
+              <span style={{ fontSize: 11, color: '#9ca3af', fontWeight: 600 }}>
+                MMT Seguros · {new Date().toLocaleDateString('es-ES')}
+              </span>
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* ─── DataGrid Editor ────────────────────────────────────────────────── */
+        <div className="flex-1 min-h-0">
+          <DataGrid
+            columns={columns}
+            rows={rows}
+            onRowsChange={handleRowsChange}
+            rowKeyGetter={(row: OfertaRow) => row._id}
+            style={{ height: '100%', fontFamily: 'ui-sans-serif, system-ui, sans-serif', fontSize: 12 }}
+            className="rdg-light"
+            defaultColumnOptions={{ resizable: true, sortable: false }}
+          />
+        </div>
+      )}
     </div>
   );
 });
 
 function readonlyCell({ row, column }: RenderCellProps<OfertaRow>) {
   return (
-    <div style={{ height: '100%', display: 'flex', alignItems: 'center', paddingLeft: 8, fontSize: 12, color: '#374151', background: '#f9fafb' }}>
+    <div style={{ height: '100%', display: 'flex', alignItems: 'center', paddingLeft: 8, fontSize: 12, color: '#000000', background: '#f9fafb' }}>
       {String((row as unknown as Record<string, string>)[column.key] ?? '')}
     </div>
   );

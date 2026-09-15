@@ -352,8 +352,8 @@ export function extractFields(fullText: string, allLines: string[], analyzeResul
                 }
             }
         }
-    } catch (e) {
-        console.warn("[ORION] V2 Extractor threw an error, ignoring.", e);
+    } catch {
+        // V2 Extractor threw an error, ignoring
     }
     // --- END V2 ---
 

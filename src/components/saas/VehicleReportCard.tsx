@@ -56,9 +56,8 @@ interface VehicleReportCardProps {
 }
 
 const cardStyle: React.CSSProperties = {
-    background: 'rgba(2,6,23,0.85)',
+    background: 'rgba(2,6,23,0.92)',
     border: '1px solid rgba(255,255,255,0.08)',
-    backdropFilter: 'blur(24px)',
 };
 
 const sectionDivider: React.CSSProperties = {
@@ -72,7 +71,7 @@ export default function VehicleReportCard({ ui, isLoading }: VehicleReportCardPr
     if (isLoading) {
         return (
             <div className="flex-[0.8] xl:flex-[0.6] min-w-[400px] rounded-2xl flex flex-col p-6 overflow-hidden relative" style={cardStyle}>
-                <div className="absolute top-0 left-0 right-0 h-px animate-pulse" style={{ background: 'linear-gradient(90deg, transparent, #6366f1, transparent)' }} />
+                <div className="absolute top-0 left-0 right-0 h-px animate-pulse" style={{ background: 'linear-gradient(90deg, transparent, #1240CC, transparent)' }} />
                 <div className="animate-pulse space-y-6 flex-1 mt-4">
                     <div className="h-12 rounded-lg" style={{ background: 'rgba(255,255,255,0.05)' }} />
                     <div className="grid grid-cols-3 gap-4">
@@ -155,11 +154,11 @@ export default function VehicleReportCard({ ui, isLoading }: VehicleReportCardPr
                     {ui.catalogoVersion && (
                         <div
                             className="px-4 py-2 rounded-lg flex items-start gap-3"
-                            style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)' }}
+                            style={{ background: 'rgba(18,64,204,0.08)', border: '1px solid rgba(18,64,204,0.2)' }}
                         >
-                            <div className="w-1 self-stretch rounded-full shrink-0" style={{ background: '#6366f1' }} />
+                            <div className="w-1 self-stretch rounded-full shrink-0" style={{ background: '#1240CC' }} />
                             <div className="flex flex-col min-w-0">
-                                <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'rgba(99,102,241,0.7)' }}>
+                                <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'rgba(18,64,204,0.7)' }}>
                                     Versión catálogo confirmada
                                 </span>
                                 <span className="text-sm font-black text-white truncate">{ui.makeModel}</span>
@@ -167,7 +166,7 @@ export default function VehicleReportCard({ ui, isLoading }: VehicleReportCardPr
                                     {ui.catalogoVersion}
                                 </span>
                                 {ui.catalogoIdVeh && (
-                                    <span className="text-[9px] font-mono mt-0.5" style={{ color: 'rgba(99,102,241,0.5)' }}>
+                                    <span className="text-[9px] font-mono mt-0.5" style={{ color: 'rgba(18,64,204,0.5)' }}>
                                         ID: {ui.catalogoIdVeh} · {ui.catalogoScore}% coincidencia
                                     </span>
                                 )}
@@ -197,7 +196,7 @@ export default function VehicleReportCard({ ui, isLoading }: VehicleReportCardPr
                         {ui.fechaMatriculacionEstimada && (
                             <div className="flex flex-col">
                                 <span className="text-[9px] font-bold uppercase tracking-wider mb-0.5" style={{ color: 'rgba(255,255,255,0.3)' }}>Mat. Estimada (ORIÓN)</span>
-                                <span className="text-xs font-bold truncate" style={{ color: '#6366f1' }}>{ui.fechaMatriculacionEstimada}</span>
+                                <span className="text-xs font-bold truncate" style={{ color: '#1240CC' }}>{ui.fechaMatriculacionEstimada}</span>
                             </div>
                         )}
                         {ui.fechaPrimeraMatriculacion && (!ui.fechaMatriculacionEstimada || ui.usedModel === 'manual-entry') && (
@@ -215,9 +214,9 @@ export default function VehicleReportCard({ ui, isLoading }: VehicleReportCardPr
                 <div className="p-6 flex flex-col gap-4 shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.01)' }}>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {ui.vehicleClassCode && (
-                            <div className="flex flex-col px-4 py-3 rounded-xl relative overflow-hidden" style={{ background: 'rgba(99,102,241,0.05)', border: '1px solid rgba(99,102,241,0.15)' }}>
-                                <div className="absolute left-0 top-0 bottom-0 w-0.5 rounded-r-full" style={{ background: '#6366f1' }} />
-                                <span className="text-[10px] font-bold uppercase tracking-widest mb-1 flex items-center justify-between" style={{ color: '#6366f1' }}>
+                            <div className="flex flex-col px-4 py-3 rounded-xl relative overflow-hidden" style={{ background: 'rgba(18,64,204,0.05)', border: '1px solid rgba(18,64,204,0.15)' }}>
+                                <div className="absolute left-0 top-0 bottom-0 w-0.5 rounded-r-full" style={{ background: '#1240CC' }} />
+                                <span className="text-[10px] font-bold uppercase tracking-widest mb-1 flex items-center justify-between" style={{ color: '#1240CC' }}>
                                     <span className="flex items-center gap-1.5">
                                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
                                         Clase Vehículo
@@ -312,7 +311,7 @@ export default function VehicleReportCard({ ui, isLoading }: VehicleReportCardPr
                                 <div className="px-4 pb-4 pt-1 space-y-3" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
                                     {ui.vehicleClassCode && (
                                         <div>
-                                            <div className="text-[10px] font-bold uppercase" style={{ color: '#6366f1' }}>Clasificación Vehículo (C.L: {ui.vehicleClassCode})</div>
+                                            <div className="text-[10px] font-bold uppercase" style={{ color: '#1240CC' }}>Clasificación Vehículo (C.L: {ui.vehicleClassCode})</div>
                                             {ui.decodedCL ? (
                                                 <div className="text-xs mt-1 leading-relaxed space-y-1" style={{ color: 'rgba(255,255,255,0.5)' }}>
                                                     <div><span className="font-semibold text-white/70">Construcción:</span> {ui.decodedCL.construccion.code} — {ui.decodedCL.construccion.label}</div>
@@ -325,19 +324,19 @@ export default function VehicleReportCard({ ui, isLoading }: VehicleReportCardPr
                                     )}
                                     {ui.ueCategoryCode && (
                                         <div>
-                                            <div className="text-[10px] font-bold uppercase" style={{ color: '#6366f1' }}>Categoría UE (J: {ui.ueCategoryCode})</div>
+                                            <div className="text-[10px] font-bold uppercase" style={{ color: '#1240CC' }}>Categoría UE (J: {ui.ueCategoryCode})</div>
                                             <div className="text-xs mt-0.5 leading-relaxed" style={{ color: 'rgba(255,255,255,0.5)' }}>{ui.fullCategoria || ui.ueCategoryCode}</div>
                                         </div>
                                     )}
                                     {ui.bodyCode && (
                                         <div>
-                                            <div className="text-[10px] font-bold uppercase" style={{ color: '#6366f1' }}>Carrocería UE (J.1: {ui.bodyCode})</div>
+                                            <div className="text-[10px] font-bold uppercase" style={{ color: '#1240CC' }}>Carrocería UE (J.1: {ui.bodyCode})</div>
                                             <div className="text-xs mt-0.5 leading-relaxed" style={{ color: 'rgba(255,255,255,0.5)' }}>{ui.fullCarroceria || ui.bodyCode}</div>
                                         </div>
                                     )}
                                     {ui.claseCode && (
                                         <div>
-                                            <div className="text-[10px] font-bold uppercase" style={{ color: '#6366f1' }}>Clase Específica (J.2: {ui.claseCode})</div>
+                                            <div className="text-[10px] font-bold uppercase" style={{ color: '#1240CC' }}>Clase Específica (J.2: {ui.claseCode})</div>
                                             <div className="text-xs mt-0.5 leading-relaxed" style={{ color: 'rgba(255,255,255,0.5)' }}>{ui.fullClase || ui.claseCode}</div>
                                         </div>
                                     )}
@@ -361,7 +360,7 @@ export default function VehicleReportCard({ ui, isLoading }: VehicleReportCardPr
                     </div>
                     <div
                         className="p-4 rounded-xl text-sm font-semibold leading-relaxed whitespace-pre-wrap"
-                        style={{ background: 'rgba(99,102,241,0.04)', border: '1px solid rgba(99,102,241,0.12)', color: 'rgba(255,255,255,0.7)' }}
+                        style={{ background: 'rgba(18,64,204,0.04)', border: '1px solid rgba(18,64,204,0.12)', color: 'rgba(255,255,255,0.7)' }}
                     >
                         {ui.resumen}
                     </div>

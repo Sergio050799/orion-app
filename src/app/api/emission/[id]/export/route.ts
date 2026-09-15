@@ -71,7 +71,6 @@ export async function GET(
         });
 
     } catch (error: any) {
-        console.error("[EMISSION EXPORT] Error:", error);
         return NextResponse.json({ ok: false, error: error.message || "Error interno" }, { status: 500 });
     }
 }

@@ -29,9 +29,8 @@ export default function VehicleReportPanel({
     if (!markdown && !data) return null;
 
     const containerStyle: React.CSSProperties = {
-        background: 'rgba(2,6,23,0.85)',
+        background: 'rgba(2,6,23,0.92)',
         border: '1px solid rgba(255,255,255,0.08)',
-        backdropFilter: 'blur(24px)',
     };
 
     if (markdown) {
@@ -40,7 +39,7 @@ export default function VehicleReportPanel({
                 <div className="p-4 flex justify-between items-center shrink-0" style={headerStyle}>
                     <div className="flex gap-4 items-center">
                         <div>
-                            <h2 className="text-lg font-black tracking-widest" style={{ color: '#6366f1' }}>INFORME DE INSPECCIÓN</h2>
+                            <h2 className="text-lg font-black tracking-widest" style={{ color: '#1240CC' }}>INFORME DE INSPECCIÓN</h2>
                             <div className="text-xs font-mono tracking-wider mt-1 flex items-center gap-2" style={{ color: 'rgba(255,255,255,0.35)' }}>
                                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" style={{ boxShadow: '0 0 8px rgba(16,185,129,0.5)' }} />
                                 VISTA DE DATOS (ZONA 3)

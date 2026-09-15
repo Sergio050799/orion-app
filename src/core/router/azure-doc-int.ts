@@ -33,7 +33,7 @@ export async function processDocumentWithAzure(fileBuffer: Buffer, mimeType: str
 
     if (needsFallback) {
         try {
-            console.log(`[ORION] OCR Low Quality with ${usedModel} (Mandatory: ${ocrResult.mandatoryFoundCount}/16). Falling back to prebuilt-layout...`);
+            // OCR Low Quality — falling back to prebuilt-layout
             const layoutResult = await runAzureModel("prebuilt-layout", fileBuffer, mimeType);
             const layoutOcrResult = computeOcrQuality(layoutResult as AzureAnalyzeResult);
 
@@ -41,12 +41,12 @@ export async function processDocumentWithAzure(fileBuffer: Buffer, mimeType: str
                 usedModel = "prebuilt-layout";
                 analyzeResult = layoutResult;
                 ocrResult = layoutOcrResult;
-                console.log(`[ORION] Fallback successful. Using prebuilt-layout.`);
+                // Fallback successful — using prebuilt-layout
             } else {
-                console.log(`[ORION] Fallback yielded fewer or equal mandatory fields (${layoutOcrResult.mandatoryFoundCount} vs ${ocrResult.mandatoryFoundCount}). Keeping prebuilt-read.`);
+                // Fallback yielded fewer or equal mandatory fields — keeping prebuilt-read
             }
-        } catch (e) {
-            console.warn("[ORION] Fallback to prebuilt-layout failed, sticking with prebuilt-read.", e);
+        } catch {
+            // Fallback to prebuilt-layout failed, sticking with prebuilt-read
         }
     }
 

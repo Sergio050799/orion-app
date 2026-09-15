@@ -107,7 +107,7 @@ const statusConfig: Record<DocStatus, { label: string; color: string; bg: string
     completo:   { label: 'Completo',   color: '#10B981', bg: 'rgba(16,185,129,0.1)',  border: 'rgba(16,185,129,0.2)' },
     revisar:    { label: 'Revisar',    color: '#F59E0B', bg: 'rgba(245,158,11,0.1)',  border: 'rgba(245,158,11,0.2)' },
     error:      { label: 'Error',      color: '#EF4444', bg: 'rgba(239,68,68,0.1)',   border: 'rgba(239,68,68,0.2)' },
-    procesando: { label: 'Procesando', color: '#6366f1', bg: 'rgba(99,102,241,0.1)',  border: 'rgba(99,102,241,0.2)' },
+    procesando: { label: 'Procesando', color: '#1240CC', bg: 'rgba(18,64,204,0.1)',  border: 'rgba(18,64,204,0.2)' },
 };
 
 const catLabel: Record<string, string> = {
@@ -124,7 +124,7 @@ function SortableHeader({ label, sortKey, activeKey, dir, onSort }: {
         <th className="th cursor-pointer select-none" onClick={() => onSort(sortKey)}>
             <div className="flex items-center gap-1">
                 {label}
-                <span className="text-[10px]" style={{ color: isActive ? '#818cf8' : 'rgba(255,255,255,0.2)' }}>
+                <span className="text-[10px]" style={{ color: isActive ? '#818cf8' : 'rgba(178,198,245,0.5)' }}>
                     {isActive && dir === 'asc' ? '↑' : isActive && dir === 'desc' ? '↓' : '↕'}
                 </span>
             </div>
@@ -201,15 +201,15 @@ function EmissionDetailTable({ emission, onBack, onExportExcel, onDeleteDocument
             {/* Header */}
             <div
                 className="rounded-2xl p-4 flex items-center justify-between shrink-0"
-                style={{ background: 'rgba(2,6,23,0.6)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(20px)' }}
+                style={{ background: 'rgba(2,6,23,0.85)', border: '1px solid rgba(61,112,255,0.16)' }}
             >
                 <div className="flex items-center gap-4">
                     <button
                         onClick={onBack}
                         className="p-1.5 rounded-lg transition-colors"
-                        style={{ color: 'rgba(255,255,255,0.4)' }}
-                        onMouseEnter={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.8)')}
-                        onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.4)')}
+                        style={{ color: 'rgba(178,198,245,0.6)' }}
+                        onMouseEnter={e => (e.currentTarget.style.color = '#BDD4FF')}
+                        onMouseLeave={e => (e.currentTarget.style.color = 'rgba(178,198,245,0.6)')}
                     >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 12H5M12 5l-7 7 7 7" /></svg>
                     </button>
@@ -219,7 +219,7 @@ function EmissionDetailTable({ emission, onBack, onExportExcel, onDeleteDocument
                             <input
                                 autoFocus
                                 className="bg-transparent border-b outline-none text-base font-bold text-white"
-                                style={{ borderColor: 'rgba(99,102,241,0.5)' }}
+                                style={{ borderColor: 'rgba(18,64,204,0.5)' }}
                                 value={emissionName}
                                 onChange={e => setEmissionName(e.target.value)}
                                 onBlur={() => { setEditingName(false); onUpdateName(emissionName); }}
@@ -234,7 +234,7 @@ function EmissionDetailTable({ emission, onBack, onExportExcel, onDeleteDocument
                                 <span className="ml-2 text-xs font-normal opacity-30">✏</span>
                             </h2>
                         )}
-                        <p className="text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                        <p className="text-[11px] mt-0.5" style={{ color: 'rgba(178,198,245,0.6)' }}>
                             {uniquePlates(emission.documents)} vehículos · {countByType(emission.documents)} · {formatDate(emission.createdAt)}
                             {dups > 0 && <span className="ml-2 font-bold" style={{ color: '#F59E0B' }}>⚠ {dups} matrículas duplicadas</span>}
                         </p>
@@ -245,7 +245,7 @@ function EmissionDetailTable({ emission, onBack, onExportExcel, onDeleteDocument
                         value={filterType}
                         onChange={e => setFilterType(e.target.value)}
                         className="text-xs font-bold px-3 py-1.5 rounded-lg outline-none"
-                        style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.7)' }}
+                        style={{ background: 'rgba(61,112,255,0.12)', border: '1px solid rgba(61,112,255,0.22)', color: '#BDD4FF' }}
                     >
                         <option value="all">Todos los tipos</option>
                         <option value="ficha">Fichas</option>
@@ -271,11 +271,11 @@ function EmissionDetailTable({ emission, onBack, onExportExcel, onDeleteDocument
             {/* Table */}
             <div
                 className="flex-1 rounded-2xl overflow-hidden flex flex-col"
-                style={{ background: 'rgba(2,6,23,0.6)', border: '1px solid rgba(255,255,255,0.08)' }}
+                style={{ background: 'rgba(2,6,23,0.6)', border: '1px solid rgba(61,112,255,0.16)' }}
             >
                 <div className="flex-1 overflow-y-auto custom-scrollbar">
                     <table className="w-full text-left">
-                        <thead className="sticky top-0 z-10" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                        <thead className="sticky top-0 z-10" style={{ borderBottom: '1px solid rgba(61,112,255,0.16)' }}>
                             <tr>
                                 <th className="py-3 px-4 w-10">
                                     <input type="checkbox"
@@ -284,7 +284,7 @@ function EmissionDetailTable({ emission, onBack, onExportExcel, onDeleteDocument
                                             const allKeys = groups.map(g => g.plate || `__noplaca_${g.primaryDoc.id}`);
                                             setSelectedPlates(allSelected ? new Set() : new Set(allKeys));
                                         }}
-                                        style={{ accentColor: '#6366f1' }}
+                                        style={{ accentColor: '#1240CC' }}
                                     />
                                 </th>
                                 <SortableHeader label="Matrícula"   sortKey="plate"  activeKey={sortKey} dir={sortDir} onSort={handleSort} />
@@ -298,7 +298,7 @@ function EmissionDetailTable({ emission, onBack, onExportExcel, onDeleteDocument
                         </thead>
                         <tbody>
                             {groups.length === 0 && (
-                                <tr><td colSpan={8} className="text-center py-12 text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>Sin documentos.</td></tr>
+                                <tr><td colSpan={8} className="text-center py-12 text-sm" style={{ color: 'rgba(178,198,245,0.5)' }}>Sin documentos.</td></tr>
                             )}
                             {groups.map(group => {
                                 const groupKey = group.plate || `__noplaca_${group.primaryDoc.id}`;
@@ -313,7 +313,7 @@ function EmissionDetailTable({ emission, onBack, onExportExcel, onDeleteDocument
                                         {/* Vehicle group row */}
                                         <tr
                                             className="cursor-pointer group transition-colors"
-                                            style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
+                                            style={{ borderBottom: '1px solid rgba(6,14,50,0.55)' }}
                                             onClick={() => setExpandedPlate(isExpanded ? null : groupKey)}
                                             onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.02)')}
                                             onMouseLeave={e => (e.currentTarget.style.background = '')}
@@ -326,23 +326,23 @@ function EmissionDetailTable({ emission, onBack, onExportExcel, onDeleteDocument
                                                         n.has(groupKey) ? n.delete(groupKey) : n.add(groupKey);
                                                         setSelectedPlates(n);
                                                     }}
-                                                    style={{ accentColor: '#6366f1' }}
+                                                    style={{ accentColor: '#1240CC' }}
                                                 />
                                             </td>
                                             <td className="py-3 px-4">
                                                 {group.plate ? (
-                                                    <span className="font-mono font-bold text-sm px-2 py-0.5 rounded tracking-widest" style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.85)' }}>
+                                                    <span className="font-mono font-bold text-sm px-2 py-0.5 rounded tracking-widest" style={{ background: 'rgba(51,102,255,0.1)', border: '1px solid rgba(61,112,255,0.22)', color: '#BDD4FF' }}>
                                                         {group.plate}
                                                     </span>
-                                                ) : <span className="text-xs" style={{ color: 'rgba(255,255,255,0.2)' }}>—</span>}
+                                                ) : <span className="text-xs" style={{ color: 'rgba(178,198,245,0.5)' }}>—</span>}
                                             </td>
-                                            <td className="py-3 px-4 text-xs max-w-[140px] truncate" style={{ color: 'rgba(255,255,255,0.55)' }}>
-                                                {group.propietario || <span style={{ color: 'rgba(255,255,255,0.2)' }}>—</span>}
+                                            <td className="py-3 px-4 text-xs max-w-[140px] truncate" style={{ color: 'rgba(178,198,245,0.78)' }}>
+                                                {group.propietario || <span style={{ color: 'rgba(178,198,245,0.5)' }}>—</span>}
                                             </td>
-                                            <td className="py-3 px-4 text-xs font-bold" style={{ color: 'rgba(255,255,255,0.75)' }}>{group.marca || '—'}</td>
-                                            <td className="py-3 px-4 text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>{group.modelo || '—'}</td>
+                                            <td className="py-3 px-4 text-xs font-bold" style={{ color: '#BDD4FF' }}>{group.marca || '—'}</td>
+                                            <td className="py-3 px-4 text-xs" style={{ color: 'rgba(178,198,245,0.7)' }}>{group.modelo || '—'}</td>
                                             <td className="py-3 px-4">
-                                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ color: '#818cf8', background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)' }}>
+                                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ color: '#818cf8', background: 'rgba(18,64,204,0.1)', border: '1px solid rgba(18,64,204,0.2)' }}>
                                                     {group.documents.length} doc{group.documents.length !== 1 ? 's' : ''}
                                                 </span>
                                             </td>
@@ -351,27 +351,27 @@ function EmissionDetailTable({ emission, onBack, onExportExcel, onDeleteDocument
                                                     {st.label}
                                                 </span>
                                             </td>
-                                            <td className="py-3 px-4 text-[10px] font-bold transition-colors" style={{ color: isExpanded ? '#818cf8' : 'rgba(255,255,255,0.2)' }}>
+                                            <td className="py-3 px-4 text-[10px] font-bold transition-colors" style={{ color: isExpanded ? '#818cf8' : 'rgba(178,198,245,0.5)' }}>
                                                 {isExpanded ? '▲' : '▼'}
                                             </td>
                                         </tr>
 
                                         {/* Expanded: split panel */}
                                         {isExpanded && (
-                                            <tr style={{ background: 'rgba(99,102,241,0.04)', borderBottom: '2px solid rgba(99,102,241,0.2)', borderLeft: '2px solid rgba(99,102,241,0.3)' }}>
+                                            <tr style={{ background: 'rgba(18,64,204,0.04)', borderBottom: '2px solid rgba(18,64,204,0.2)', borderLeft: '2px solid rgba(18,64,204,0.3)' }}>
                                                 <td colSpan={8} className="px-6 py-5">
                                                     <div className="flex gap-5 min-h-[220px]">
                                                         {/* LEFT — Thumbnail */}
                                                         <div className="w-2/5 shrink-0 flex flex-col gap-2">
                                                             <div
                                                                 className="rounded-xl overflow-hidden flex items-center justify-center"
-                                                                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+                                                                style={{ background: 'rgba(6,14,50,0.55)', border: '1px solid rgba(61,112,255,0.16)' }}
                                                             >
                                                                 {group.primaryDoc.thumbnail ? (
                                                                     // eslint-disable-next-line @next/next/no-img-element
                                                                     <img src={group.primaryDoc.thumbnail} alt="documento" className="w-full object-contain rounded-xl" style={{ maxHeight: 400 }} />
                                                                 ) : (
-                                                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1">
+                                                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(51,102,255,0.25)" strokeWidth="1">
                                                                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" />
                                                                     </svg>
                                                                 )}
@@ -381,8 +381,8 @@ function EmissionDetailTable({ emission, onBack, onExportExcel, onDeleteDocument
                                                                 {group.documents.map(d => {
                                                                     const ds = statusConfig[d.status];
                                                                     return (
-                                                                        <div key={d.id} className="flex items-center justify-between gap-2 px-2 py-1 rounded-lg" style={{ background: 'rgba(255,255,255,0.03)' }}>
-                                                                            <span className="text-[9px] font-bold truncate max-w-[80px]" style={{ color: 'rgba(255,255,255,0.55)' }}>
+                                                                        <div key={d.id} className="flex items-center justify-between gap-2 px-2 py-1 rounded-lg" style={{ background: 'rgba(12,28,82,0.45)' }}>
+                                                                            <span className="text-[9px] font-bold truncate max-w-[80px]" style={{ color: 'rgba(178,198,245,0.78)' }}>
                                                                                 {catLabel[d.docCategory] || d.docCategory}
                                                                                 {d.docSubtype && ` · ${d.docSubtype}`}
                                                                             </span>
@@ -391,9 +391,9 @@ function EmissionDetailTable({ emission, onBack, onExportExcel, onDeleteDocument
                                                                                 <button
                                                                                     onClick={e => { e.stopPropagation(); onDeleteDocument(d.id); }}
                                                                                     className="p-0.5 rounded transition-colors"
-                                                                                    style={{ color: 'rgba(255,255,255,0.2)' }}
+                                                                                    style={{ color: 'rgba(178,198,245,0.5)' }}
                                                                                     onMouseEnter={e => (e.currentTarget.style.color = '#EF4444')}
-                                                                                    onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.2)')}
+                                                                                    onMouseLeave={e => (e.currentTarget.style.color = 'rgba(178,198,245,0.5)')}
                                                                                 >
                                                                                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                                                                         <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
@@ -417,18 +417,18 @@ function EmissionDetailTable({ emission, onBack, onExportExcel, onDeleteDocument
                                                                     { key: 'modelo',      label: 'Modelo',      placeholder: 'Sin modelo',       val: fields.modelo      ?? group.modelo ?? '' },
                                                                 ].map(({ key, label, placeholder, val }) => (
                                                                     <div key={key} className="flex flex-col gap-1">
-                                                                        <label className="text-[9px] font-bold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.3)' }}>{label}</label>
+                                                                        <label className="text-[9px] font-bold uppercase tracking-widest" style={{ color: 'rgba(178,198,245,0.5)' }}>{label}</label>
                                                                         <input
                                                                             className="w-full bg-transparent border-b text-sm outline-none transition-colors"
-                                                                            style={{ borderColor: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.85)' }}
+                                                                            style={{ borderColor: 'rgba(61,112,255,0.22)', color: '#BDD4FF' }}
                                                                             value={val || ''}
                                                                             placeholder={placeholder}
                                                                             onChange={e => setEditedFields(prev => ({
                                                                                 ...prev,
                                                                                 [groupKey]: { ...(prev[groupKey] || {}), [key]: e.target.value }
                                                                             }))}
-                                                                            onFocus={e => (e.currentTarget.style.borderColor = 'rgba(99,102,241,0.6)')}
-                                                                            onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')}
+                                                                            onFocus={e => (e.currentTarget.style.borderColor = 'rgba(18,64,204,0.6)')}
+                                                                            onBlur={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.22)')}
                                                                         />
                                                                     </div>
                                                                 ))}
@@ -438,21 +438,21 @@ function EmissionDetailTable({ emission, onBack, onExportExcel, onDeleteDocument
                                                             {group.primaryDoc.reportMarkdown ? (
                                                                 <div
                                                                     className="text-xs rounded-xl p-4 font-mono whitespace-pre-wrap max-h-40 overflow-y-auto custom-scrollbar flex-1"
-                                                                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.6)', lineHeight: 1.6 }}
+                                                                    style={{ background: 'rgba(12,28,82,0.45)', border: '1px solid rgba(51,102,255,0.1)', color: 'rgba(178,198,245,0.78)', lineHeight: 1.6 }}
                                                                 >
                                                                     {group.primaryDoc.reportMarkdown}
                                                                 </div>
                                                             ) : (
-                                                                <p className="text-xs italic" style={{ color: 'rgba(255,255,255,0.2)' }}>Sin informe disponible.</p>
+                                                                <p className="text-xs italic" style={{ color: 'rgba(178,198,245,0.5)' }}>Sin informe disponible.</p>
                                                             )}
 
                                                             {/* Catalog candidates */}
                                                             {group.primaryDoc.catalogoCandidatos && group.primaryDoc.catalogoCandidatos.length > 0 && (
                                                                 <div className="flex flex-col gap-2">
-                                                                    <label className="text-[9px] font-bold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.3)' }}>Catálogo</label>
+                                                                    <label className="text-[9px] font-bold uppercase tracking-widest" style={{ color: 'rgba(178,198,245,0.5)' }}>Catálogo</label>
                                                                     <select
                                                                         className="text-[10px] font-bold px-3 py-2 rounded-lg outline-none"
-                                                                        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(99,102,241,0.25)', color: 'rgba(255,255,255,0.8)' }}
+                                                                        style={{ background: 'rgba(6,14,50,0.55)', border: '1px solid rgba(18,64,204,0.25)', color: '#BDD4FF' }}
                                                                         defaultValue={group.primaryDoc.catalogoCandidatos[0]?.id_veh ?? ''}
                                                                         onClick={e => e.stopPropagation()}
                                                                     >
@@ -678,20 +678,20 @@ export default function EmissionOcrFlow() {
             {/* Header */}
             <div
                 className="flex items-center justify-between shrink-0 rounded-2xl p-4"
-                style={{ background: 'rgba(2,6,23,0.6)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(20px)' }}
+                style={{ background: 'rgba(2,6,23,0.85)', border: '1px solid rgba(61,112,255,0.16)' }}
             >
                 <div>
                     <h1 className="text-xl font-black text-white uppercase tracking-tight">Centro de Emisión</h1>
-                    <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                    <p className="text-xs mt-1" style={{ color: 'rgba(178,198,245,0.6)' }}>
                         Procesa batches de documentos · Fichas · Permisos · Autorizaciones
                     </p>
                 </div>
                 <button
                     onClick={() => setShowUploadModal(true)}
                     className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl transition-all text-white"
-                    style={{ background: '#6366f1', boxShadow: '0 0 20px rgba(99,102,241,0.3)' }}
+                    style={{ background: '#1240CC', boxShadow: '0 0 20px rgba(18,64,204,0.3)' }}
                     onMouseEnter={e => (e.currentTarget.style.background = '#818cf8')}
-                    onMouseLeave={e => (e.currentTarget.style.background = '#6366f1')}
+                    onMouseLeave={e => (e.currentTarget.style.background = '#1240CC')}
                 >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                         <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
@@ -704,19 +704,19 @@ export default function EmissionOcrFlow() {
             {emissions.length === 0 ? (
                 <div
                     className="flex-1 rounded-2xl flex flex-col items-center justify-center gap-4"
-                    style={{ background: 'rgba(2,6,23,0.4)', border: '1px dashed rgba(255,255,255,0.1)' }}
+                    style={{ background: 'rgba(2,6,23,0.4)', border: '1px dashed rgba(61,112,255,0.22)' }}
                 >
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="rgba(51,102,255,0.25)" strokeWidth="1">
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" />
                         <line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" />
                     </svg>
-                    <p className="text-sm font-bold" style={{ color: 'rgba(255,255,255,0.3)' }}>Sin emisiones todavía</p>
+                    <p className="text-sm font-bold" style={{ color: 'rgba(178,198,245,0.5)' }}>Sin emisiones todavía</p>
                     <button
                         onClick={() => setShowUploadModal(true)}
                         className="text-xs font-semibold px-4 py-2 rounded-xl transition-all text-white"
-                        style={{ background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)' }}
-                        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(99,102,241,0.25)')}
-                        onMouseLeave={e => (e.currentTarget.style.background = 'rgba(99,102,241,0.15)')}
+                        style={{ background: 'rgba(18,64,204,0.15)', border: '1px solid rgba(18,64,204,0.3)' }}
+                        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(18,64,204,0.25)')}
+                        onMouseLeave={e => (e.currentTarget.style.background = 'rgba(18,64,204,0.15)')}
                     >
                         Crear primera emisión
                     </button>
@@ -731,16 +731,16 @@ export default function EmissionOcrFlow() {
                             <div
                                 key={em.id}
                                 className="rounded-2xl px-5 py-4 flex items-center justify-between cursor-pointer group transition-all"
-                                style={{ background: 'rgba(2,6,23,0.6)', border: '1px solid rgba(255,255,255,0.07)' }}
+                                style={{ background: 'rgba(2,6,23,0.6)', border: '1px solid rgba(51,102,255,0.1)' }}
                                 onClick={() => setActiveEmission(em)}
-                                onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(99,102,241,0.3)')}
-                                onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)')}
+                                onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(18,64,204,0.3)')}
+                                onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(51,102,255,0.1)')}
                             >
                                 <div className="flex flex-col gap-1">
                                     <div className="flex items-center gap-3">
                                         <span className="text-sm font-black text-white">{em.name}</span>
                                         {isProcessing && (
-                                            <span className="text-[9px] font-bold px-2 py-0.5 rounded-full animate-pulse" style={{ color: '#818cf8', background: 'rgba(99,102,241,0.12)' }}>
+                                            <span className="text-[9px] font-bold px-2 py-0.5 rounded-full animate-pulse" style={{ color: '#818cf8', background: 'rgba(18,64,204,0.12)' }}>
                                                 PROCESANDO
                                             </span>
                                         )}
@@ -750,23 +750,23 @@ export default function EmissionOcrFlow() {
                                             </span>
                                         )}
                                     </div>
-                                    <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                                    <p className="text-[11px]" style={{ color: 'rgba(178,198,245,0.6)' }}>
                                         {veh} vehículo{veh !== 1 ? 's' : ''} · {countByType(em.documents)} · {formatDate(em.createdAt)}
                                     </p>
                                 </div>
                                 <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
                                     <button
                                         className="text-xs font-bold px-4 py-2 rounded-xl transition-all"
-                                        style={{ color: '#818cf8', background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)' }}
+                                        style={{ color: '#818cf8', background: 'rgba(18,64,204,0.1)', border: '1px solid rgba(18,64,204,0.25)' }}
                                     >
                                         Ver →
                                     </button>
                                     <button
                                         onClick={e => { e.stopPropagation(); handleDeleteEmission(em.id); }}
                                         className="p-2 rounded-xl transition-all"
-                                        style={{ color: 'rgba(255,255,255,0.3)', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+                                        style={{ color: 'rgba(178,198,245,0.5)', background: 'rgba(6,14,50,0.55)', border: '1px solid rgba(61,112,255,0.16)' }}
                                         onMouseEnter={e => { (e.currentTarget.style.color = '#EF4444'); (e.currentTarget.style.borderColor = 'rgba(239,68,68,0.3)'); }}
-                                        onMouseLeave={e => { (e.currentTarget.style.color = 'rgba(255,255,255,0.3)'); (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'); }}
+                                        onMouseLeave={e => { (e.currentTarget.style.color = 'rgba(178,198,245,0.5)'); (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.16)'); }}
                                         title="Eliminar emisión"
                                     >
                                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -789,8 +789,8 @@ export default function EmissionOcrFlow() {
 
             {processing && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}>
-                    <div className="rounded-2xl p-8 flex flex-col items-center gap-4" style={{ background: 'rgba(2,6,23,0.97)', border: '1px solid rgba(99,102,241,0.25)' }}>
-                        <svg className="animate-spin w-10 h-10" style={{ color: '#6366f1' }} fill="none" viewBox="0 0 24 24">
+                    <div className="rounded-2xl p-8 flex flex-col items-center gap-4" style={{ background: 'rgba(2,6,23,0.97)', border: '1px solid rgba(18,64,204,0.25)' }}>
+                        <svg className="animate-spin w-10 h-10" style={{ color: '#1240CC' }} fill="none" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                         </svg>
