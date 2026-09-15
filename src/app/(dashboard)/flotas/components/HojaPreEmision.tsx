@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 
-// ─── Estimación fecha matrícula (placas españolas nuevas NNNN-LLL) ───────────
+// ─── Estimación año por matrícula (NNNN-LLL) ─────────────────────────────────
 
 const PLATE_YEAR_RANGES: [string, string, number, number][] = [
   ['0000', '1999', 2000, 2003],
@@ -17,9 +17,8 @@ function estimateYear(plate: string): { year: number; range: string } | null {
   if (!m) return null;
   const num = parseInt(m[1]);
   for (const [from, to, yf, yt] of PLATE_YEAR_RANGES) {
-    if (num >= parseInt(from) && num <= parseInt(to)) {
+    if (num >= parseInt(from) && num <= parseInt(to))
       return { year: Math.round((yf + yt) / 2), range: `${yf}–${yt}` };
-    }
   }
   return null;
 }
@@ -59,8 +58,8 @@ interface VehicleEmision {
   kw: string;
   cv: string;
   tn: string;
-  anyo_fabricacion: string;      // "09/2020" from Silverdat
-  fecha_matriculacion: string;   // from Silverdat/DGT
+  anyo_fabricacion: string;
+  fecha_matriculacion: string;
   status: EmisionStatus;
   candidatos: CandidatoCatalogo[];
   seleccionado: CandidatoCatalogo | null;
@@ -72,35 +71,154 @@ interface Props {
   onCatalogoChange?: (selecciones: Record<string, string>) => void;
 }
 
-// ─── Similitud entre vehículos ───────────────────────────────────────────────
+// ─── Helpers similitud ───────────────────────────────────────────────────────
 
-/** Clave estricta: 100% idénticos en datos del Excel */
 function strictKey(v: VehicleEmision): string {
   return `${v.marca}|${v.modelo}|${v.kw}|${v.cv}|${v.tn}|${v.tipo}`.toUpperCase().trim();
 }
 
-/** Similitud flexible: misma marca+modelo, kW cercano */
 function areSimilar(a: VehicleEmision, b: VehicleEmision): boolean {
   if (a.marca.toUpperCase() !== b.marca.toUpperCase()) return false;
   if (a.modelo.toUpperCase() !== b.modelo.toUpperCase()) return false;
-  // kW: tolerancia 5%
   const kwA = parseFloat(a.kw) || 0;
   const kwB = parseFloat(b.kw) || 0;
   if (kwA > 0 && kwB > 0 && Math.abs(kwA - kwB) / Math.max(kwA, kwB) > 0.05) return false;
   return true;
 }
 
-/** Describe las diferencias entre dos vehículos */
 function getDiffs(base: VehicleEmision, other: VehicleEmision): string[] {
   const diffs: string[] = [];
-  if (base.kw !== other.kw) diffs.push(`KW: ${base.kw} vs ${other.kw}`);
-  if (base.cv !== other.cv) diffs.push(`CV: ${base.cv} vs ${other.cv}`);
-  if (base.tn !== other.tn) diffs.push(`TN: ${base.tn} vs ${other.tn}`);
-  if (base.tipo.toUpperCase() !== other.tipo.toUpperCase()) diffs.push(`Tipo: ${base.tipo} vs ${other.tipo}`);
+  if (base.kw !== other.kw) diffs.push(`KW: ${base.kw}→${other.kw}`);
+  if (base.cv !== other.cv) diffs.push(`CV: ${base.cv}→${other.cv}`);
+  if (base.tn !== other.tn) diffs.push(`TN: ${base.tn}→${other.tn}`);
+  if (base.tipo.toUpperCase() !== other.tipo.toUpperCase()) diffs.push(`Tipo: ${base.tipo}→${other.tipo}`);
   return diffs;
 }
 
-// ─── Modal: aplicar a similares ──────────────────────────────────────────────
+// ─── ManualSearchPanel ────────────────────────────────────────────────────────
+
+function ManualSearchPanel({ vehicle, onSelect, onClose }: {
+  vehicle: VehicleEmision;
+  onSelect: (c: CandidatoCatalogo) => void;
+  onClose: () => void;
+}) {
+  const [marca, setMarca]           = useState(vehicle.marca);
+  const [modelo, setModelo]         = useState(vehicle.modelo);
+  const [combustible, setCombustible] = useState('');
+  const [kw, setKw]                 = useState(vehicle.kw || '');
+  const [anyo, setAnyo]             = useState('');
+  const [results, setResults]       = useState<CandidatoCatalogo[]>([]);
+  const [loading, setLoading]       = useState(false);
+  const [searched, setSearched]     = useState(false);
+  const firstRef = useRef(true);
+
+  const doSearch = useCallback(async () => {
+    setLoading(true);
+    setSearched(true);
+    try {
+      const body: Record<string, string | number> = {};
+      if (marca)      body.marca      = marca;
+      if (modelo)     body.modelo     = modelo;
+      if (combustible) body.combustible = combustible;
+      if (kw)         body.kw         = kw;
+      if (anyo)       body.anyo       = parseInt(anyo);
+      const res  = await fetch('/api/catalogo/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const json = await res.json();
+      setResults((json.candidates ?? json.candidatos ?? json.results ?? []).slice(0, 40));
+    } catch {
+      setResults([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [marca, modelo, combustible, kw, anyo]);
+
+  useEffect(() => {
+    if (firstRef.current) { firstRef.current = false; doSearch(); }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const onKey = (e: React.KeyboardEvent) => { if (e.key === 'Enter') doSearch(); };
+
+  return (
+    <div style={{ padding: '10px 14px 14px', background: '#f0f4ff', borderTop: '1px solid #c8d8f5' }}>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: 8 }}>
+        <Fld label="Marca">
+          <input value={marca} onChange={e => setMarca(e.target.value)} onKeyDown={onKey}
+            style={{ ...inS, width: 110 }} />
+        </Fld>
+        <Fld label="Modelo">
+          <input value={modelo} onChange={e => setModelo(e.target.value)} onKeyDown={onKey}
+            style={{ ...inS, width: 160 }} />
+        </Fld>
+        <Fld label="Combustible">
+          <select value={combustible} onChange={e => setCombustible(e.target.value)} style={{ ...inS, width: 90 }}>
+            <option value="">Todos</option>
+            {Object.entries(FUEL_LABEL).map(([k, lbl]) => <option key={k} value={k}>{lbl}</option>)}
+          </select>
+        </Fld>
+        <Fld label="KW">
+          <input value={kw} onChange={e => setKw(e.target.value)} placeholder="ej. 338" onKeyDown={onKey}
+            style={{ ...inS, width: 70 }} />
+        </Fld>
+        <Fld label="Año">
+          <input value={anyo} onChange={e => setAnyo(e.target.value)} placeholder="2020" onKeyDown={onKey}
+            style={{ ...inS, width: 70 }} />
+        </Fld>
+        <button onClick={doSearch} disabled={loading}
+          style={{ padding: '5px 14px', borderRadius: 6, background: '#1240CC', color: '#fff', border: 'none', fontSize: 11, fontWeight: 700, cursor: loading ? 'wait' : 'pointer', opacity: loading ? 0.7 : 1, alignSelf: 'flex-end', height: 28 }}>
+          {loading ? '...' : 'Buscar'}
+        </button>
+        <button onClick={onClose}
+          style={{ padding: '5px 10px', borderRadius: 6, background: '#fff', color: '#6b7280', border: '1px solid #e5e7eb', fontSize: 11, cursor: 'pointer', alignSelf: 'flex-end', height: 28 }}>
+          ✕
+        </button>
+      </div>
+
+      {searched && (
+        <div style={{ maxHeight: 220, overflowY: 'auto', border: '1px solid #d4dff5', borderRadius: 8, background: '#fff' }}>
+          {results.length === 0 ? (
+            <div style={{ padding: '20px', textAlign: 'center', color: '#9ca3af', fontSize: 12 }}>
+              Sin resultados. Ajusta los filtros.
+            </div>
+          ) : results.map(c => (
+            <button key={c.id_veh} type="button" onClick={() => onSelect(c)}
+              style={{ display: 'flex', width: '100%', textAlign: 'left', padding: '8px 12px', background: '#fff', border: 'none', borderBottom: '1px solid #f3f4f6', cursor: 'pointer', alignItems: 'center', gap: 10 }}
+              onMouseEnter={e => (e.currentTarget.style.background = '#eef3ff')}
+              onMouseLeave={e => (e.currentTarget.style.background = '#fff')}>
+              <span style={{ flex: 1, fontSize: 12, fontWeight: 600, color: '#111827' }}>{c.version}</span>
+              <span style={{ fontSize: 10, color: '#6b7280', whiteSpace: 'nowrap' }}>
+                {c.kw}kW · {FUEL_LABEL[c.combustible] ?? c.combustible}
+                {c.anyo ? ` · ${c.anyo}` : ''}
+                {c.cilindrada > 0 ? ` · ${c.cilindrada}cc` : ''}
+              </span>
+              <span style={{ fontSize: 10, fontFamily: 'monospace', color: '#9ca3af', whiteSpace: 'nowrap' }}>{c.id_veh}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Fld({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <div style={{ fontSize: 9, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2 }}>{label}</div>
+      {children}
+    </div>
+  );
+}
+
+const inS: React.CSSProperties = {
+  fontSize: 11, padding: '5px 8px', borderRadius: 6,
+  border: '1px solid #d1d5db', outline: 'none', background: '#fff',
+};
+
+// ─── SimilarModal ─────────────────────────────────────────────────────────────
 
 function SimilarModal({ source, similar, selected, onApply, onClose }: {
   source: VehicleEmision;
@@ -110,81 +228,62 @@ function SimilarModal({ source, similar, selected, onApply, onClose }: {
   onClose: () => void;
 }) {
   const [checked, setChecked] = useState<Set<number>>(() => {
-    // Auto-check los 100% idénticos
     const auto = new Set<number>();
     similar.forEach(s => { if (s.identical) auto.add(s.idx); });
     return auto;
   });
 
-  const toggle = (idx: number) => {
-    setChecked(prev => {
-      const next = new Set(prev);
-      if (next.has(idx)) next.delete(idx); else next.add(idx);
-      return next;
-    });
-  };
-
-  const identicalCount = similar.filter(s => s.identical).length;
-  const similarCount = similar.filter(s => !s.identical).length;
+  const toggle = (idx: number) => setChecked(prev => {
+    const next = new Set(prev);
+    if (next.has(idx)) next.delete(idx); else next.add(idx);
+    return next;
+  });
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
       onClick={onClose}>
       <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)' }} />
-      <div style={{ position: 'relative', background: '#fff', borderRadius: 16, padding: '24px', maxWidth: 520, width: '90%', maxHeight: '80vh', overflow: 'auto', boxShadow: '0 25px 80px rgba(0,0,0,0.3)' }}
+      <div style={{ position: 'relative', background: '#fff', borderRadius: 16, padding: 24, maxWidth: 520, width: '90%', maxHeight: '80vh', overflow: 'auto', boxShadow: '0 25px 80px rgba(0,0,0,0.3)' }}
         onClick={e => e.stopPropagation()}>
-
         <div style={{ fontSize: 14, fontWeight: 900, color: '#111827', marginBottom: 4 }}>
-          Aplicar selección a vehículos similares
+          Vehículos similares sin versión
         </div>
         <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 16 }}>
-          Has seleccionado <strong>{selected.version}</strong> para {source.matricula}.
-          {identicalCount > 0 && <> Hay <strong style={{ color: '#059669' }}>{identicalCount} idénticos</strong> (pre-marcados).</>}
-          {similarCount > 0 && <> Hay <strong style={{ color: '#d97706' }}>{similarCount} similares</strong> con diferencias.</>}
+          ¿Aplicar <strong>{selected.version}</strong> también a estos vehículos?
         </div>
-
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 20 }}>
           {similar.map(s => (
             <label key={s.idx}
               style={{
                 display: 'flex', alignItems: 'flex-start', gap: 10, padding: '8px 10px', borderRadius: 8, cursor: 'pointer',
-                background: checked.has(s.idx) ? (s.identical ? 'rgba(16,185,129,0.08)' : 'rgba(245,158,11,0.08)') : '#f9fafb',
-                border: `1px solid ${checked.has(s.idx) ? (s.identical ? '#6ee7b7' : '#fcd34d') : '#e5e7eb'}`,
-                transition: 'all 0.15s',
+                background: checked.has(s.idx) ? 'rgba(245,158,11,0.08)' : '#f9fafb',
+                border: `1px solid ${checked.has(s.idx) ? '#fcd34d' : '#e5e7eb'}`,
+                transition: 'all 0.12s',
               }}>
               <input type="checkbox" checked={checked.has(s.idx)} onChange={() => toggle(s.idx)}
-                style={{ marginTop: 2, accentColor: s.identical ? '#059669' : '#d97706' }} />
+                style={{ marginTop: 2, accentColor: '#d97706' }} />
               <div style={{ flex: 1 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ fontSize: 13, fontWeight: 700, fontFamily: 'monospace', color: '#111827' }}>{s.vehicle.matricula}</span>
-                  {s.identical ? (
-                    <span style={{ fontSize: 9, fontWeight: 800, padding: '1px 6px', borderRadius: 4, background: '#d1fae5', color: '#065f46', textTransform: 'uppercase' }}>Idéntico</span>
-                  ) : (
-                    <span style={{ fontSize: 9, fontWeight: 800, padding: '1px 6px', borderRadius: 4, background: '#fef3c7', color: '#92400e', textTransform: 'uppercase' }}>Similar</span>
-                  )}
+                  <span style={{ fontSize: 9, fontWeight: 800, padding: '1px 6px', borderRadius: 4, background: '#fef3c7', color: '#92400e', textTransform: 'uppercase' }}>Similar</span>
                 </div>
                 {s.diffs.length > 0 && (
                   <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 2 }}>
-                    Diferencias: {s.diffs.join(' · ')}
+                    {s.diffs.join(' · ')}
                   </div>
                 )}
               </div>
             </label>
           ))}
         </div>
-
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
           <button type="button" onClick={onClose}
             style={{ fontSize: 11, fontWeight: 700, padding: '8px 16px', borderRadius: 8, background: '#f3f4f6', border: '1px solid #e5e7eb', color: '#6b7280', cursor: 'pointer' }}>
-            Solo este
+            Solo estos ya aplicados
           </button>
-          <button type="button"
-            onClick={() => onApply(Array.from(checked))}
+          <button type="button" onClick={() => onApply(Array.from(checked))}
             disabled={checked.size === 0}
-            style={{
-              fontSize: 11, fontWeight: 700, padding: '8px 16px', borderRadius: 8, cursor: checked.size > 0 ? 'pointer' : 'not-allowed',
-              background: checked.size > 0 ? '#1240CC' : '#d1d5db', color: '#fff', border: 'none',
-            }}>
+            style={{ fontSize: 11, fontWeight: 700, padding: '8px 16px', borderRadius: 8, cursor: checked.size > 0 ? 'pointer' : 'not-allowed', background: checked.size > 0 ? '#1240CC' : '#d1d5db', color: '#fff', border: 'none' }}>
             Aplicar a {checked.size} vehículo{checked.size !== 1 ? 's' : ''}
           </button>
         </div>
@@ -193,270 +292,106 @@ function SimilarModal({ source, similar, selected, onApply, onClose }: {
   );
 }
 
-// ─── Componente card por vehículo ────────────────────────────────────────────
+// ─── StatusChip ───────────────────────────────────────────────────────────────
 
-function VehicleCard({ v, similarCount, onSearch, onSelect, onDirectId }: {
-  v: VehicleEmision;
-  similarCount: number;
-  onSearch: () => void;
-  onSelect: (c: CandidatoCatalogo) => void;
-  onDirectId: (idVeh: string) => void;
-}) {
-  const estimation = estimateYear(v.matricula);
-  const [idInput, setIdInput] = useState('');
-  const [showIdInput, setShowIdInput] = useState(false);
-
-  const statusColors: Record<EmisionStatus, { bg: string; text: string; label: string }> = {
-    pendiente:     { bg: '#fef3c7', text: '#92400e', label: 'Pendiente' },
-    listo:         { bg: '#d1fae5', text: '#065f46', label: 'Listo' },
-    sin_catalogo:  { bg: '#fee2e2', text: '#991b1b', label: 'Sin catálogo' },
-  };
-  const sc = statusColors[v.status];
-
-  const handleIdSubmit = () => {
-    const id = idInput.trim();
-    if (id) { onDirectId(id); setIdInput(''); setShowIdInput(false); }
-  };
-
+function StatusChip({ status }: { status: EmisionStatus }) {
+  const cfg = {
+    pendiente:    { bg: '#fef3c7', text: '#92400e', label: 'Pendiente' },
+    listo:        { bg: '#d1fae5', text: '#065f46', label: 'Listo' },
+    sin_catalogo: { bg: '#fee2e2', text: '#991b1b', label: 'Sin catálogo' },
+  }[status];
   return (
-    <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #e5e7eb', background: '#ffffff' }}>
-      {/* Header */}
-      <div style={{ padding: '10px 14px', borderBottom: '1px solid #e5e7eb', background: '#f9fafb', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div className="flex items-center gap-3">
-          <span className="font-black" style={{ fontSize: 15, fontFamily: 'monospace', color: '#111827' }}>{v.matricula}</span>
-          <span style={{ fontSize: 11, color: '#6b7280' }}>{v.marca} {v.modelo} {v.tipo ? `· ${v.tipo}` : ''}</span>
-          {similarCount > 0 && (
-            <span style={{ fontSize: 9, fontWeight: 800, padding: '1px 6px', borderRadius: 4, background: '#ede9fe', color: '#6d28d9' }}>
-              x{similarCount + 1} similares
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          {/* Botón ID directo */}
-          {!v.seleccionado && (
-            <button type="button" onClick={() => setShowIdInput(!showIdInput)}
-              title="Asignar por ID de catálogo"
-              style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 6, background: 'rgba(18,64,204,0.06)', border: '1px solid rgba(18,64,204,0.15)', color: '#1240CC', cursor: 'pointer' }}>
-              ID
-            </button>
-          )}
-          <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full"
-            style={{ background: sc.bg, color: sc.text }}>{sc.label}</span>
-        </div>
-      </div>
-
-      {/* ID directo input */}
-      {showIdInput && !v.seleccionado && (
-        <div style={{ padding: '8px 14px', borderBottom: '1px solid #e5e7eb', background: '#f0f4ff', display: 'flex', gap: 8, alignItems: 'center' }}>
-          <span style={{ fontSize: 10, fontWeight: 700, color: '#6b7280', whiteSpace: 'nowrap' }}>ID Catálogo:</span>
-          <input
-            style={{ flex: 1, fontSize: 12, padding: '4px 8px', borderRadius: 6, border: '1px solid #d1d5db', fontFamily: 'monospace', outline: 'none' }}
-            placeholder="Ej: 241210258"
-            value={idInput}
-            onChange={e => setIdInput(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter') handleIdSubmit(); }}
-            autoFocus
-          />
-          <button type="button" onClick={handleIdSubmit}
-            style={{ fontSize: 10, fontWeight: 700, padding: '4px 12px', borderRadius: 6, background: '#1240CC', color: '#fff', border: 'none', cursor: 'pointer' }}>
-            Asignar
-          </button>
-        </div>
-      )}
-
-      {/* Body */}
-      <div style={{ padding: '10px 14px', display: 'flex', gap: 20, flexWrap: 'wrap' }}>
-        {/* Datos técnicos */}
-        <div style={{ flex: '0 0 auto', display: 'flex', gap: 12 }}>
-          {[['KW', v.kw], ['CV', v.cv], ['TN', v.tn]].map(([k, val]) => val ? (
-            <div key={k} style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 9, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#9ca3af' }}>{k}</div>
-              <div style={{ fontSize: 14, fontWeight: 900, fontFamily: 'monospace', color: '#374151' }}>{val}</div>
-            </div>
-          ) : null)}
-        </div>
-
-        {/* Fecha: dato real (Silverdat) o estimación matrícula */}
-        {(() => {
-          // Extract real year from Silverdat dates
-          const realDate = v.fecha_matriculacion || v.anyo_fabricacion;
-          if (realDate) {
-            return (
-              <div style={{ fontSize: 11, color: '#059669', display: 'flex', alignItems: 'center', fontWeight: 600 }}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2" style={{ marginRight: 5 }}>
-                  <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-                </svg>
-                {v.fecha_matriculacion ? 'Matriculación' : 'Fabricación'}: <strong style={{ color: '#065f46', marginLeft: 4 }}>{realDate}</strong>
-              </div>
-            );
-          }
-          if (estimation) {
-            return (
-              <div style={{ fontSize: 11, color: '#6b7280', display: 'flex', alignItems: 'center' }}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" style={{ marginRight: 5 }}>
-                  <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-                </svg>
-                Matrícula del <strong style={{ color: '#374151' }}>{estimation.range}</strong> aprox.
-              </div>
-            );
-          }
-          return null;
-        })()}
-
-        {/* Catálogo — acabados */}
-        <div style={{ flex: 1, minWidth: 200 }}>
-          {v.seleccionado ? (
-            <div style={{ padding: '6px 10px', background: '#d1fae5', borderRadius: 8, border: '1px solid #6ee7b7', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div>
-                <div style={{ fontSize: 10, fontWeight: 900, color: '#065f46', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Catálogo confirmado</div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: '#111827' }}>{v.seleccionado.version}</div>
-                <div style={{ fontSize: 10, color: '#6b7280' }}>
-                  ID: {v.seleccionado.id_veh} · {v.seleccionado.kw}kW/{v.seleccionado.cv || Math.round(v.seleccionado.kw * 1.36)}CV · {FUEL_LABEL[v.seleccionado.combustible] ?? v.seleccionado.combustible}
-                  {v.seleccionado.cilindrada > 0 ? ` · ${v.seleccionado.cilindrada}cc` : ''}
-                  {v.seleccionado.plazas > 0 ? ` · ${v.seleccionado.plazas}pl` : ''}
-                  {v.seleccionado.tara > 0 ? ` · ${v.seleccionado.tara}kg` : ''}
-                </div>
-              </div>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg>
-            </div>
-          ) : v.candidatos.length > 0 ? (
-            <div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: '#6b7280', marginBottom: 4 }}>Selecciona acabado ({v.candidatos.length} opciones):</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 3, maxHeight: 280, overflowY: 'auto' }}>
-                {v.candidatos.map(c => {
-                  const fuelLabel = FUEL_LABEL[c.combustible] ?? c.combustible;
-                  return (
-                    <button key={c.id_veh} type="button" onClick={() => onSelect(c)}
-                      style={{ display: 'flex', flexDirection: 'column', gap: 2, padding: '6px 10px', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 6, cursor: 'pointer', fontSize: 12, textAlign: 'left' }}
-                      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(160,216,244,0.15)')}
-                      onMouseLeave={e => (e.currentTarget.style.background = '#f9fafb')}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontWeight: 600, color: '#374151' }}>{c.version}</span>
-                        {c.score != null && (
-                          <span style={{ fontSize: 10, fontWeight: 700, fontFamily: 'monospace', color: c.score >= 80 ? '#059669' : c.score >= 60 ? '#d97706' : '#dc2626' }}>
-                            {c.score}%
-                          </span>
-                        )}
-                      </div>
-                      <div style={{ display: 'flex', gap: 10, fontSize: 10, color: '#9ca3af', flexWrap: 'wrap' }}>
-                        <span>{c.kw}kW/{c.cv || Math.round(c.kw * 1.36)}CV</span>
-                        <span>{fuelLabel}</span>
-                        {c.cilindrada > 0 && <span>{c.cilindrada}cc</span>}
-                        {c.plazas > 0 && <span>{c.plazas}pl</span>}
-                        {c.tara > 0 && <span>{c.tara}kg</span>}
-                        {c.puertas > 0 && <span>{c.puertas}p</span>}
-                        {c.pvp ? <span style={{ color: '#6b7280' }}>{c.pvp.toLocaleString('es-ES')}€</span> : null}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              {v.status === 'sin_catalogo' && (
-                <span style={{ fontSize: 10, color: '#9ca3af' }}>Sin resultados en catálogo</span>
-              )}
-              <button type="button" onClick={onSearch} disabled={v.searching}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest"
-                style={{
-                  color: v.status === 'sin_catalogo' ? '#9ca3af' : '#1240CC',
-                  background: v.status === 'sin_catalogo' ? 'rgba(156,163,175,0.08)' : 'rgba(18,64,204,0.08)',
-                  border: `1px solid ${v.status === 'sin_catalogo' ? 'rgba(156,163,175,0.2)' : 'rgba(18,64,204,0.2)'}`,
-                  cursor: v.searching ? 'wait' : 'pointer', opacity: v.searching ? 0.7 : 1,
-                }}>
-                {v.searching ? (
-                  <svg className="animate-spin" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0" opacity="0.3"/><path d="M12 3a9 9 0 019 9"/></svg>
-                ) : (
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-                )}
-                {v.searching ? 'Buscando...' : v.status === 'sin_catalogo' ? 'Reintentar búsqueda' : 'Buscar en catálogo'}
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
+    <span style={{ fontSize: 10, fontWeight: 800, padding: '2px 7px', borderRadius: 4, background: cfg.bg, color: cfg.text, textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>
+      {cfg.label}
+    </span>
   );
 }
 
-// ─── Componente principal ────────────────────────────────────────────────────
+// ─── HojaPreEmision ───────────────────────────────────────────────────────────
 
 export default function HojaPreEmision({ trabajoRows, onCatalogoChange }: Props) {
   const initial = useMemo<VehicleEmision[]>(() =>
     trabajoRows.filter(r => r['matricula']?.trim()).map(r => ({
-      matricula:   r['matricula'] ?? '',
-      marca:       r['marca'] ?? '',
-      modelo:      r['modelo'] ?? '',
-      tipo:        r['tipo_vehiculo'] ?? '',
-      kw:          r['kw'] ?? '',
-      cv:          r['cv'] ?? '',
-      tn:          r['tn'] ?? '',
+      matricula:           r['matricula'] ?? '',
+      marca:               r['marca'] ?? '',
+      modelo:              r['modelo'] ?? '',
+      tipo:                r['tipo_vehiculo'] ?? '',
+      kw:                  r['kw'] ?? '',
+      cv:                  r['cv'] ?? '',
+      tn:                  r['tn'] ?? '',
       anyo_fabricacion:    r['anyo_fabricacion'] ?? '',
       fecha_matriculacion: r['fecha_matriculacion'] ?? '',
-      status:      'pendiente' as EmisionStatus,
-      candidatos:  [],
-      seleccionado: null,
-      searching:   false,
+      status:              'pendiente' as EmisionStatus,
+      candidatos:          [],
+      seleccionado:        null,
+      searching:           false,
     })),
     [trabajoRows],
   );
 
-  const [vehicles, setVehicles] = useState<VehicleEmision[]>(initial);
-  const autoSearchedRef = useRef(false);
+  const [vehicles, setVehicles]         = useState<VehicleEmision[]>(initial);
+  const [openSearchRow, setOpenSearchRow] = useState<number | null>(null);
+  const autoSearchedRef                 = useRef(false);
+  const pendingNotifyRef                = useRef(false);
 
-  // Modal state
   const [modalData, setModalData] = useState<{
     sourceIdx: number;
     selected: CandidatoCatalogo;
     similar: { vehicle: VehicleEmision; idx: number; diffs: string[]; identical: boolean }[];
   } | null>(null);
 
-  // Resync: añadir vehículos nuevos de trabajoRows
+  // Añadir vehículos nuevos de trabajoRows sin resetear los existentes
   useEffect(() => {
     const existingMats = new Set(vehicles.map(v => v.matricula));
     const newVehicles = initial.filter(v => v.matricula && !existingMats.has(v.matricula));
-    if (newVehicles.length > 0) {
-      setVehicles(prev => [...prev, ...newVehicles]);
-    }
+    if (newVehicles.length > 0) setVehicles(prev => [...prev, ...newVehicles]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initial]);
 
   const setV = useCallback((i: number, patch: Partial<VehicleEmision>) => {
     setVehicles(prev => { const n = [...prev]; n[i] = { ...n[i], ...patch }; return n; });
   }, []);
 
-  // Contar similares por vehículo (para el badge)
-  const similarCounts = useMemo(() => {
-    const counts: number[] = vehicles.map(() => 0);
-    for (let i = 0; i < vehicles.length; i++) {
-      for (let j = i + 1; j < vehicles.length; j++) {
-        if (areSimilar(vehicles[i], vehicles[j])) {
-          counts[i]++;
-          counts[j]++;
-        }
-      }
-    }
-    return counts;
-  }, [vehicles]);
+  const applyToMultiple = useCallback((indices: number[], cat: CandidatoCatalogo) => {
+    setVehicles(prev => {
+      const updated = [...prev];
+      indices.forEach(idx => { updated[idx] = { ...updated[idx], seleccionado: cat, status: 'listo' }; });
+      return updated;
+    });
+    pendingNotifyRef.current = true;
+  }, []);
 
-  // Extract real year from Silverdat dates (formats: "09/2020", "2020-09-15", "15/09/2020")
+  // Selección: auto-aplica a idénticos, modal solo para similares distintos
+  const handleSelect = useCallback((i: number, c: CandidatoCatalogo) => {
+    const source   = vehicles[i];
+    const srcKey   = strictKey(source);
+    const identical: number[] = [];
+    const similar:  { vehicle: VehicleEmision; idx: number; diffs: string[]; identical: boolean }[] = [];
+
+    vehicles.forEach((v, j) => {
+      if (j === i || v.seleccionado) return;
+      if (!areSimilar(source, v)) return;
+      if (strictKey(v) === srcKey) identical.push(j);
+      else similar.push({ vehicle: v, idx: j, diffs: getDiffs(source, v), identical: false });
+    });
+
+    applyToMultiple([i, ...identical], c);
+    setOpenSearchRow(null);
+
+    if (similar.length > 0) setModalData({ sourceIdx: i, selected: c, similar });
+  }, [vehicles, applyToMultiple]);
+
   const extractYear = useCallback((v: VehicleEmision): number | null => {
-    // Priority 1: fecha_matriculacion from Silverdat/DGT
-    // Priority 2: anyo_fabricacion from Silverdat
-    for (const dateStr of [v.fecha_matriculacion, v.anyo_fabricacion]) {
-      if (!dateStr) continue;
-      // Try 4-digit year anywhere in the string
-      const m = dateStr.match(/(\d{4})/);
-      if (m) {
-        const y = parseInt(m[1]);
-        if (y >= 1980 && y <= 2040) return y;
-      }
+    for (const s of [v.fecha_matriculacion, v.anyo_fabricacion]) {
+      if (!s) continue;
+      const m = s.match(/(\d{4})/);
+      if (m) { const y = parseInt(m[1]); if (y >= 1980 && y <= 2040) return y; }
     }
     return null;
   }, []);
 
   const doSearch = useCallback(async (body: Record<string, string | number>): Promise<CandidatoCatalogo[]> => {
-    const res = await fetch('/api/catalogo/search', {
+    const res  = await fetch('/api/catalogo/search', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -472,72 +407,54 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange }: Props)
     setV(i, { searching: true });
     try {
       const body: Record<string, string | number> = {};
-      if (v.marca) body.marca = v.marca;
+      if (v.marca)  body.marca  = v.marca;
       if (v.modelo) body.modelo = v.modelo;
-      if (v.kw) body.kw = v.kw;
+      if (v.kw)     body.kw     = v.kw;
       else if (v.cv) body.kw = String(Math.round(parseFloat(v.cv) / 1.36));
-      if (v.tn) {
-        const tnNum = parseFloat(v.tn);
-        body.tara = tnNum >= 100 ? tnNum : tnNum * 1000;
-      }
+      if (v.tn) { const n = parseFloat(v.tn); body.tara = n >= 100 ? n : n * 1000; }
 
-      // Año: prioridad fecha real (Silverdat) > estimación matrícula
       const realYear = extractYear(v);
       const plateEst = estimateYear(v.matricula);
-      if (realYear) body.anyo = realYear;
+      if (realYear)      body.anyo = realYear;
       else if (plateEst) body.anyo = plateEst.year;
 
-      // Intento 1: búsqueda completa
       let candidatos = await doSearch(body);
-
-      // Fallback 1: sin año (puede ser estimación incorrecta)
       if (candidatos.length === 0 && body.anyo) {
-        const { anyo: _, ...sinAnyo } = body;
-        candidatos = await doSearch(sinAnyo);
+        const { anyo: _, ...sinAnyo } = body; candidatos = await doSearch(sinAnyo);
       }
-
-      // Fallback 2: solo marca + modelo (sin filtros técnicos)
       if (candidatos.length === 0 && body.marca && body.modelo) {
         candidatos = await doSearch({ marca: body.marca, modelo: body.modelo });
       }
 
-      // Limit to top 5 most relevant candidates
-      const top = candidatos.slice(0, 5);
+      const top = candidatos.slice(0, 8);
 
       if (top.length === 1) {
-        // Auto-select when only one result
+        // Single result → auto-select and auto-apply to identical
         setVehicles(prev => {
-          const n = [...prev];
-          n[i] = { ...n[i], candidatos: top, seleccionado: top[0], status: 'listo', searching: false };
+          const n   = [...prev];
+          n[i]      = { ...n[i], candidatos: top, searching: false };
           return n;
         });
-        pendingNotifyRef.current = true;
+        // Use timeout so setVehicles above settles before handleSelect reads vehicles
+        setTimeout(() => handleSelect(i, top[0]), 0);
       } else {
         setV(i, { candidatos: top, status: top.length > 0 ? 'pendiente' : 'sin_catalogo', searching: false });
       }
     } catch {
       setV(i, { status: 'sin_catalogo', searching: false });
     }
-  }, [vehicles, setV, extractYear, doSearch]);
+  }, [vehicles, setV, extractYear, doSearch, handleSelect]);
 
-  // Auto-buscar al montar — throttled (max 3 concurrent)
+  // Auto-buscar al montar, máx 3 concurrentes
   useEffect(() => {
     if (autoSearchedRef.current) return;
     if (vehicles.length === 0) return;
     autoSearchedRef.current = true;
-
-    const pending = vehicles
-      .map((v, i) => ({ v, i }))
-      .filter(({ v }) => v.candidatos.length === 0 && !v.searching && v.marca);
-
-    let active = 0;
-    let idx = 0;
-    const MAX_CONCURRENT = 3;
-
+    const pending = vehicles.map((v, i) => ({ v, i })).filter(({ v }) => v.candidatos.length === 0 && !v.searching && v.marca);
+    let active = 0, idx = 0;
     const runNext = () => {
-      while (active < MAX_CONCURRENT && idx < pending.length) {
-        const { i } = pending[idx++];
-        active++;
+      while (active < 3 && idx < pending.length) {
+        const { i } = pending[idx++]; active++;
         Promise.resolve(handleSearch(i)).finally(() => { active--; runNext(); });
       }
     };
@@ -545,70 +462,20 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange }: Props)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [vehicles.length]);
 
-  // Notificar selecciones al padre (via effect to avoid setState-during-render)
-  const pendingNotifyRef = useRef(false);
-
+  // Notificar selecciones al padre
   useEffect(() => {
     if (!pendingNotifyRef.current) return;
     pendingNotifyRef.current = false;
-    const selecciones: Record<string, string> = {};
-    vehicles.forEach(v => {
-      if (v.seleccionado && v.matricula) {
-        selecciones[v.matricula] = v.seleccionado.id_veh;
-      }
-    });
-    onCatalogoChange?.(selecciones);
+    const sel: Record<string, string> = {};
+    vehicles.forEach(v => { if (v.seleccionado && v.matricula) sel[v.matricula] = v.seleccionado.id_veh; });
+    onCatalogoChange?.(sel);
   }, [vehicles, onCatalogoChange]);
 
-  // Aplicar selección a un solo vehículo
-  const applyToSingle = useCallback((idx: number, cat: CandidatoCatalogo) => {
-    setVehicles(prev => {
-      const updated = [...prev];
-      updated[idx] = { ...updated[idx], seleccionado: cat, status: 'listo' };
-      return updated;
-    });
-    pendingNotifyRef.current = true;
-  }, []);
-
-  // Aplicar selección a múltiples vehículos
-  const applyToMultiple = useCallback((indices: number[], cat: CandidatoCatalogo) => {
-    setVehicles(prev => {
-      const updated = [...prev];
-      indices.forEach(idx => {
-        updated[idx] = { ...updated[idx], seleccionado: cat, status: 'listo' };
-      });
-      return updated;
-    });
-    pendingNotifyRef.current = true;
-  }, []);
-
-  const handleSelect = useCallback((i: number, c: CandidatoCatalogo) => {
-    const source = vehicles[i];
-    const sourceKey = strictKey(source);
-
-    // Buscar similares (no seleccionados aún, excluyendo el actual)
-    const similar: { vehicle: VehicleEmision; idx: number; diffs: string[]; identical: boolean }[] = [];
-    vehicles.forEach((v, j) => {
-      if (j === i || v.seleccionado) return;
-      if (!areSimilar(source, v)) return;
-      const identical = strictKey(v) === sourceKey;
-      similar.push({ vehicle: v, idx: j, diffs: getDiffs(source, v), identical });
-    });
-
-    // Aplicar siempre al vehículo actual
-    applyToSingle(i, c);
-
-    // Si hay similares, abrir modal para que el jefe decida
-    if (similar.length > 0) {
-      setModalData({ sourceIdx: i, selected: c, similar });
-    }
-  }, [vehicles, applyToSingle]);
-
-  // Búsqueda directa por ID de catálogo
+  // Búsqueda directa por ID
   const handleDirectId = useCallback(async (i: number, idVeh: string) => {
     setV(i, { searching: true });
     try {
-      const res = await fetch(`/api/catalogo/${encodeURIComponent(idVeh)}`);
+      const res  = await fetch(`/api/catalogo/${encodeURIComponent(idVeh)}`);
       const json = await res.json();
       if (json.ok && json.vehiculo) {
         handleSelect(i, json.vehiculo as CandidatoCatalogo);
@@ -621,59 +488,208 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange }: Props)
     }
   }, [setV, handleSelect]);
 
+  const handleClearSelection = useCallback((i: number) => {
+    setVehicles(prev => {
+      const n = [...prev];
+      n[i] = { ...n[i], seleccionado: null, status: n[i].candidatos.length > 0 ? 'pendiente' : 'sin_catalogo' };
+      return n;
+    });
+    pendingNotifyRef.current = true;
+  }, []);
+
   const listos = vehicles.filter(v => v.status === 'listo').length;
+  const pct    = vehicles.length > 0 ? Math.round((listos / vehicles.length) * 100) : 0;
 
   return (
     <div className="flex flex-col h-full min-h-0">
-      {/* Toolbar */}
-      <div className="flex items-center justify-between px-4 py-2 shrink-0"
-        style={{ borderBottom: '1px solid #e5e7eb', background: '#f9fafb' }}>
-        <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#6b7280' }}>
-          Listos para emitir: {listos} / Total: {vehicles.length}
+
+      {/* ── Toolbar ─────────────────────────────────────────────────────────── */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px', borderBottom: '1px solid #e5e7eb', background: '#f9fafb', flexShrink: 0 }}>
+        <span style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#6b7280' }}>
+          Listos: <span style={{ color: '#1240CC' }}>{listos}</span> / {vehicles.length}
         </span>
-        <div className="flex items-center gap-2">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ height: 6, width: 120, background: '#e5e7eb', borderRadius: 3, overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: `${vehicles.length > 0 ? (listos / vehicles.length) * 100 : 0}%`, background: '#1240CC', borderRadius: 3, transition: 'width 0.3s' }} />
+            <div style={{ height: '100%', width: `${pct}%`, background: pct === 100 ? '#059669' : '#1240CC', borderRadius: 3, transition: 'width 0.3s' }} />
           </div>
-          <span style={{ fontSize: 11, fontWeight: 700, color: '#1240CC' }}>
-            {vehicles.length > 0 ? Math.round((listos / vehicles.length) * 100) : 0}%
-          </span>
+          <span style={{ fontSize: 11, fontWeight: 700, color: pct === 100 ? '#059669' : '#1240CC' }}>{pct}%</span>
         </div>
       </div>
 
-      {/* Cards */}
-      <div className="flex-1 overflow-auto custom-scrollbar p-4" style={{ background: '#f9fafb' }}>
+      {/* ── Grid ────────────────────────────────────────────────────────────── */}
+      <div className="flex-1 overflow-auto custom-scrollbar" style={{ background: '#f3f4f6', padding: 12 }}>
         {vehicles.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '60px 0', color: '#9ca3af', fontSize: 13 }}>
             Añade vehículos en TRABAJO para comenzar la pre-emisión.
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {vehicles.map((v, i) => (
-              <VehicleCard key={v.matricula || i} v={v}
-                similarCount={similarCounts[i]}
-                onSearch={() => handleSearch(i)}
-                onSelect={c => handleSelect(i, c)}
-                onDirectId={id => handleDirectId(i, id)}
-              />
-            ))}
+          <div style={{ background: '#fff', borderRadius: 10, overflow: 'hidden', border: '1px solid #e5e7eb', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+              <thead>
+                <tr style={{ background: '#f8f9fa', borderBottom: '2px solid #e5e7eb' }}>
+                  <th style={{ ...thS, width: 36, textAlign: 'center' }}>#</th>
+                  <th style={{ ...thS, width: 110 }}>Matrícula</th>
+                  <th style={{ ...thS, width: 120 }}>Marca</th>
+                  <th style={{ ...thS, width: 160 }}>Modelo</th>
+                  <th style={{ ...thS }}>Versión / Acabado</th>
+                  <th style={{ ...thS, width: 120 }}>ID Catálogo</th>
+                  <th style={{ ...thS, width: 110 }}>Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {vehicles.map((v, i) => (
+                  <React.Fragment key={v.matricula || i}>
+                    {/* ── Fila principal ─────────────────────────────────── */}
+                    <tr style={{
+                      borderBottom: openSearchRow === i ? 'none' : '1px solid #f3f4f6',
+                      background: v.status === 'listo' ? 'rgba(16,185,129,0.03)' : openSearchRow === i ? '#f5f8ff' : '#fff',
+                      transition: 'background 0.12s',
+                    }}
+                      onMouseEnter={e => { if (v.status !== 'listo' && openSearchRow !== i) e.currentTarget.style.background = '#fafbff'; }}
+                      onMouseLeave={e => { if (v.status !== 'listo' && openSearchRow !== i) e.currentTarget.style.background = '#fff'; }}>
+
+                      <td style={{ ...tdS, textAlign: 'center', color: '#9ca3af', fontSize: 11 }}>{i + 1}</td>
+                      <td style={{ ...tdS, fontFamily: 'monospace', fontWeight: 800, color: '#111827', letterSpacing: '0.04em' }}>{v.matricula}</td>
+                      <td style={{ ...tdS, color: '#374151', fontWeight: 600 }}>{v.marca}</td>
+                      <td style={{ ...tdS, color: '#374151' }}>{v.modelo}</td>
+
+                      {/* ── Versión cell ─────────────────────────────────── */}
+                      <td style={tdS}>
+                        {v.searching ? (
+                          <span style={{ color: '#9ca3af', fontSize: 11, display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <svg style={{ animation: 'spin 1s linear infinite' }} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                              <circle cx="12" cy="12" r="10" opacity="0.2"/>
+                              <path d="M12 2a10 10 0 0110 10"/>
+                            </svg>
+                            Buscando...
+                          </span>
+                        ) : v.seleccionado ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ fontWeight: 700, color: '#065f46', fontSize: 12, flex: 1 }}>{v.seleccionado.version}</span>
+                            <button type="button" onClick={() => handleClearSelection(i)}
+                              title="Cambiar versión"
+                              style={{ fontSize: 9, padding: '2px 6px', borderRadius: 4, background: '#fee2e2', color: '#dc2626', border: '1px solid #fca5a5', cursor: 'pointer', fontWeight: 700, flexShrink: 0 }}>
+                              ✕
+                            </button>
+                          </div>
+                        ) : v.candidatos.length > 0 ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <select
+                              defaultValue=""
+                              onChange={e => {
+                                const c = v.candidatos.find(c => c.id_veh === e.target.value);
+                                if (c) handleSelect(i, c);
+                              }}
+                              style={{ flex: 1, maxWidth: 380, fontSize: 11, padding: '5px 8px', borderRadius: 6, border: '1px solid #d1d5db', background: '#fff', outline: 'none', cursor: 'pointer' }}>
+                              <option value="" disabled>— Seleccionar acabado —</option>
+                              {v.candidatos.map(c => (
+                                <option key={c.id_veh} value={c.id_veh}>
+                                  {c.version}{c.score ? ` · ${c.score}%` : ''}
+                                </option>
+                              ))}
+                            </select>
+                            <button type="button"
+                              onClick={() => setOpenSearchRow(openSearchRow === i ? null : i)}
+                              title="Buscar manualmente en el catálogo"
+                              style={{ fontSize: 10, padding: '4px 8px', borderRadius: 6, background: openSearchRow === i ? 'rgba(18,64,204,0.15)' : 'rgba(18,64,204,0.06)', border: '1px solid rgba(18,64,204,0.25)', color: '#1240CC', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                              Buscar
+                            </button>
+                          </div>
+                        ) : (
+                          <button type="button"
+                            onClick={() => setOpenSearchRow(openSearchRow === i ? null : i)}
+                            style={{ fontSize: 11, fontWeight: 700, padding: '5px 12px', borderRadius: 6,
+                              background: v.status === 'sin_catalogo' ? 'rgba(220,38,38,0.06)' : 'rgba(18,64,204,0.07)',
+                              border: `1px solid ${v.status === 'sin_catalogo' ? 'rgba(220,38,38,0.25)' : 'rgba(18,64,204,0.2)'}`,
+                              color: v.status === 'sin_catalogo' ? '#dc2626' : '#1240CC', cursor: 'pointer' }}>
+                            {v.status === 'sin_catalogo' ? 'Sin coincidencias · Buscar' : 'Buscar en catálogo'}
+                          </button>
+                        )}
+                      </td>
+
+                      <td style={{ ...tdS, fontFamily: 'monospace', fontSize: 11, color: '#6b7280' }}>
+                        {v.seleccionado ? (
+                          <span style={{ color: '#374151', fontWeight: 700 }}>{v.seleccionado.id_veh}</span>
+                        ) : (
+                          <DirectIdCell onSubmit={id => handleDirectId(i, id)} />
+                        )}
+                      </td>
+
+                      <td style={tdS}><StatusChip status={v.status} /></td>
+                    </tr>
+
+                    {/* ── Panel búsqueda manual (fila expandible) ─────────── */}
+                    {openSearchRow === i && (
+                      <tr style={{ borderBottom: '1px solid #c8d8f5' }}>
+                        <td colSpan={7} style={{ padding: 0 }}>
+                          <ManualSearchPanel
+                            vehicle={v}
+                            onSelect={c => handleSelect(i, c)}
+                            onClose={() => setOpenSearchRow(null)}
+                          />
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
 
-      {/* Modal: aplicar a similares */}
+      {/* ── Modal similares ──────────────────────────────────────────────────── */}
       {modalData && (
         <SimilarModal
           source={vehicles[modalData.sourceIdx]}
           similar={modalData.similar}
           selected={modalData.selected}
           onClose={() => setModalData(null)}
-          onApply={(indices) => {
-            applyToMultiple(indices, modalData.selected);
-            setModalData(null);
-          }}
+          onApply={indices => { applyToMultiple(indices, modalData.selected); setModalData(null); }}
         />
       )}
+
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }
+
+// ─── DirectIdCell ─────────────────────────────────────────────────────────────
+
+function DirectIdCell({ onSubmit }: { onSubmit: (id: string) => void }) {
+  const [editing, setEditing] = useState(false);
+  const [val, setVal]         = useState('');
+
+  if (!editing) {
+    return (
+      <button type="button" onClick={() => setEditing(true)}
+        title="Asignar por ID de catálogo"
+        style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 5, background: 'rgba(18,64,204,0.05)', border: '1px solid rgba(18,64,204,0.15)', color: '#1240CC', cursor: 'pointer' }}>
+        + ID
+      </button>
+    );
+  }
+  return (
+    <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+      <input autoFocus value={val} onChange={e => setVal(e.target.value)}
+        placeholder="241210258"
+        onKeyDown={e => { if (e.key === 'Enter' && val.trim()) { onSubmit(val.trim()); setEditing(false); setVal(''); } if (e.key === 'Escape') { setEditing(false); setVal(''); } }}
+        style={{ width: 90, fontSize: 11, padding: '3px 6px', borderRadius: 5, border: '1px solid #1240CC', outline: 'none', fontFamily: 'monospace' }} />
+      <button type="button" onClick={() => { if (val.trim()) { onSubmit(val.trim()); setEditing(false); setVal(''); } }}
+        style={{ fontSize: 10, fontWeight: 700, padding: '3px 7px', borderRadius: 5, background: '#1240CC', color: '#fff', border: 'none', cursor: 'pointer' }}>
+        ✓
+      </button>
+    </div>
+  );
+}
+
+// ─── Estilos tabla ────────────────────────────────────────────────────────────
+
+const thS: React.CSSProperties = {
+  padding: '9px 12px', textAlign: 'left', fontSize: 11, fontWeight: 700,
+  color: '#374151', borderBottom: '2px solid #e5e7eb', whiteSpace: 'nowrap',
+};
+
+const tdS: React.CSSProperties = {
+  padding: '10px 12px', fontSize: 12, color: '#111827', verticalAlign: 'middle',
+};
