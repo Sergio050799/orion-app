@@ -350,7 +350,7 @@ function trabajoToOferta(rows: Record<string, string>[]): OfertaRow[] {
       animales:        '',
       isotermo:        '',
       perdida_total:   '',
-      oferta_prima_mmt: r['prima_referencia'] ?? '',
+      oferta_prima_mmt: '',
       _primaOverride:  '',
     }));
 }
@@ -442,27 +442,24 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
         animales: existing?.animales || saved?.animales || '',
         isotermo: existing?.isotermo || saved?.isotermo || '',
         perdida_total: existing?.perdida_total || saved?.perdida_total || '',
-        oferta_prima_mmt: existing?.oferta_prima_mmt || saved?.oferta_prima_mmt || src.prima_referencia || '',
+        oferta_prima_mmt: existing?.oferta_prima_mmt || saved?.oferta_prima_mmt || '',
         _primaOverride: existing?._primaOverride || saved?._primaOverride || '',
       };
 
       // Force lunas='No' for types that can't have lunas
       if (NO_LUNAS_TIPOS.has(row.tipo_vehiculo.toLowerCase())) row.lunas = 'No';
 
-      // Prima priority: manual override > prima_referencia (individual) > informe MMT (group avg) > auto-calc
+      // Prima priority: manual override (keep) > tarifa auto-calc > grupo MMT del Informe > empty
       if (!row._primaOverride) {
-        if (!row.oferta_prima_mmt) {
+        const auto = calcPrimaForRow(row);
+        if (auto) {
+          row.oferta_prima_mmt = auto;
+        } else {
+          // Tarifa no cubre este vehículo → usar prima de grupo del Informe si existe
           const tipoKey = (row.tipo_vehiculo || '').toUpperCase().trim() || 'SIN TIPO';
-          const normTipo = tipoKey === 'DERIVADO DE TURISMO' ? 'TURISMO' : tipoKey;
-          const cobKey = row.coberturas || 'Sin cobertura';
-          const informeKey = `${normTipo}||${cobKey}`;
-          const informePrima = primasMmt?.[informeKey];
-          if (informePrima != null) {
-            // Use group avg from Informe only when no individual prima_referencia exists
-            row.oferta_prima_mmt = String(informePrima);
-          } else if (row.coberturas) {
-            row.oferta_prima_mmt = calcPrimaForRow(row);
-          }
+          const tNorm = tipoKey === 'DERIVADO DE TURISMO' ? 'TURISMO' : tipoKey;
+          const informePrima = primasMmt?.[`${tNorm}||${row.coberturas || 'Sin cobertura'}`];
+          row.oferta_prima_mmt = informePrima ? String(informePrima) : '';
         }
       }
 

@@ -531,20 +531,9 @@ export default function HojaInforme({
       base = { ...tarifaDefaults };
     }
 
-    // Rellenar grupos sin prima con la media — sin notificar al padre si ya había guardados
-    let filledMissing = false;
-    for (const [key, g] of Object.entries(tipoCobGrupos)) {
-      if (!(key in base) && g.count > 0 && g.sumaSol > 0) {
-        base[key] = parseFloat((g.sumaSol / g.count).toFixed(2));
-        filledMissing = true;
-      }
-    }
-
     if (Object.keys(base).length > 0) {
       setMmtInputs(base);
-      // Solo notificar si no había valores previos o si se rellenaron grupos faltantes
-      // (evita loop: padre actualiza primasMmtValues → effect se dispara → loop)
-      if (!hasSaved || filledMissing) onPrimasMmtChange?.(base);
+      if (!hasSaved) onPrimasMmtChange?.(base);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [primasMmtValues, ofertaDefaults, tarifaDefaults]);
