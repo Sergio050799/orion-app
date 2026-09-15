@@ -44,12 +44,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         router.push("/dashboard");
     };
 
-    const logout = () => {
+    const logout = async () => {
         localStorage.removeItem("orion_user");
         setUser(null);
         setIsAuthenticated(false);
-        fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
-        router.push("/login");
+        await fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
+        window.location.href = '/login';
     };
 
     return (
