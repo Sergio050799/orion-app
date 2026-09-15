@@ -22,6 +22,7 @@ interface OfertaBody {
   empresa_nombre: string;
   empresa_cif: string;
   vehiculos: Vehiculo[];
+  cobAnexo?: { titulo: string; garantias: string[] }[];
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -225,7 +226,68 @@ export async function POST(req: NextRequest) {
     ws['!pageSetup'] = { orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 1, paperSize: 9 };
 
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Hoja1');
+    XLSX.utils.book_append_sheet(wb, ws, 'Oferta');
+
+    // ── Hoja 2: Detalle de coberturas ─────────────────────────────────────────
+    if (body.cobAnexo && body.cobAnexo.length > 0) {
+      const BLUE   = { rgb: "002F82" };
+      const WHTF   = { rgb: "FFFFFF" };
+      const LBLUE  = { rgb: "EEF3FF" };
+      const BORD   = { rgb: "D4DFF5" };
+      const thin2  = { style: "thin" as const, color: { rgb: "D4DFF5" } };
+
+      const s_cob_title: object = {
+        fill: { fgColor: BLUE, patternType: "solid" },
+        font: { bold: true, sz: 11, color: WHTF, name: "Calibri" },
+        alignment: { horizontal: "left", vertical: "center" },
+        border: { top: thin2, bottom: thin2, left: thin2, right: thin2 },
+      };
+      const s_cob_head: object = {
+        fill: { fgColor: LBLUE, patternType: "solid" },
+        font: { bold: true, sz: 13, name: "Calibri", color: BLUE },
+        alignment: { horizontal: "left", vertical: "center" },
+        border: { bottom: { style: "medium" as const, color: BORD } },
+      };
+      const s_cob_item: object = {
+        font: { sz: 11, name: "Calibri" },
+        alignment: { horizontal: "left", vertical: "center" },
+        border: { bottom: thin2, left: thin2, right: thin2 },
+      };
+
+      const cob2rows: (string | number)[][] = [];
+      cob2rows.push(['DETALLE DE COBERTURAS INCLUIDAS', '']);
+
+      for (const { titulo, garantias } of body.cobAnexo) {
+        cob2rows.push(['']);
+        cob2rows.push([titulo, '']);
+        for (const g of garantias) cob2rows.push([`  ✓  ${g}`, '']);
+      }
+
+      const ws2 = XLSX.utils.aoa_to_sheet(cob2rows);
+      const enc2 = XLSX.utils.encode_cell;
+
+      ws2['!cols'] = [{ wch: 55 }, { wch: 10 }];
+      ws2['!rows'] = cob2rows.map(() => ({ hpt: 20 }));
+      if (ws2['!rows'][0]) ws2['!rows'][0] = { hpt: 30 };
+
+      // Title row
+      ws2[enc2({ r: 0, c: 0 })].s = s_cob_head;
+
+      let rowIdx = 2;
+      for (const { titulo, garantias } of body.cobAnexo) {
+        rowIdx++; // blank
+        ws2[enc2({ r: rowIdx, c: 0 })] = { t: 's', v: titulo, s: s_cob_title };
+        ws2[enc2({ r: rowIdx, c: 1 })] = { t: 's', v: '', s: s_cob_title };
+        rowIdx++;
+        for (const g of garantias) {
+          ws2[enc2({ r: rowIdx, c: 0 })] = { t: 's', v: `  ✓  ${g}`, s: s_cob_item };
+          ws2[enc2({ r: rowIdx, c: 1 })] = { t: 's', v: '', s: s_cob_item };
+          rowIdx++;
+        }
+      }
+
+      XLSX.utils.book_append_sheet(wb, ws2, 'Coberturas');
+    }
 
     const buffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array', cellStyles: true }) as number[];
     const safeName = body.flota_nombre.replace(/[^a-zA-Z0-9_\- ]/g, '').trim() || 'OFERTA';

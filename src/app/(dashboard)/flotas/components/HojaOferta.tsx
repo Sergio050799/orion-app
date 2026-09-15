@@ -144,6 +144,122 @@ function calcPrimaForRow(row: OfertaRow): string {
   return String(result);
 }
 
+// ─── PDF builder ─────────────────────────────────────────────────────────────
+
+const BASE_GARANTIAS_OFERTA = [
+  'Responsabilidad civil obligatoria',
+  'Responsabilidad civil voluntaria (hasta 50 millones)',
+  'Defensa jurídica y reclamación de daños',
+  'Seguro del Conductor (22.550 €)',
+];
+
+function buildOfertaPdfHtml(data: {
+  rows: OfertaRow[];
+  header?: Props['header'];
+  carpetaNombre?: string;
+  cobAnexo: { titulo: string; garantias: string[] }[];
+  primaTotal: number;
+  primaNetaTotal: number;
+  localPrimaCliente: string;
+  localDescuento: string;
+}): string {
+  const { rows, header, carpetaNombre, cobAnexo, primaTotal, primaNetaTotal, localPrimaCliente, localDescuento } = data;
+  const fmtE = (n: number) => n.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+  const today = new Date().toLocaleDateString('es-ES');
+  const totalActual = rows.reduce((s, r) => s + (parseFloat(r.prima_referencia) || 0), 0);
+  const primaClienteVal = parseFloat(localPrimaCliente) || 0;
+  const base = primaClienteVal > 0 ? primaClienteVal : totalActual;
+  const comparar = primaNetaTotal > 0 && primaNetaTotal !== primaTotal ? primaNetaTotal : primaTotal;
+  const diff = base > 0 && comparar > 0 ? comparar - base : null;
+
+  const vehiculosHtml = rows.filter(r => r.matricula.trim()).map((r, i) => {
+    const [marca, ...mp] = r.marca_modelo.split(' ');
+    const stripe = i % 2 === 1 ? '#f7f8fa' : '#ffffff';
+    return `<tr style="background:${stripe};border-bottom:1px solid #e8eaed">
+      <td>${(header?.tomador ?? '').toUpperCase()}</td>
+      <td>${r.tipo_vehiculo.toUpperCase()}</td>
+      <td style="font-weight:800;color:#002F82;letter-spacing:.04em">${r.matricula}</td>
+      <td>${(marca ?? '').toUpperCase()}</td>
+      <td>${mp.join(' ').toUpperCase()}</td>
+      <td style="font-weight:700">${r.coberturas.toUpperCase()}</td>
+      <td style="text-align:right;font-family:monospace;font-weight:700">${r.prima_referencia ? fmtE(parseFloat(r.prima_referencia)||0) : '—'}</td>
+      <td>${(header?.formaPago ?? 'ANUAL').toUpperCase()}</td>
+      <td style="font-weight:700;color:#002F82;text-align:right;font-family:monospace">${r.oferta_prima_mmt ? fmtE(parseFloat(r.oferta_prima_mmt)||0) : '—'}</td>
+    </tr>`;
+  }).join('');
+
+  const anexoHtml = cobAnexo.length > 0 ? `
+  <div style="page-break-before:always;padding-top:14mm">
+    <div style="font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:.12em;color:#002F82;border-bottom:2px solid #002F82;padding-bottom:4px;margin-bottom:10px">
+      Anexo — Detalle de coberturas incluidas
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      ${cobAnexo.map(({ titulo, garantias }) => `
+      <div style="border:1px solid #d4dff5;border-radius:7px;overflow:hidden">
+        <div style="background:#002F82;color:#fff;padding:7px 13px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.1em">${titulo}</div>
+        <div style="padding:8px 13px">
+          ${garantias.map(g => `<div style="display:flex;align-items:center;gap:7px;padding:4px 0;border-bottom:1px solid #eaeffb;font-size:11px;color:#1e2a4a">
+            <span style="width:5px;height:5px;border-radius:50%;background:#002F82;flex-shrink:0;display:inline-block"></span>${g}
+          </div>`).join('')}
+        </div>
+      </div>`).join('')}
+    </div>
+    <div style="margin-top:12px;padding-top:6px;border-top:1px solid #d4dff5;display:flex;justify-content:space-between;font-size:10px;color:#8ea3c8">
+      <span>MMT Seguros — Documento confidencial</span><span>Generado: ${today}</span>
+    </div>
+  </div>` : '';
+
+  return `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8">
+<title>Oferta ${(carpetaNombre ?? '').toUpperCase()}</title>
+<style>
+  @page{size:A4 landscape;margin:10mm 13mm}
+  @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}.no-print{display:none}}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Calibri,Arial,sans-serif;font-size:12px;color:#1e2a4a;background:#fff;line-height:1.3}
+  table{width:100%;border-collapse:collapse}
+  th{background:#002F82;color:#fff;padding:10px 8px;font-size:11px;font-weight:800;text-transform:uppercase;text-align:center;white-space:nowrap;letter-spacing:.04em}
+  td{padding:9px 8px;text-align:center;font-size:12px}
+  .tfoot td{background:#eef3ff;font-weight:900;font-size:13px;border-top:3px solid #002F82}
+</style></head><body>
+<div style="background:#002F82;padding:22px 30px;display:flex;align-items:center;justify-content:center;position:relative;margin-bottom:0">
+  <div style="color:#fff;font-size:22px;font-weight:900;text-align:center;letter-spacing:.03em">
+    OFERTA PARA LA FLOTA ${(carpetaNombre ?? 'FLOTA').toUpperCase()}
+  </div>
+</div>
+<div style="padding:10px 30px;text-align:center;border-bottom:2px solid #e5e7eb;background:#fafbfc;font-size:14px;font-weight:700;margin-bottom:8px">
+  ${(header?.tomador ?? '').toUpperCase()}${header?.cif ? ` — ${header.cif.toUpperCase()}` : ''}
+</div>
+<table>
+  <thead><tr>
+    <th>Tomador</th><th>Tipología</th><th>Matrícula</th><th>Marca</th><th>Modelo</th>
+    <th>Coberturas</th><th>Total Actual</th><th>Forma Pago</th><th>Prima MMT</th>
+  </tr></thead>
+  <tbody>${vehiculosHtml}</tbody>
+  <tfoot><tr class="tfoot">
+    <td colspan="6" style="text-align:right;font-weight:900">TOTALES</td>
+    <td style="text-align:right;font-family:monospace">${totalActual > 0 ? fmtE(totalActual) : '—'}</td>
+    <td></td>
+    <td style="text-align:right;font-family:monospace;color:#002F82">${fmtE(primaTotal)}</td>
+  </tr></tfoot>
+</table>
+<div style="display:flex;gap:28px;padding:12px 30px;border-top:2px solid #e5e7eb;background:#fafbfc;flex-wrap:wrap;margin-top:8px">
+  <div><div style="font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.06em">Vehículos</div>
+    <div style="font-size:20px;font-weight:900;color:#002F82;font-family:monospace">${rows.filter(r=>r.matricula.trim()).length}</div></div>
+  ${primaClienteVal > 0 ? `<div><div style="font-size:9px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.06em">Prima Cliente Actual</div>
+    <div style="font-size:20px;font-weight:900;color:#b45309;font-family:monospace">${fmtE(primaClienteVal)}</div></div>` : ''}
+  <div><div style="font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.06em">Prima Ofertada MMT</div>
+    <div style="font-size:20px;font-weight:900;color:#002F82;font-family:monospace">${fmtE(primaTotal)}</div></div>
+  ${primaNetaTotal > 0 && primaNetaTotal !== primaTotal ? `<div><div style="font-size:9px;font-weight:700;color:#15803d;text-transform:uppercase;letter-spacing:.06em">Prima Neta (${localDescuento}% dto.)</div>
+    <div style="font-size:20px;font-weight:900;color:#16a34a;font-family:monospace">${fmtE(primaNetaTotal)}</div></div>` : ''}
+  ${diff !== null ? `<div><div style="font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.06em">Diferencia</div>
+    <div style="font-size:20px;font-weight:900;font-family:monospace;color:${diff<=0?'#16a34a':'#dc2626'}">${diff<=0?'':'+'}${fmtE(diff)}</div></div>` : ''}
+</div>
+<div style="text-align:center;padding:8px;font-size:10px;color:#9ca3af;border-top:1px solid #e5e7eb">MMT Seguros · ${today}</div>
+${anexoHtml}
+<script>window.onload=()=>{window.print()}</script>
+</body></html>`;
+}
+
 // ─── DropdownEditor ────────────────────────────────────────────────────────────
 
 function DropdownEditor({ options, row, column, onRowChange, onClose }: RenderEditCellProps<OfertaRow> & { options: string[] }) {
@@ -463,6 +579,42 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
     }, 0);
   }, [rows, localDescuento, localDescCob]);
 
+  // ── Coberturas para el anexo ──────────────────────────────────────────────
+  const cobAnexo = useMemo(() => {
+    const TIPOS_REMOLQUE = new Set(['semirremolque', 'remolque']);
+    const cobMap = new Map<string, boolean>();
+    rows.forEach(r => {
+      if (!r.coberturas) return;
+      const isRemolque = TIPOS_REMOLQUE.has(r.tipo_vehiculo.toLowerCase());
+      if (!cobMap.has(r.coberturas)) cobMap.set(r.coberturas, false);
+      if (!isRemolque) cobMap.set(r.coberturas, true);
+    });
+    const result: { titulo: string; garantias: string[] }[] = [];
+    const seen = new Set<string>();
+    cobMap.forEach((hasNonRemolque, rawCob) => {
+      const v = rawCob.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+      let key = '';
+      if (v.includes('todo') || v.includes('franquicia') || v.includes('riesgo')) key = 'tr';
+      else if (v.includes('amplia')) key = 'ta';
+      else if (v.includes('tercero')) key = 't';
+      if (!key || seen.has(key)) return;
+      seen.add(key);
+      if (key === 't') result.push({ titulo: 'Terceros', garantias: [...BASE_GARANTIAS_OFERTA] });
+      else if (key === 'ta') result.push({ titulo: 'Terceros Ampliado', garantias: [...BASE_GARANTIAS_OFERTA, ...(hasNonRemolque ? ['Lunas (excepto remolques)'] : []), 'Robo', 'Incendio'] });
+      else if (key === 'tr') result.push({ titulo: 'Todo Riesgo con Franquicia 1.800 €', garantias: [...BASE_GARANTIAS_OFERTA, ...(hasNonRemolque ? ['Lunas (excepto remolques)'] : []), 'Robo', 'Incendio', 'Daños propios con franquicia de 1.800 €'] });
+    });
+    return result.sort((a, b) => { const o: Record<string,number>={'Terceros':0,'Terceros Ampliado':1,'Todo Riesgo con Franquicia 1.800 €':2}; return (o[a.titulo]??9)-(o[b.titulo]??9); });
+  }, [rows]);
+
+  // ── Exportar PDF ──────────────────────────────────────────────────────────
+  const handleExportPdf = useCallback(() => {
+    const html = buildOfertaPdfHtml({ rows, header, carpetaNombre, cobAnexo, primaTotal, primaNetaTotal, localPrimaCliente, localDescuento });
+    const w = window.open('', '_blank', 'width=960,height=720');
+    if (!w) return;
+    w.document.write(html);
+    w.document.close();
+  }, [rows, header, carpetaNombre, cobAnexo, primaTotal, primaNetaTotal, localPrimaCliente, localDescuento]);
+
   // ─── Generar Oferta Excel (via endpoint con formato MMT) ───────────────────
   const [exporting, setExporting] = useState(false);
 
@@ -492,6 +644,7 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
         empresa_nombre: (header?.tomador ?? '').toUpperCase(),
         empresa_cif: (header?.cif ?? '').toUpperCase(),
         vehiculos,
+        cobAnexo,
       };
 
       const controller = new AbortController();
@@ -716,12 +869,19 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
             {showPreview ? 'Vista previa' : 'Editar datos'}
           </button>
           {rows.length > 0 && (
-            <button onClick={handleExportOferta}
-              disabled={exporting}
-              style={{ fontSize: 10, fontWeight: 800, padding: '4px 12px', borderRadius: 6, background: exporting ? 'rgba(22,163,74,0.05)' : 'rgba(22,163,74,0.1)', color: '#16a34a', border: '1px solid rgba(22,163,74,0.25)', cursor: exporting ? 'wait' : 'pointer', textTransform: 'uppercase', letterSpacing: '0.05em', opacity: exporting ? 0.6 : 1, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              {exporting ? 'Generando...' : 'Descargar Excel'}
-            </button>
+            <>
+              <button onClick={handleExportOferta}
+                disabled={exporting}
+                style={{ fontSize: 10, fontWeight: 800, padding: '4px 12px', borderRadius: 6, background: exporting ? 'rgba(22,163,74,0.05)' : 'rgba(22,163,74,0.1)', color: '#16a34a', border: '1px solid rgba(22,163,74,0.25)', cursor: exporting ? 'wait' : 'pointer', textTransform: 'uppercase', letterSpacing: '0.05em', opacity: exporting ? 0.6 : 1, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                {exporting ? 'Generando...' : 'Excel'}
+              </button>
+              <button onClick={handleExportPdf}
+                style={{ fontSize: 10, fontWeight: 800, padding: '4px 12px', borderRadius: 6, background: 'rgba(220,38,38,0.08)', color: '#dc2626', border: '1px solid rgba(220,38,38,0.25)', cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                PDF
+              </button>
+            </>
           )}
           {rows.length === 0 && trabajoRows.length === 0 && (
             <span style={{ fontSize: 10, color: '#9ca3af' }}>Completa TRABAJO para generar la oferta.</span>
