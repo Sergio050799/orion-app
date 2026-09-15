@@ -159,18 +159,10 @@ function buildOfertaPdfHtml(data: {
   carpetaNombre?: string;
   cobAnexo: { titulo: string; garantias: string[] }[];
   primaTotal: number;
-  primaNetaTotal: number;
-  localPrimaCliente: string;
-  localDescuento: string;
 }): string {
-  const { rows, header, carpetaNombre, cobAnexo, primaTotal, primaNetaTotal, localPrimaCliente, localDescuento } = data;
+  const { rows, header, carpetaNombre, cobAnexo, primaTotal } = data;
   const fmtE = (n: number) => n.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
   const today = new Date().toLocaleDateString('es-ES');
-  const totalActual = rows.reduce((s, r) => s + (parseFloat(r.prima_referencia) || 0), 0);
-  const primaClienteVal = parseFloat(localPrimaCliente) || 0;
-  const base = primaClienteVal > 0 ? primaClienteVal : totalActual;
-  const comparar = primaNetaTotal > 0 && primaNetaTotal !== primaTotal ? primaNetaTotal : primaTotal;
-  const diff = base > 0 && comparar > 0 ? comparar - base : null;
 
   const vehiculosHtml = rows.filter(r => r.matricula.trim()).map((r, i) => {
     const [marca, ...mp] = r.marca_modelo.split(' ');
@@ -182,7 +174,6 @@ function buildOfertaPdfHtml(data: {
       <td>${(marca ?? '').toUpperCase()}</td>
       <td>${mp.join(' ').toUpperCase()}</td>
       <td style="font-weight:700">${r.coberturas.toUpperCase()}</td>
-      <td style="text-align:right;font-family:monospace;font-weight:700">${r.prima_referencia ? fmtE(parseFloat(r.prima_referencia)||0) : '—'}</td>
       <td>${(header?.formaPago ?? 'ANUAL').toUpperCase()}</td>
       <td style="font-weight:700;color:#002F82;text-align:right;font-family:monospace">${r.oferta_prima_mmt ? fmtE(parseFloat(r.oferta_prima_mmt)||0) : '—'}</td>
     </tr>`;
@@ -222,6 +213,7 @@ function buildOfertaPdfHtml(data: {
   .tfoot td{background:#eef3ff;font-weight:900;font-size:13px;border-top:3px solid #002F82}
 </style></head><body>
 <div style="background:#002F82;padding:22px 30px;display:flex;align-items:center;justify-content:center;position:relative;margin-bottom:0">
+  <img src="/LOGOMMT.jpg" alt="Logo MMT" style="position:absolute;left:28px;top:50%;transform:translateY(-50%);height:60px;object-fit:contain" onerror="this.style.display='none'">
   <div style="color:#fff;font-size:22px;font-weight:900;text-align:center;letter-spacing:.03em">
     OFERTA PARA LA FLOTA ${(carpetaNombre ?? 'FLOTA').toUpperCase()}
   </div>
@@ -232,27 +224,19 @@ function buildOfertaPdfHtml(data: {
 <table>
   <thead><tr>
     <th>Tomador</th><th>Tipología</th><th>Matrícula</th><th>Marca</th><th>Modelo</th>
-    <th>Coberturas</th><th>Total Actual</th><th>Forma Pago</th><th>Prima MMT</th>
+    <th>Coberturas</th><th>Forma Pago</th><th>Vencimiento</th><th>Prima Ofertada MMT</th>
   </tr></thead>
   <tbody>${vehiculosHtml}</tbody>
   <tfoot><tr class="tfoot">
-    <td colspan="6" style="text-align:right;font-weight:900">TOTALES</td>
-    <td style="text-align:right;font-family:monospace">${totalActual > 0 ? fmtE(totalActual) : '—'}</td>
-    <td></td>
+    <td colspan="8" style="text-align:right;font-weight:900">TOTALES</td>
     <td style="text-align:right;font-family:monospace;color:#002F82">${fmtE(primaTotal)}</td>
   </tr></tfoot>
 </table>
 <div style="display:flex;gap:28px;padding:12px 30px;border-top:2px solid #e5e7eb;background:#fafbfc;flex-wrap:wrap;margin-top:8px">
   <div><div style="font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.06em">Vehículos</div>
     <div style="font-size:20px;font-weight:900;color:#002F82;font-family:monospace">${rows.filter(r=>r.matricula.trim()).length}</div></div>
-  ${primaClienteVal > 0 ? `<div><div style="font-size:9px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.06em">Prima Cliente Actual</div>
-    <div style="font-size:20px;font-weight:900;color:#b45309;font-family:monospace">${fmtE(primaClienteVal)}</div></div>` : ''}
   <div><div style="font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.06em">Prima Ofertada MMT</div>
     <div style="font-size:20px;font-weight:900;color:#002F82;font-family:monospace">${fmtE(primaTotal)}</div></div>
-  ${primaNetaTotal > 0 && primaNetaTotal !== primaTotal ? `<div><div style="font-size:9px;font-weight:700;color:#15803d;text-transform:uppercase;letter-spacing:.06em">Prima Neta (${localDescuento}% dto.)</div>
-    <div style="font-size:20px;font-weight:900;color:#16a34a;font-family:monospace">${fmtE(primaNetaTotal)}</div></div>` : ''}
-  ${diff !== null ? `<div><div style="font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.06em">Diferencia</div>
-    <div style="font-size:20px;font-weight:900;font-family:monospace;color:${diff<=0?'#16a34a':'#dc2626'}">${diff<=0?'':'+'}${fmtE(diff)}</div></div>` : ''}
 </div>
 <div style="text-align:center;padding:8px;font-size:10px;color:#9ca3af;border-top:1px solid #e5e7eb">MMT Seguros · ${today}</div>
 ${anexoHtml}
@@ -605,7 +589,7 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
 
   // ── Exportar PDF ──────────────────────────────────────────────────────────
   const handleExportPdf = useCallback(() => {
-    const html = buildOfertaPdfHtml({ rows, header, carpetaNombre, cobAnexo, primaTotal, primaNetaTotal, localPrimaCliente, localDescuento });
+    const html = buildOfertaPdfHtml({ rows, header, carpetaNombre, cobAnexo, primaTotal });
     const w = window.open('', '_blank', 'width=960,height=720');
     if (!w) return;
     w.document.write(html);
@@ -629,7 +613,6 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
           marca: (marca ?? '').toUpperCase(),
           modelo: modeloParts.join(' ').toUpperCase(),
           coberturas: (r.coberturas ?? '').toUpperCase(),
-          prima_actual: parseFloat(r.prima_referencia) || 0,
           forma_pago: (header?.formaPago ?? 'ANUAL').toUpperCase(),
           fecha_vencimiento: parseFecha(header?.efecto),
           prima_ofertada: parseFloat(r.oferta_prima_mmt) || 0,

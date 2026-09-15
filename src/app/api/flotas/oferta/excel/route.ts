@@ -11,7 +11,6 @@ interface Vehiculo {
   marca: string;
   modelo: string;
   coberturas: string;
-  prima_actual: number;
   forma_pago: string;
   fecha_vencimiento: string;
   prima_ofertada: number;
@@ -124,24 +123,18 @@ export async function POST(req: NextRequest) {
     const DATA_END   = DATA_START + N - 1;
     const TOTAL_ROW  = DATA_END + 1;
 
-    // 1-indexed for SUM formulas
-    const DS = DATA_START + 1;
-    const DE = DATA_END + 1;
-
     // ── Build rows ────────────────────────────────────────────────────────────
-    // Amounts as strings to avoid serial-number rendering issues
     const rows: (string | number)[][] = [];
 
-    rows.push([`OFERTA PARA LA FLOTA ${body.flota_nombre}`, ...Array(9).fill('')]);
-    rows.push([`${body.empresa_nombre}  —  ${body.empresa_cif}`, ...Array(9).fill('')]);
+    rows.push([`OFERTA PARA LA FLOTA ${body.flota_nombre}`, ...Array(8).fill('')]);
+    rows.push([`${body.empresa_nombre}  —  ${body.empresa_cif}`, ...Array(8).fill('')]);
     rows.push(['TOMADOR', 'TIPOLOGÍA', 'MATRÍCULA', 'MARCA', 'MODELO',
-               'COBERTURAS', 'TOTAL ACTUAL', 'FORMA PAGO', 'VENCIMIENTO', 'PRIMA OFERTADA MMT']);
+               'COBERTURAS', 'FORMA PAGO', 'VENCIMIENTO', 'PRIMA OFERTADA MMT']);
 
     for (const v of body.vehiculos) {
       rows.push([
         v.tomador, v.tipologia, v.matricula, v.marca, v.modelo,
         v.coberturas,
-        fmtEUR(v.prima_actual),
         v.forma_pago,
         fmtFecha(v.fecha_vencimiento),
         fmtEUR(v.prima_ofertada),
@@ -149,21 +142,21 @@ export async function POST(req: NextRequest) {
     }
 
     // Totals placeholder
-    rows.push(['TOTALES', '', '', '', '', '', '', '', '', '']);
+    rows.push(['TOTALES', '', '', '', '', '', '', '', '']);
 
     const ws = XLSX.utils.aoa_to_sheet(rows);
     const enc = XLSX.utils.encode_cell;
 
     // ── Merges ────────────────────────────────────────────────────────────────
     ws['!merges'] = [
-      { s: { r: TITLE_ROW, c: 0 }, e: { r: TITLE_ROW, c: 9 } },
-      { s: { r: CO_ROW,    c: 0 }, e: { r: CO_ROW,    c: 9 } },
+      { s: { r: TITLE_ROW, c: 0 }, e: { r: TITLE_ROW, c: 8 } },
+      { s: { r: CO_ROW,    c: 0 }, e: { r: CO_ROW,    c: 8 } },
     ];
 
     // ── Column widths ─────────────────────────────────────────────────────────
     ws['!cols'] = [
       { wch: 28 }, { wch: 16 }, { wch: 13 }, { wch: 16 }, { wch: 22 },
-      { wch: 35 }, { wch: 18 }, { wch: 16 }, { wch: 14 }, { wch: 24 },
+      { wch: 35 }, { wch: 16 }, { wch: 14 }, { wch: 26 },
     ];
 
     // ── Row heights ───────────────────────────────────────────────────────────
@@ -178,21 +171,21 @@ export async function POST(req: NextRequest) {
     // ── Apply styles ──────────────────────────────────────────────────────────
 
     // Title row (blue background)
-    for (let c = 0; c < 10; c++) {
+    for (let c = 0; c < 9; c++) {
       const ref = enc({ r: TITLE_ROW, c });
       if (!ws[ref]) ws[ref] = { t: 's', v: '' };
       ws[ref].s = c === 0 ? s_title : s_title_fill;
     }
 
     // Company row
-    for (let c = 0; c < 10; c++) {
+    for (let c = 0; c < 9; c++) {
       const ref = enc({ r: CO_ROW, c });
       if (!ws[ref]) ws[ref] = { t: 's', v: '' };
       ws[ref].s = s_company;
     }
 
     // Header row (dark blue, white text)
-    for (let c = 0; c < 10; c++) {
+    for (let c = 0; c < 9; c++) {
       const ref = enc({ r: HEAD_ROW, c });
       if (!ws[ref]) ws[ref] = { t: 's', v: '' };
       ws[ref].s = s_header;
@@ -202,25 +195,22 @@ export async function POST(req: NextRequest) {
     for (let row = 0; row < N; row++) {
       const r = DATA_START + row;
       const even = row % 2 === 0;
-      for (let c = 0; c < 10; c++) {
+      for (let c = 0; c < 9; c++) {
         const ref = enc({ r, c });
         if (!ws[ref]) ws[ref] = { t: 's', v: '' };
-        // Currency columns get right-aligned bold blue style
-        ws[ref].s = (c === 6 || c === 9) ? s_data_num(even) : s_data(even);
+        ws[ref].s = c === 8 ? s_data_num(even) : s_data(even);
       }
     }
 
-    // Totals row — compute sums from numeric data
-    const totalActual = body.vehiculos.reduce((s, v) => s + (v.prima_actual || 0), 0);
+    // Totals row
     const totalOferta = body.vehiculos.reduce((s, v) => s + (v.prima_ofertada || 0), 0);
 
-    for (let c = 0; c < 10; c++) {
+    for (let c = 0; c < 9; c++) {
       const ref = enc({ r: TOTAL_ROW, c });
       if (!ws[ref]) ws[ref] = { t: 's', v: '' };
-      ws[ref].s = (c === 6 || c === 9) ? s_total_num : s_total;
+      ws[ref].s = c === 8 ? s_total_num : s_total;
     }
-    ws[enc({ r: TOTAL_ROW, c: 6 })].v = fmtEUR(totalActual);
-    ws[enc({ r: TOTAL_ROW, c: 9 })].v = fmtEUR(totalOferta);
+    ws[enc({ r: TOTAL_ROW, c: 8 })].v = fmtEUR(totalOferta);
 
     // Print settings
     ws['!pageSetup'] = { orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 1, paperSize: 9 };
