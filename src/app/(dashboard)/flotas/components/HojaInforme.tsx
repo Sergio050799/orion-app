@@ -435,14 +435,23 @@ export default function HojaInforme({
   const [mmtInputs, setMmtInputs] = useState<Record<string, number>>(primasMmtValues ?? {});
 
   useEffect(() => {
+    let base: Record<string, number> = {};
     if (primasMmtValues && Object.keys(primasMmtValues).length > 0) {
-      setMmtInputs(primasMmtValues);
+      base = { ...primasMmtValues };
     } else if (Object.keys(ofertaDefaults).length > 0) {
-      setMmtInputs(ofertaDefaults);
-      onPrimasMmtChange?.(ofertaDefaults);
+      base = { ...ofertaDefaults };
     } else if (Object.keys(tarifaDefaults).length > 0) {
-      setMmtInputs(tarifaDefaults);
-      onPrimasMmtChange?.(tarifaDefaults);
+      base = { ...tarifaDefaults };
+    }
+    // Rellenar grupos sin prima asignada con la media del grupo
+    for (const [key, g] of Object.entries(tipoCobGrupos)) {
+      if (!(key in base) && g.count > 0 && g.sumaSol > 0) {
+        base[key] = parseFloat((g.sumaSol / g.count).toFixed(2));
+      }
+    }
+    if (Object.keys(base).length > 0) {
+      setMmtInputs(base);
+      onPrimasMmtChange?.(base);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [primasMmtValues, ofertaDefaults, tarifaDefaults]);
