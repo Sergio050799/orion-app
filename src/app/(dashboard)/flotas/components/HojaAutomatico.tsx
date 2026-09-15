@@ -382,21 +382,50 @@ function Step1({
                     <p style={{ margin: '10px 0 0', fontSize: 12, color: '#ef4444', fontWeight: 600 }}>{parseError}</p>
                 )}
 
-                {uploadedRows && (
-                    <div style={{ marginTop: 14, padding: '10px 14px', background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: 10 }}>
-                        <span style={{ fontSize: 12, fontWeight: 700, color: '#10b981' }}>
-                            {uploadedRows.length} vehículo{uploadedRows.length !== 1 ? 's' : ''} listos
-                        </span>
-                        <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                            {uploadedRows.slice(0, 8).map((r, i) => (
-                                <span key={i} style={{ fontSize: 10, fontWeight: 700, color: 'rgba(178,198,245,0.6)', background: 'rgba(61,112,255,0.1)', border: '1px solid rgba(61,112,255,0.15)', borderRadius: 4, padding: '2px 7px', fontFamily: 'monospace' }}>
-                                    {r['matricula']}
+                {uploadedRows && (() => {
+                    const seen = new Map<string, number>();
+                    uploadedRows.forEach(r => {
+                        const mat = r['matricula']?.trim().replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+                        if (mat) seen.set(mat, (seen.get(mat) ?? 0) + 1);
+                    });
+                    const duplicadas = Array.from(seen.entries()).filter(([, n]) => n > 1).map(([m]) => m);
+                    return (
+                        <>
+                            {duplicadas.length > 0 && (
+                                <div style={{ marginTop: 10, padding: '10px 14px', background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.35)', borderRadius: 10 }}>
+                                    <span style={{ fontSize: 12, fontWeight: 700, color: '#ef4444' }}>
+                                        ⚠ {duplicadas.length} matrícula{duplicadas.length !== 1 ? 's' : ''} duplicada{duplicadas.length !== 1 ? 's' : ''} — revisa el Excel antes de continuar
+                                    </span>
+                                    <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                                        {duplicadas.map(m => (
+                                            <span key={m} style={{ fontSize: 11, fontWeight: 800, color: '#ef4444', background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 4, padding: '2px 8px', fontFamily: 'monospace' }}>
+                                                {m} ×{seen.get(m)}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                            <div style={{ marginTop: 10, padding: '10px 14px', background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: 10 }}>
+                                <span style={{ fontSize: 12, fontWeight: 700, color: '#10b981' }}>
+                                    {uploadedRows.length} vehículo{uploadedRows.length !== 1 ? 's' : ''} detectados
+                                    {duplicadas.length > 0 && <span style={{ color: '#f59e0b', fontWeight: 700 }}> · {duplicadas.length} dup.</span>}
                                 </span>
-                            ))}
-                            {uploadedRows.length > 8 && <span style={{ fontSize: 10, color: 'rgba(178,198,245,0.4)' }}>+{uploadedRows.length - 8} más</span>}
-                        </div>
-                    </div>
-                )}
+                                <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                                    {uploadedRows.slice(0, 8).map((r, i) => {
+                                        const mat = r['matricula']?.trim().replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+                                        const isDup = duplicadas.includes(mat);
+                                        return (
+                                            <span key={i} style={{ fontSize: 10, fontWeight: 700, color: isDup ? '#ef4444' : 'rgba(178,198,245,0.6)', background: isDup ? 'rgba(239,68,68,0.1)' : 'rgba(61,112,255,0.1)', border: `1px solid ${isDup ? 'rgba(239,68,68,0.3)' : 'rgba(61,112,255,0.15)'}`, borderRadius: 4, padding: '2px 7px', fontFamily: 'monospace' }}>
+                                                {r['matricula']}
+                                            </span>
+                                        );
+                                    })}
+                                    {uploadedRows.length > 8 && <span style={{ fontSize: 10, color: 'rgba(178,198,245,0.4)' }}>+{uploadedRows.length - 8} más</span>}
+                                </div>
+                            </div>
+                        </>
+                    );
+                })()}
             </div>
 
             {/* Mode selector */}
