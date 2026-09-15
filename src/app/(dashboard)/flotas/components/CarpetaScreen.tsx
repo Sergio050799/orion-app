@@ -115,7 +115,7 @@ interface Props {
 
 export default function CarpetaScreen({ onSelect }: Props) {
   const { user } = useAuth();
-  const [carpetas, setCarpetas] = useState<FlotaCarpeta[]>([]);
+  const [carpetas, setCarpetas] = useState<FlotaCarpeta[]>(() => listarCarpetas().map(normalizarCarpeta));
   const [nombre, setNombre] = useState('');
   const [confirmDel, setConfirmDel] = useState<string | null>(null);
   const [corredores, setCorredores] = useState<Corredor[]>([]);

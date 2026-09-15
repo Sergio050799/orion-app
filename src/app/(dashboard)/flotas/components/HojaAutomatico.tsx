@@ -731,6 +731,8 @@ function Step3({
 }) {
     const [globalDiscount, setGlobalDiscount] = useState('0');
     const [tipoOverrides, setTipoOverrides] = useState<Record<string, string>>({});
+    const [bulkFrom, setBulkFrom] = useState('');
+    const [bulkTo, setBulkTo] = useState('');
 
     const discount = Math.max(0, Math.min(100, parseFloat(globalDiscount) || 0));
 
@@ -804,6 +806,44 @@ function Step3({
                     {vehicles.length} vehículos · primas y coberturas del Excel
                 </p>
             </div>
+
+            {/* Cambio masivo de tipología */}
+            {(() => {
+                const presentTypes = Array.from(new Set(vehicles.map(v => effectiveTipo(v)))).sort();
+                const applyBulk = () => {
+                    if (!bulkTo) return;
+                    setTipoOverrides(prev => {
+                        const next = { ...prev };
+                        vehicles.forEach(v => {
+                            const cur = tipoOverrides[v.matricula] || v.tipo_vehiculo || '';
+                            if (bulkFrom === '' ? !cur : cur === bulkFrom) {
+                                next[v.matricula] = bulkTo;
+                            }
+                        });
+                        return next;
+                    });
+                    setBulkFrom('');
+                    setBulkTo('');
+                };
+                return (
+                    <div style={{ ...glass, padding: 16, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(178,198,245,0.5)', textTransform: 'uppercase', letterSpacing: '0.08em', flexShrink: 0 }}>Cambio masivo</span>
+                        <select value={bulkFrom} onChange={e => setBulkFrom(e.target.value)} style={{ background: 'rgba(6,14,50,0.7)', color: '#BDD4FF', border: '1px solid rgba(61,112,255,0.3)', borderRadius: 8, padding: '6px 10px', fontSize: 12, cursor: 'pointer', flex: '1 1 140px' }}>
+                            <option value="">— Sin tipo —</option>
+                            {presentTypes.filter(Boolean).map(t => <option key={t} value={t}>{t}</option>)}
+                        </select>
+                        <span style={{ fontSize: 11, color: 'rgba(178,198,245,0.4)', flexShrink: 0 }}>→</span>
+                        <select value={bulkTo} onChange={e => setBulkTo(e.target.value)} style={{ background: 'rgba(6,14,50,0.7)', color: '#BDD4FF', border: '1px solid rgba(61,112,255,0.3)', borderRadius: 8, padding: '6px 10px', fontSize: 12, cursor: 'pointer', flex: '1 1 140px' }}>
+                            <option value="">— Tipo nuevo —</option>
+                            {TIPO_VEHICULO_OPTS.map(o => <option key={o} value={o}>{o}</option>)}
+                        </select>
+                        <button onClick={applyBulk} disabled={!bulkTo} style={{ padding: '7px 18px', borderRadius: 8, background: bulkTo ? 'linear-gradient(135deg, #1240CC, #3366FF)' : 'rgba(18,64,204,0.2)', color: '#fff', border: 'none', fontSize: 12, fontWeight: 700, cursor: bulkTo ? 'pointer' : 'not-allowed', flexShrink: 0 }}>
+                            Aplicar
+                        </button>
+                        {bulkFrom === '' && <span style={{ fontSize: 10, color: 'rgba(178,198,245,0.35)', flex: '100%' }}>Selecciona un tipo origen para cambiar todos los vehículos de ese tipo, o deja vacío para asignar a los que no tienen tipo.</span>}
+                    </div>
+                );
+            })()}
 
             {/* Tipos pendientes */}
             {vehicles.some(v => !effectiveTipo(v)) && (

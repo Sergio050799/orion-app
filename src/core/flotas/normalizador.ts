@@ -6,7 +6,7 @@
 // ─── Opciones canónicas ───────────────────────────────────────────────────────
 
 export const TIPO_VEHICULO_OPTS = [
-  'Turismo', 'Furgoneta', 'Cabeza tractora', 'Camión rígido',
+  'Turismo', 'Todoterreno', 'Furgoneta', 'Cabeza tractora', 'Camión rígido',
   'Semirremolque', 'Industrial matriculado', 'Industrial no matriculado',
 ];
 
@@ -34,9 +34,14 @@ addAliases('Turismo', [
   'turismo', 'turismos', 'turis', 'tur', 'turism',
   'derivado de turismo', 'derivado turismo', 'deriv turismo', 'deriv. turismo',
   'turismo derivado', 'automovil', 'automóvil', 'auto', 'coche', 'pkw',
-  'todo terreno', 'todoterreno', 'suv', 'monovolumen', 'berlina', 'sedan',
-  'familiar', 'coupe', 'descapotable', 'cabrio', 'cabriolet', 'hatchback',
-  'microcar', 'microcoche', 'cuadriciclo', 'quad',
+  'berlina', 'sedan', 'familiar', 'coupe', 'descapotable', 'cabrio', 'cabriolet',
+  'hatchback', 'microcar', 'microcoche', 'cuadriciclo', 'quad',
+]);
+
+addAliases('Todoterreno', [
+  'todoterreno', 'todo terreno', 'todo-terreno', 'suv', 'monovolumen',
+  'crossover', 'offroad', 'off-road', '4x4', '4wd', 'awd',
+  'jeep', 'pickup', 'pick up', 'pick-up',
 ]);
 
 addAliases('Furgoneta', [
