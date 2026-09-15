@@ -88,8 +88,9 @@ function buildPdfHtml(data: {
   primasSol: { tipo: string; cob: string; count: number; media: number; total: number }[];
   mmtRows: { tipo: string; cob: string; count: number; prima: number | null; total: number | null }[];
   corredorLabel?: string;
+  cobAnexo: { titulo: string; garantias: string[] }[];
 }): string {
-  const { header, pivot, totalVehiculos, ambitoLabel, sinco, primasSol, mmtRows, corredorLabel } = data;
+  const { header, pivot, totalVehiculos, ambitoLabel, sinco, primasSol, mmtRows, corredorLabel, cobAnexo } = data;
   const totalSol = primasSol.reduce((a, r) => a + r.total, 0);
   const totalMmt = mmtRows.reduce((a, r) => a + (r.total ?? 0), 0);
   const dif = totalMmt - totalSol;
@@ -229,6 +230,16 @@ function buildPdfHtml(data: {
 
   /* ── Footer ── */
   .report-footer { margin-top: 8px; padding-top: 6px; border-top: 1px solid #d4dff5; display: flex; justify-content: space-between; font-size: 10px; color: #8ea3c8; }
+
+  /* ── Anexo coberturas ── */
+  .anexo-page { page-break-before: always; padding-top: 14px; }
+  .anexo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
+  .anexo-box { border: 1px solid #d4dff5; border-radius: 7px; overflow: hidden; }
+  .anexo-box-head { background: #1240CC; color: #fff; padding: 7px 13px; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.10em; font-family: 'Arial Black', Arial, sans-serif; }
+  .anexo-box-body { padding: 8px 13px; }
+  .garantia-row { display: flex; align-items: center; gap: 7px; padding: 4px 0; border-bottom: 1px solid #eaeffb; font-size: 11px; color: #1e2a4a; }
+  .garantia-row:last-child { border-bottom: none; }
+  .garantia-dot { width: 5px; height: 5px; border-radius: 50%; background: #1240CC; flex-shrink: 0; display: inline-block; }
 </style>
 </head>
 <body>
@@ -322,6 +333,24 @@ ${sincoHtml}
   <span>Generado: ${today()}</span>
 </div>
 
+${cobAnexo.length > 0 ? `
+<div class="anexo-page">
+  <div class="section-title">Anexo — Detalle de coberturas incluidas</div>
+  <div class="anexo-grid">
+    ${cobAnexo.map(({ titulo, garantias }) => `
+    <div class="anexo-box">
+      <div class="anexo-box-head">${titulo}</div>
+      <div class="anexo-box-body">
+        ${garantias.map(g => `<div class="garantia-row"><span class="garantia-dot"></span>${g}</div>`).join('')}
+      </div>
+    </div>`).join('')}
+  </div>
+  <div class="report-footer" style="margin-top: 12px;">
+    <span>MMT Seguros — Documento confidencial</span>
+    <span>Generado: ${today()}</span>
+  </div>
+</div>` : ''}
+
 <script>window.onload = () => { window.print(); };</script>
 </body>
 </html>`;
@@ -403,6 +432,62 @@ export default function HojaInforme({
       total: g.sumaSol,
     })),
   [tipoCobGrupos]);
+
+  // ── Anexo de coberturas ───────────────────────────────────────────────────────
+  const BASE_GARANTIAS = [
+    'Responsabilidad civil obligatoria',
+    'Responsabilidad civil voluntaria (hasta 50 millones)',
+    'Defensa jurídica y reclamación de daños',
+    'Seguro del Conductor (22.550 €)',
+  ];
+
+  const cobAnexo = useMemo(() => {
+    const TIPOS_REMOLQUE = new Set(['SEMIRREMOLQUE', 'REMOLQUE']);
+    const cobMap = new Map<string, boolean>(); // rawCob → hasNonRemolque
+    Object.values(tipoCobGrupos).forEach(g => {
+      const isRemolque = TIPOS_REMOLQUE.has(g.tipo);
+      if (!cobMap.has(g.cob)) cobMap.set(g.cob, false);
+      if (!isRemolque) cobMap.set(g.cob, true);
+    });
+
+    const result: { titulo: string; garantias: string[] }[] = [];
+    const seen = new Set<string>();
+    cobMap.forEach((hasNonRemolque, rawCob) => {
+      const v = rawCob.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+      let key = '';
+      if (v.includes('todo') || v.includes('franquicia') || v.includes('riesgo')) key = 'tr';
+      else if (v.includes('amplia')) key = 'ta';
+      else if (v.includes('tercero')) key = 't';
+      if (!key || seen.has(key)) return;
+      seen.add(key);
+      if (key === 't') {
+        result.push({ titulo: 'Terceros', garantias: [...BASE_GARANTIAS] });
+      } else if (key === 'ta') {
+        result.push({
+          titulo: 'Terceros Ampliado',
+          garantias: [
+            ...BASE_GARANTIAS,
+            ...(hasNonRemolque ? ['Lunas (excepto remolques)'] : []),
+            'Robo', 'Incendio',
+          ],
+        });
+      } else if (key === 'tr') {
+        result.push({
+          titulo: 'Todo Riesgo con Franquicia 1.800 €',
+          garantias: [
+            ...BASE_GARANTIAS,
+            ...(hasNonRemolque ? ['Lunas (excepto remolques)'] : []),
+            'Robo', 'Incendio', 'Daños propios con franquicia de 1.800 €',
+          ],
+        });
+      }
+    });
+    // Orden lógico: Terceros → Terceros Ampliado → Todo Riesgo
+    return result.sort((a, b) => {
+      const order: Record<string, number> = { 'Terceros': 0, 'Terceros Ampliado': 1, 'Todo Riesgo con Franquicia 1.800 €': 2 };
+      return (order[a.titulo] ?? 9) - (order[b.titulo] ?? 9);
+    });
+  }, [tipoCobGrupos]);
 
   // ── Defaults tarifa ───────────────────────────────────────────────────────────
   const tarifaDefaults = useMemo(() => {
@@ -517,13 +602,14 @@ export default function HojaInforme({
       primasSol,
       mmtRows,
       corredorLabel,
+      cobAnexo,
     });
 
     const w = window.open('', '_blank', 'width=860,height=700');
     if (!w) return;
     w.document.write(html);
     w.document.close();
-  }, [header, pivot, totalVehiculos, ambito, primasSol, mmtRows, resumenAuto, resumenManual, sincoGlobal]);
+  }, [header, pivot, totalVehiculos, ambito, primasSol, mmtRows, resumenAuto, resumenManual, sincoGlobal, cobAnexo]);
 
   // ── Render ────────────────────────────────────────────────────────────────────
   return (
