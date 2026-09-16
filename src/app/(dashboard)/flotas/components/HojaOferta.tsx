@@ -157,7 +157,7 @@ function buildOfertaPdfHtml(data: {
   rows: OfertaRow[];
   header?: Props['header'];
   carpetaNombre?: string;
-  cobAnexo: { titulo: string; garantias: string[] }[];
+  cobAnexo: { titulo: string; tipologias: string[]; garantias: string[] }[];
   primaTotal: number;
 }): string {
   const { rows, header, carpetaNombre, cobAnexo, primaTotal } = data;
@@ -186,9 +186,10 @@ function buildOfertaPdfHtml(data: {
       Anexo — Detalle de coberturas incluidas
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      ${cobAnexo.map(({ titulo, garantias }) => `
+      ${cobAnexo.map(({ titulo, tipologias, garantias }) => `
       <div style="border:1px solid #d4dff5;border-radius:7px;overflow:hidden">
         <div style="background:#002F82;color:#fff;padding:7px 13px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.1em">${titulo}</div>
+        ${tipologias.length > 0 ? `<div style="background:#0a3d91;color:rgba(255,255,255,0.75);padding:2px 13px 5px;font-size:9px;letter-spacing:.05em;text-transform:uppercase">${tipologias.join(' · ')}</div>` : ''}
         <div style="padding:8px 13px">
           ${garantias.map(g => `<div style="display:flex;align-items:center;gap:7px;padding:4px 0;border-bottom:1px solid #eaeffb;font-size:11px;color:#1e2a4a">
             <span style="width:5px;height:5px;border-radius:50%;background:#002F82;flex-shrink:0;display:inline-block"></span>${g}
@@ -564,29 +565,57 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
   // ── Coberturas para el anexo ──────────────────────────────────────────────
   const cobAnexo = useMemo(() => {
     const TIPOS_REMOLQUE = new Set(['semirremolque', 'remolque']);
-    const cobMap = new Map<string, boolean>();
+    const BASE_NO_CONDUCTOR = BASE_GARANTIAS_OFERTA.filter(g => !g.includes('Conductor'));
+    const cobMap = new Map<string, { nonRem: Set<string>; rem: Set<string> }>();
     rows.forEach(r => {
       if (!r.coberturas) return;
-      const isRemolque = TIPOS_REMOLQUE.has(r.tipo_vehiculo.toLowerCase());
-      if (!cobMap.has(r.coberturas)) cobMap.set(r.coberturas, false);
-      if (!isRemolque) cobMap.set(r.coberturas, true);
+      const isRem = TIPOS_REMOLQUE.has(r.tipo_vehiculo.toLowerCase());
+      if (!cobMap.has(r.coberturas)) cobMap.set(r.coberturas, { nonRem: new Set(), rem: new Set() });
+      const entry = cobMap.get(r.coberturas)!;
+      const tip = r.tipo_vehiculo.charAt(0).toUpperCase() + r.tipo_vehiculo.slice(1).toLowerCase();
+      if (isRem) entry.rem.add(tip);
+      else entry.nonRem.add(tip);
     });
-    const result: { titulo: string; garantias: string[] }[] = [];
+    const result: { titulo: string; tipologias: string[]; garantias: string[] }[] = [];
     const seen = new Set<string>();
-    cobMap.forEach((hasNonRemolque, rawCob) => {
+    cobMap.forEach(({ nonRem, rem }, rawCob) => {
       const v = rawCob.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
       let key = '';
       if (v.includes('todo') || v.includes('franquicia') || v.includes('riesgo')) key = 'tr';
       else if (v.includes('amplia')) key = 'ta';
       else if (v.includes('tercero')) key = 't';
-      if (!key || seen.has(key)) return;
-      seen.add(key);
-      if (key === 't') result.push({ titulo: 'Terceros', garantias: [...BASE_GARANTIAS_OFERTA] });
-      else if (key === 'ta') result.push({ titulo: 'Terceros Ampliado', garantias: [...BASE_GARANTIAS_OFERTA, ...(hasNonRemolque ? ['Lunas (excepto remolques)'] : []), 'Robo', 'Incendio'] });
-      else if (key === 'tr') result.push({ titulo: 'Todo Riesgo con Franquicia 1.800 €', garantias: [...BASE_GARANTIAS_OFERTA, ...(hasNonRemolque ? ['Lunas (excepto remolques)'] : []), 'Robo', 'Incendio', 'Daños propios con franquicia de 1.800 €'] });
+      if (!key) return;
+      if (nonRem.size > 0 && !seen.has(key)) {
+        seen.add(key);
+        const tipologias = [...nonRem];
+        if (key === 't') result.push({ titulo: 'Terceros', tipologias, garantias: [...BASE_GARANTIAS_OFERTA] });
+        else if (key === 'ta') result.push({ titulo: 'Terceros Ampliado', tipologias, garantias: [...BASE_GARANTIAS_OFERTA, 'Lunas', 'Robo', 'Incendio'] });
+        else if (key === 'tr') result.push({ titulo: 'Todo Riesgo con Franquicia 1.800 €', tipologias, garantias: [...BASE_GARANTIAS_OFERTA, 'Lunas', 'Robo', 'Incendio', 'Daños propios con franquicia de 1.800 €'] });
+      }
+      if (rem.size > 0 && !seen.has(key + '_rem')) {
+        seen.add(key + '_rem');
+        const tipologias = [...rem];
+        if (key === 't') result.push({ titulo: 'Terceros — Remolques', tipologias, garantias: [...BASE_NO_CONDUCTOR] });
+        else if (key === 'ta') result.push({ titulo: 'Terceros Ampliado — Remolques', tipologias, garantias: [...BASE_NO_CONDUCTOR, 'Robo', 'Incendio'] });
+        else if (key === 'tr') result.push({ titulo: 'Todo Riesgo — Remolques', tipologias, garantias: [...BASE_NO_CONDUCTOR, 'Robo', 'Incendio', 'Daños propios con franquicia de 1.800 €'] });
+      }
     });
-    return result.sort((a, b) => { const o: Record<string,number>={'Terceros':0,'Terceros Ampliado':1,'Todo Riesgo con Franquicia 1.800 €':2}; return (o[a.titulo]??9)-(o[b.titulo]??9); });
+    const titleOrder: Record<string, number> = { 'Terceros': 0, 'Terceros — Remolques': 1, 'Terceros Ampliado': 2, 'Terceros Ampliado — Remolques': 3, 'Todo Riesgo con Franquicia 1.800 €': 4, 'Todo Riesgo — Remolques': 5 };
+    return result.sort((a, b) => (titleOrder[a.titulo] ?? 9) - (titleOrder[b.titulo] ?? 9));
   }, [rows]);
+
+  // ── Actualizar primas desde Informe ──────────────────────────────────────
+  const handleActualizarDesdeInforme = useCallback(() => {
+    if (!primasMmt || Object.keys(primasMmt).length === 0) return;
+    setRows(prev => prev.map(row => {
+      const tipoKey = (row.tipo_vehiculo || '').toUpperCase().trim() || 'SIN TIPO';
+      const tNorm = tipoKey === 'DERIVADO DE TURISMO' ? 'TURISMO' : tipoKey;
+      const key = `${tNorm}||${row.coberturas || 'Sin cobertura'}`;
+      const prima = primasMmt[key];
+      if (prima != null) return { ...row, oferta_prima_mmt: String(prima), _primaOverride: '' };
+      return row;
+    }));
+  }, [primasMmt]);
 
   // ── Exportar PDF ──────────────────────────────────────────────────────────
   const handleExportPdf = useCallback(() => {
@@ -837,6 +866,15 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
           )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {/* Actualizar primas desde Informe */}
+          {primasMmt && Object.keys(primasMmt).length > 0 && (
+            <button
+              onClick={handleActualizarDesdeInforme}
+              style={{ fontSize: 10, fontWeight: 800, padding: '4px 10px', borderRadius: 6, background: 'rgba(0,48,132,0.08)', color: '#002F82', border: '1px solid rgba(0,48,132,0.25)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+              Actualizar primas
+            </button>
+          )}
           {/* Ajustes toggle */}
           <button
             onClick={() => setShowAjustes(!showAjustes)}

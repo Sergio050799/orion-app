@@ -102,10 +102,16 @@ function ManualSearchPanel({ vehicle, onSelect, onClose }: {
   onSelect: (c: CandidatoCatalogo) => void;
   onClose: () => void;
 }) {
-  const [marca, setMarca]           = useState(vehicle.marca);
-  const [modelo, setModelo]         = useState(vehicle.modelo);
+  const isRem = ['semirremolque', 'remolque'].includes((vehicle.tipo || '').toLowerCase());
+  const initMarca  = isRem ? 'REMOLQUE' : vehicle.marca;
+  const initModelo = isRem
+    ? ((vehicle.tipo || '').toLowerCase() === 'semirremolque' ? 'SEMIRREMOLQUE' : 'REMOLQUE') + (vehicle.marca ? ` ${vehicle.marca}` : '')
+    : vehicle.modelo;
+
+  const [marca, setMarca]           = useState(initMarca);
+  const [modelo, setModelo]         = useState(initModelo);
   const [combustible, setCombustible] = useState('');
-  const [kw, setKw]                 = useState(vehicle.kw || '');
+  const [kw, setKw]                 = useState(isRem ? '' : (vehicle.kw || ''));
   const [anyo, setAnyo]             = useState('');
   const [results, setResults]       = useState<CandidatoCatalogo[]>([]);
   const [loading, setLoading]       = useState(false);
@@ -190,12 +196,13 @@ function ManualSearchPanel({ vehicle, onSelect, onClose }: {
               onMouseEnter={e => (e.currentTarget.style.background = '#eef3ff')}
               onMouseLeave={e => (e.currentTarget.style.background = '#fff')}>
               <span style={{ flex: 1, fontSize: 12, fontWeight: 600, color: '#111827' }}>{c.version}</span>
-              <span style={{ fontSize: 10, color: '#6b7280', whiteSpace: 'nowrap' }}>
-                {c.kw}kW · {FUEL_LABEL[c.combustible] ?? c.combustible}
+              <span style={{ fontSize: 10, color: '#374151', whiteSpace: 'nowrap' }}>
+                {c.kw > 0 ? `${c.kw}kW · ` : ''}{FUEL_LABEL[c.combustible] ?? c.combustible}
                 {c.anyo ? ` · ${c.anyo}` : ''}
                 {c.cilindrada > 0 ? ` · ${c.cilindrada}cc` : ''}
+                {c.tara > 0 ? ` · ${c.tara}kg` : ''}
               </span>
-              <span style={{ fontSize: 10, fontFamily: 'monospace', color: '#9ca3af', whiteSpace: 'nowrap' }}>{c.id_veh}</span>
+              <span style={{ fontSize: 10, fontFamily: 'monospace', color: '#374151', whiteSpace: 'nowrap' }}>{c.id_veh}</span>
             </button>
           ))}
         </div>
@@ -215,7 +222,7 @@ function Fld({ label, children }: { label: string; children: React.ReactNode }) 
 
 const inS: React.CSSProperties = {
   fontSize: 11, padding: '5px 8px', borderRadius: 6,
-  border: '1px solid #d1d5db', outline: 'none', background: '#fff',
+  border: '1px solid #d1d5db', outline: 'none', background: '#fff', color: '#111827',
 };
 
 // ─── SimilarModal ─────────────────────────────────────────────────────────────
@@ -331,7 +338,9 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange }: Props)
 
   const [vehicles, setVehicles]         = useState<VehicleEmision[]>(initial);
   const [openSearchRow, setOpenSearchRow] = useState<number | null>(null);
-  const autoSearchedRef                 = useRef(false);
+  const [checkedRows, setCheckedRows]   = useState<Set<number>>(new Set());
+  const searchedMatsRef                 = useRef<Set<string>>(new Set());
+  const searchAbortRef                  = useRef<Map<number, AbortController>>(new Map());
   const pendingNotifyRef                = useRef(false);
 
   const [modalData, setModalData] = useState<{
@@ -355,7 +364,7 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange }: Props)
   const applyToMultiple = useCallback((indices: number[], cat: CandidatoCatalogo) => {
     setVehicles(prev => {
       const updated = [...prev];
-      indices.forEach(idx => { updated[idx] = { ...updated[idx], seleccionado: cat, status: 'listo' }; });
+      indices.forEach(idx => { updated[idx] = { ...updated[idx], seleccionado: cat, status: 'listo', searching: false }; });
       return updated;
     });
     pendingNotifyRef.current = true;
@@ -390,11 +399,12 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange }: Props)
     return null;
   }, []);
 
-  const doSearch = useCallback(async (body: Record<string, string | number>): Promise<CandidatoCatalogo[]> => {
+  const doSearch = useCallback(async (body: Record<string, string | number>, signal?: AbortSignal): Promise<CandidatoCatalogo[]> => {
     const res  = await fetch('/api/catalogo/search', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
+      signal,
     });
     if (!res.ok) throw new Error('API error');
     const json = await res.json();
@@ -404,53 +414,103 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange }: Props)
   const handleSearch = useCallback(async (i: number) => {
     const v = vehicles[i];
     if (!v) return;
+    // Cancel any prior search for this slot
+    searchAbortRef.current.get(i)?.abort();
+    const ctrl = new AbortController();
+    searchAbortRef.current.set(i, ctrl);
     setV(i, { searching: true });
     try {
       const body: Record<string, string | number> = {};
-      if (v.marca)  body.marca  = v.marca;
-      if (v.modelo) body.modelo = v.modelo;
-      if (v.kw)     body.kw     = v.kw;
-      else if (v.cv) body.kw = String(Math.round(parseFloat(v.cv) / 1.36));
-      if (v.tn) { const n = parseFloat(v.tn); body.tara = n >= 100 ? n : n * 1000; }
+      const TIPOS_REM = new Set(['semirremolque', 'remolque']);
+      const isRem = TIPOS_REM.has((v.tipo || '').toLowerCase());
+
+      if (isRem) {
+        // En el catálogo todos los remolques/semirremolques tienen marca="REMOLQUE"
+        // y el fabricante está en modelo: "SEMIRREMOLQUE KRONE", "SEMIRREMOLQUE SCHMITZ", etc.
+        body.marca = 'REMOLQUE';
+        const prefix = (v.tipo || '').toLowerCase() === 'semirremolque' ? 'SEMIRREMOLQUE' : 'REMOLQUE';
+        body.modelo = v.marca ? `${prefix} ${v.marca}` : prefix;
+        if (v.tn) { const n = parseFloat(v.tn); if (!isNaN(n) && n > 0) body.tara = n >= 100 ? n : n * 1000; }
+      } else {
+        if (v.marca)  body.marca  = v.marca;
+        if (v.modelo) body.modelo = v.modelo;
+        if (v.kw)     body.kw     = v.kw;
+        else if (v.cv) body.kw = String(Math.round(parseFloat(v.cv) / 1.36));
+        if (v.tn) { const n = parseFloat(v.tn); body.tara = n >= 100 ? n : n * 1000; }
+      }
 
       const realYear = extractYear(v);
       const plateEst = estimateYear(v.matricula);
       if (realYear)      body.anyo = realYear;
       else if (plateEst) body.anyo = plateEst.year;
 
-      let candidatos = await doSearch(body);
+      let candidatos = await doSearch(body, ctrl.signal);
+      if (ctrl.signal.aborted) return;
       if (candidatos.length === 0 && body.anyo) {
-        const { anyo: _, ...sinAnyo } = body; candidatos = await doSearch(sinAnyo);
+        const { anyo: _, ...sinAnyo } = body; candidatos = await doSearch(sinAnyo, ctrl.signal);
       }
+      if (ctrl.signal.aborted) return;
       if (candidatos.length === 0 && body.marca && body.modelo) {
-        candidatos = await doSearch({ marca: body.marca, modelo: body.modelo });
+        candidatos = await doSearch({ marca: body.marca, modelo: body.modelo }, ctrl.signal);
+      }
+      if (ctrl.signal.aborted) return;
+      // Extra fallbacks para remolques: prefijo alternativo y búsqueda por marca sola
+      if (isRem && candidatos.length === 0 && v.marca) {
+        const altPrefix = (v.tipo || '').toLowerCase() === 'semirremolque' ? 'REMOLQUE' : 'SEMIRREMOLQUE';
+        candidatos = await doSearch({ marca: 'REMOLQUE', modelo: `${altPrefix} ${v.marca.toUpperCase()}` }, ctrl.signal);
+        if (ctrl.signal.aborted) return;
+      }
+      if (isRem && candidatos.length === 0 && v.marca) {
+        candidatos = await doSearch({ marca: 'REMOLQUE', modelo: v.marca.toUpperCase() }, ctrl.signal);
+        if (ctrl.signal.aborted) return;
       }
 
       const top = candidatos.slice(0, 8);
 
       if (top.length === 1) {
-        // Single result → auto-select and auto-apply to identical
         setVehicles(prev => {
-          const n   = [...prev];
-          n[i]      = { ...n[i], candidatos: top, searching: false };
+          const n = [...prev];
+          n[i] = { ...n[i], candidatos: top, searching: false };
           return n;
         });
-        // Use timeout so setVehicles above settles before handleSelect reads vehicles
         setTimeout(() => handleSelect(i, top[0]), 0);
+      } else if (isRem && top.length === 0) {
+        // Fallback genérico: asigna entrada de peso o tipo genérico del catálogo
+        const taraKg = v.tn ? (parseFloat(v.tn) >= 100 ? parseFloat(v.tn) : parseFloat(v.tn) * 1000) : 0;
+        const genericId = (v.tipo || '').toLowerCase() === 'semirremolque'
+          ? '314954925'   // SEMIRREMOLQUE SEMI · 35000kg
+          : taraKg > 7000 ? '131733694'  // + DE 7000 · 15000kg
+          : taraKg > 3000 ? '131733669'  // DE 3001 A 7000
+          : taraKg > 1000 ? '131733100'  // DE 1001 A 3000
+          : '131733087';                  // A 1000
+        const gRes = await fetch(`/api/catalogo/${genericId}`, { signal: ctrl.signal });
+        if (ctrl.signal.aborted) return;
+        const gJson = await gRes.json();
+        if (gJson.ok && gJson.vehiculo) {
+          setVehicles(prev => { const n = [...prev]; n[i] = { ...n[i], candidatos: [gJson.vehiculo], searching: false }; return n; });
+          setTimeout(() => handleSelect(i, gJson.vehiculo), 0);
+        } else {
+          setV(i, { status: 'sin_catalogo', searching: false });
+        }
       } else {
         setV(i, { candidatos: top, status: top.length > 0 ? 'pendiente' : 'sin_catalogo', searching: false });
       }
     } catch {
+      if (ctrl.signal.aborted) return;
       setV(i, { status: 'sin_catalogo', searching: false });
+    } finally {
+      searchAbortRef.current.delete(i);
     }
   }, [vehicles, setV, extractYear, doSearch, handleSelect]);
 
-  // Auto-buscar al montar, máx 3 concurrentes
+  // Auto-buscar al montar y cuando se añaden vehículos nuevos, máx 3 concurrentes
   useEffect(() => {
-    if (autoSearchedRef.current) return;
     if (vehicles.length === 0) return;
-    autoSearchedRef.current = true;
-    const pending = vehicles.map((v, i) => ({ v, i })).filter(({ v }) => v.candidatos.length === 0 && !v.searching && v.marca);
+    const pending = vehicles.map((v, i) => ({ v, i })).filter(({ v }) =>
+      v.candidatos.length === 0 && !v.searching && v.marca && !searchedMatsRef.current.has(v.matricula)
+    );
+    if (pending.length === 0) return;
+    pending.forEach(({ v }) => searchedMatsRef.current.add(v.matricula));
     let active = 0, idx = 0;
     const runNext = () => {
       while (active < 3 && idx < pending.length) {
@@ -471,8 +531,10 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange }: Props)
     onCatalogoChange?.(sel);
   }, [vehicles, onCatalogoChange]);
 
-  // Búsqueda directa por ID
+  // Búsqueda directa por ID — aborta cualquier búsqueda en curso para este vehículo
   const handleDirectId = useCallback(async (i: number, idVeh: string) => {
+    searchAbortRef.current.get(i)?.abort();
+    searchAbortRef.current.delete(i);
     setV(i, { searching: true });
     try {
       const res  = await fetch(`/api/catalogo/${encodeURIComponent(idVeh)}`);
@@ -487,6 +549,11 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange }: Props)
       setV(i, { searching: false });
     }
   }, [setV, handleSelect]);
+
+  const handleBulkAssign = useCallback((c: CandidatoCatalogo) => {
+    applyToMultiple([...checkedRows], c);
+    setCheckedRows(new Set());
+  }, [checkedRows, applyToMultiple]);
 
   const handleClearSelection = useCallback((i: number) => {
     setVehicles(prev => {
@@ -516,6 +583,41 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange }: Props)
         </div>
       </div>
 
+      {/* ── Bulk-assign toolbar ─────────────────────────────────────────────── */}
+      {checkedRows.size > 0 && (() => {
+        const firstIdx = [...checkedRows].find(i => vehicles[i]?.candidatos.length > 0) ?? -1;
+        const candidatos = firstIdx >= 0 ? vehicles[firstIdx].candidatos : [];
+        return (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 16px', borderBottom: '1px solid #c8d8f5', background: '#eef3ff', flexShrink: 0, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 11, fontWeight: 800, color: '#1240CC' }}>
+              {checkedRows.size} seleccionado{checkedRows.size > 1 ? 's' : ''}
+            </span>
+            {candidatos.length > 0 ? (
+              <>
+                <select
+                  defaultValue=""
+                  onChange={e => {
+                    const c = candidatos.find(c => c.id_veh === e.target.value);
+                    if (c) handleBulkAssign(c);
+                  }}
+                  style={{ fontSize: 11, padding: '4px 8px', borderRadius: 6, border: '1px solid #a5b8e8', background: '#fff', outline: 'none', cursor: 'pointer', maxWidth: 380 }}>
+                  <option value="" disabled>— Seleccionar versión para todos —</option>
+                  {candidatos.map(c => (
+                    <option key={c.id_veh} value={c.id_veh}>{c.version}{c.score ? ` · ${c.score}%` : ''}</option>
+                  ))}
+                </select>
+              </>
+            ) : (
+              <span style={{ fontSize: 11, color: '#6b7280' }}>Sin candidatos disponibles para las filas seleccionadas</span>
+            )}
+            <button onClick={() => setCheckedRows(new Set())}
+              style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 5, background: 'transparent', border: '1px solid #a5b8e8', color: '#6b7280', cursor: 'pointer', marginLeft: 'auto' }}>
+              Cancelar
+            </button>
+          </div>
+        );
+      })()}
+
       {/* ── Grid ────────────────────────────────────────────────────────────── */}
       <div className="flex-1 overflow-auto custom-scrollbar" style={{ background: '#f3f4f6', padding: 12 }}>
         {vehicles.length === 0 ? (
@@ -527,7 +629,14 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange }: Props)
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
               <thead>
                 <tr style={{ background: '#f8f9fa', borderBottom: '2px solid #e5e7eb' }}>
-                  <th style={{ ...thS, width: 36, textAlign: 'center' }}>#</th>
+                  <th style={{ ...thS, width: 42, textAlign: 'center' }}>
+                    <input type="checkbox"
+                      title="Seleccionar todos"
+                      checked={vehicles.length > 0 && checkedRows.size === vehicles.length}
+                      onChange={e => setCheckedRows(e.target.checked ? new Set(vehicles.map((_, i) => i)) : new Set())}
+                      style={{ cursor: 'pointer', width: 14, height: 14 }}
+                    />
+                  </th>
                   <th style={{ ...thS, width: 110 }}>Matrícula</th>
                   <th style={{ ...thS, width: 120 }}>Marca</th>
                   <th style={{ ...thS, width: 160 }}>Modelo</th>
@@ -548,10 +657,16 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange }: Props)
                       onMouseEnter={e => { if (v.status !== 'listo' && openSearchRow !== i) e.currentTarget.style.background = '#fafbff'; }}
                       onMouseLeave={e => { if (v.status !== 'listo' && openSearchRow !== i) e.currentTarget.style.background = '#fff'; }}>
 
-                      <td style={{ ...tdS, textAlign: 'center', color: '#9ca3af', fontSize: 11 }}>{i + 1}</td>
+                      <td style={{ ...tdS, textAlign: 'center' }}>
+                        <input type="checkbox"
+                          checked={checkedRows.has(i)}
+                          onChange={e => setCheckedRows(prev => { const n = new Set(prev); if (e.target.checked) n.add(i); else n.delete(i); return n; })}
+                          style={{ cursor: 'pointer', width: 14, height: 14 }}
+                        />
+                      </td>
                       <td style={{ ...tdS, fontFamily: 'monospace', fontWeight: 800, color: '#111827', letterSpacing: '0.04em' }}>{v.matricula}</td>
-                      <td style={{ ...tdS, color: '#374151', fontWeight: 600 }}>{v.marca}</td>
-                      <td style={{ ...tdS, color: '#374151' }}>{v.modelo}</td>
+                      <td style={{ ...tdS, color: '#111827', fontWeight: 600 }}>{v.marca}</td>
+                      <td style={{ ...tdS, color: '#111827' }}>{v.modelo}</td>
 
                       {/* ── Versión cell ─────────────────────────────────── */}
                       <td style={tdS}>
@@ -609,7 +724,7 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange }: Props)
 
                       <td style={{ ...tdS, fontFamily: 'monospace', fontSize: 11, color: '#6b7280' }}>
                         {v.seleccionado ? (
-                          <span style={{ color: '#374151', fontWeight: 700 }}>{v.seleccionado.id_veh}</span>
+                          <span style={{ color: '#111827', fontWeight: 700 }}>{v.seleccionado.id_veh}</span>
                         ) : (
                           <DirectIdCell onSubmit={id => handleDirectId(i, id)} />
                         )}

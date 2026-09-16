@@ -88,7 +88,7 @@ function buildPdfHtml(data: {
   primasSol: { tipo: string; cob: string; count: number; media: number; total: number }[];
   mmtRows: { tipo: string; cob: string; count: number; prima: number | null; total: number | null }[];
   corredorLabel?: string;
-  cobAnexo: { titulo: string; garantias: string[] }[];
+  cobAnexo: { titulo: string; tipologias?: string[]; garantias: string[] }[];
 }): string {
   const { header, pivot, totalVehiculos, ambitoLabel, sinco, primasSol, mmtRows, corredorLabel, cobAnexo } = data;
   const totalSol = primasSol.reduce((a, r) => a + r.total, 0);
@@ -337,9 +337,10 @@ ${cobAnexo.length > 0 ? `
 <div class="anexo-page">
   <div class="section-title">Anexo — Detalle de coberturas incluidas</div>
   <div class="anexo-grid">
-    ${cobAnexo.map(({ titulo, garantias }) => `
+    ${cobAnexo.map(({ titulo, tipologias, garantias }) => `
     <div class="anexo-box">
       <div class="anexo-box-head">${titulo}</div>
+      ${tipologias && tipologias.length > 0 ? `<div style="background:#0a3d91;color:rgba(255,255,255,0.75);padding:2px 12px 4px;font-size:8px;letter-spacing:.05em;text-transform:uppercase">${tipologias.join(' · ')}</div>` : ''}
       <div class="anexo-box-body">
         ${garantias.map(g => `<div class="garantia-row"><span class="garantia-dot"></span>${g}</div>`).join('')}
       </div>
@@ -443,50 +444,42 @@ export default function HojaInforme({
 
   const cobAnexo = useMemo(() => {
     const TIPOS_REMOLQUE = new Set(['SEMIRREMOLQUE', 'REMOLQUE']);
-    const cobMap = new Map<string, boolean>(); // rawCob → hasNonRemolque
+    const BASE_NO_CONDUCTOR = BASE_GARANTIAS.filter(g => !g.includes('Conductor'));
+    const cobMap = new Map<string, { nonRem: Set<string>; rem: Set<string> }>();
     Object.values(tipoCobGrupos).forEach(g => {
-      const isRemolque = TIPOS_REMOLQUE.has(g.tipo);
-      if (!cobMap.has(g.cob)) cobMap.set(g.cob, false);
-      if (!isRemolque) cobMap.set(g.cob, true);
+      const isRem = TIPOS_REMOLQUE.has(g.tipo);
+      if (!cobMap.has(g.cob)) cobMap.set(g.cob, { nonRem: new Set(), rem: new Set() });
+      const entry = cobMap.get(g.cob)!;
+      const tip = g.tipo.charAt(0).toUpperCase() + g.tipo.slice(1).toLowerCase();
+      if (isRem) entry.rem.add(tip);
+      else entry.nonRem.add(tip);
     });
-
-    const result: { titulo: string; garantias: string[] }[] = [];
+    const result: { titulo: string; tipologias: string[]; garantias: string[] }[] = [];
     const seen = new Set<string>();
-    cobMap.forEach((hasNonRemolque, rawCob) => {
+    cobMap.forEach(({ nonRem, rem }, rawCob) => {
       const v = rawCob.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
       let key = '';
       if (v.includes('todo') || v.includes('franquicia') || v.includes('riesgo')) key = 'tr';
       else if (v.includes('amplia')) key = 'ta';
       else if (v.includes('tercero')) key = 't';
-      if (!key || seen.has(key)) return;
-      seen.add(key);
-      if (key === 't') {
-        result.push({ titulo: 'Terceros', garantias: [...BASE_GARANTIAS] });
-      } else if (key === 'ta') {
-        result.push({
-          titulo: 'Terceros Ampliado',
-          garantias: [
-            ...BASE_GARANTIAS,
-            ...(hasNonRemolque ? ['Lunas (excepto remolques)'] : []),
-            'Robo', 'Incendio',
-          ],
-        });
-      } else if (key === 'tr') {
-        result.push({
-          titulo: 'Todo Riesgo con Franquicia 1.800 €',
-          garantias: [
-            ...BASE_GARANTIAS,
-            ...(hasNonRemolque ? ['Lunas (excepto remolques)'] : []),
-            'Robo', 'Incendio', 'Daños propios con franquicia de 1.800 €',
-          ],
-        });
+      if (!key) return;
+      if (nonRem.size > 0 && !seen.has(key)) {
+        seen.add(key);
+        const tipologias = [...nonRem];
+        if (key === 't') result.push({ titulo: 'Terceros', tipologias, garantias: [...BASE_GARANTIAS] });
+        else if (key === 'ta') result.push({ titulo: 'Terceros Ampliado', tipologias, garantias: [...BASE_GARANTIAS, 'Lunas', 'Robo', 'Incendio'] });
+        else if (key === 'tr') result.push({ titulo: 'Todo Riesgo con Franquicia 1.800 €', tipologias, garantias: [...BASE_GARANTIAS, 'Lunas', 'Robo', 'Incendio', 'Daños propios con franquicia de 1.800 €'] });
+      }
+      if (rem.size > 0 && !seen.has(key + '_rem')) {
+        seen.add(key + '_rem');
+        const tipologias = [...rem];
+        if (key === 't') result.push({ titulo: 'Terceros — Remolques', tipologias, garantias: [...BASE_NO_CONDUCTOR] });
+        else if (key === 'ta') result.push({ titulo: 'Terceros Ampliado — Remolques', tipologias, garantias: [...BASE_NO_CONDUCTOR, 'Robo', 'Incendio'] });
+        else if (key === 'tr') result.push({ titulo: 'Todo Riesgo — Remolques', tipologias, garantias: [...BASE_NO_CONDUCTOR, 'Robo', 'Incendio', 'Daños propios con franquicia de 1.800 €'] });
       }
     });
-    // Orden lógico: Terceros → Terceros Ampliado → Todo Riesgo
-    return result.sort((a, b) => {
-      const order: Record<string, number> = { 'Terceros': 0, 'Terceros Ampliado': 1, 'Todo Riesgo con Franquicia 1.800 €': 2 };
-      return (order[a.titulo] ?? 9) - (order[b.titulo] ?? 9);
-    });
+    const titleOrder: Record<string, number> = { 'Terceros': 0, 'Terceros — Remolques': 1, 'Terceros Ampliado': 2, 'Terceros Ampliado — Remolques': 3, 'Todo Riesgo con Franquicia 1.800 €': 4, 'Todo Riesgo — Remolques': 5 };
+    return result.sort((a, b) => (titleOrder[a.titulo] ?? 9) - (titleOrder[b.titulo] ?? 9));
   }, [tipoCobGrupos]);
 
   // ── Defaults tarifa ───────────────────────────────────────────────────────────

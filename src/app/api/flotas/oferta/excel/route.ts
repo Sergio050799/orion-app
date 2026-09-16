@@ -21,7 +21,7 @@ interface OfertaBody {
   empresa_nombre: string;
   empresa_cif: string;
   vehiculos: Vehiculo[];
-  cobAnexo?: { titulo: string; garantias: string[] }[];
+  cobAnexo?: { titulo: string; tipologias?: string[]; garantias: string[] }[];
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -244,12 +244,19 @@ export async function POST(req: NextRequest) {
         border: { bottom: thin2, left: thin2, right: thin2 },
       };
 
+      const s_cob_tipos: object = {
+        fill: { fgColor: { rgb: "0a3d91" }, patternType: "solid" },
+        font: { sz: 8, name: "Calibri", color: { rgb: "BDD0F5" }, italic: true },
+        alignment: { horizontal: "left", vertical: "center" },
+      };
+
       const cob2rows: (string | number)[][] = [];
       cob2rows.push(['DETALLE DE COBERTURAS INCLUIDAS', '']);
 
-      for (const { titulo, garantias } of body.cobAnexo) {
+      for (const { titulo, tipologias, garantias } of body.cobAnexo) {
         cob2rows.push(['']);
         cob2rows.push([titulo, '']);
+        if (tipologias && tipologias.length > 0) cob2rows.push([tipologias.join(' · '), '']);
         for (const g of garantias) cob2rows.push([`  ✓  ${g}`, '']);
       }
 
@@ -264,11 +271,16 @@ export async function POST(req: NextRequest) {
       ws2[enc2({ r: 0, c: 0 })].s = s_cob_head;
 
       let rowIdx = 2;
-      for (const { titulo, garantias } of body.cobAnexo) {
+      for (const { titulo, tipologias, garantias } of body.cobAnexo) {
         rowIdx++; // blank
         ws2[enc2({ r: rowIdx, c: 0 })] = { t: 's', v: titulo, s: s_cob_title };
         ws2[enc2({ r: rowIdx, c: 1 })] = { t: 's', v: '', s: s_cob_title };
         rowIdx++;
+        if (tipologias && tipologias.length > 0) {
+          ws2[enc2({ r: rowIdx, c: 0 })] = { t: 's', v: tipologias.join(' · '), s: s_cob_tipos };
+          ws2[enc2({ r: rowIdx, c: 1 })] = { t: 's', v: '', s: s_cob_tipos };
+          rowIdx++;
+        }
         for (const g of garantias) {
           ws2[enc2({ r: rowIdx, c: 0 })] = { t: 's', v: `  ✓  ${g}`, s: s_cob_item };
           ws2[enc2({ r: rowIdx, c: 1 })] = { t: 's', v: '', s: s_cob_item };
