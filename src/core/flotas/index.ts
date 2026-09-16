@@ -6,7 +6,8 @@ export { validarCobertura } from './coberturas';
 
 export { getCategoria, puedeCargarLunas, franquiciasValidas, productosDisponibles } from './auxiliares';
 
-export { normalizarPoliza } from './poliza';
+export { normalizarPoliza, detectarClaveFlota, normalizarPolizaConClave } from './poliza';
+export type { ClaveFlotaGrupo } from './poliza';
 
 export type { ResumenSinco } from './sinco';
 export {

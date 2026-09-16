@@ -82,7 +82,7 @@ export const BASE_COL_DEFS: ColDef[] = [
 
 export const POLIZA_SINCO_DEF: ColDef = {
   id: 'poliza_sinco', name: 'Nº_POLIZA_SINCO', width: 130, isComputed: true,
-  computeFn: (row) => normalizarPoliza(row['num_poliza_actual'] ?? ''),
+  computeFn: (row) => row['poliza_sinco_override'] || normalizarPoliza(row['num_poliza_actual'] ?? ''),
 };
 
 export const ANYO_MATRICULA_DEF: ColDef = {

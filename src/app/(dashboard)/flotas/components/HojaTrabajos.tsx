@@ -4,7 +4,8 @@ import React, { lazy, Suspense, useState, useCallback, useRef, forwardRef } from
 const FlotaGrid = lazy(() => import('./FlotaGrid'));
 import HeaderBlock from './HeaderBlock';
 import { makeTrabajoColDefs } from './constants';
-import { contarVehiculos, filtrarFilasReales } from '@/core/flotas';
+import { contarVehiculos, filtrarFilasReales, detectarClaveFlota, normalizarPoliza, normalizarPolizaConClave } from '@/core/flotas';
+import type { ClaveFlotaGrupo } from '@/core/flotas';
 import type { FlotaGridHandle, FlotaHeader } from './types';
 
 interface Props {
@@ -351,6 +352,9 @@ const HojaTrabajos = forwardRef<FlotaGridHandle, Props>(function HojaTrabajos(
 ) {
   const [confirmPending, setConfirmPending] = useState(false);
   const [vehicleCount, setVehicleCount]   = useState(0);
+  const [claveGrupos, setClaveGrupos]     = useState<ClaveFlotaGrupo[]>([]);
+  const [polizaResolucion, setPolizaResolucion] = useState<'none' | 'ultimos5' | 'clave'>('none');
+  const prevClaveKeyRef = useRef('');
   const gridRef = useRef<FlotaGridHandle>(null);
 
   // Silverdat state
@@ -395,7 +399,46 @@ const HojaTrabajos = forwardRef<FlotaGridHandle, Props>(function HojaTrabajos(
     const mats = data.map(r => r['matricula'] ?? '').filter(v => v.trim());
     setVehicleCount(contarVehiculos(mats));
     onDataChange?.(data);
+
+    const polizas = data.map(r => r['num_poliza_actual'] ?? '').filter(Boolean);
+    const grupos = detectarClaveFlota(polizas);
+    const key = grupos.map(g => g.prefijo).sort().join(',');
+    if (key !== prevClaveKeyRef.current) {
+      prevClaveKeyRef.current = key;
+      setClaveGrupos(grupos);
+      if (grupos.length > 0) setPolizaResolucion('none');
+    }
   }, [onDataChange]);
+
+  const handleApplyPolizaOverride = useCallback((modo: 'ultimos5' | 'clave') => {
+    if (modo === 'ultimos5') {
+      // Default behaviour — just dismiss the banner
+      setPolizaResolucion('ultimos5');
+      return;
+    }
+    const data = gridRef.current?.getData();
+    if (!data) return;
+    const updated = data.map(row => {
+      const polizaRaw = (row['num_poliza_actual'] ?? '').trim();
+      if (!polizaRaw) return row;
+      const digits = polizaRaw.replace(/[\s\-\.\/]/g, '').replace(/\D/g, '');
+      const grupo = claveGrupos.find(g => digits.startsWith(g.prefijo));
+      const override = grupo
+        ? normalizarPolizaConClave(polizaRaw, grupo.prefijo)
+        : normalizarPoliza(polizaRaw);
+      return { ...row, poliza_sinco_override: override };
+    });
+    gridRef.current?.setData(updated);
+    setPolizaResolucion('clave');
+  }, [claveGrupos]);
+
+  const handleUndoPolizaOverride = useCallback(() => {
+    const data = gridRef.current?.getData();
+    if (!data) return;
+    const updated = data.map(({ poliza_sinco_override: _, ...rest }) => rest);
+    gridRef.current?.setData(updated);
+    setPolizaResolucion('none');
+  }, []);
 
   // ─── Silverdat enrichment logic ──────────────────────────────────────────
 
@@ -665,6 +708,51 @@ const HojaTrabajos = forwardRef<FlotaGridHandle, Props>(function HojaTrabajos(
           </div>
         )}
       </div>
+
+      {/* Banner clave de flota */}
+      {claveGrupos.length > 0 && polizaResolucion === 'none' && (
+        <div style={{ background: '#fffbeb', borderBottom: '1px solid #fcd34d', padding: '8px 16px', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2.5" style={{ flexShrink: 0 }}>
+            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          <span style={{ fontSize: 12, fontWeight: 700, color: '#92400e' }}>
+            Posible clave de flota:{' '}
+            {claveGrupos.map(g => `"${g.prefijo}" (${g.afectadas.length} pólizas)`).join(' · ')}
+          </span>
+          <span style={{ fontSize: 11, color: '#b45309' }}>¿Cómo normalizar Nº PÓLIZA SINCO?</span>
+          <button
+            onClick={() => handleApplyPolizaOverride('ultimos5')}
+            style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 6, background: 'rgba(217,119,6,0.1)', color: '#92400e', border: '1px solid rgba(217,119,6,0.35)', cursor: 'pointer' }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(217,119,6,0.2)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'rgba(217,119,6,0.1)')}>
+            Últimos 5 dígitos
+          </button>
+          <button
+            onClick={() => handleApplyPolizaOverride('clave')}
+            style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 6, background: '#d97706', color: '#fff', border: '1px solid #b45309', cursor: 'pointer' }}
+            onMouseEnter={e => (e.currentTarget.style.background = '#b45309')}
+            onMouseLeave={e => (e.currentTarget.style.background = '#d97706')}>
+            Normalizar con clave de flota
+          </button>
+        </div>
+      )}
+      {claveGrupos.length > 0 && polizaResolucion !== 'none' && (
+        <div style={{ background: '#f0fdf4', borderBottom: '1px solid #86efac', padding: '6px 16px', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+          <span style={{ fontSize: 11, fontWeight: 700, color: '#15803d' }}>
+            Póliza SINCO: {polizaResolucion === 'clave' ? 'normalizada con clave de flota' : 'últimos 5 dígitos (por defecto)'}
+          </span>
+          <button
+            onClick={handleUndoPolizaOverride}
+            style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 5, background: 'rgba(22,163,74,0.1)', color: '#15803d', border: '1px solid rgba(22,163,74,0.3)', cursor: 'pointer', marginLeft: 4 }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(22,163,74,0.2)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'rgba(22,163,74,0.1)')}>
+            Deshacer
+          </button>
+        </div>
+      )}
 
       <Suspense fallback={<div className="flex-1 animate-pulse rounded-xl bg-white/5" />}>
         <FlotaGrid
