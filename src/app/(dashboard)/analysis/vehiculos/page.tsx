@@ -119,11 +119,18 @@ function SilverdatModal({ onClose, onSuccess }: { onClose: () => void; onSuccess
         if (!datId || !user || !pass) return;
         setLoading(true); setError('');
         try {
-            const r = await fetch('/api/silverdat/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ datId, user, pass }) });
+            const r = await fetch('/api/silverdat/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ datId, user, pass }),
+                signal: AbortSignal.timeout(18000),
+            });
             const d = await r.json();
             if (d.ok) onSuccess();
             else setError(d.error || 'Credenciales incorrectas');
-        } catch { setError('Error de conexión'); }
+        } catch (e) {
+            setError(e instanceof Error && e.name === 'TimeoutError' ? 'Silverdat no responde (timeout)' : 'Error de conexión');
+        }
         finally { setLoading(false); }
     };
 
@@ -412,6 +419,7 @@ export default function VehiculosPage() {
     const [input, setInput] = useState('');
     const [cards, setCards] = useState<PlateCard[]>([]);
     const [showSdModal, setShowSdModal] = useState(false);
+    const [sdSession, setSdSession] = useState<'checking' | 'ok' | 'none'>('checking');
     const [globalLoading, setGlobalLoading] = useState(false);
     const [hasQueried, setHasQueried] = useState(false);
     const [queryMode, setQueryMode] = useState<'full' | 'year'>('full');
@@ -419,6 +427,13 @@ export default function VehiculosPage() {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const enrichingRef = useRef(false);
     const stopEnrichRef = useRef(false);
+
+    useEffect(() => {
+        fetch('/api/silverdat/login', { signal: AbortSignal.timeout(8000) })
+            .then(r => r.json())
+            .then(d => setSdSession(d.hasSession ? 'ok' : 'none'))
+            .catch(() => setSdSession('none'));
+    }, []);
 
     useEffect(() => {
         const el = textareaRef.current;
@@ -444,6 +459,7 @@ export default function VehiculosPage() {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ matriculas: [plate] }),
+                    signal: AbortSignal.timeout(20000),
                 });
                 const data = await res.json();
                 if (data.ok && data.results?.[0]?.ok && data.results[0].vehicle) {
@@ -497,18 +513,20 @@ export default function VehiculosPage() {
         enrichingRef.current = false;
 
         try {
-            const r = await fetch('/api/silverdat/login');
+            const r = await fetch('/api/silverdat/login', { signal: AbortSignal.timeout(8000) });
             const d = await r.json();
-            if (!d.hasSession) { setShowSdModal(true); return; }
-        } catch { setShowSdModal(true); return; }
+            if (!d.hasSession) { setSdSession('none'); setShowSdModal(true); return; }
+            setSdSession('ok');
+        } catch { setSdSession('none'); setShowSdModal(true); return; }
 
         runEnrichment(plates, queryMode);
     };
 
     const handleSdSuccess = () => {
         setShowSdModal(false);
+        setSdSession('ok');
         const plates = cards.map(c => c.originalInput);
-        runEnrichment(plates, activeModeRef.current);
+        if (plates.length > 0) runEnrichment(plates, activeModeRef.current);
     };
 
     const handleExport = async () => {
@@ -641,6 +659,25 @@ export default function VehiculosPage() {
 
                 {/* ── LEFT PANEL ─────────────────────────────────────────── */}
                 <div style={{ ...GLASS, padding: 22, flex: '0 0 320px', position: 'sticky', top: 16 }}>
+
+                    {/* Silverdat status */}
+                    {sdSession === 'checking' ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 14, fontSize: 11, color: 'rgba(178,198,245,0.4)' }}>
+                            <svg style={{ animation: 'sdSpin 1s linear infinite', flexShrink: 0 }} width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" strokeOpacity="0.2"/><path d="M21 12a9 9 0 00-9-9"/></svg>
+                            Comprobando Silverdat...
+                        </div>
+                    ) : sdSession === 'ok' ? (
+                        <button onClick={() => setShowSdModal(true)} style={{ width: '100%', padding: '7px 12px', borderRadius: 9, marginBottom: 14, background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.22)', color: '#10b981', fontSize: 11, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}>
+                            <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#10b981', flexShrink: 0 }} />
+                            Silverdat conectado
+                        </button>
+                    ) : (
+                        <button onClick={() => setShowSdModal(true)} style={{ width: '100%', padding: '9px 12px', borderRadius: 9, marginBottom: 14, background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.4)', color: '#f59e0b', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}>
+                            <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#f59e0b', flexShrink: 0 }} />
+                            Conectar Silverdat
+                        </button>
+                    )}
+
                     <label style={{ fontSize: 10, fontWeight: 800, color: 'rgba(51,102,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8, display: 'block' }}>
                         Matrículas
                     </label>
@@ -742,19 +779,6 @@ export default function VehiculosPage() {
                                 </div>
                             )}
                         </div>
-                    )}
-
-                    {/* Reconectar Silverdat */}
-                    {hasQueried && !globalLoading && (
-                        <button onClick={() => setShowSdModal(true)} style={{
-                            width: '100%', marginTop: 10, padding: '8px 0', borderRadius: 9,
-                            background: sdFailed > 0 ? 'rgba(245,158,11,0.12)' : 'rgba(6,14,50,0.4)',
-                            border: `1px solid ${sdFailed > 0 ? 'rgba(245,158,11,0.35)' : 'rgba(61,112,255,0.15)'}`,
-                            color: sdFailed > 0 ? '#f59e0b' : 'rgba(178,198,245,0.4)',
-                            fontSize: 11, fontWeight: 700, cursor: 'pointer',
-                        }}>
-                            {sdFailed > 0 ? 'Sesión Silverdat expirada? Reconectar' : 'Cambiar credenciales Silverdat'}
-                        </button>
                     )}
 
                     {/* Export */}

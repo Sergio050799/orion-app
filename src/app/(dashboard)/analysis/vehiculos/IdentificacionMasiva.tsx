@@ -92,10 +92,11 @@ function SilverdatModal({ onClose, onSuccess }: { onClose: () => void; onSuccess
       const r = await fetch('/api/silverdat/login', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ datId, user, pass }),
+        signal: AbortSignal.timeout(18000),
       });
       const d = await r.json();
       if (d.ok) onSuccess(); else setError(d.error || 'Credenciales incorrectas');
-    } catch { setError('Error de conexión'); }
+    } catch (e) { setError(e instanceof Error && e.name === 'TimeoutError' ? 'Silverdat no responde (timeout)' : 'Error de conexión'); }
     finally { setLoading(false); }
   };
 
@@ -178,6 +179,7 @@ export default function IdentificacionMasiva() {
       const res = await fetch('/api/silverdat/enrich', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ matriculas: [mat] }),
+        signal: AbortSignal.timeout(20000),
       });
       if (!res.ok) return row;
       const data = await res.json();
@@ -254,7 +256,7 @@ export default function IdentificacionMasiva() {
       setRawRows(rows);
       setVehicles([]);
       try {
-        const d = await (await fetch('/api/silverdat/login')).json();
+        const d = await (await fetch('/api/silverdat/login', { signal: AbortSignal.timeout(8000) })).json();
         if (!d.hasSession) { setSdPending(true); setShowSdModal(true); return; }
       } catch { setSdPending(true); setShowSdModal(true); return; }
       startEnrichment(rows);
