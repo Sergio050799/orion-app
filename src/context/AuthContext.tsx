@@ -22,30 +22,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             .then(r => r.json())
             .then((data: { authenticated: boolean; username?: string }) => {
                 if (data.authenticated && data.username) {
-                    localStorage.setItem('orion_user', data.username);
+                    sessionStorage.setItem('orion_user', data.username);
                     setUser(data.username);
                     setIsAuthenticated(true);
                 } else {
-                    localStorage.removeItem('orion_user');
+                    clearStorage();
                     setUser(null);
                     setIsAuthenticated(false);
                 }
             })
             .catch(() => {
-                const storedUser = localStorage.getItem('orion_user');
+                const storedUser = sessionStorage.getItem('orion_user');
                 if (storedUser) { setUser(storedUser); setIsAuthenticated(true); }
             });
     }, []);
 
     const login = (username: string) => {
-        localStorage.setItem("orion_user", username);
+        sessionStorage.setItem("orion_user", username);
         setUser(username);
         setIsAuthenticated(true);
         router.push("/dashboard");
     };
 
     const logout = async () => {
-        localStorage.removeItem("orion_user");
+        clearStorage();
         setUser(null);
         setIsAuthenticated(false);
         await fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
@@ -57,6 +57,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             {children}
         </AuthContext.Provider>
     );
+}
+
+function clearStorage() {
+    try { localStorage.clear(); } catch { /* */ }
+    try { sessionStorage.clear(); } catch { /* */ }
 }
 
 export function useAuth() {
