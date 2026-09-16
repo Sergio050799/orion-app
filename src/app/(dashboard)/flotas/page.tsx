@@ -24,6 +24,7 @@ const HojaOferta = lazy(() => import('./components/HojaOferta'));
 import HojaPreEmision from './components/HojaPreEmision';
 import HojaDatosGenerales from './components/HojaDatosGenerales';
 import HojaAutomatico from './components/HojaAutomatico';
+import SilverdatChip from '@/components/saas/SilverdatChip';
 import type { FlotaGridHandle, FlotaHeader, CoberturaRow } from './components/types';
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
@@ -410,6 +411,7 @@ export default function FlotasPage() {
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              <SilverdatChip />
               {/* Folder pill */}
               <div style={{
                 display: 'flex', alignItems: 'center', gap: 8,

@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { resolvePlateFromSeed } from "@/core/_source_of_truth/plates/resolver";
+import SilverdatChip from '@/components/saas/SilverdatChip';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -631,23 +632,7 @@ export default function VehiculosPage() {
                     </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                {/* Silverdat status — siempre visible */}
-                {sdSession === 'checking' ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'rgba(178,198,245,0.4)', padding: '6px 10px' }}>
-                        <svg style={{ animation: 'sdSpin 1s linear infinite', flexShrink: 0 }} width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" strokeOpacity="0.2"/><path d="M21 12a9 9 0 00-9-9"/></svg>
-                        Silverdat...
-                    </div>
-                ) : sdSession === 'ok' ? (
-                    <button onClick={() => setShowSdModal(true)} style={{ padding: '6px 14px', borderRadius: 8, background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', color: '#10b981', fontSize: 11, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981', flexShrink: 0 }} />
-                        Silverdat conectado
-                    </button>
-                ) : (
-                    <button onClick={() => setShowSdModal(true)} style={{ padding: '7px 16px', borderRadius: 8, background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.45)', color: '#f59e0b', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#f59e0b', flexShrink: 0 }} />
-                        Conectar Silverdat
-                    </button>
-                )}
+                <SilverdatChip onSessionChange={ok => setSdSession(ok ? 'ok' : 'none')} />
                 <div style={{ display: 'flex', gap: 0 }}>
                     {([
                         ['identificar', 'Identificar'],
