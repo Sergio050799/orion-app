@@ -61,7 +61,7 @@ function sdHeaders(extra?: Record<string, string>): Record<string, string> {
 
 async function sdFetch(url: string, init?: RequestInit): Promise<Response> {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 8000);
+  const timeout = setTimeout(() => controller.abort(), 20000);
   try {
     const res = await fetch(url, {
       ...init,
@@ -229,13 +229,19 @@ export async function queryByMatricula(matricula: string): Promise<{ ok: boolean
       `${BASE}/consultaMatricula.php?matricula=${encodeURIComponent(plate)}&searchByMat=true`
     );
     const matText = await matRes.text();
-    console.log(`[Silverdat][${plate}] consultaMatricula.php status=${matRes.status} body="${matText.substring(0, 500)}"`);
+    const isHtml = matText.trimStart().startsWith('<');
+    console.log(`[Silverdat][${plate}] consultaMatricula.php status=${matRes.status} isHtml=${isHtml} body="${matText.substring(0, 800)}"`);
 
     let matData: any = null;
     try { matData = JSON.parse(matText); } catch { /* not JSON */ }
 
+    // Fallback: parse "Info DGT" HTML response
+    if (!matData && isHtml) {
+      matData = parseInfoDgtHtml(matText, plate);
+    }
+
     if (!matData) {
-      return { ok: false, error: "Respuesta no válida de consultaMatricula", debug: `status=${matRes.status} body="${matText.substring(0, 300)}"` };
+      return { ok: false, error: "Respuesta no válida de consultaMatricula", debug: `status=${matRes.status} isHtml=${isHtml} body="${matText.substring(0, 300)}"` };
     }
 
     // error field: 0 = OK, anything else = error
@@ -336,6 +342,59 @@ export async function queryByMatricula(matricula: string): Promise<{ ok: boolean
 }
 
 // ─── Parse helpers ──────────────────────────────────────────────────────────
+
+function parseInfoDgtHtml(html: string, plate: string): any | null {
+  try {
+    const data: Record<string, string> = {};
+
+    // Helper: extract text after a label pattern
+    const extract = (patterns: string[]): string | undefined => {
+      for (const p of patterns) {
+        // Try td/div/span after a label containing the pattern
+        const re1 = new RegExp(`${p}[^<]*</[^>]+>\\s*<[^>]+>([^<]+)<`, 'i');
+        const m1 = re1.exec(html);
+        if (m1?.[1]?.trim()) return m1[1].trim();
+        // Try value in same element after colon
+        const re2 = new RegExp(`${p}[\\s:]+([A-Z0-9][^<\\n]{1,60})`, 'i');
+        const m2 = re2.exec(html);
+        if (m2?.[1]?.trim()) return m2[1].trim();
+      }
+    };
+
+    // Marca
+    const marca = extract(['Marca', 'MARCA', 'marca']);
+    if (marca) data.MARCA_ITV = marca;
+
+    // Modelo
+    const modelo = extract(['Modelo', 'MODELO', 'modelo']);
+    if (modelo) data.MODELO_ITV = modelo;
+
+    // Combustible/Propulsión
+    const comb = extract(['Combustible', 'Propulsi', 'PROPULSION', 'Fuel']);
+    if (comb) data.COD_PROPULSION_ITV = comb;
+
+    // Fecha matriculación
+    const fecha = extract(['Fecha.*matriculaci', 'FECHA.*MAT', 'F\\.Matriculaci']);
+    if (fecha) data.FECHA_MATRICULACION_ITV = fecha;
+
+    // VIN / Bastidor
+    const vin = extract(['Bastidor', 'VIN', 'BASTIDOR']);
+    if (vin) data.BASTIDOR_ITV = vin;
+
+    // kW / Potencia
+    const kw = extract(['Potencia', 'KW', 'kW']);
+    if (kw) data.KW_ITV = kw.replace(/[^0-9.,]/g, '');
+
+    // If we got at least marca or modelo, return it
+    if (data.MARCA_ITV || data.MODELO_ITV || data.BASTIDOR_ITV) {
+      console.log(`[Silverdat][${plate}] InfoDGT HTML parsed:`, data);
+      return { ...data, error: 0, _source: 'infodgt_html' };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
 
 function parseVehicleData(
   matricula: string,
