@@ -379,6 +379,17 @@ const HojaTrabajos = forwardRef<FlotaGridHandle, Props>(function HojaTrabajos(
     getColDefs: () => gridRef.current!.getColDefs(),
   }), []);
 
+  const runClaveDetection = useCallback((data: Record<string, string>[]) => {
+    const polizas = data.map(r => r['num_poliza_actual'] ?? '').filter(Boolean);
+    const grupos = detectarClaveFlota(polizas);
+    const key = grupos.map(g => g.prefijo).sort().join(',');
+    if (key !== prevClaveKeyRef.current) {
+      prevClaveKeyRef.current = key;
+      setClaveGrupos(grupos);
+    }
+    if (grupos.length > 0) setPolizaResolucion('none');
+  }, []);
+
   const doImport = useCallback(() => {
     const raw = getOriginalSnapshot();
     if (!raw) return;
@@ -386,7 +397,8 @@ const HojaTrabajos = forwardRef<FlotaGridHandle, Props>(function HojaTrabajos(
     if (data.length === 0) return;
     gridRef.current?.setData(data);
     setConfirmPending(false);
-  }, [getOriginalSnapshot]);
+    runClaveDetection(data);
+  }, [getOriginalSnapshot, runClaveDetection]);
 
   const handleCopy = useCallback(() => {
     const d = gridRef.current?.getData() ?? [];
@@ -399,16 +411,8 @@ const HojaTrabajos = forwardRef<FlotaGridHandle, Props>(function HojaTrabajos(
     const mats = data.map(r => r['matricula'] ?? '').filter(v => v.trim());
     setVehicleCount(contarVehiculos(mats));
     onDataChange?.(data);
-
-    const polizas = data.map(r => r['num_poliza_actual'] ?? '').filter(Boolean);
-    const grupos = detectarClaveFlota(polizas);
-    const key = grupos.map(g => g.prefijo).sort().join(',');
-    if (key !== prevClaveKeyRef.current) {
-      prevClaveKeyRef.current = key;
-      setClaveGrupos(grupos);
-      if (grupos.length > 0) setPolizaResolucion('none');
-    }
-  }, [onDataChange]);
+    runClaveDetection(data);
+  }, [onDataChange, runClaveDetection]);
 
   const handleApplyPolizaOverride = useCallback((modo: 'ultimos5' | 'clave') => {
     if (modo === 'ultimos5') {
