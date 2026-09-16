@@ -25,7 +25,7 @@ async function verifyToken(token: string): Promise<boolean> {
   }
 }
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
   if (PUBLIC.some(p => pathname.startsWith(p))) return NextResponse.next();
 
