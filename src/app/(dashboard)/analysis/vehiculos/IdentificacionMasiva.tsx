@@ -139,6 +139,7 @@ export default function IdentificacionMasiva() {
   const [vehicles,     setVehicles]     = useState<VehiculoExport[]>([]);
   const [parseError,   setParseError]   = useState('');
   const [showSdModal,  setShowSdModal]  = useState(false);
+  const [sdPending,    setSdPending]    = useState(false);
   const [progress,     setProgress]     = useState({ current: 0, total: 0 });
   const [log,          setLog]          = useState<EnrichLog[]>([]);
   const abortRef = useRef(false);
@@ -254,8 +255,8 @@ export default function IdentificacionMasiva() {
       setVehicles([]);
       try {
         const d = await (await fetch('/api/silverdat/login')).json();
-        if (!d.hasSession) { setShowSdModal(true); return; }
-      } catch { setShowSdModal(true); return; }
+        if (!d.hasSession) { setSdPending(true); setShowSdModal(true); return; }
+      } catch { setSdPending(true); setShowSdModal(true); return; }
       startEnrichment(rows);
     } catch {
       setParseError('Error al leer el archivo. Asegúrate de que es un Excel válido.');
@@ -279,38 +280,61 @@ export default function IdentificacionMasiva() {
         {showSdModal && (
           <SilverdatModal
             onClose={() => setShowSdModal(false)}
-            onSuccess={() => { setShowSdModal(false); startEnrichment(rawRows); }}
+            onSuccess={() => { setShowSdModal(false); setSdPending(false); startEnrichment(rawRows); }}
           />
         )}
-        <div style={{ textAlign: 'center', maxWidth: 480 }}>
-          <h2 style={{ margin: '0 0 8px', fontSize: 20, color: '#FFFFFF', fontWeight: 700 }}>Identificación masiva</h2>
-          <p style={{ margin: 0, fontSize: 13, color: 'rgba(178,198,245,0.6)', lineHeight: 1.6 }}>
-            Con solo la matrícula Silverdat obtiene la marca, modelo y datos del vehículo. Después el catálogo asigna el ID automáticamente.
-          </p>
-        </div>
 
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
-          <button onClick={handleDescargarPlantilla} style={{ background: 'rgba(6,14,50,0.5)', border: '1px solid rgba(61,112,255,0.3)', borderRadius: 12, padding: '12px 24px', color: '#BDD4FF', fontSize: 13, cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-            Descargar plantilla
-          </button>
-          <label style={{ background: 'linear-gradient(135deg, #1240CC, #3366FF)', border: 'none', borderRadius: 12, padding: '12px 24px', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, boxShadow: '0 0 24px rgba(18,64,204,0.4)' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
-            Subir Excel
-            <input ref={fileRef} type="file" accept=".xlsx,.xls" style={{ display: 'none' }} onChange={handleFileUpload} />
-          </label>
-        </div>
-
-        {parseError && (
-          <p style={{ color: '#f87171', fontSize: 12, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 8, padding: '8px 16px' }}>
-            {parseError}
-          </p>
+        {sdPending && !showSdModal && (
+          <div style={{ textAlign: 'center', padding: '16px 24px', background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 12, maxWidth: 440 }}>
+            <p style={{ margin: '0 0 12px', fontSize: 13, color: '#fbbf24', fontWeight: 600 }}>
+              Archivo cargado — falta iniciar sesión en Silverdat
+            </p>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+              <button onClick={() => setShowSdModal(true)}
+                style={{ padding: '9px 22px', borderRadius: 9, background: 'linear-gradient(135deg,#d97706,#f59e0b)', color: '#fff', border: 'none', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
+                Introducir credenciales
+              </button>
+              <button onClick={() => { setSdPending(false); setRawRows([]); }}
+                style={{ padding: '9px 16px', borderRadius: 9, background: 'rgba(6,14,50,0.5)', color: 'rgba(178,198,245,0.6)', border: '1px solid rgba(61,112,255,0.2)', fontSize: 12, cursor: 'pointer' }}>
+                Cancelar
+              </button>
+            </div>
+          </div>
         )}
 
-        <div style={{ fontSize: 11, color: 'rgba(178,198,245,0.35)', textAlign: 'center', maxWidth: 360 }}>
-          Columna requerida: <span style={{ color: 'rgba(178,198,245,0.6)' }}>matricula</span><br />
-          Opcionales (mejoran precisión): marca, modelo, tipo_vehiculo, kw, cv, tn, anyo_fabricacion
-        </div>
+        {!sdPending && (
+          <>
+            <div style={{ textAlign: 'center', maxWidth: 480 }}>
+              <h2 style={{ margin: '0 0 8px', fontSize: 20, color: '#FFFFFF', fontWeight: 700 }}>Identificación masiva</h2>
+              <p style={{ margin: 0, fontSize: 13, color: 'rgba(178,198,245,0.6)', lineHeight: 1.6 }}>
+                Con solo la matrícula Silverdat obtiene la marca, modelo y datos del vehículo. Después el catálogo asigna el ID automáticamente.
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
+              <button onClick={handleDescargarPlantilla} style={{ background: 'rgba(6,14,50,0.5)', border: '1px solid rgba(61,112,255,0.3)', borderRadius: 12, padding: '12px 24px', color: '#BDD4FF', fontSize: 13, cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                Descargar plantilla
+              </button>
+              <label style={{ background: 'linear-gradient(135deg, #1240CC, #3366FF)', border: 'none', borderRadius: 12, padding: '12px 24px', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, boxShadow: '0 0 24px rgba(18,64,204,0.4)' }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+                Subir Excel
+                <input ref={fileRef} type="file" accept=".xlsx,.xls" style={{ display: 'none' }} onChange={handleFileUpload} />
+              </label>
+            </div>
+
+            {parseError && (
+              <p style={{ color: '#f87171', fontSize: 12, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 8, padding: '8px 16px' }}>
+                {parseError}
+              </p>
+            )}
+
+            <div style={{ fontSize: 11, color: 'rgba(178,198,245,0.35)', textAlign: 'center', maxWidth: 360 }}>
+              Columna requerida: <span style={{ color: 'rgba(178,198,245,0.6)' }}>matricula</span><br />
+              Opcionales (mejoran precisión): marca, modelo, tipo_vehiculo, kw, cv, tn, anyo_fabricacion
+            </div>
+          </>
+        )}
       </div>
     );
   }

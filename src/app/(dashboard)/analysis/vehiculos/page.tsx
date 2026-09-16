@@ -744,6 +744,19 @@ export default function VehiculosPage() {
                         </div>
                     )}
 
+                    {/* Reconectar Silverdat */}
+                    {hasQueried && !globalLoading && (
+                        <button onClick={() => setShowSdModal(true)} style={{
+                            width: '100%', marginTop: 10, padding: '8px 0', borderRadius: 9,
+                            background: sdFailed > 0 ? 'rgba(245,158,11,0.12)' : 'rgba(6,14,50,0.4)',
+                            border: `1px solid ${sdFailed > 0 ? 'rgba(245,158,11,0.35)' : 'rgba(61,112,255,0.15)'}`,
+                            color: sdFailed > 0 ? '#f59e0b' : 'rgba(178,198,245,0.4)',
+                            fontSize: 11, fontWeight: 700, cursor: 'pointer',
+                        }}>
+                            {sdFailed > 0 ? 'Sesión Silverdat expirada? Reconectar' : 'Cambiar credenciales Silverdat'}
+                        </button>
+                    )}
+
                     {/* Export */}
                     {cards.length > 0 && !globalLoading && (
                         <button onClick={handleExport} style={{
