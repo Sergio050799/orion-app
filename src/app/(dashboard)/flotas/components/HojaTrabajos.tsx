@@ -383,9 +383,7 @@ const HojaTrabajos = forwardRef<FlotaGridHandle, Props>(function HojaTrabajos(
     const polizas = data.map(r => r['num_poliza_actual'] ?? '').filter(Boolean);
     const grupos = detectarClaveFlota(polizas);
     const key = grupos.map(g => g.prefijo).sort().join(',');
-    // eslint-disable-next-line no-console
-    console.log('[ClaveFlota] polizas:', polizas.length, polizas, 'grupos:', grupos.length, grupos);
-    if (key !== prevClaveKeyRef.current) {
+if (key !== prevClaveKeyRef.current) {
       prevClaveKeyRef.current = key;
       setClaveGrupos(grupos);
     }
