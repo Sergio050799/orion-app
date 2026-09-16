@@ -16,7 +16,7 @@
     "file-saver": "^2.0.5",
     "jscanify": "^1.4.2",
     "jszip": "^3.10.1",
-    "next": "16.3.5",
+    "next": "16.1.6",
     "next-themes": "^0.4.6",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^5.5.207",
@@ -36,7 +36,7 @@
     "@types/react-dom": "^19",
     "autoprefixer": "^10.4.24",
     "eslint": "^9",
-    "eslint-config-next": "16.3.5",
+    "eslint-config-next": "16.1.6",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.19",
     "typescript": "^5"
