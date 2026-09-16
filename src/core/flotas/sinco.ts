@@ -47,9 +47,9 @@ export function contarVehiculosConSinco(codigosRetorno: string[]): number {
     return codigosRetorno.filter(c => !c || c.trim() === '' || c.trim() === '0').length;
 }
 
-/** Filtra las filas reales (con al menos un campo no vacío) */
+/** Filtra las filas reales: requiere matrícula no vacía */
 export function filtrarFilasReales(rows: Record<string, string>[]): Record<string, string>[] {
-    return rows.filter(row => Object.values(row).some(v => v.trim() !== ''));
+    return rows.filter(row => (row['matricula'] ?? '').trim() !== '');
 }
 
 // ─── E-3: CONSOLIDADO Y MERGE SINCO ──────────────────────────────────────────
