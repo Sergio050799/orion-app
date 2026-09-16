@@ -459,7 +459,7 @@ export default function VehiculosPage() {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ matriculas: [plate] }),
-                    signal: AbortSignal.timeout(20000),
+                    signal: AbortSignal.timeout(45000),
                 });
                 const data = await res.json();
                 if (data.ok && data.results?.[0]?.ok && data.results[0].vehicle) {
@@ -630,6 +630,24 @@ export default function VehiculosPage() {
                         <h1 style={{ fontSize: 26, fontWeight: 800, color: '#FFFFFF', margin: 0, lineHeight: 1.2 }}>Vehículos</h1>
                     </div>
                 </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                {/* Silverdat status — siempre visible */}
+                {sdSession === 'checking' ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'rgba(178,198,245,0.4)', padding: '6px 10px' }}>
+                        <svg style={{ animation: 'sdSpin 1s linear infinite', flexShrink: 0 }} width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" strokeOpacity="0.2"/><path d="M21 12a9 9 0 00-9-9"/></svg>
+                        Silverdat...
+                    </div>
+                ) : sdSession === 'ok' ? (
+                    <button onClick={() => setShowSdModal(true)} style={{ padding: '6px 14px', borderRadius: 8, background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', color: '#10b981', fontSize: 11, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981', flexShrink: 0 }} />
+                        Silverdat conectado
+                    </button>
+                ) : (
+                    <button onClick={() => setShowSdModal(true)} style={{ padding: '7px 16px', borderRadius: 8, background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.45)', color: '#f59e0b', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#f59e0b', flexShrink: 0 }} />
+                        Conectar Silverdat
+                    </button>
+                )}
                 <div style={{ display: 'flex', gap: 0 }}>
                     {([
                         ['identificar', 'Identificar'],
@@ -645,6 +663,7 @@ export default function VehiculosPage() {
                         }}>{l}</button>
                     ))}
                 </div>
+                </div>
             </div>
 
             {/* Tab: Masivo */}
@@ -659,25 +678,6 @@ export default function VehiculosPage() {
 
                 {/* ── LEFT PANEL ─────────────────────────────────────────── */}
                 <div style={{ ...GLASS, padding: 22, flex: '0 0 320px', position: 'sticky', top: 16 }}>
-
-                    {/* Silverdat status */}
-                    {sdSession === 'checking' ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 14, fontSize: 11, color: 'rgba(178,198,245,0.4)' }}>
-                            <svg style={{ animation: 'sdSpin 1s linear infinite', flexShrink: 0 }} width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" strokeOpacity="0.2"/><path d="M21 12a9 9 0 00-9-9"/></svg>
-                            Comprobando Silverdat...
-                        </div>
-                    ) : sdSession === 'ok' ? (
-                        <button onClick={() => setShowSdModal(true)} style={{ width: '100%', padding: '7px 12px', borderRadius: 9, marginBottom: 14, background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.22)', color: '#10b981', fontSize: 11, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}>
-                            <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#10b981', flexShrink: 0 }} />
-                            Silverdat conectado
-                        </button>
-                    ) : (
-                        <button onClick={() => setShowSdModal(true)} style={{ width: '100%', padding: '9px 12px', borderRadius: 9, marginBottom: 14, background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.4)', color: '#f59e0b', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}>
-                            <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#f59e0b', flexShrink: 0 }} />
-                            Conectar Silverdat
-                        </button>
-                    )}
-
                     <label style={{ fontSize: 10, fontWeight: 800, color: 'rgba(51,102,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8, display: 'block' }}>
                         Matrículas
                     </label>
