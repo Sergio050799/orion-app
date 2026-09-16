@@ -395,7 +395,7 @@ function Step1({
                                 <div style={{ marginTop: 10, padding: '10px 14px', background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.35)', borderRadius: 10 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
                                         <span style={{ fontSize: 12, fontWeight: 700, color: '#ef4444' }}>
-                                            ⚠ {duplicadas.length} matrícula{duplicadas.length !== 1 ? 's' : ''} duplicada{duplicadas.length !== 1 ? 's' : ''}
+                                            {duplicadas.length} matrícula{duplicadas.length !== 1 ? 's' : ''} duplicada{duplicadas.length !== 1 ? 's' : ''}
                                         </span>
                                         <button
                                             onClick={() => {
@@ -602,10 +602,18 @@ function Step2({
             setProgress(p => ({ current: done, total: rows.length, log: [...p.log, { plate: matricula, ok: !!sd, marca: sd?.marca, modelo: sd?.modelo?.split(' ')[0] }] }));
         };
 
-        for (let i = 0; i < rows.length && !abortRef.current; i++) {
-            await processOne(rows[i]);
-            if (i < rows.length - 1 && !abortRef.current) await new Promise(r => setTimeout(r, 400));
-        }
+        // 3 workers en paralelo — cola compartida
+        let queueIdx = 0;
+        const worker = async () => {
+            while (!abortRef.current) {
+                const myIdx = queueIdx++;
+                if (myIdx >= rows.length) break;
+                await processOne(rows[myIdx]);
+                if (!abortRef.current && myIdx < rows.length - 1)
+                    await new Promise(r => setTimeout(r, 200));
+            }
+        };
+        await Promise.all([worker(), worker(), worker()]);
 
         if (!abortRef.current) {
             const all = Array.from(mergeMap.values());
@@ -743,7 +751,7 @@ function Step2({
                                         background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.4)',
                                         color: '#f59e0b', fontSize: 12, fontWeight: 700, cursor: 'pointer',
                                     }}>
-                                        🔄 Segunda barrida ({failedCount} matrícula{failedCount !== 1 ? 's' : ''})
+                                        Segunda barrida ({failedCount} matrícula{failedCount !== 1 ? 's' : ''})
                                     </button>
                                 )}
                                 <button onClick={() => onComplete(allProcessedRef.current)} style={{
@@ -895,7 +903,7 @@ function Step3({
             {vehicles.some(v => !effectiveTipo(v)) && (
                 <div style={{ ...glass, padding: 16, marginBottom: 20, border: '1px solid rgba(245,158,11,0.35)', background: 'rgba(245,158,11,0.07)' }}>
                     <p style={{ margin: '0 0 12px', fontSize: 12, fontWeight: 700, color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                        ⚠ Tipos de vehículo pendientes — asigna antes de continuar
+                        Tipos de vehículo pendientes — asigna antes de continuar
                     </p>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                         {vehicles.filter(v => !effectiveTipo(v)).map(v => (
@@ -953,7 +961,7 @@ function Step3({
                             }}>
                                 <div>
                                     <span style={{ fontSize: 13, fontWeight: 700, color: g.tipo ? '#FFFFFF' : '#f59e0b' }}>
-                                        {g.tipo || '⚠ Sin tipo'}
+                                        {g.tipo || 'Sin tipo'}
                                     </span>
                                     <div style={{ fontSize: 10, color: 'rgba(178,198,245,0.4)', marginTop: 2 }}>
                                         {g.vehList.map(v => v.matricula).slice(0, 3).join(', ')}{g.vehList.length > 3 ? ` +${g.vehList.length - 3}` : ''}

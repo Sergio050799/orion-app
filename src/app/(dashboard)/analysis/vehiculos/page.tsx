@@ -403,7 +403,12 @@ async function searchCatalogForSd(sd: SilverdatVehicle): Promise<CatalogMatch[]>
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
+// ─── Lazy import ─────────────────────────────────────────────────────────────
+import dynamic from 'next/dynamic';
+const IdentificacionMasiva = dynamic(() => import('./IdentificacionMasiva'), { ssr: false });
+
 export default function VehiculosPage() {
+    const [tab, setTab] = useState<'identificar' | 'masivo'>('identificar');
     const [input, setInput] = useState('');
     const [cards, setCards] = useState<PlateCard[]>([]);
     const [showSdModal, setShowSdModal] = useState(false);
@@ -413,6 +418,7 @@ export default function VehiculosPage() {
     const activeModeRef = useRef<'full' | 'year'>('full');
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const enrichingRef = useRef(false);
+    const stopEnrichRef = useRef(false);
 
     useEffect(() => {
         const el = textareaRef.current;
@@ -426,9 +432,11 @@ export default function VehiculosPage() {
     const runEnrichment = useCallback(async (plates: string[], mode: 'full' | 'year' = 'full') => {
         if (enrichingRef.current) return;
         enrichingRef.current = true;
+        stopEnrichRef.current = false;
         setGlobalLoading(true);
 
         for (let i = 0; i < plates.length; i++) {
+            if (stopEnrichRef.current) break;
             const plate = plates[i];
             updateCard(plate, { sdStatus: 'loading' });
             try {
@@ -591,20 +599,45 @@ export default function VehiculosPage() {
     const sdPending = cards.filter(c => c.sdStatus === 'loading' || c.sdStatus === 'idle' && globalLoading).length;
 
     return (
-        <div className="h-full w-full animate-in fade-in duration-500" style={{ maxWidth: 1240, margin: '0 auto', padding: '0 16px' }}>
+        <div className="h-full w-full animate-in fade-in duration-500" style={{ maxWidth: 1240, margin: '0 auto', padding: '0 16px', display: 'flex', flexDirection: 'column' }}>
 
             {showSdModal && <SilverdatModal onClose={() => setShowSdModal(false)} onSuccess={handleSdSuccess} />}
 
-            {/* Header */}
-            <div style={{ marginBottom: 22, display: 'flex', alignItems: 'flex-start', gap: 14 }}>
-                <div style={{ width: 4, height: 48, borderRadius: 2, background: 'linear-gradient(180deg,#1240CC,#3366FF)', marginTop: 2, flexShrink: 0 }} />
-                <div>
-                    <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#3366FF', marginBottom: 3 }}>Consulta</p>
-                    <h1 style={{ fontSize: 26, fontWeight: 800, color: '#FFFFFF', margin: 0, lineHeight: 1.2 }}>Vehículos</h1>
+            {/* Header + tab toggle */}
+            <div style={{ marginBottom: 18, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+                    <div style={{ width: 4, height: 48, borderRadius: 2, background: 'linear-gradient(180deg,#1240CC,#3366FF)', marginTop: 2, flexShrink: 0 }} />
+                    <div>
+                        <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#3366FF', marginBottom: 3 }}>Consulta</p>
+                        <h1 style={{ fontSize: 26, fontWeight: 800, color: '#FFFFFF', margin: 0, lineHeight: 1.2 }}>Vehículos</h1>
+                    </div>
+                </div>
+                <div style={{ display: 'flex', gap: 0 }}>
+                    {([
+                        ['identificar', 'Identificar'],
+                        ['masivo',      'Masivo'],
+                    ] as const).map(([t, l]) => (
+                        <button key={t} onClick={() => setTab(t)} style={{
+                            padding: '7px 20px', fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer',
+                            borderRadius: t === 'identificar' ? '10px 0 0 10px' : '0 10px 10px 0',
+                            background: tab === t ? 'rgba(18,64,204,0.35)' : 'rgba(6,14,50,0.5)',
+                            color: tab === t ? '#3D7BFF' : 'rgba(178,198,245,0.5)',
+                            boxShadow: tab === t ? '0 0 0 1px rgba(51,102,255,0.4) inset' : '0 0 0 1px rgba(61,112,255,0.12) inset',
+                            transition: 'all 180ms', letterSpacing: '0.04em',
+                        }}>{l}</button>
+                    ))}
                 </div>
             </div>
 
-            <div style={{ display: 'flex', gap: 22, alignItems: 'flex-start' }}>
+            {/* Tab: Masivo */}
+            {tab === 'masivo' && (
+                <div style={{ flex: 1, minHeight: 0, background: 'rgba(0,7,45,0.85)', border: '1px solid rgba(51,102,255,0.1)', borderRadius: 16, overflow: 'hidden' }}>
+                    <IdentificacionMasiva />
+                </div>
+            )}
+
+            {/* Tab: Identificar (original) */}
+            {tab === 'identificar' && <div style={{ display: 'flex', gap: 22, alignItems: 'flex-start' }}>
 
                 {/* ── LEFT PANEL ─────────────────────────────────────────── */}
                 <div style={{ ...GLASS, padding: 22, flex: '0 0 320px', position: 'sticky', top: 16 }}>
@@ -648,6 +681,17 @@ export default function VehiculosPage() {
                         ))}
                     </div>
 
+                    {globalLoading && (
+                        <button
+                            onClick={() => { stopEnrichRef.current = true; enrichingRef.current = false; setGlobalLoading(false); }}
+                            style={{
+                                width: '100%', padding: '10px 0', borderRadius: 10, marginBottom: 8,
+                                background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
+                                color: '#f87171', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                            }}>
+                            Detener
+                        </button>
+                    )}
                     <button
                         onClick={handleConsultar}
                         disabled={!input.trim() || globalLoading}
@@ -897,7 +941,7 @@ export default function VehiculosPage() {
                         );
                     })}
                 </div>
-            </div>
+            </div>}
         </div>
     );
 }

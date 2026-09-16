@@ -236,7 +236,7 @@ function EmissionDetailTable({ emission, onBack, onExportExcel, onDeleteDocument
                         )}
                         <p className="text-[11px] mt-0.5" style={{ color: 'rgba(178,198,245,0.6)' }}>
                             {uniquePlates(emission.documents)} vehículos · {countByType(emission.documents)} · {formatDate(emission.createdAt)}
-                            {dups > 0 && <span className="ml-2 font-bold" style={{ color: '#F59E0B' }}>⚠ {dups} matrículas duplicadas</span>}
+                            {dups > 0 && <span className="ml-2 font-bold" style={{ color: '#F59E0B' }}>{dups} matrículas duplicadas</span>}
                         </p>
                     </div>
                 </div>

@@ -470,7 +470,7 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
                     color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.05em',
                     whiteSpace: 'nowrap',
                   }}>
-                    ⚠ Próxima renovación
+                    Próxima renovación
                   </span>
                 )}
               </label>

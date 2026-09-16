@@ -275,7 +275,7 @@ const HojaCoberturas = forwardRef<HojaCoberturasHandle, Props>(
                       <CellDropdown value={row.cobertura} options={opts.coberturas}
                         onChange={v=>setRow(i,{cobertura:v,frq:'',asistencia:''})} />
                       {!validation.valido && (
-                        <div className="text-[10px] mt-0.5" style={{color:'#ef4444'}} title={validation.errores.join(' ')}>⚠ {validation.errores[0]}</div>
+                        <div className="text-[10px] mt-0.5" style={{color:'#ef4444'}} title={validation.errores.join(' ')}>{validation.errores[0]}</div>
                       )}
                     </td>
                     <td style={{ ...tdS, minWidth:80 }} onClick={e=>e.stopPropagation()}>

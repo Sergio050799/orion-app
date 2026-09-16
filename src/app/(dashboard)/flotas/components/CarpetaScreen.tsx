@@ -131,7 +131,7 @@ export default function CarpetaScreen({ onSelect }: Props) {
   const cargarAbortRef = useRef<AbortController | null>(null);
 
   // Estado change confirmation per row
-  const [pendingEstado, setPendingEstado] = useState<{ id: string; estado: EstadoFlota } | null>(null);
+  const [pendingEstado, setPendingEstado] = useState<{ id: string; estado: EstadoFlota; motivo: string } | null>(null);
 
   const cargar = async () => {
     // Cancel any in-flight fetch before starting a new one
@@ -211,7 +211,12 @@ export default function CarpetaScreen({ onSelect }: Props) {
       if (sucursalFilter && corr?.sucursal !== sucursalFilter) return false;
       if (comercialFilter && (corr?.comercial ?? '').toLowerCase() !== comercialFilter.toLowerCase()) return false;
       const q = query.trim().toLowerCase();
-      if (q && !c.nombre.toLowerCase().includes(q) && !corrName.toLowerCase().includes(q)) return false;
+      if (q) {
+        const cif     = (c.header?.cif     ?? '').toLowerCase();
+        const tomador = (c.header?.tomador ?? '').toLowerCase();
+        const nombre  = c.nombre.toLowerCase();
+        if (!nombre.includes(q) && !corrName.toLowerCase().includes(q) && !cif.includes(q) && !tomador.includes(q)) return false;
+      }
       return true;
     });
   }, [carpetas, query, corredorFilter, estadoFilter, sucursalFilter, comercialFilter, corredorMap]);
@@ -248,7 +253,7 @@ export default function CarpetaScreen({ onSelect }: Props) {
 
   const handleConfirmarEstado = () => {
     if (!pendingEstado) return;
-    cambiarEstado(pendingEstado.id, pendingEstado.estado);
+    cambiarEstado(pendingEstado.id, pendingEstado.estado, pendingEstado.motivo || undefined);
     setCarpetas(listarCarpetas().map(normalizarCarpeta));
     setPendingEstado(null);
   };
@@ -301,7 +306,7 @@ export default function CarpetaScreen({ onSelect }: Props) {
           borderRadius: 10, padding: '0 14px', flex: 1, maxWidth: 280,
         }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(70,120,255,0.5)" strokeWidth="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-          <input placeholder="Buscar..." value={query} onChange={e => setQuery(e.target.value)} style={{
+          <input placeholder="Buscar por nombre, CIF, tomador..." value={query} onChange={e => setQuery(e.target.value)} style={{
             background: 'none', border: 'none', outline: 'none', color: '#FFFFFF', fontSize: 12, padding: '8px 0', width: '100%',
           }} />
         </div>
@@ -369,20 +374,38 @@ export default function CarpetaScreen({ onSelect }: Props) {
       {pendingEstado && (
         <div style={{
           padding: '12px 16px', borderRadius: 12,
-          background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.3)',
-          display: 'flex', alignItems: 'center', gap: 12,
+          background: pendingEstado.estado === 'RECHAZADA' ? 'rgba(239,68,68,0.08)' : 'rgba(245,158,11,0.08)',
+          border: `1px solid ${pendingEstado.estado === 'RECHAZADA' ? 'rgba(239,68,68,0.3)' : 'rgba(245,158,11,0.3)'}`,
+          display: 'flex', flexDirection: 'column', gap: 10,
         }}>
-          <span style={{ fontSize: 12, color: '#fbbf24', flex: 1 }}>
-            Cambiar estado a <b>{pendingEstado.estado}</b>. Confirmar?
-          </span>
-          <button onClick={handleConfirmarEstado} style={{
-            background: '#f59e0b', border: 'none', borderRadius: 8,
-            padding: '5px 16px', color: '#000', fontSize: 12, fontWeight: 700, cursor: 'pointer',
-          }}>Confirmar</button>
-          <button onClick={() => setPendingEstado(null)} style={{
-            background: 'none', border: 'none', cursor: 'pointer',
-            color: 'rgba(178,198,245,0.5)', fontSize: 12, padding: '5px 8px',
-          }}>Cancelar</button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{ fontSize: 12, color: pendingEstado.estado === 'RECHAZADA' ? '#f87171' : '#fbbf24', flex: 1 }}>
+              Cambiar estado a <b>{pendingEstado.estado}</b>. Confirmar?
+            </span>
+            <button onClick={handleConfirmarEstado} style={{
+              background: pendingEstado.estado === 'RECHAZADA' ? '#ef4444' : '#f59e0b',
+              border: 'none', borderRadius: 8,
+              padding: '5px 16px', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+            }}>Confirmar</button>
+            <button onClick={() => setPendingEstado(null)} style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              color: 'rgba(178,198,245,0.5)', fontSize: 12, padding: '5px 8px',
+            }}>Cancelar</button>
+          </div>
+          {pendingEstado.estado === 'RECHAZADA' && (
+            <input
+              autoFocus
+              placeholder="Motivo del rechazo (ej: precio fuera de mercado, falta documentación...)"
+              value={pendingEstado.motivo}
+              onChange={e => setPendingEstado(p => p ? { ...p, motivo: e.target.value } : p)}
+              onKeyDown={e => { if (e.key === 'Enter') handleConfirmarEstado(); if (e.key === 'Escape') setPendingEstado(null); }}
+              style={{
+                width: '100%', fontSize: 12, padding: '7px 12px', borderRadius: 8, boxSizing: 'border-box',
+                background: 'rgba(6,14,50,0.6)', border: '1px solid rgba(239,68,68,0.4)',
+                color: '#fff', outline: 'none',
+              }}
+            />
+          )}
         </div>
       )}
 
@@ -485,9 +508,26 @@ export default function CarpetaScreen({ onSelect }: Props) {
                       </span>
                     )}
                   </span>
+                  {/* CIF + tomador */}
+                  {(c.header?.cif || c.header?.tomador) && (
+                    <span style={{ fontSize: 10, color: 'rgba(178,198,245,0.5)', fontWeight: 400 }}>
+                      {c.header.cif && <span style={{ fontFamily: 'monospace', letterSpacing: '0.04em' }}>{c.header.cif}</span>}
+                      {c.header.cif && c.header.tomador && <span style={{ margin: '0 4px', opacity: 0.4 }}>·</span>}
+                      {c.header.tomador && <span>{c.header.tomador}</span>}
+                    </span>
+                  )}
+                  {/* Motivo rechazo */}
+                  {c.estado === 'RECHAZADA' && (() => {
+                    const lastMotivo = [...(c.historico ?? [])].reverse().find(h => h.estadoNuevo === 'RECHAZADA' && h.motivo)?.motivo;
+                    return lastMotivo ? (
+                      <span style={{ fontSize: 10, color: '#f87171', fontStyle: 'italic' }}>
+                        ✕ {lastMotivo}
+                      </span>
+                    ) : null;
+                  })()}
                   {/* Creado por */}
                   {c.creado_por && (
-                    <span style={{ fontSize: 10, color: 'rgba(178,198,245,0.38)', fontWeight: 400 }}>
+                    <span style={{ fontSize: 10, color: 'rgba(178,198,245,0.28)', fontWeight: 400 }}>
                       por {c.creado_por}
                     </span>
                   )}
@@ -521,7 +561,7 @@ export default function CarpetaScreen({ onSelect }: Props) {
                     value={c.estado}
                     onChange={e => {
                       const nuevo = e.target.value as EstadoFlota;
-                      if (nuevo !== c.estado) setPendingEstado({ id: c.id, estado: nuevo });
+                      if (nuevo !== c.estado) setPendingEstado({ id: c.id, estado: nuevo, motivo: '' });
                     }}
                     style={{
                       background: 'transparent', border: 'none', cursor: 'pointer',

@@ -169,7 +169,7 @@ export default function Sidebar() {
                             </p>
                         </div>
                         {isAdmin && (
-                            <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 12, flexShrink: 0 }}>⚙</span>
+                            <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 9, fontWeight: 800, letterSpacing: '0.05em', flexShrink: 0 }}>ADM</span>
                         )}
                     </div>
                 ) : (

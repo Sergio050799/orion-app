@@ -68,7 +68,7 @@ function Section({ title, icon, accept, file, inputRef, status, onFileChange, on
       )}
       {seedWarning && (
         <p style={{ fontSize: 10, color: 'rgba(178,198,245,0.5)', marginBottom: 10, fontWeight: 600 }}>
-          ⚠ Activo tras reiniciar el servidor
+          Activo tras reiniciar el servidor
         </p>
       )}
       <div>

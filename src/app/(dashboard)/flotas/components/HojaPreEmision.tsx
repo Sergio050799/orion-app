@@ -66,9 +66,25 @@ interface VehicleEmision {
   searching: boolean;
 }
 
+export interface VehiculoExport {
+  matricula: string;
+  marca: string;
+  modelo: string;
+  tipo: string;
+  id_catalogo: string;
+  version: string;
+  anyo: number;
+  combustible: string;
+  kw: number;
+  cv: number;
+  tara: number;
+  status: string;
+}
+
 interface Props {
   trabajoRows: Record<string, string>[];
   onCatalogoChange?: (selecciones: Record<string, string>) => void;
+  onVehiclesUpdate?: (exports: VehiculoExport[]) => void;
 }
 
 // ─── Helpers similitud ───────────────────────────────────────────────────────
@@ -102,7 +118,8 @@ function ManualSearchPanel({ vehicle, onSelect, onClose }: {
   onSelect: (c: CandidatoCatalogo) => void;
   onClose: () => void;
 }) {
-  const isRem = ['semirremolque', 'remolque'].includes((vehicle.tipo || '').toLowerCase());
+  const isRem = ['semirremolque', 'remolque'].includes((vehicle.tipo || '').toLowerCase())
+    || /^R[\s-]?\d{4}/i.test(vehicle.matricula);
   const initMarca  = isRem ? 'REMOLQUE' : vehicle.marca;
   const initModelo = isRem
     ? ((vehicle.tipo || '').toLowerCase() === 'semirremolque' ? 'SEMIRREMOLQUE' : 'REMOLQUE') + (vehicle.marca ? ` ${vehicle.marca}` : '')
@@ -316,7 +333,7 @@ function StatusChip({ status }: { status: EmisionStatus }) {
 
 // ─── HojaPreEmision ───────────────────────────────────────────────────────────
 
-export default function HojaPreEmision({ trabajoRows, onCatalogoChange }: Props) {
+export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehiclesUpdate }: Props) {
   const initial = useMemo<VehicleEmision[]>(() =>
     trabajoRows.filter(r => r['matricula']?.trim()).map(r => ({
       matricula:           r['matricula'] ?? '',
@@ -412,17 +429,54 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange }: Props)
   }, []);
 
   const handleSearch = useCallback(async (i: number) => {
-    const v = vehicles[i];
-    if (!v) return;
+    const vOrig = vehicles[i];
+    if (!vOrig) return;
+    let v = { ...vOrig };
     // Cancel any prior search for this slot
     searchAbortRef.current.get(i)?.abort();
     const ctrl = new AbortController();
     searchAbortRef.current.set(i, ctrl);
     setV(i, { searching: true });
     try {
+      // Sin marca ni modelo → enriquecer con Silverdat primero
+      if (!v.marca && !v.modelo) {
+        try {
+          const sdRes = await fetch('/api/silverdat/enrich', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ matriculas: [v.matricula] }),
+            signal: ctrl.signal,
+          });
+          if (ctrl.signal.aborted) return;
+          const sdData = await sdRes.json();
+          if (sdData.ok && sdData.results?.[0]?.ok && sdData.results[0].vehicle) {
+            const sd = sdData.results[0].vehicle as Record<string, unknown>;
+            const patch: Partial<VehicleEmision> = {};
+            if (sd.marca) patch.marca = sd.marca as string;
+            if (sd.modelo) {
+              let m = sd.modelo as string;
+              if (sd.marca && m.toUpperCase().startsWith((sd.marca as string).toUpperCase()))
+                m = m.slice((sd.marca as string).length).trim();
+              patch.modelo = m;
+            }
+            if (sd.kw)                  patch.kw                  = String(sd.kw);
+            if (sd.cv)                  patch.cv                  = String(sd.cv);
+            if (sd.tara)                patch.tn                  = String(sd.tara);
+            if (sd.fecha_matriculacion) patch.fecha_matriculacion = sd.fecha_matriculacion as string;
+            if (sd.anyo_fabricacion)    patch.anyo_fabricacion    = sd.anyo_fabricacion as string;
+            if (sd.tipo_vehiculo)       patch.tipo                = sd.tipo_vehiculo as string;
+            v = { ...v, ...patch };
+            setV(i, patch);
+          }
+        } catch {
+          if (ctrl.signal.aborted) return;
+        }
+      }
+
       const body: Record<string, string | number> = {};
       const TIPOS_REM = new Set(['semirremolque', 'remolque']);
-      const isRem = TIPOS_REM.has((v.tipo || '').toLowerCase());
+      const isRem = TIPOS_REM.has((v.tipo || '').toLowerCase())
+        || /^R[\s-]?\d{4}/i.test(v.matricula);
 
       if (isRem) {
         // En el catálogo todos los remolques/semirremolques tienen marca="REMOLQUE"
@@ -507,7 +561,7 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange }: Props)
   useEffect(() => {
     if (vehicles.length === 0) return;
     const pending = vehicles.map((v, i) => ({ v, i })).filter(({ v }) =>
-      v.candidatos.length === 0 && !v.searching && v.marca && !searchedMatsRef.current.has(v.matricula)
+      v.candidatos.length === 0 && !v.searching && !v.seleccionado && !searchedMatsRef.current.has(v.matricula)
     );
     if (pending.length === 0) return;
     pending.forEach(({ v }) => searchedMatsRef.current.add(v.matricula));
@@ -529,7 +583,21 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange }: Props)
     const sel: Record<string, string> = {};
     vehicles.forEach(v => { if (v.seleccionado && v.matricula) sel[v.matricula] = v.seleccionado.id_veh; });
     onCatalogoChange?.(sel);
-  }, [vehicles, onCatalogoChange]);
+    onVehiclesUpdate?.(vehicles.map(v => ({
+      matricula:   v.matricula,
+      marca:       v.marca,
+      modelo:      v.modelo,
+      tipo:        v.tipo,
+      id_catalogo: v.seleccionado?.id_veh ?? '',
+      version:     v.seleccionado?.version ?? '',
+      anyo:        v.seleccionado?.anyo ?? 0,
+      combustible: v.seleccionado?.combustible ?? '',
+      kw:          v.seleccionado?.kw ?? 0,
+      cv:          v.seleccionado?.cv ?? 0,
+      tara:        v.seleccionado?.tara ?? 0,
+      status:      v.status,
+    })));
+  }, [vehicles, onCatalogoChange, onVehiclesUpdate]);
 
   // Búsqueda directa por ID — aborta cualquier búsqueda en curso para este vehículo
   const handleDirectId = useCallback(async (i: number, idVeh: string) => {
@@ -571,11 +639,22 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange }: Props)
     <div className="flex flex-col h-full min-h-0">
 
       {/* ── Toolbar ─────────────────────────────────────────────────────────── */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px', borderBottom: '1px solid #e5e7eb', background: '#f9fafb', flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px', borderBottom: '1px solid #e5e7eb', background: '#f9fafb', flexShrink: 0, gap: 10 }}>
         <span style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#6b7280' }}>
           Listos: <span style={{ color: '#1240CC' }}>{listos}</span> / {vehicles.length}
         </span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, justifyContent: 'flex-end' }}>
+          {vehicles.some(v => v.searching) && (
+            <button
+              onClick={() => {
+                searchAbortRef.current.forEach(ctrl => ctrl.abort());
+                searchAbortRef.current.clear();
+                setVehicles(prev => prev.map(v => v.searching ? { ...v, searching: false, status: v.candidatos.length > 0 ? 'pendiente' : 'sin_catalogo' } : v));
+              }}
+              style={{ fontSize: 10, fontWeight: 700, padding: '4px 12px', borderRadius: 7, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', color: '#dc2626', cursor: 'pointer' }}>
+              Detener
+            </button>
+          )}
           <div style={{ height: 6, width: 120, background: '#e5e7eb', borderRadius: 3, overflow: 'hidden' }}>
             <div style={{ height: '100%', width: `${pct}%`, background: pct === 100 ? '#059669' : '#1240CC', borderRadius: 3, transition: 'width 0.3s' }} />
           </div>

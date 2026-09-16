@@ -14,6 +14,7 @@ function flotaLabel(f: FlotaCarpeta) {
   return f.nombre?.trim() || 'Sin nombre';
 }
 import CarpetaScreen, { EstadoBadge } from './components/CarpetaScreen';
+import FlotasContratadas from './components/FlotasContratadas';
 import HojaOriginal from './components/HojaOriginal';
 import HojaTrabajos from './components/HojaTrabajos';
 import HojaSincoUnificado from './components/HojaSincoUnificado';
@@ -160,6 +161,7 @@ async function descargarTodo(carpeta: FlotaCarpeta, corredorNombre?: string) {
 // ─── FlotasPage ─────────────────────────────────────────────────────────────
 
 export default function FlotasPage() {
+  const [mainView, setMainView] = useState<'estudio' | 'flotas'>('estudio');
   const [activeTab, setActiveTab] = useState<TabName>('ORIGINAL');
   const [carpetaActiva, setCarpetaActiva] = useState<FlotaCarpeta | null>(null);
   const [showCarpetaScreen, setShowCarpetaScreen] = useState(true);
@@ -543,14 +545,41 @@ export default function FlotasPage() {
           </div>
         )}
 
+        {/* Selector principal Flotas / Estudio */}
+        {(showCarpetaScreen || mainView === 'flotas') && (
+          <div style={{ display: 'flex', gap: 0, marginBottom: 8, flexShrink: 0 }}>
+            {([
+              ['flotas',  'Flotas',          '🗂'],
+              ['estudio', 'Estudio de Flotas', '🔬'],
+            ] as const).map(([view, label]) => (
+              <button key={view} onClick={() => { setMainView(view); if (view === 'estudio') setShowCarpetaScreen(true); }}
+                style={{
+                  padding: '7px 20px', fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer',
+                  borderRadius: view === 'flotas' ? '10px 0 0 10px' : '0 10px 10px 0',
+                  background: mainView === view ? (view === 'flotas' ? 'rgba(16,185,129,0.25)' : 'rgba(18,64,204,0.35)') : 'rgba(6,14,50,0.5)',
+                  color: mainView === view ? (view === 'flotas' ? '#10b981' : '#3D7BFF') : 'rgba(178,198,245,0.5)',
+                  boxShadow: mainView === view ? `0 0 0 1px ${view === 'flotas' ? 'rgba(16,185,129,0.4)' : 'rgba(51,102,255,0.4)'} inset` : '0 0 0 1px rgba(61,112,255,0.12) inset',
+                  transition: 'all 180ms',
+                  letterSpacing: '0.04em',
+                }}>
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Main container */}
         <div className="flex-1 flex flex-col min-h-0 rounded-2xl overflow-hidden"
           style={{ background: 'rgba(0,7,45,0.85)', border: '1px solid rgba(51,102,255,0.1)' }}>
 
-          {showCarpetaScreen && <CarpetaScreen onSelect={handleSelectCarpeta} />}
+          {mainView === 'flotas' && (
+            <FlotasContratadas onSelect={c => { setMainView('estudio'); handleSelectCarpeta(c); }} />
+          )}
+
+          {mainView === 'estudio' && showCarpetaScreen && <CarpetaScreen onSelect={handleSelectCarpeta} />}
 
           {/* Hojas */}
-          <div className="flex-1 min-h-0 relative" style={{ display: showCarpetaScreen ? 'none' : 'block' }}>
+          <div className="flex-1 min-h-0 relative" style={{ display: (mainView === 'estudio' && !showCarpetaScreen) ? 'block' : 'none' }}>
             {TABS.map(tab => (
               <div key={tab} style={{ position: 'absolute', inset: 0, display: activeTab === tab ? 'flex' : 'none', flexDirection: 'column' }}>
                 {tab === 'DATOS GENERALES' && carpetaActiva && (
@@ -629,7 +658,7 @@ export default function FlotasPage() {
           </div>
 
           {/* Tab bar at bottom */}
-          {!showCarpetaScreen && (
+          {mainView === 'estudio' && !showCarpetaScreen && (
             <div style={{
               display: 'flex', alignItems: 'stretch', gap: 0, padding: '0 8px',
               borderTop: '1px solid rgba(61,112,255,0.16)', background: 'rgba(0,7,45,0.6)',
