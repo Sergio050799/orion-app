@@ -81,6 +81,7 @@ const FlotaGrid = forwardRef<FlotaGridHandle, FlotaGridProps>(function FlotaGrid
   const [bulkValue, setBulkValue] = useState('');
   const [confirmDelRow, setConfirmDelRow] = useState<number | null>(null);
   const [copiedRange, setCopiedRange] = useState<{ r0: number; r1: number; c0: number; c1: number } | null>(null);
+  const [sortConfig, setSortConfig] = useState<{ col: string; dir: 'asc' | 'desc' } | null>(null);
 
   // Drag-to-select refs
   const isDraggingRef = useRef(false);
@@ -102,6 +103,8 @@ const FlotaGrid = forwardRef<FlotaGridHandle, FlotaGridProps>(function FlotaGrid
   rowsRef.current = rows;
   const copiedRangeRef = useRef(copiedRange);
   copiedRangeRef.current = copiedRange;
+  const sortConfigRef = useRef(sortConfig);
+  sortConfigRef.current = sortConfig;
 
   // ─── Debounced onDataChange ─────────────────────────────────────────────────
 
@@ -466,6 +469,7 @@ const FlotaGrid = forwardRef<FlotaGridHandle, FlotaGridProps>(function FlotaGrid
   useImperativeHandle(ref, () => ({
     getData: () => rows.map(rowToRecord),
     setData: (data) => {
+      setSortConfig(null);
       setRows(data.map((r, i) => ({ ...emptyRow(i, colDefs), ...r })));
     },
     toRows: () => rows.map(row => {
@@ -483,6 +487,25 @@ const FlotaGrid = forwardRef<FlotaGridHandle, FlotaGridProps>(function FlotaGrid
   const deleteRow = useCallback((rowIdx: number) => {
     setRows(prev => prev.filter((_, i) => i !== rowIdx));
     setConfirmDelRow(null);
+    setSelRange(null);
+  }, []);
+
+  const handleSortCol = useCallback((colId: string) => {
+    const prev = sortConfigRef.current;
+    let newDir: 'asc' | 'desc' | null;
+    if (!prev || prev.col !== colId) newDir = 'asc';
+    else if (prev.dir === 'asc') newDir = 'desc';
+    else newDir = null;
+
+    if (newDir !== null) {
+      setRows(cur => [...cur].sort((a, b) => {
+        const av = String(a[colId] ?? '').toLowerCase();
+        const bv = String(b[colId] ?? '').toLowerCase();
+        const cmp = av < bv ? -1 : av > bv ? 1 : 0;
+        return newDir === 'asc' ? cmp : -cmp;
+      }));
+    }
+    setSortConfig(newDir !== null ? { col: colId, dir: newDir } : null);
     setSelRange(null);
   }, []);
 
@@ -539,6 +562,21 @@ const FlotaGrid = forwardRef<FlotaGridHandle, FlotaGridProps>(function FlotaGrid
       resizable: !col.isComputed,
       editable: !col.isComputed,
       renderEditCell: col.isComputed ? undefined : renderTextEditor,
+      renderHeaderCell: () => {
+        const isActive = sortConfig?.col === col.id;
+        return (
+          <div
+            title={`Ordenar por ${col.name}`}
+            onClick={() => handleSortCol(col.id)}
+            style={{ cursor: 'pointer', userSelect: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3, height: '100%', padding: '0 4px', fontWeight: 700 }}
+          >
+            {col.name}
+            <span style={{ fontSize: 8, opacity: isActive ? 0.9 : 0.2, transition: 'opacity 0.15s' }}>
+              {isActive && sortConfig!.dir === 'desc' ? '▼' : '▲'}
+            </span>
+          </div>
+        );
+      },
       renderCell: ({ row, rowIdx }: RenderCellProps<GridRow>) => {
         const rawValue = row[col.id];
         const value = rawValue !== undefined ? String(rawValue) : '';
@@ -607,7 +645,7 @@ const FlotaGrid = forwardRef<FlotaGridHandle, FlotaGridProps>(function FlotaGrid
     }));
 
     return [rowNumCol, ...dataCols];
-  }, [colDefs, selRange, copiedRange, confirmDelRow, deleteRow]);
+  }, [colDefs, selRange, copiedRange, confirmDelRow, deleteRow, sortConfig, handleSortCol]);
 
   // ─── onRowsChange: normalización + auto-fill ───────────────────────────────
 
@@ -884,12 +922,12 @@ const FlotaGrid = forwardRef<FlotaGridHandle, FlotaGridProps>(function FlotaGrid
           onSelectedRowsChange={setSelectedRows}
           onCellClick={(args: CellMouseArgs<GridRow>, event) => {
             const colIdx = colDefs.findIndex(c => c.id === args.column.key);
-            if ((event as unknown as MouseEvent).shiftKey && selRange) {
+            if ((event as unknown as MouseEvent).shiftKey) {
               setSelRange({
-                r0: Math.min(selRange.r0, args.rowIdx),
-                r1: Math.max(selRange.r1, args.rowIdx),
-                c0: Math.min(selRange.c0, colIdx),
-                c1: Math.max(selRange.c1, colIdx),
+                r0: Math.min(focusedRowIdx, args.rowIdx),
+                r1: Math.max(focusedRowIdx, args.rowIdx),
+                c0: 0,
+                c1: colDefs.length - 1,
               });
             } else {
               setLastColKey(args.column.key);

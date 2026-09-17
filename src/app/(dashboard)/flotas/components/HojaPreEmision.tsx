@@ -356,6 +356,8 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
   const [vehicles, setVehicles]         = useState<VehicleEmision[]>(initial);
   const [openSearchRow, setOpenSearchRow] = useState<number | null>(null);
   const [checkedRows, setCheckedRows]   = useState<Set<number>>(new Set());
+  const [sortConfig, setSortConfig]     = useState<{ col: string; dir: 'asc'|'desc' } | null>(null);
+  const [lastCheckedDisplayIdx, setLastCheckedDisplayIdx] = useState<number | null>(null);
   const searchedMatsRef                 = useRef<Set<string>>(new Set());
   const searchAbortRef                  = useRef<Map<number, AbortController>>(new Map());
   const pendingNotifyRef                = useRef(false);
@@ -632,6 +634,28 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
     pendingNotifyRef.current = true;
   }, []);
 
+  const displayVehicles = useMemo(() => {
+    if (!sortConfig) return vehicles;
+    return [...vehicles].sort((a, b) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const av = String((a as any)[sortConfig.col] ?? '').toLowerCase();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const bv = String((b as any)[sortConfig.col] ?? '').toLowerCase();
+      const cmp = av < bv ? -1 : av > bv ? 1 : 0;
+      return sortConfig.dir === 'asc' ? cmp : -cmp;
+    });
+  }, [vehicles, sortConfig]);
+
+  const handleSortCol = (col: string) => {
+    setSortConfig(prev => {
+      if (!prev || prev.col !== col) return { col, dir: 'asc' };
+      if (prev.dir === 'asc') return { col, dir: 'desc' };
+      return null;
+    });
+    setCheckedRows(new Set());
+    setLastCheckedDisplayIdx(null);
+  };
+
   const listos = vehicles.filter(v => v.status === 'listo').length;
   const pct    = vehicles.length > 0 ? Math.round((listos / vehicles.length) * 100) : 0;
 
@@ -712,34 +736,67 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
                     <input type="checkbox"
                       title="Seleccionar todos"
                       checked={vehicles.length > 0 && checkedRows.size === vehicles.length}
-                      onChange={e => setCheckedRows(e.target.checked ? new Set(vehicles.map((_, i) => i)) : new Set())}
+                      onChange={e => { setCheckedRows(e.target.checked ? new Set(vehicles.map((_, i) => i)) : new Set()); setLastCheckedDisplayIdx(null); }}
                       style={{ cursor: 'pointer', width: 14, height: 14 }}
                     />
                   </th>
-                  <th style={{ ...thS, width: 110 }}>Matrícula</th>
-                  <th style={{ ...thS, width: 120 }}>Marca</th>
-                  <th style={{ ...thS, width: 160 }}>Modelo</th>
+                  {(['matricula','marca','modelo'] as const).map((col, ci) => {
+                    const labels = ['Matrícula','Marca','Modelo'];
+                    const widths = [110, 120, 160];
+                    const isActive = sortConfig?.col === col;
+                    return (
+                      <th key={col} style={{ ...thS, width: widths[ci], cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSortCol(col)}>
+                        {labels[ci]}{' '}
+                        <span style={{ fontSize: 8, opacity: isActive ? 0.9 : 0.2 }}>{isActive && sortConfig!.dir === 'desc' ? '▼' : '▲'}</span>
+                      </th>
+                    );
+                  })}
                   <th style={{ ...thS }}>Versión / Acabado</th>
                   <th style={{ ...thS, width: 120 }}>ID Catálogo</th>
-                  <th style={{ ...thS, width: 110 }}>Estado</th>
+                  <th style={{ ...thS, width: 110, cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSortCol('status')}>
+                    Estado{' '}
+                    <span style={{ fontSize: 8, opacity: sortConfig?.col === 'status' ? 0.9 : 0.2 }}>{sortConfig?.col === 'status' && sortConfig.dir === 'desc' ? '▼' : '▲'}</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {vehicles.map((v, i) => (
-                  <React.Fragment key={v.matricula || i}>
+                {displayVehicles.map((v, displayIdx) => {
+                  const origIdx = vehicles.indexOf(v);
+                  return (
+                  <React.Fragment key={v.matricula || displayIdx}>
                     {/* ── Fila principal ─────────────────────────────────── */}
                     <tr style={{
-                      borderBottom: openSearchRow === i ? 'none' : '1px solid #f3f4f6',
-                      background: v.status === 'listo' ? 'rgba(16,185,129,0.03)' : openSearchRow === i ? '#f5f8ff' : '#fff',
+                      borderBottom: openSearchRow === origIdx ? 'none' : '1px solid #f3f4f6',
+                      background: v.status === 'listo' ? 'rgba(16,185,129,0.03)' : openSearchRow === origIdx ? '#f5f8ff' : '#fff',
                       transition: 'background 0.12s',
                     }}
-                      onMouseEnter={e => { if (v.status !== 'listo' && openSearchRow !== i) e.currentTarget.style.background = '#fafbff'; }}
-                      onMouseLeave={e => { if (v.status !== 'listo' && openSearchRow !== i) e.currentTarget.style.background = '#fff'; }}>
+                      onMouseEnter={e => { if (v.status !== 'listo' && openSearchRow !== origIdx) e.currentTarget.style.background = '#fafbff'; }}
+                      onMouseLeave={e => { if (v.status !== 'listo' && openSearchRow !== origIdx) e.currentTarget.style.background = '#fff'; }}>
 
                       <td style={{ ...tdS, textAlign: 'center' }}>
                         <input type="checkbox"
-                          checked={checkedRows.has(i)}
-                          onChange={e => setCheckedRows(prev => { const n = new Set(prev); if (e.target.checked) n.add(i); else n.delete(i); return n; })}
+                          checked={checkedRows.has(origIdx)}
+                          onChange={() => {}}
+                          onClick={(e: React.MouseEvent<HTMLInputElement>) => {
+                            if (e.shiftKey && lastCheckedDisplayIdx !== null) {
+                              e.preventDefault();
+                              const min = Math.min(lastCheckedDisplayIdx, displayIdx);
+                              const max = Math.max(lastCheckedDisplayIdx, displayIdx);
+                              const shouldCheck = !checkedRows.has(origIdx);
+                              setCheckedRows(prev => {
+                                const n = new Set(prev);
+                                for (let di = min; di <= max; di++) {
+                                  const oi = vehicles.indexOf(displayVehicles[di]);
+                                  if (oi >= 0) { if (shouldCheck) n.add(oi); else n.delete(oi); }
+                                }
+                                return n;
+                              });
+                              setLastCheckedDisplayIdx(displayIdx);
+                            } else {
+                              setCheckedRows(prev => { const n = new Set(prev); if (n.has(origIdx)) n.delete(origIdx); else n.add(origIdx); return n; });
+                              setLastCheckedDisplayIdx(displayIdx);
+                            }
+                          }}
                           style={{ cursor: 'pointer', width: 14, height: 14 }}
                         />
                       </td>
@@ -760,7 +817,7 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
                         ) : v.seleccionado ? (
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                             <span style={{ fontWeight: 700, color: '#065f46', fontSize: 12, flex: 1 }}>{v.seleccionado.version}</span>
-                            <button type="button" onClick={() => handleClearSelection(i)}
+                            <button type="button" onClick={() => handleClearSelection(origIdx)}
                               title="Cambiar versión"
                               style={{ fontSize: 9, padding: '2px 6px', borderRadius: 4, background: '#fee2e2', color: '#dc2626', border: '1px solid #fca5a5', cursor: 'pointer', fontWeight: 700, flexShrink: 0 }}>
                               ✕
@@ -772,7 +829,7 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
                               defaultValue=""
                               onChange={e => {
                                 const c = v.candidatos.find(c => c.id_veh === e.target.value);
-                                if (c) handleSelect(i, c);
+                                if (c) handleSelect(origIdx, c);
                               }}
                               style={{ flex: 1, maxWidth: 380, fontSize: 11, padding: '5px 8px', borderRadius: 6, border: '1px solid #d1d5db', background: '#fff', outline: 'none', cursor: 'pointer' }}>
                               <option value="" disabled>— Seleccionar acabado —</option>
@@ -783,15 +840,15 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
                               ))}
                             </select>
                             <button type="button"
-                              onClick={() => setOpenSearchRow(openSearchRow === i ? null : i)}
+                              onClick={() => setOpenSearchRow(openSearchRow === origIdx ? null : origIdx)}
                               title="Buscar manualmente en el catálogo"
-                              style={{ fontSize: 10, padding: '4px 8px', borderRadius: 6, background: openSearchRow === i ? 'rgba(18,64,204,0.15)' : 'rgba(18,64,204,0.06)', border: '1px solid rgba(18,64,204,0.25)', color: '#1240CC', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                              style={{ fontSize: 10, padding: '4px 8px', borderRadius: 6, background: openSearchRow === origIdx ? 'rgba(18,64,204,0.15)' : 'rgba(18,64,204,0.06)', border: '1px solid rgba(18,64,204,0.25)', color: '#1240CC', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0 }}>
                               Buscar
                             </button>
                           </div>
                         ) : (
                           <button type="button"
-                            onClick={() => setOpenSearchRow(openSearchRow === i ? null : i)}
+                            onClick={() => setOpenSearchRow(openSearchRow === origIdx ? null : origIdx)}
                             style={{ fontSize: 11, fontWeight: 700, padding: '5px 12px', borderRadius: 6,
                               background: v.status === 'sin_catalogo' ? 'rgba(220,38,38,0.06)' : 'rgba(18,64,204,0.07)',
                               border: `1px solid ${v.status === 'sin_catalogo' ? 'rgba(220,38,38,0.25)' : 'rgba(18,64,204,0.2)'}`,
@@ -805,7 +862,7 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
                         {v.seleccionado ? (
                           <span style={{ color: '#111827', fontWeight: 700 }}>{v.seleccionado.id_veh}</span>
                         ) : (
-                          <DirectIdCell onSubmit={id => handleDirectId(i, id)} />
+                          <DirectIdCell onSubmit={id => handleDirectId(origIdx, id)} />
                         )}
                       </td>
 
@@ -813,19 +870,20 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
                     </tr>
 
                     {/* ── Panel búsqueda manual (fila expandible) ─────────── */}
-                    {openSearchRow === i && (
+                    {openSearchRow === origIdx && (
                       <tr style={{ borderBottom: '1px solid #c8d8f5' }}>
                         <td colSpan={7} style={{ padding: 0 }}>
                           <ManualSearchPanel
                             vehicle={v}
-                            onSelect={c => handleSelect(i, c)}
+                            onSelect={c => handleSelect(origIdx, c)}
                             onClose={() => setOpenSearchRow(null)}
                           />
                         </td>
                       </tr>
                     )}
                   </React.Fragment>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
