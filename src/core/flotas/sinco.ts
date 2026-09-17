@@ -47,9 +47,9 @@ export function contarVehiculosConSinco(codigosRetorno: string[]): number {
     return codigosRetorno.filter(c => !c || c.trim() === '' || c.trim() === '0').length;
 }
 
-/** Filtra las filas reales: requiere matrícula no vacía */
+/** Filtra las filas reales: requiere matrícula no vacía (acepta 'Matrícula' del resultado SINCO o 'matricula' de TRABAJO) */
 export function filtrarFilasReales(rows: Record<string, string>[]): Record<string, string>[] {
-    return rows.filter(row => (row['matricula'] ?? '').trim() !== '');
+    return rows.filter(row => (row['matricula'] ?? row['Matrícula'] ?? '').trim() !== '');
 }
 
 // ─── E-3: CONSOLIDADO Y MERGE SINCO ──────────────────────────────────────────
