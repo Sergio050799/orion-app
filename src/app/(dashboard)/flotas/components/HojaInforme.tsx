@@ -408,17 +408,17 @@ export default function HojaInforme({
   const isYes = (v?: string) => { const u = (v ?? '').trim().toUpperCase(); return u !== '' && u !== 'NO' && u !== 'N' && u !== '0'; };
 
   const tipoCobGrupos = useMemo(() => {
-    const grupos: Record<string, { tipo: string; cob: string; cobLabel: string; count: number; sumaSol: number }> = {};
+    const grupos: Record<string, { tipo: string; cob: string; cobLabel: string; count: number; sumaSol: number; hasAsistencia: boolean }> = {};
     trabajoRows.filter(r => r['matricula']?.trim()).forEach(r => {
       const tipo = normTipo(r['tipo_vehiculo'] || '');
       const cob  = r['coberturas_solicitadas'] || 'Sin cobertura';
       const key  = `${tipo}||${cob}`;                                  // clave estable para saved primas
       const prima = parseFloat(r['prima_referencia'] ?? '');
-      if (!grupos[key]) grupos[key] = { tipo, cob, cobLabel: cob, count: 0, sumaSol: 0 };
+      if (!grupos[key]) grupos[key] = { tipo, cob, cobLabel: cob, count: 0, sumaSol: 0, hasAsistencia: false };
       // Actualizar cobLabel si este vehículo tiene extras
       const extras: string[] = [];
       if (isYes(r['lunas'])) extras.push('LUNAS');
-      if (isYes(r['asistencia'])) extras.push('ASISTENCIA');
+      if (isYes(r['asistencia'])) { extras.push('ASISTENCIA'); grupos[key].hasAsistencia = true; }
       if (extras.length > 0) grupos[key].cobLabel = `${cob} (${extras.join(', ')})`;
       grupos[key].count++;
       if (!isNaN(prima)) grupos[key].sumaSol += prima;
@@ -445,37 +445,39 @@ export default function HojaInforme({
   const cobAnexo = useMemo(() => {
     const TIPOS_REMOLQUE = new Set(['SEMIRREMOLQUE', 'REMOLQUE']);
     const BASE_NO_CONDUCTOR = BASE_GARANTIAS.filter(g => !g.includes('Conductor'));
-    const cobMap = new Map<string, { nonRem: Set<string>; rem: Set<string> }>();
+    const cobMap = new Map<string, { nonRem: Set<string>; rem: Set<string>; hasAsistencia: boolean }>();
     Object.values(tipoCobGrupos).forEach(g => {
       const isRem = TIPOS_REMOLQUE.has(g.tipo);
-      if (!cobMap.has(g.cob)) cobMap.set(g.cob, { nonRem: new Set(), rem: new Set() });
+      if (!cobMap.has(g.cob)) cobMap.set(g.cob, { nonRem: new Set(), rem: new Set(), hasAsistencia: false });
       const entry = cobMap.get(g.cob)!;
       const tip = g.tipo.charAt(0).toUpperCase() + g.tipo.slice(1).toLowerCase();
       if (isRem) entry.rem.add(tip);
       else entry.nonRem.add(tip);
+      if (g.hasAsistencia) entry.hasAsistencia = true;
     });
     const result: { titulo: string; tipologias: string[]; garantias: string[] }[] = [];
     const seen = new Set<string>();
-    cobMap.forEach(({ nonRem, rem }, rawCob) => {
+    cobMap.forEach(({ nonRem, rem, hasAsistencia }, rawCob) => {
       const v = rawCob.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
       let key = '';
       if (v.includes('todo') || v.includes('franquicia') || v.includes('riesgo')) key = 'tr';
       else if (v.includes('amplia')) key = 'ta';
       else if (v.includes('tercero')) key = 't';
       if (!key) return;
+      const asistGar = hasAsistencia ? ['Asistencia en Viaje'] : [];
       if (nonRem.size > 0 && !seen.has(key)) {
         seen.add(key);
         const tipologias = [...nonRem];
-        if (key === 't') result.push({ titulo: 'Terceros', tipologias, garantias: [...BASE_GARANTIAS] });
-        else if (key === 'ta') result.push({ titulo: 'Terceros Ampliado', tipologias, garantias: [...BASE_GARANTIAS, 'Lunas', 'Robo', 'Incendio'] });
-        else if (key === 'tr') result.push({ titulo: 'Todo Riesgo con Franquicia 1.800 €', tipologias, garantias: [...BASE_GARANTIAS, 'Lunas', 'Robo', 'Incendio', 'Daños propios con franquicia de 1.800 €'] });
+        if (key === 't') result.push({ titulo: 'Terceros', tipologias, garantias: [...BASE_GARANTIAS, ...asistGar] });
+        else if (key === 'ta') result.push({ titulo: 'Terceros Ampliado', tipologias, garantias: [...BASE_GARANTIAS, 'Lunas', 'Robo', 'Incendio', ...asistGar] });
+        else if (key === 'tr') result.push({ titulo: 'Todo Riesgo con Franquicia 1.800 €', tipologias, garantias: [...BASE_GARANTIAS, 'Lunas', 'Robo', 'Incendio', 'Daños propios con franquicia de 1.800 €', ...asistGar] });
       }
       if (rem.size > 0 && !seen.has(key + '_rem')) {
         seen.add(key + '_rem');
         const tipologias = [...rem];
-        if (key === 't') result.push({ titulo: 'Terceros — Remolques', tipologias, garantias: [...BASE_NO_CONDUCTOR] });
-        else if (key === 'ta') result.push({ titulo: 'Terceros Ampliado — Remolques', tipologias, garantias: [...BASE_NO_CONDUCTOR, 'Robo', 'Incendio'] });
-        else if (key === 'tr') result.push({ titulo: 'Todo Riesgo — Remolques', tipologias, garantias: [...BASE_NO_CONDUCTOR, 'Robo', 'Incendio', 'Daños propios con franquicia de 1.800 €'] });
+        if (key === 't') result.push({ titulo: 'Terceros — Remolques', tipologias, garantias: [...BASE_NO_CONDUCTOR, ...asistGar] });
+        else if (key === 'ta') result.push({ titulo: 'Terceros Ampliado — Remolques', tipologias, garantias: [...BASE_NO_CONDUCTOR, 'Robo', 'Incendio', ...asistGar] });
+        else if (key === 'tr') result.push({ titulo: 'Todo Riesgo — Remolques', tipologias, garantias: [...BASE_NO_CONDUCTOR, 'Robo', 'Incendio', 'Daños propios con franquicia de 1.800 €', ...asistGar] });
       }
     });
     const titleOrder: Record<string, number> = { 'Terceros': 0, 'Terceros — Remolques': 1, 'Terceros Ampliado': 2, 'Terceros Ampliado — Remolques': 3, 'Todo Riesgo con Franquicia 1.800 €': 4, 'Todo Riesgo — Remolques': 5 };

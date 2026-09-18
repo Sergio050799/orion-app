@@ -566,38 +566,41 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
   const cobAnexo = useMemo(() => {
     const TIPOS_REMOLQUE = new Set(['semirremolque', 'remolque']);
     const BASE_NO_CONDUCTOR = BASE_GARANTIAS_OFERTA.filter(g => !g.includes('Conductor'));
-    const cobMap = new Map<string, { nonRem: Set<string>; rem: Set<string> }>();
+    const cobMap = new Map<string, { nonRem: Set<string>; rem: Set<string>; hasAsistencia: boolean }>();
     rows.forEach(r => {
       if (!r.coberturas) return;
       const isRem = TIPOS_REMOLQUE.has(r.tipo_vehiculo.toLowerCase());
-      if (!cobMap.has(r.coberturas)) cobMap.set(r.coberturas, { nonRem: new Set(), rem: new Set() });
+      if (!cobMap.has(r.coberturas)) cobMap.set(r.coberturas, { nonRem: new Set(), rem: new Set(), hasAsistencia: false });
       const entry = cobMap.get(r.coberturas)!;
       const tip = r.tipo_vehiculo.charAt(0).toUpperCase() + r.tipo_vehiculo.slice(1).toLowerCase();
       if (isRem) entry.rem.add(tip);
       else entry.nonRem.add(tip);
+      const asist = (r.asistencia || '').toLowerCase();
+      if (asist && asist !== 'no') entry.hasAsistencia = true;
     });
     const result: { titulo: string; tipologias: string[]; garantias: string[] }[] = [];
     const seen = new Set<string>();
-    cobMap.forEach(({ nonRem, rem }, rawCob) => {
+    cobMap.forEach(({ nonRem, rem, hasAsistencia }, rawCob) => {
       const v = rawCob.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
       let key = '';
       if (v.includes('todo') || v.includes('franquicia') || v.includes('riesgo')) key = 'tr';
       else if (v.includes('amplia')) key = 'ta';
       else if (v.includes('tercero')) key = 't';
       if (!key) return;
+      const asistGar = hasAsistencia ? ['Asistencia en Viaje'] : [];
       if (nonRem.size > 0 && !seen.has(key)) {
         seen.add(key);
         const tipologias = [...nonRem];
-        if (key === 't') result.push({ titulo: 'Terceros', tipologias, garantias: [...BASE_GARANTIAS_OFERTA] });
-        else if (key === 'ta') result.push({ titulo: 'Terceros Ampliado', tipologias, garantias: [...BASE_GARANTIAS_OFERTA, 'Lunas', 'Robo', 'Incendio'] });
-        else if (key === 'tr') result.push({ titulo: 'Todo Riesgo con Franquicia 1.800 €', tipologias, garantias: [...BASE_GARANTIAS_OFERTA, 'Lunas', 'Robo', 'Incendio', 'Daños propios con franquicia de 1.800 €'] });
+        if (key === 't') result.push({ titulo: 'Terceros', tipologias, garantias: [...BASE_GARANTIAS_OFERTA, ...asistGar] });
+        else if (key === 'ta') result.push({ titulo: 'Terceros Ampliado', tipologias, garantias: [...BASE_GARANTIAS_OFERTA, 'Lunas', 'Robo', 'Incendio', ...asistGar] });
+        else if (key === 'tr') result.push({ titulo: 'Todo Riesgo con Franquicia 1.800 €', tipologias, garantias: [...BASE_GARANTIAS_OFERTA, 'Lunas', 'Robo', 'Incendio', 'Daños propios con franquicia de 1.800 €', ...asistGar] });
       }
       if (rem.size > 0 && !seen.has(key + '_rem')) {
         seen.add(key + '_rem');
         const tipologias = [...rem];
-        if (key === 't') result.push({ titulo: 'Terceros — Remolques', tipologias, garantias: [...BASE_NO_CONDUCTOR] });
-        else if (key === 'ta') result.push({ titulo: 'Terceros Ampliado — Remolques', tipologias, garantias: [...BASE_NO_CONDUCTOR, 'Robo', 'Incendio'] });
-        else if (key === 'tr') result.push({ titulo: 'Todo Riesgo — Remolques', tipologias, garantias: [...BASE_NO_CONDUCTOR, 'Robo', 'Incendio', 'Daños propios con franquicia de 1.800 €'] });
+        if (key === 't') result.push({ titulo: 'Terceros — Remolques', tipologias, garantias: [...BASE_NO_CONDUCTOR, ...asistGar] });
+        else if (key === 'ta') result.push({ titulo: 'Terceros Ampliado — Remolques', tipologias, garantias: [...BASE_NO_CONDUCTOR, 'Robo', 'Incendio', ...asistGar] });
+        else if (key === 'tr') result.push({ titulo: 'Todo Riesgo — Remolques', tipologias, garantias: [...BASE_NO_CONDUCTOR, 'Robo', 'Incendio', 'Daños propios con franquicia de 1.800 €', ...asistGar] });
       }
     });
     const titleOrder: Record<string, number> = { 'Terceros': 0, 'Terceros — Remolques': 1, 'Terceros Ampliado': 2, 'Terceros Ampliado — Remolques': 3, 'Todo Riesgo con Franquicia 1.800 €': 4, 'Todo Riesgo — Remolques': 5 };
