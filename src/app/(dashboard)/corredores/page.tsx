@@ -585,6 +585,49 @@ export default function CorredoresPage() {
   const [importToast, setImportToast] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
+  const handleDescargarPlantilla = useCallback(async () => {
+    const ExcelJS = (await import('exceljs')).default;
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet('Corredores');
+    const cols = [
+      { header: 'nombre',       width: 30 },
+      { header: 'codigo',       width: 14 },
+      { header: 'cif',          width: 14 },
+      { header: 'domicilio',    width: 36 },
+      { header: 'comision',     width: 12 },
+      { header: 'periodicidad', width: 14 },
+      { header: 'forma pago',   width: 16 },
+      { header: 'contacto',     width: 22 },
+      { header: 'email',        width: 28 },
+      { header: 'telefono',     width: 16 },
+      { header: 'sucursal',     width: 14 },
+      { header: 'comercial',    width: 18 },
+      { header: 'observaciones', width: 36 },
+    ];
+    ws.columns = cols.map(c => ({ header: c.header, key: c.header, width: c.width }));
+    const headerRow = ws.getRow(1);
+    headerRow.eachCell(cell => {
+      cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1240CC' } };
+      cell.alignment = { vertical: 'middle' };
+    });
+    headerRow.height = 20;
+    // Fila de ejemplo
+    ws.addRow({
+      nombre: 'Corredor Ejemplo S.L.', codigo: 'COR-001', cif: 'B12345678',
+      domicilio: 'Calle Mayor 1, Madrid', comision: 15, periodicidad: 'mensual',
+      'forma pago': 'Transferencia', contacto: 'Juan García',
+      email: 'juan@corredor.com', telefono: '600123456',
+      sucursal: 'TITAN', comercial: 'Roberto', observaciones: '',
+    });
+    const buf = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'plantilla_corredores.xlsx'; a.click();
+    URL.revokeObjectURL(url);
+  }, []);
+
   const handleImportExcel = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -728,6 +771,11 @@ export default function CorredoresPage() {
               </div>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={handleDescargarPlantilla} style={{
+                background: 'rgba(6,14,50,0.5)', border: '1px solid rgba(61,112,255,0.22)',
+                borderRadius: 10, padding: '9px 16px',
+                color: 'rgba(178,198,245,0.8)', fontSize: 13, fontWeight: 500, cursor: 'pointer',
+              }}>Descargar plantilla</button>
               <button onClick={() => fileRef.current?.click()} style={{
                 background: 'rgba(6,14,50,0.5)', border: '1px solid rgba(61,112,255,0.22)',
                 borderRadius: 10, padding: '9px 16px',
