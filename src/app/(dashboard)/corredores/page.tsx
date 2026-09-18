@@ -692,8 +692,13 @@ export default function CorredoresPage() {
         }
         count++;
       }
-      await sincronizarCorredores(listarCorredores());
-      await cargarCorredoresDelServidor();
+      for (const corredor of listarCorredores()) {
+        await fetch('/api/flotas/corredores', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'upsert', corredor }),
+        });
+      }
       setImportToast(`${count} corredor${count !== 1 ? 'es' : ''} importado${count !== 1 ? 's' : ''}`);
       setTimeout(() => setImportToast(''), 3000);
       cargar();
