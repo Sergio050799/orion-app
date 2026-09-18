@@ -104,3 +104,12 @@ export function eliminarCorredor(id: string): void {
   saveAll(loadAll().filter(c => c.id !== id));
   syncDelete(id);
 }
+
+export function borrarTodosLosCorredores(): void {
+  saveAll([]);
+  fetch('/api/flotas/corredores', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'deleteAll' }),
+  }).catch(() => {});
+}

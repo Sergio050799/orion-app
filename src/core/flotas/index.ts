@@ -26,10 +26,10 @@ export type { FlotaSession, CoberturaAsignacion, Row } from './sesion';
 export { guardarSesion, cargarSesion, listarSesiones, eliminarSesion } from './sesion';
 
 export type { FlotaCarpeta, EstadoFlota, HistoricoEntry, TarifaEntry } from './carpeta';
-export { listarCarpetas, crearCarpeta, guardarCarpeta, cargarCarpeta, eliminarCarpeta, cambiarEstado, cargarCarpetasDelServidor, initMemCache, sesionJoin, sesionLeave, sesionHeartbeat } from './carpeta';
+export { listarCarpetas, crearCarpeta, guardarCarpeta, cargarCarpeta, eliminarCarpeta, cambiarEstado, cargarCarpetasDelServidor, initMemCache, sesionJoin, sesionLeave, sesionHeartbeat, borrarTodasLasCarpetas } from './carpeta';
 
 export type { Corredor, Periodicidad, Sucursal } from './corredor';
-export { listarCorredores, crearCorredor, guardarCorredor, cargarCorredor, eliminarCorredor, cargarCorredoresDelServidor } from './corredor';
+export { listarCorredores, crearCorredor, guardarCorredor, cargarCorredor, eliminarCorredor, cargarCorredoresDelServidor, borrarTodosLosCorredores } from './corredor';
 
 export type { ParseResult } from './parser';
 export { parseExcelTemplate } from './parser';

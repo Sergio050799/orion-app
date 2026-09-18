@@ -3,10 +3,10 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  listarCorredores, crearCorredor, guardarCorredor, eliminarCorredor, cargarCorredoresDelServidor,
+  listarCorredores, crearCorredor, guardarCorredor, eliminarCorredor, cargarCorredoresDelServidor, borrarTodosLosCorredores,
   type Corredor, type Periodicidad, type Sucursal,
 } from '@/core/flotas';
-import { listarCarpetas, crearCarpeta, guardarCarpeta, eliminarCarpeta, type FlotaCarpeta } from '@/core/flotas';
+import { listarCarpetas, crearCarpeta, guardarCarpeta, eliminarCarpeta, borrarTodasLasCarpetas, type FlotaCarpeta } from '@/core/flotas';
 
 // ─── Design tokens ──────────────────────────────────────────────────────────
 
@@ -583,7 +583,20 @@ export default function CorredoresPage() {
   const [panelAbierto, setPanelAbierto] = useState(false);
   const [corredorEditar, setCorredorEditar] = useState<Corredor | null>(null);
   const [importToast, setImportToast] = useState('');
+  const [confirmBorrarTodo, setConfirmBorrarTodo] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const handleBorrarTodo = useCallback(() => {
+    borrarTodosLosCorredores();
+    borrarTodasLasCarpetas();
+    setCorredores([]);
+    setCarpetas([]);
+    setVista('lista');
+    setCorredorDetalle(null);
+    setConfirmBorrarTodo(false);
+    setImportToast('Todos los datos eliminados');
+    setTimeout(() => setImportToast(''), 3000);
+  }, []);
 
   const handleDescargarPlantilla = useCallback(async () => {
     const ExcelJS = (await import('exceljs')).default;
@@ -659,8 +672,10 @@ export default function CorredoresPage() {
         const comision = parseFloat(get('comision', 'comision %', 'porcentaje').replace(',', '.').replace('%', '')) || 0;
         const sucursalRaw = get('sucursal').toUpperCase();
         const sucursal: Sucursal | undefined = (sucursalRaw === 'TITAN' || sucursalRaw === 'MEDIACION') ? sucursalRaw : undefined;
-        crearCorredor({
-          nombre, codigo: get('codigo', 'code', 'cod'), cif: get('cif', 'nif'),
+        const cifNuevo = get('cif', 'nif');
+        const existente = listarCorredores().find(c => c.cif && c.cif === cifNuevo);
+        const datos = {
+          nombre, codigo: get('codigo', 'code', 'cod'), cif: cifNuevo,
           domicilio: get('domicilio', 'direccion', 'address'),
           porcentajeComision: comision, periodicidad,
           formaPago: get('forma pago', 'forma_pago', 'pago'),
@@ -669,7 +684,12 @@ export default function CorredoresPage() {
           telefono: get('telefono', 'phone', 'tel'),
           observaciones: get('observaciones', 'notas', 'notes'),
           sucursal, comercial: get('comercial'),
-        });
+        };
+        if (existente) {
+          guardarCorredor({ ...existente, ...datos });
+        } else {
+          crearCorredor(datos);
+        }
         count++;
       }
       setImportToast(`${count} corredor${count !== 1 ? 'es' : ''} importado${count !== 1 ? 's' : ''}`);
@@ -770,7 +790,30 @@ export default function CorredoresPage() {
                 </p>
               </div>
             </div>
-            <div style={{ display: 'flex', gap: 8 }}>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              {confirmBorrarTodo ? (
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.35)',
+                  borderRadius: 10, padding: '6px 14px', fontSize: 12,
+                }}>
+                  <span style={{ color: '#f87171', fontWeight: 600 }}>¿Borrar TODO? Esto elimina corredores y flotas.</span>
+                  <button onClick={handleBorrarTodo} style={{
+                    background: '#ef4444', border: 'none', borderRadius: 6,
+                    padding: '4px 12px', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                  }}>Sí, borrar todo</button>
+                  <button onClick={() => setConfirmBorrarTodo(false)} style={{
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    color: 'rgba(178,198,245,0.5)', fontSize: 12, padding: '4px 6px',
+                  }}>Cancelar</button>
+                </div>
+              ) : (
+                <button onClick={() => setConfirmBorrarTodo(true)} style={{
+                  background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)',
+                  borderRadius: 10, padding: '9px 16px',
+                  color: '#f87171', fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                }}>Borrar todo</button>
+              )}
               <button onClick={handleDescargarPlantilla} style={{
                 background: 'rgba(6,14,50,0.5)', border: '1px solid rgba(61,112,255,0.22)',
                 borderRadius: 10, padding: '9px 16px',

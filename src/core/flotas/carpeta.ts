@@ -210,3 +210,12 @@ export function eliminarCarpeta(id: string): void {
   saveAll(loadAll().filter(c => c.id !== id));
   syncDelete(id);
 }
+
+export function borrarTodasLasCarpetas(): void {
+  saveAll([]);
+  fetch('/api/flotas/carpetas', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'replaceAll', carpetas: [] }),
+  }).catch(() => {});
+}
