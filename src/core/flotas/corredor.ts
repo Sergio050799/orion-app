@@ -113,3 +113,11 @@ export function borrarTodosLosCorredores(): void {
     body: JSON.stringify({ action: 'deleteAll' }),
   }).catch(() => {});
 }
+
+export async function sincronizarCorredores(corredores: Corredor[]): Promise<void> {
+  await fetch('/api/flotas/corredores', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'replaceAll', corredores }),
+  });
+}

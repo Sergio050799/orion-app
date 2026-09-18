@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  listarCorredores, crearCorredor, guardarCorredor, eliminarCorredor, cargarCorredoresDelServidor, borrarTodosLosCorredores,
+  listarCorredores, crearCorredor, guardarCorredor, eliminarCorredor, cargarCorredoresDelServidor, borrarTodosLosCorredores, sincronizarCorredores,
   type Corredor, type Periodicidad, type Sucursal,
 } from '@/core/flotas';
 import { listarCarpetas, crearCarpeta, guardarCarpeta, eliminarCarpeta, borrarTodasLasCarpetas, type FlotaCarpeta } from '@/core/flotas';
@@ -692,6 +692,8 @@ export default function CorredoresPage() {
         }
         count++;
       }
+      await sincronizarCorredores(listarCorredores());
+      await cargarCorredoresDelServidor();
       setImportToast(`${count} corredor${count !== 1 ? 'es' : ''} importado${count !== 1 ? 's' : ''}`);
       setTimeout(() => setImportToast(''), 3000);
       cargar();
