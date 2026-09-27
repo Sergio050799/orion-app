@@ -117,7 +117,6 @@ export default function CarpetaScreen({ onSelect }: Props) {
   const { user } = useAuth();
   const [carpetas, setCarpetas] = useState<FlotaCarpeta[]>(() => listarCarpetas().map(normalizarCarpeta));
   const [nombre, setNombre] = useState('');
-  const [tomadorNuevo, setTomadorNuevo] = useState('');
   const [confirmDel, setConfirmDel] = useState<string | null>(null);
   const [corredores, setCorredores] = useState<Corredor[]>([]);
   const [corredorId, setCorredorId] = useState<string>('');
@@ -226,11 +225,7 @@ export default function CarpetaScreen({ onSelect }: Props) {
     const n = nombre.trim();
     if (!n) return;
     const carpeta = crearCarpeta(n, corredorId || undefined, user ?? undefined);
-    if (tomadorNuevo.trim()) {
-      carpeta.header = { ...carpeta.header, tomador: tomadorNuevo.trim() };
-      guardarCarpeta(carpeta);
-    }
-    setNombre(''); setTomadorNuevo(''); setCorredorId(''); setShowCrearCorredor(false); setCreating(false);
+    setNombre(''); setCorredorId(''); setShowCrearCorredor(false); setCreating(false);
     onSelect(normalizarCarpeta(carpeta));
   };
 
@@ -452,16 +447,12 @@ export default function CarpetaScreen({ onSelect }: Props) {
               onKeyDown={e => { if (e.key === 'Enter' && !showCrearCorredor) handleCrear(); }}
               placeholder="Nombre del estudio (ej. FRILESA S.L.)"
               className="orion-input" style={{ flex: 2, minWidth: 180, fontSize: 13 }} />
-            <input value={tomadorNuevo} onChange={e => setTomadorNuevo(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter' && !showCrearCorredor) handleCrear(); }}
-              placeholder="Tomador"
-              className="orion-input" style={{ flex: 1, minWidth: 140, fontSize: 13 }} />
             <button onClick={handleCrear} disabled={!nombre.trim()} style={{
               background: nombre.trim() ? 'linear-gradient(135deg, #1240CC, #3366FF)' : 'rgba(18,64,204,0.3)',
               border: 'none', borderRadius: 10, padding: '0 20px', color: '#fff', fontSize: 12, fontWeight: 600,
               cursor: nombre.trim() ? 'pointer' : 'not-allowed',
             }}>Crear</button>
-            <button onClick={() => { setCreating(false); setTomadorNuevo(''); }} style={{
+            <button onClick={() => setCreating(false)} style={{
               background: 'rgba(6,14,50,0.5)', border: '1px solid rgba(61,112,255,0.22)',
               borderRadius: 10, padding: '0 14px', color: '#BDD4FF', fontSize: 12, cursor: 'pointer',
             }}>Cancelar</button>
