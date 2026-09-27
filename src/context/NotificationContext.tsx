@@ -67,6 +67,10 @@ const PERIODICIDAD_MESES: Record<string, number> = {
   mensual: 1, bimestral: 2, trimestral: 3, semestral: 6, anual: 12,
 };
 
+function isSameDay(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
 /** Desde la fecha de vencimiento, retrocede por periodicidad para hallar la próxima regularización futura. */
 function proximaRegularizacion(fechaVencimiento: string, periodicidad: string): Date | null {
   const vto = parseFecha(fechaVencimiento);
@@ -77,6 +81,7 @@ function proximaRegularizacion(fechaVencimiento: string, periodicidad: string): 
   const candidate = new Date(vto);
   while (candidate > now) candidate.setMonth(candidate.getMonth() - meses);
   candidate.setMonth(candidate.getMonth() + meses);
+  if (isSameDay(candidate, vto)) return null;
   return candidate;
 }
 

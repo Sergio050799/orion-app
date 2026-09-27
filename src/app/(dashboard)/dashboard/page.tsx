@@ -38,17 +38,21 @@ const PERIODICIDAD_MESES: Record<string, number> = {
   mensual: 1, bimestral: 2, trimestral: 3, semestral: 6, anual: 12,
 };
 
+function isSameDay(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
 function proximaRegularizacion(fechaVencimiento: string, periodicidad: string): Date | null {
   const vto = parseFechaFlexible(fechaVencimiento);
   if (!vto) return null;
   const meses = PERIODICIDAD_MESES[periodicidad.toLowerCase()];
   if (!meses) return null;
   const now = new Date();
-  // Desde vencimiento, retroceder hasta pasar hoy
   const candidate = new Date(vto);
   while (candidate > now) candidate.setMonth(candidate.getMonth() - meses);
-  // Avanzar una vez para obtener la próxima fecha futura
   candidate.setMonth(candidate.getMonth() + meses);
+  // Si coincide con el vencimiento es Renovación, no Regularización
+  if (isSameDay(candidate, vto)) return null;
   return candidate;
 }
 
@@ -233,7 +237,7 @@ export default function DashboardPage() {
         const proxima = proximaRegularizacion(c.header.fechaVencimiento, c.header.periodicidad);
         if (proxima) {
           const dias = diasHasta(proxima);
-          if (dias <= 90) entries.push({ carpeta: c, dias, corredor, tipo: 'regularizacion', fecha: proxima });
+          if (dias <= 30) entries.push({ carpeta: c, dias, corredor, tipo: 'regularizacion', fecha: proxima });
         }
       }
 
@@ -242,7 +246,7 @@ export default function DashboardPage() {
         const fecha = parseFechaFlexible(c.header.fechaVencimiento);
         if (fecha) {
           const dias = diasHasta(fecha);
-          if (dias <= 90) entries.push({ carpeta: c, dias, corredor, tipo: 'vencimiento', fecha });
+          if (dias <= 30) entries.push({ carpeta: c, dias, corredor, tipo: 'vencimiento', fecha });
         }
       }
     }
@@ -290,7 +294,7 @@ export default function DashboardPage() {
             fontFamily: 'var(--font-display), Inter, sans-serif',
             fontWeight: 600, fontSize: 17, margin: 0, color: '#FFFFFF',
           }}>
-            Próximas renovaciones
+            Regularizaciones y renovaciones
           </h3>
           <span style={{ fontSize: 12, color: 'rgba(178,206,255,0.65)', letterSpacing: '0.06em' }}>
             Distribución actual
@@ -299,7 +303,7 @@ export default function DashboardPage() {
 
         {alertas.length === 0 ? (
           <p style={{ color: 'rgba(178,198,245,0.38)', fontSize: 12, textAlign: 'center', padding: '30px 0', margin: 0 }}>
-            Sin renovaciones próximas en los siguientes 90 días.
+            Sin regularizaciones ni renovaciones en los próximos 30 días.
           </p>
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>

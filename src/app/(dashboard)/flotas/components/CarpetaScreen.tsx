@@ -132,7 +132,7 @@ export default function CarpetaScreen({ onSelect }: Props) {
   const cargarAbortRef = useRef<AbortController | null>(null);
 
   // Estado change confirmation per row
-  const [pendingEstado, setPendingEstado] = useState<{ id: string; estado: EstadoFlota; motivo: string } | null>(null);
+  const [pendingEstado, setPendingEstado] = useState<{ id: string; estado: EstadoFlota; motivo: string; fechaVencimiento: string } | null>(null);
 
   const cargar = async () => {
     // Cancel any in-flight fetch before starting a new one
@@ -258,7 +258,15 @@ export default function CarpetaScreen({ onSelect }: Props) {
 
   const handleConfirmarEstado = () => {
     if (!pendingEstado) return;
+    if (pendingEstado.estado === 'CONTRATADA' && !pendingEstado.fechaVencimiento.trim()) return;
     cambiarEstado(pendingEstado.id, pendingEstado.estado, pendingEstado.motivo || undefined);
+    if (pendingEstado.estado === 'CONTRATADA' && pendingEstado.fechaVencimiento.trim()) {
+      const carpeta = listarCarpetas().find(c => c.id === pendingEstado.id);
+      if (carpeta) {
+        carpeta.header = { ...carpeta.header, fechaVencimiento: pendingEstado.fechaVencimiento.trim() };
+        guardarCarpeta(carpeta);
+      }
+    }
     setCarpetas(listarCarpetas().map(normalizarCarpeta));
     setPendingEstado(null);
   };
@@ -384,19 +392,38 @@ export default function CarpetaScreen({ onSelect }: Props) {
           display: 'flex', flexDirection: 'column', gap: 10,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ fontSize: 12, color: pendingEstado.estado === 'RECHAZADA' ? '#f87171' : '#fbbf24', flex: 1 }}>
+            <span style={{ fontSize: 12, color: pendingEstado.estado === 'RECHAZADA' ? '#f87171' : pendingEstado.estado === 'CONTRATADA' ? '#34d399' : '#fbbf24', flex: 1 }}>
               Cambiar estado a <b>{pendingEstado.estado}</b>. Confirmar?
             </span>
-            <button onClick={handleConfirmarEstado} style={{
-              background: pendingEstado.estado === 'RECHAZADA' ? '#ef4444' : '#f59e0b',
-              border: 'none', borderRadius: 8,
-              padding: '5px 16px', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer',
-            }}>Confirmar</button>
+            <button
+              onClick={handleConfirmarEstado}
+              disabled={pendingEstado.estado === 'CONTRATADA' && !pendingEstado.fechaVencimiento.trim()}
+              style={{
+                background: pendingEstado.estado === 'RECHAZADA' ? '#ef4444' : pendingEstado.estado === 'CONTRATADA' ? '#10b981' : '#f59e0b',
+                border: 'none', borderRadius: 8,
+                padding: '5px 16px', color: '#fff', fontSize: 12, fontWeight: 700,
+                cursor: (pendingEstado.estado === 'CONTRATADA' && !pendingEstado.fechaVencimiento.trim()) ? 'not-allowed' : 'pointer',
+                opacity: (pendingEstado.estado === 'CONTRATADA' && !pendingEstado.fechaVencimiento.trim()) ? 0.5 : 1,
+              }}>Confirmar</button>
             <button onClick={() => setPendingEstado(null)} style={{
               background: 'none', border: 'none', cursor: 'pointer',
               color: 'rgba(178,198,245,0.5)', fontSize: 12, padding: '5px 8px',
             }}>Cancelar</button>
           </div>
+          {pendingEstado.estado === 'CONTRATADA' && (
+            <input
+              autoFocus
+              placeholder="Fecha de vencimiento (DD/MM/YYYY) *"
+              value={pendingEstado.fechaVencimiento}
+              onChange={e => setPendingEstado(p => p ? { ...p, fechaVencimiento: e.target.value } : p)}
+              onKeyDown={e => { if (e.key === 'Enter') handleConfirmarEstado(); if (e.key === 'Escape') setPendingEstado(null); }}
+              style={{
+                width: '100%', fontSize: 12, padding: '7px 12px', borderRadius: 8, boxSizing: 'border-box',
+                background: 'rgba(6,14,50,0.6)', border: '1px solid rgba(16,185,129,0.4)',
+                color: '#fff', outline: 'none',
+              }}
+            />
+          )}
           {pendingEstado.estado === 'RECHAZADA' && (
             <input
               autoFocus
@@ -570,7 +597,7 @@ export default function CarpetaScreen({ onSelect }: Props) {
                     value={c.estado}
                     onChange={e => {
                       const nuevo = e.target.value as EstadoFlota;
-                      if (nuevo !== c.estado) setPendingEstado({ id: c.id, estado: nuevo, motivo: '' });
+                      if (nuevo !== c.estado) setPendingEstado({ id: c.id, estado: nuevo, motivo: '', fechaVencimiento: '' });
                     }}
                     style={{
                       background: 'transparent', border: 'none', cursor: 'pointer',
