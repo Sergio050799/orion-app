@@ -11,18 +11,42 @@ const DashboardCharts = dynamic(() => import('./components/DashboardCharts'), {
     ssr: false,
 });
 
-function diasHastaVencimiento(fechaStr: string): number {
-  const fecha = new Date(fechaStr);
-  if (isNaN(fecha.getTime())) return Infinity;
+function parseFechaFlexible(s: string): Date | null {
+  if (!s) return null;
+  const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (m) {
+    const d = new Date(parseInt(m[3]), parseInt(m[2]) - 1, parseInt(m[1]));
+    return isNaN(d.getTime()) ? null : d;
+  }
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function diasHasta(fecha: Date): number {
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
   return Math.floor((fecha.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24));
 }
 
 function formatFecha(fechaStr: string): string {
-  const d = new Date(fechaStr);
-  if (isNaN(d.getTime())) return '—';
+  const d = parseFechaFlexible(fechaStr);
+  if (!d) return fechaStr || '—';
   return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+const PERIODICIDAD_MESES: Record<string, number> = {
+  mensual: 1, bimestral: 2, trimestral: 3, semestral: 6, anual: 12,
+};
+
+function proximaRegularizacion(fechaInicio: string, periodicidad: string): Date | null {
+  const inicio = parseFechaFlexible(fechaInicio);
+  if (!inicio) return null;
+  const meses = PERIODICIDAD_MESES[periodicidad.toLowerCase()];
+  if (!meses) return null;
+  const now = new Date();
+  const next = new Date(inicio);
+  while (next <= now) next.setMonth(next.getMonth() + meses);
+  return next;
 }
 
 const glass: React.CSSProperties = {
@@ -192,15 +216,35 @@ export default function DashboardPage() {
   }, [carpetas]);
 
   const alertas = useMemo(() => {
-    return carpetas
-      .filter(c => c.header?.fechaVencimiento)
-      .map(c => {
-        const dias = diasHastaVencimiento(c.header.fechaVencimiento!);
-        const corredor = c.corredor_id ? corredorMap.get(c.corredor_id) : null;
-        return { carpeta: c, dias, corredor };
-      })
-      .filter(a => a.dias <= 90)
-      .sort((a, b) => a.dias - b.dias);
+    const entries: { carpeta: FlotaCarpeta; dias: number; corredor: Corredor | null | undefined; tipo: 'vencimiento' | 'regularizacion'; fecha: Date }[] = [];
+
+    for (const c of carpetas) {
+      const corredor = c.corredor_id ? corredorMap.get(c.corredor_id) : null;
+
+      // Próxima regularización (solo EXTERNA con fechaInicio + periodicidad)
+      if (
+        c.header?.formaPago?.toUpperCase() === 'EXTERNA' &&
+        c.header?.fechaInicio &&
+        c.header?.periodicidad
+      ) {
+        const proxima = proximaRegularizacion(c.header.fechaInicio, c.header.periodicidad);
+        if (proxima) {
+          const dias = diasHasta(proxima);
+          if (dias <= 90) entries.push({ carpeta: c, dias, corredor, tipo: 'regularizacion', fecha: proxima });
+        }
+      }
+
+      // Vencimiento de póliza
+      if (c.header?.fechaVencimiento) {
+        const fecha = parseFechaFlexible(c.header.fechaVencimiento);
+        if (fecha) {
+          const dias = diasHasta(fecha);
+          if (dias <= 90) entries.push({ carpeta: c, dias, corredor, tipo: 'vencimiento', fecha });
+        }
+      }
+    }
+
+    return entries.sort((a, b) => a.dias - b.dias);
   }, [carpetas, corredorMap]);
 
   return (
@@ -258,7 +302,7 @@ export default function DashboardPage() {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
               <tr>
-                {['Flota', 'Corredor', 'Vencimiento', 'Periodicidad', 'Estado'].map(h => (
+                {['Flota', 'Corredor', 'Fecha', 'Tipo', 'Estado'].map(h => (
                   <th key={h} style={{
                     textAlign: 'left', padding: '10px 14px', fontSize: 11, fontWeight: 600,
                     textTransform: 'uppercase', letterSpacing: '0.10em',
@@ -271,8 +315,8 @@ export default function DashboardPage() {
               </tr>
             </thead>
             <tbody>
-              {alertas.map(({ carpeta, dias, corredor }) => (
-                <tr key={carpeta.id} style={{ transition: 'background 180ms' }}
+              {alertas.map(({ carpeta, dias, corredor, tipo, fecha }) => (
+                <tr key={`${carpeta.id}_${tipo}`} style={{ transition: 'background 180ms' }}
                   onMouseEnter={e => (e.currentTarget.style.background = 'rgba(51,102,255,0.04)')}
                   onMouseLeave={e => (e.currentTarget.style.background = '')}>
                   <td style={{ padding: '14px', fontSize: 13, borderBottom: '1px solid rgba(51,102,255,0.08)' }}>
@@ -287,10 +331,19 @@ export default function DashboardPage() {
                     {corredor?.nombre ?? 'Sin corredor'}
                   </td>
                   <td style={{ padding: '14px', fontSize: 13, color: '#D0DFFF', fontFamily: 'monospace', borderBottom: '1px solid rgba(51,102,255,0.08)' }}>
-                    {formatFecha(carpeta.header.fechaVencimiento!)}
+                    {fecha.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                   </td>
-                  <td style={{ padding: '14px', fontSize: 13, color: 'rgba(188,216,255,0.7)', borderBottom: '1px solid rgba(51,102,255,0.08)' }}>
-                    {corredor?.periodicidad ? corredor.periodicidad.charAt(0).toUpperCase() + corredor.periodicidad.slice(1) : '—'}
+                  <td style={{ padding: '14px', fontSize: 12, borderBottom: '1px solid rgba(51,102,255,0.08)' }}>
+                    <span style={{
+                      padding: '3px 8px', borderRadius: 999, fontWeight: 600,
+                      background: tipo === 'regularizacion' ? 'rgba(245,158,11,0.15)' : 'rgba(239,68,68,0.12)',
+                      color: tipo === 'regularizacion' ? '#fbbf24' : '#f87171',
+                      border: `1px solid ${tipo === 'regularizacion' ? 'rgba(245,158,11,0.3)' : 'rgba(239,68,68,0.25)'}`,
+                    }}>
+                      {tipo === 'regularizacion'
+                        ? `Reg. ${carpeta.header?.periodicidad ?? ''}`
+                        : 'Renovación'}
+                    </span>
                   </td>
                   <td style={{ padding: '14px', borderBottom: '1px solid rgba(51,102,255,0.08)' }}>
                     <UrgenciaBadge dias={dias} />
