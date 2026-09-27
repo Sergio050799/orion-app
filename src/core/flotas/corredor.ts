@@ -1,6 +1,6 @@
 // ─── CORREDOR — Entidad comercial que agrupa flotas ───────────────────────────
 
-export type Periodicidad = 'mensual' | 'trimestral' | 'semestral' | 'anual';
+export type Periodicidad = 'mensual' | 'bimestral' | 'trimestral' | 'semestral' | 'anual';
 export type Sucursal = 'TITAN' | 'MEDIACION';
 
 export interface Corredor {
