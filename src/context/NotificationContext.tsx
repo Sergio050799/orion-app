@@ -67,16 +67,17 @@ const PERIODICIDAD_MESES: Record<string, number> = {
   mensual: 1, bimestral: 2, trimestral: 3, semestral: 6, anual: 12,
 };
 
-/** Dada una fecha de inicio y periodicidad, devuelve la próxima fecha de regularización futura. */
-function proximaRegularizacion(fechaInicio: string, periodicidad: string): Date | null {
-  const inicio = parseFecha(fechaInicio);
-  if (!inicio) return null;
+/** Desde la fecha de vencimiento, retrocede por periodicidad para hallar la próxima regularización futura. */
+function proximaRegularizacion(fechaVencimiento: string, periodicidad: string): Date | null {
+  const vto = parseFecha(fechaVencimiento);
+  if (!vto) return null;
   const meses = PERIODICIDAD_MESES[periodicidad.toLowerCase()];
   if (!meses) return null;
   const now = new Date();
-  const next = new Date(inicio);
-  while (next <= now) next.setMonth(next.getMonth() + meses);
-  return next;
+  const candidate = new Date(vto);
+  while (candidate > now) candidate.setMonth(candidate.getMonth() - meses);
+  candidate.setMonth(candidate.getMonth() + meses);
+  return candidate;
 }
 
 // ─── Generate notifications from data ────────────────────────────────────────
@@ -95,10 +96,10 @@ function generateNotifications(): Notification[] {
     // ── Regularización periódica (solo flotas EXTERNA) ───────────────────────
     if (
       c.header?.formaPago?.toUpperCase() === 'EXTERNA' &&
-      c.header?.fechaInicio &&
+      c.header?.fechaVencimiento &&
       c.header?.periodicidad
     ) {
-      const proxima = proximaRegularizacion(c.header.fechaInicio, c.header.periodicidad);
+      const proxima = proximaRegularizacion(c.header.fechaVencimiento, c.header.periodicidad);
       if (proxima) {
         const diffDays = Math.ceil((proxima.getTime() - now.getTime()) / 86400000);
         if (diffDays <= 30) {

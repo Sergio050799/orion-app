@@ -38,15 +38,18 @@ const PERIODICIDAD_MESES: Record<string, number> = {
   mensual: 1, bimestral: 2, trimestral: 3, semestral: 6, anual: 12,
 };
 
-function proximaRegularizacion(fechaInicio: string, periodicidad: string): Date | null {
-  const inicio = parseFechaFlexible(fechaInicio);
-  if (!inicio) return null;
+function proximaRegularizacion(fechaVencimiento: string, periodicidad: string): Date | null {
+  const vto = parseFechaFlexible(fechaVencimiento);
+  if (!vto) return null;
   const meses = PERIODICIDAD_MESES[periodicidad.toLowerCase()];
   if (!meses) return null;
   const now = new Date();
-  const next = new Date(inicio);
-  while (next <= now) next.setMonth(next.getMonth() + meses);
-  return next;
+  // Desde vencimiento, retroceder hasta pasar hoy
+  const candidate = new Date(vto);
+  while (candidate > now) candidate.setMonth(candidate.getMonth() - meses);
+  // Avanzar una vez para obtener la próxima fecha futura
+  candidate.setMonth(candidate.getMonth() + meses);
+  return candidate;
 }
 
 const glass: React.CSSProperties = {
@@ -221,13 +224,13 @@ export default function DashboardPage() {
     for (const c of carpetas) {
       const corredor = c.corredor_id ? corredorMap.get(c.corredor_id) : null;
 
-      // Próxima regularización (solo EXTERNA con fechaInicio + periodicidad)
+      // Próxima regularización (solo EXTERNA con fechaVencimiento + periodicidad)
       if (
         c.header?.formaPago?.toUpperCase() === 'EXTERNA' &&
-        c.header?.fechaInicio &&
+        c.header?.fechaVencimiento &&
         c.header?.periodicidad
       ) {
-        const proxima = proximaRegularizacion(c.header.fechaInicio, c.header.periodicidad);
+        const proxima = proximaRegularizacion(c.header.fechaVencimiento, c.header.periodicidad);
         if (proxima) {
           const dias = diasHasta(proxima);
           if (dias <= 90) entries.push({ carpeta: c, dias, corredor, tipo: 'regularizacion', fecha: proxima });
