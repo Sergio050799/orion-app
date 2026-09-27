@@ -148,7 +148,7 @@ export function listarCarpetas(): FlotaCarpeta[] {
 export function crearCarpeta(nombre: string, corredor_id?: string, creado_por?: string): FlotaCarpeta {
   const now = new Date().toISOString();
   const carpeta: FlotaCarpeta = {
-    id: `carpeta_${Date.now()}`,
+    id: `carpeta_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
     nombre,
     creadaEn: now,
     actualizadaEn: now,

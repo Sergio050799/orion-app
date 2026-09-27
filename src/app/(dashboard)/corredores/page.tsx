@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 import {
-  listarCorredores, crearCorredor, guardarCorredor, eliminarCorredor, cargarCorredoresDelServidor, borrarTodosLosCorredores, sincronizarCorredores,
+  listarCorredores, crearCorredor, guardarCorredor, eliminarCorredor, cargarCorredoresDelServidor, borrarTodosLosCorredores,
   type Corredor, type Periodicidad, type Sucursal,
 } from '@/core/flotas';
 import { listarCarpetas, crearCarpeta, guardarCarpeta, eliminarCarpeta, borrarTodasLasCarpetas, type FlotaCarpeta } from '@/core/flotas';
@@ -573,6 +574,7 @@ function CorredoresTable({
 
 export default function CorredoresPage() {
   const router = useRouter();
+  const { role } = useAuth();
   const [corredores, setCorredores] = useState<Corredor[]>([]);
   const [carpetas, setCarpetas] = useState<FlotaCarpeta[]>([]);
   const [vista, setVista] = useState<Vista>('lista');
@@ -603,19 +605,19 @@ export default function CorredoresPage() {
     const wb = new ExcelJS.Workbook();
     const ws = wb.addWorksheet('Corredores');
     const cols = [
-      { header: 'nombre',       width: 30 },
-      { header: 'codigo',       width: 14 },
-      { header: 'cif',          width: 14 },
-      { header: 'domicilio',    width: 36 },
-      { header: 'comision',     width: 12 },
-      { header: 'periodicidad', width: 14 },
-      { header: 'forma pago',   width: 16 },
-      { header: 'contacto',     width: 22 },
-      { header: 'email',        width: 28 },
-      { header: 'telefono',     width: 16 },
-      { header: 'sucursal',     width: 14 },
-      { header: 'comercial',    width: 18 },
-      { header: 'observaciones', width: 36 },
+      { header: 'NOMBRE',        width: 30 },
+      { header: 'CODIGO',        width: 14 },
+      { header: 'CIF',           width: 14 },
+      { header: 'DOMICILIO',     width: 36 },
+      { header: 'COMISION',      width: 12 },
+      { header: 'PERIODICIDAD',  width: 14 },
+      { header: 'FORMA PAGO',    width: 16 },
+      { header: 'CONTACTO',      width: 22 },
+      { header: 'EMAIL',         width: 28 },
+      { header: 'TELEFONO',      width: 16 },
+      { header: 'SUCURSAL',      width: 14 },
+      { header: 'COMERCIAL',     width: 18 },
+      { header: 'OBSERVACIONES', width: 36 },
     ];
     ws.columns = cols.map(c => ({ header: c.header, key: c.header, width: c.width }));
     const headerRow = ws.getRow(1);
@@ -650,8 +652,12 @@ export default function CorredoresPage() {
       const wb = XLSX.read(buf, { type: 'array' });
       const ws = wb.Sheets[wb.SheetNames[0]];
       const rows: Record<string, string>[] = XLSX.utils.sheet_to_json(ws, { defval: '' });
-      if (rows.length === 0) { setImportToast('Excel vacio'); setTimeout(() => setImportToast(''), 2000); return; }
-      let count = 0;
+      if (rows.length === 0) { setImportToast('Excel vacío'); setTimeout(() => setImportToast(''), 2000); return; }
+
+      const now = new Date().toISOString();
+      const actuales = listarCorredores();
+      const lote: Corredor[] = [];
+
       for (const r of rows) {
         const get = (...keys: string[]) => {
           for (const k of keys) {
@@ -673,8 +679,8 @@ export default function CorredoresPage() {
         const sucursalRaw = get('sucursal').toUpperCase();
         const sucursal: Sucursal | undefined = (sucursalRaw === 'TITAN' || sucursalRaw === 'MEDIACION') ? sucursalRaw : undefined;
         const cifNuevo = get('cif', 'nif');
-        const existente = listarCorredores().find(c => c.cif && c.cif === cifNuevo);
-        const datos = {
+        const existente = actuales.find(c => c.cif && c.cif === cifNuevo);
+        const campos = {
           nombre, codigo: get('codigo', 'code', 'cod'), cif: cifNuevo,
           domicilio: get('domicilio', 'direccion', 'address'),
           porcentajeComision: comision, periodicidad,
@@ -686,22 +692,40 @@ export default function CorredoresPage() {
           sucursal, comercial: get('comercial'),
         };
         if (existente) {
-          guardarCorredor({ ...existente, ...datos });
+          lote.push({ ...existente, ...campos, actualizadoEn: now });
         } else {
-          crearCorredor(datos);
+          lote.push({
+            ...campos,
+            id: `corredor_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+            codigo: campos.codigo || `COR-${String(actuales.length + lote.length + 1).padStart(3, '0')}`,
+            creadoEn: now,
+            actualizadoEn: now,
+          });
         }
-        count++;
       }
-      for (const corredor of listarCorredores()) {
-        await fetch('/api/flotas/corredores', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'upsert', corredor }),
-        });
+
+      if (lote.length === 0) {
+        setImportToast('Sin filas válidas en el archivo');
+        setTimeout(() => setImportToast(''), 3000);
+        return;
       }
-      setImportToast(`${count} corredor${count !== 1 ? 'es' : ''} importado${count !== 1 ? 's' : ''}`);
+
+      const res = await fetch('/api/flotas/corredores', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'upsertBatch', corredores: lote }),
+      });
+
+      if (!res.ok) {
+        setImportToast('Error al guardar en el servidor');
+        setTimeout(() => setImportToast(''), 3000);
+        return;
+      }
+
+      const data = await cargarCorredoresDelServidor();
+      setCorredores([...data].sort((a, b) => a.nombre.localeCompare(b.nombre)));
+      setImportToast(`${lote.length} corredor${lote.length !== 1 ? 'es' : ''} importado${lote.length !== 1 ? 's' : ''}`);
       setTimeout(() => setImportToast(''), 3000);
-      cargar();
     } catch {
       setImportToast('Error al leer el archivo');
       setTimeout(() => setImportToast(''), 3000);
@@ -798,7 +822,7 @@ export default function CorredoresPage() {
               </div>
             </div>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              {confirmBorrarTodo ? (
+              {role === 'admin' && (confirmBorrarTodo ? (
                 <div style={{
                   display: 'flex', alignItems: 'center', gap: 8,
                   background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.35)',
@@ -820,7 +844,7 @@ export default function CorredoresPage() {
                   borderRadius: 10, padding: '9px 16px',
                   color: '#f87171', fontSize: 13, fontWeight: 500, cursor: 'pointer',
                 }}>Borrar todo</button>
-              )}
+              ))}
               <button onClick={handleDescargarPlantilla} style={{
                 background: 'rgba(6,14,50,0.5)', border: '1px solid rgba(61,112,255,0.22)',
                 borderRadius: 10, padding: '9px 16px',

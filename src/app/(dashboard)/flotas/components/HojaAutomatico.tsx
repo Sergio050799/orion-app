@@ -4,7 +4,7 @@ import React, { useState, useRef, useMemo } from 'react';
 import { generarPlantillaExcel } from '@/core/flotas/plantilla';
 import { normalizeTipoVehiculo, TIPO_VEHICULO_OPTS } from '@/core/flotas/normalizador';
 import type { FlotaHeader } from './types';
-import type { FlotaCarpeta } from '@/core/flotas';
+import { listarCarpetas, type FlotaCarpeta } from '@/core/flotas';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -69,7 +69,7 @@ interface ProcessedVehicle {
 interface ProgressState {
     current: number;
     total: number;
-    log: { plate: string; ok: boolean; marca?: string; modelo?: string }[];
+    log: { plate: string; ok: boolean; marca?: string; modelo?: string; fromCache?: boolean }[];
 }
 
 interface Props {
@@ -221,6 +221,25 @@ function ModeToggle({ value, onChange }: { value: ProcessMode; onChange: (m: Pro
 
 // ─── Step 1: Upload ───────────────────────────────────────────────────────────
 
+function estadoBg(estado: string) {
+    switch (estado) {
+        case 'CONTRATADA': return 'rgba(16,185,129,0.15)';
+        case 'OFERTADA':   return 'rgba(59,130,246,0.15)';
+        case 'EN ESTUDIO': return 'rgba(245,158,11,0.15)';
+        case 'RECHAZADA':  return 'rgba(239,68,68,0.15)';
+        default:           return 'rgba(61,112,255,0.15)';
+    }
+}
+function estadoColor(estado: string) {
+    switch (estado) {
+        case 'CONTRATADA': return '#10b981';
+        case 'OFERTADA':   return '#3b82f6';
+        case 'EN ESTUDIO': return '#f59e0b';
+        case 'RECHAZADA':  return '#ef4444';
+        default:           return '#BDD4FF';
+    }
+}
+
 function Step1({
     header, carpetaActiva, onNext,
 }: {
@@ -232,6 +251,7 @@ function Step1({
     const [uploadedRows, setUploadedRows] = useState<Record<string, string>[] | null>(null);
     const [parseError, setParseError] = useState('');
     const [mode, setMode] = useState<ProcessMode>('con');
+    const [flotasMatch, setFlotasMatch] = useState<FlotaCarpeta[]>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const detectedHeaderRef = useRef<Partial<FlotaHeader>>({});
 
@@ -309,6 +329,26 @@ function Step1({
                 if (!v || labels.has(v.toLowerCase())) delete detectedHeader[k];
             }
             detectedHeaderRef.current = detectedHeader;
+
+            // Detectar si esta flota ya existe en el sistema
+            // eslint-disable-next-line no-misleading-character-class
+            const normalize = (s?: string) =>
+                (s ?? '').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+            const cifNorm     = normalize(detectedHeader.cif);
+            const tomadorNorm = normalize(detectedHeader.tomador);
+            const matches = listarCarpetas().filter(c => {
+                if (carpetaActiva && c.id === carpetaActiva.id) return false;
+                const cCif     = normalize(c.header.cif);
+                const cTomador = normalize(c.header.tomador);
+                const cNombre  = normalize(c.nombre);
+                const cifOk    = cifNorm.length > 3 && cCif.length > 3 && cifNorm === cCif;
+                const tomOk    = tomadorNorm.length > 3 && cTomador.length > 3 &&
+                    (cTomador.includes(tomadorNorm) || tomadorNorm.includes(cTomador));
+                const nombreOk = tomadorNorm.length > 3 && cNombre.length > 3 &&
+                    (cNombre.includes(tomadorNorm) || tomadorNorm.includes(cNombre));
+                return cifOk || tomOk || nombreOk;
+            });
+            setFlotasMatch(matches);
 
             setUploadedRows(withPlate);
         } catch (err: unknown) {
@@ -445,6 +485,49 @@ function Step1({
                 })()}
             </div>
 
+            {/* Banner: flota ya registrada */}
+            {flotasMatch.length > 0 && (
+                <div style={{
+                    marginBottom: 16, padding: '14px 16px',
+                    background: 'rgba(245,158,11,0.07)',
+                    border: '1.5px solid rgba(245,158,11,0.35)',
+                    borderRadius: 12,
+                    display: 'flex', alignItems: 'flex-start', gap: 12,
+                }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2.5" style={{ flexShrink: 0, marginTop: 1 }}>
+                        <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                        <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
+                    </svg>
+                    <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 12, fontWeight: 800, color: '#f59e0b', marginBottom: 8 }}>
+                            Esta flota ya está registrada en Orion
+                        </div>
+                        {flotasMatch.map(c => (
+                            <div key={c.id} style={{ fontSize: 11, color: 'rgba(178,198,245,0.75)', marginBottom: 5, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                                <span style={{ fontWeight: 700 }}>{c.nombre}</span>
+                                {c.header.tomador && <span style={{ color: 'rgba(178,198,245,0.5)' }}>{c.header.tomador}</span>}
+                                <span style={{
+                                    padding: '1px 8px', borderRadius: 20,
+                                    fontSize: 10, fontWeight: 800,
+                                    background: estadoBg(c.estado),
+                                    color: estadoColor(c.estado),
+                                }}>
+                                    {c.estado}
+                                </span>
+                            </div>
+                        ))}
+                        <div style={{ fontSize: 11, color: 'rgba(178,198,245,0.45)', marginTop: 8 }}>
+                            Puedes continuar para estudiarla de nuevo o cerrar este archivo.
+                        </div>
+                    </div>
+                    <button
+                        onClick={() => setFlotasMatch([])}
+                        style={{ background: 'none', border: 'none', color: 'rgba(178,198,245,0.35)', cursor: 'pointer', padding: '2px 4px', flexShrink: 0, fontSize: 16, lineHeight: 1 }}
+                        title="Ignorar aviso"
+                    >✕</button>
+                </div>
+            )}
+
             {/* Mode selector */}
             <div style={{ ...glass, padding: 20, marginBottom: 20 }}>
                 <p style={{ margin: '0 0 12px', fontSize: 12, fontWeight: 700, color: 'rgba(178,198,245,0.55)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
@@ -481,9 +564,11 @@ function Step1({
 
 function Step2({
     uploadedRows,
+    carpetaActiva,
     onComplete,
 }: {
     uploadedRows: Record<string, string>[];
+    carpetaActiva: FlotaCarpeta | null;
     onComplete: (vehicles: ProcessedVehicle[]) => void;
 }) {
     const [progress, setProgress] = useState<ProgressState>({ current: 0, total: uploadedRows.length, log: [] });
@@ -491,26 +576,32 @@ function Step2({
     const [showSdModal, setShowSdModal] = useState(false);
     const [started, setStarted] = useState(false);
     const [finished, setFinished] = useState(false);
+    const [cacheCount, setCacheCount] = useState(0);
     const abortRef = useRef(false);
     const allProcessedRef = useRef<ProcessedVehicle[]>([]);
     const failedRowsRef = useRef<Record<string, string>[]>([]);
 
     const NO_LUNAS = new Set(['semirremolque', 'industrial no matriculado']);
 
-    const querySilverdat = async (mat: string): Promise<{ vehicle?: SilverdatVehicle; noSession?: boolean }> => {
+    const querySilverdat = async (mat: string): Promise<{ vehicle?: SilverdatVehicle; noSession?: boolean; fromCache?: boolean }> => {
         const ctrl = new AbortController();
         const poll = setInterval(() => { if (abortRef.current) ctrl.abort(); }, 200);
         try {
             const res = await fetch('/api/silverdat/enrich', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ matriculas: [mat] }),
+                body: JSON.stringify({
+                    matriculas: [mat],
+                    carpeta_id:     carpetaActiva?.id     ?? '',
+                    carpeta_nombre: carpetaActiva?.nombre ?? '',
+                    corredor_id:    carpetaActiva?.corredor_id ?? '',
+                }),
                 signal: ctrl.signal,
             });
             if (res.status === 401) return { noSession: true };
             const data = await res.json();
             if (data.ok && data.results?.[0]?.ok && data.results[0].vehicle) {
-                return { vehicle: data.results[0].vehicle as SilverdatVehicle };
+                return { vehicle: data.results[0].vehicle as SilverdatVehicle, fromCache: !!data.results[0].fromCache };
             }
             return {};
         } catch { return {}; }
@@ -569,18 +660,10 @@ function Step2({
             let sd: SilverdatVehicle | undefined;
             let id_veh: string | undefined;
 
-            let result = await querySilverdat(matricula);
+            const result = await querySilverdat(matricula);
             if (result.noSession) { setError('Sesión Silverdat expirada. Reinicia y vuelve a hacer login.'); abortRef.current = true; return; }
             sd = result.vehicle;
-
-            if (!sd && !abortRef.current) {
-                await new Promise(r => setTimeout(r, 800));
-                if (!abortRef.current) {
-                    result = await querySilverdat(matricula);
-                    if (result.noSession) { setError('Sesión Silverdat expirada.'); abortRef.current = true; return; }
-                    sd = result.vehicle;
-                }
-            }
+            if (result.fromCache) setCacheCount(n => n + 1);
             if (abortRef.current) return;
 
             if (sd?.marca || sd?.kw) {
@@ -599,7 +682,7 @@ function Step2({
             mergeMap.set(matricula, vehicle);
 
             done++;
-            setProgress(p => ({ current: done, total: rows.length, log: [...p.log, { plate: matricula, ok: !!sd, marca: sd?.marca, modelo: sd?.modelo?.split(' ')[0] }] }));
+            setProgress(p => ({ current: done, total: rows.length, log: [...p.log, { plate: matricula, ok: !!sd, marca: sd?.marca, modelo: sd?.modelo?.split(' ')[0], fromCache: !!result.fromCache }] }));
         };
 
         // 3 workers en paralelo — cola compartida
@@ -722,6 +805,7 @@ function Step2({
                                     <span style={{ fontSize: 12, color: entry.ok ? '#10b981' : '#ef4444', flexShrink: 0 }}>{entry.ok ? '✓' : '✗'}</span>
                                     <span style={{ fontSize: 12, fontFamily: 'monospace', fontWeight: 700, color: '#FFFFFF', flexShrink: 0 }}>{entry.plate}</span>
                                     {entry.ok && <span style={{ fontSize: 11, color: 'rgba(178,198,245,0.55)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{entry.marca} {entry.modelo}</span>}
+                                    {entry.ok && entry.fromCache && <span style={{ fontSize: 10, color: '#6366f1', fontWeight: 700, flexShrink: 0 }}>historial</span>}
                                     {!entry.ok && <span style={{ fontSize: 11, color: 'rgba(239,68,68,0.6)' }}>Sin datos Silverdat</span>}
                                 </div>
                             ))
@@ -733,7 +817,7 @@ function Step2({
                     {/* Resumen + acciones post-proceso */}
                     {finished && (
                         <div style={{ ...glass, padding: 20, marginTop: 16 }}>
-                            <div style={{ display: 'flex', gap: 16, marginBottom: 16, justifyContent: 'center' }}>
+                            <div style={{ display: 'flex', gap: 16, marginBottom: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
                                 <div style={{ textAlign: 'center' }}>
                                     <div style={{ fontSize: 24, fontWeight: 900, color: '#10b981' }}>{okCount}</div>
                                     <div style={{ fontSize: 10, color: 'rgba(178,198,245,0.5)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Con Silverdat</div>
@@ -743,6 +827,15 @@ function Step2({
                                     <div style={{ fontSize: 24, fontWeight: 900, color: failedCount > 0 ? '#f59e0b' : '#10b981' }}>{failedCount}</div>
                                     <div style={{ fontSize: 10, color: 'rgba(178,198,245,0.5)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Sin datos</div>
                                 </div>
+                                {cacheCount > 0 && (
+                                    <>
+                                        <div style={{ width: 1, background: 'rgba(61,112,255,0.2)' }} />
+                                        <div style={{ textAlign: 'center' }}>
+                                            <div style={{ fontSize: 24, fontWeight: 900, color: '#6366f1' }}>{cacheCount}</div>
+                                            <div style={{ fontSize: 10, color: 'rgba(178,198,245,0.5)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Del historial</div>
+                                        </div>
+                                    </>
+                                )}
                             </div>
                             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                                 {failedCount > 0 && (
@@ -754,6 +847,16 @@ function Step2({
                                         Segunda barrida ({failedCount} matrícula{failedCount !== 1 ? 's' : ''})
                                     </button>
                                 )}
+                                <button
+                                    onClick={() => { window.open('/api/silverdat/historial-txt', '_blank'); }}
+                                    style={{
+                                        padding: '11px 16px', borderRadius: 10,
+                                        background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.4)',
+                                        color: '#818cf8', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                                    }}
+                                >
+                                    Historial TXT
+                                </button>
                                 <button onClick={() => onComplete(allProcessedRef.current)} style={{
                                     flex: 1, padding: '11px 0', borderRadius: 10,
                                     background: 'linear-gradient(135deg, #1240CC, #2563eb)',
@@ -1170,6 +1273,7 @@ export default function HojaAutomatico({ header, carpetaActiva, onComplete, onVe
             {step === 2 && (
                 <Step2
                     uploadedRows={uploadedRows}
+                    carpetaActiva={carpetaActiva}
                     onComplete={handleStep2Done}
                 />
             )}

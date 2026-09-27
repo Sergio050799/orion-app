@@ -438,43 +438,10 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
     searchAbortRef.current.get(i)?.abort();
     const ctrl = new AbortController();
     searchAbortRef.current.set(i, ctrl);
+    // Timeout de seguridad: si no responde en 12s, abortar y marcar sin_catalogo
+    const timeoutId = setTimeout(() => ctrl.abort(), 12000);
     setV(i, { searching: true });
     try {
-      // Sin marca ni modelo → enriquecer con Silverdat primero
-      if (!v.marca && !v.modelo) {
-        try {
-          const sdRes = await fetch('/api/silverdat/enrich', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ matriculas: [v.matricula] }),
-            signal: ctrl.signal,
-          });
-          if (ctrl.signal.aborted) return;
-          const sdData = await sdRes.json();
-          if (sdData.ok && sdData.results?.[0]?.ok && sdData.results[0].vehicle) {
-            const sd = sdData.results[0].vehicle as Record<string, unknown>;
-            const patch: Partial<VehicleEmision> = {};
-            if (sd.marca) patch.marca = sd.marca as string;
-            if (sd.modelo) {
-              let m = sd.modelo as string;
-              if (sd.marca && m.toUpperCase().startsWith((sd.marca as string).toUpperCase()))
-                m = m.slice((sd.marca as string).length).trim();
-              patch.modelo = m;
-            }
-            if (sd.kw)                  patch.kw                  = String(sd.kw);
-            if (sd.cv)                  patch.cv                  = String(sd.cv);
-            if (sd.tara)                patch.tn                  = String(sd.tara);
-            if (sd.fecha_matriculacion) patch.fecha_matriculacion = sd.fecha_matriculacion as string;
-            if (sd.anyo_fabricacion)    patch.anyo_fabricacion    = sd.anyo_fabricacion as string;
-            if (sd.tipo_vehiculo)       patch.tipo                = sd.tipo_vehiculo as string;
-            v = { ...v, ...patch };
-            setV(i, patch);
-          }
-        } catch {
-          if (ctrl.signal.aborted) return;
-        }
-      }
-
       const body: Record<string, string | number> = {};
       const TIPOS_REM = new Set(['semirremolque', 'remolque']);
       const isRem = TIPOS_REM.has((v.tipo || '').toLowerCase())
@@ -552,9 +519,13 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
         setV(i, { candidatos: top, status: top.length > 0 ? 'pendiente' : 'sin_catalogo', searching: false });
       }
     } catch {
-      if (ctrl.signal.aborted) return;
+      if (ctrl.signal.aborted) {
+        setV(i, { status: 'sin_catalogo', searching: false });
+        return;
+      }
       setV(i, { status: 'sin_catalogo', searching: false });
     } finally {
+      clearTimeout(timeoutId);
       searchAbortRef.current.delete(i);
     }
   }, [vehicles, setV, extractYear, doSearch, handleSelect]);
@@ -625,6 +596,64 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
     setCheckedRows(new Set());
   }, [checkedRows, applyToMultiple]);
 
+  const handleBulkDirectId = useCallback(async (idVeh: string) => {
+    try {
+      const res  = await fetch(`/api/catalogo/${encodeURIComponent(idVeh)}`);
+      const json = await res.json();
+      if (json.ok && json.vehiculo) {
+        applyToMultiple([...checkedRows], json.vehiculo as CandidatoCatalogo);
+        setCheckedRows(new Set());
+      } else {
+        alert(`ID "${idVeh}" no encontrado en el catálogo`);
+      }
+    } catch {
+      alert('Error al buscar el ID');
+    }
+  }, [checkedRows, applyToMultiple]);
+
+  const handleDownloadEmision = useCallback(async () => {
+    const listos = vehicles.filter(v => v.status === 'listo' && v.seleccionado);
+    if (listos.length === 0) { alert('No hay vehículos con catálogo asignado todavía.'); return; }
+    const ExcelJS = (await import('exceljs')).default;
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet('PRE-EMISION');
+    const COLS = ['MATRICULA', 'MARCA', 'MODELO', 'VERSION', 'AÑO', 'PLAZAS', 'ID'];
+    ws.columns = COLS.map(h => ({ header: h, key: h, width: h === 'VERSION' ? 36 : h === 'MATRICULA' ? 14 : h === 'ID' ? 16 : 12 }));
+    const hr = ws.getRow(1);
+    hr.height = 22;
+    hr.eachCell(cell => {
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1240CC' } };
+      cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, name: 'Calibri', size: 10 };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+    });
+    listos.forEach((v, ri) => {
+      const r = ws.addRow([
+        v.matricula,
+        v.seleccionado!.marca,
+        v.seleccionado!.modelo ?? v.modelo,
+        v.seleccionado!.version,
+        v.seleccionado!.anyo || '',
+        v.seleccionado!.plazas || '',
+        v.seleccionado!.id_veh,
+      ]);
+      r.height = 16;
+      r.eachCell(cell => {
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: ri % 2 === 0 ? 'FFFFFFFF' : 'FFF0F4FA' } };
+        cell.font = { name: 'Calibri', size: 9 };
+        cell.alignment = { horizontal: 'left', vertical: 'middle' };
+        cell.border = {
+          bottom: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+          right:  { style: 'thin', color: { argb: 'FFE5E7EB' } },
+        };
+      });
+    });
+    const buf = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'PRE-EMISION.xlsx'; a.click();
+    URL.revokeObjectURL(url);
+  }, [vehicles]);
+
   const handleClearSelection = useCallback((i: number) => {
     setVehicles(prev => {
       const n = [...prev];
@@ -668,6 +697,15 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
           Listos: <span style={{ color: '#1240CC' }}>{listos}</span> / {vehicles.length}
         </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, justifyContent: 'flex-end' }}>
+          {listos > 0 && (
+            <button onClick={handleDownloadEmision}
+              style={{ fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 7, background: 'rgba(5,150,105,0.08)', border: '1px solid rgba(5,150,105,0.25)', color: '#059669', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              Descargar Excel
+            </button>
+          )}
           {vehicles.some(v => v.searching) && (
             <button
               onClick={() => {
@@ -695,24 +733,21 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
             <span style={{ fontSize: 11, fontWeight: 800, color: '#1240CC' }}>
               {checkedRows.size} seleccionado{checkedRows.size > 1 ? 's' : ''}
             </span>
-            {candidatos.length > 0 ? (
-              <>
-                <select
-                  defaultValue=""
-                  onChange={e => {
-                    const c = candidatos.find(c => c.id_veh === e.target.value);
-                    if (c) handleBulkAssign(c);
-                  }}
-                  style={{ fontSize: 11, padding: '4px 8px', borderRadius: 6, border: '1px solid #a5b8e8', background: '#fff', outline: 'none', cursor: 'pointer', maxWidth: 380 }}>
-                  <option value="" disabled>— Seleccionar versión para todos —</option>
-                  {candidatos.map(c => (
-                    <option key={c.id_veh} value={c.id_veh}>{c.version}{c.score ? ` · ${c.score}%` : ''}</option>
-                  ))}
-                </select>
-              </>
-            ) : (
-              <span style={{ fontSize: 11, color: '#6b7280' }}>Sin candidatos disponibles para las filas seleccionadas</span>
+            {candidatos.length > 0 && (
+              <select
+                defaultValue=""
+                onChange={e => {
+                  const c = candidatos.find(c => c.id_veh === e.target.value);
+                  if (c) handleBulkAssign(c);
+                }}
+                style={{ fontSize: 11, padding: '4px 8px', borderRadius: 6, border: '1px solid #a5b8e8', background: '#fff', outline: 'none', cursor: 'pointer', maxWidth: 320 }}>
+                <option value="" disabled>— Versión de candidatos —</option>
+                {candidatos.map(c => (
+                  <option key={c.id_veh} value={c.id_veh}>{c.version}{c.score ? ` · ${c.score}%` : ''}</option>
+                ))}
+              </select>
             )}
+            <BulkIdInput onSubmit={handleBulkDirectId} />
             <button onClick={() => setCheckedRows(new Set())}
               style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 5, background: 'transparent', border: '1px solid #a5b8e8', color: '#6b7280', cursor: 'pointer', marginLeft: 'auto' }}>
               Cancelar
@@ -930,6 +965,38 @@ function DirectIdCell({ onSubmit }: { onSubmit: (id: string) => void }) {
       <button type="button" onClick={() => { if (val.trim()) { onSubmit(val.trim()); setEditing(false); setVal(''); } }}
         style={{ fontSize: 10, fontWeight: 700, padding: '3px 7px', borderRadius: 5, background: '#1240CC', color: '#fff', border: 'none', cursor: 'pointer' }}>
         ✓
+      </button>
+    </div>
+  );
+}
+
+// ─── BulkIdInput ─────────────────────────────────────────────────────────────
+
+function BulkIdInput({ onSubmit }: { onSubmit: (id: string) => void }) {
+  const [val, setVal] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const submit = async () => {
+    const id = val.trim();
+    if (!id) return;
+    setLoading(true);
+    try { await onSubmit(id); setVal(''); }
+    finally { setLoading(false); }
+  };
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+      <span style={{ fontSize: 10, color: '#6b7280', fontWeight: 600, whiteSpace: 'nowrap' }}>o ID directo:</span>
+      <input
+        value={val}
+        onChange={e => setVal(e.target.value)}
+        onKeyDown={e => { if (e.key === 'Enter') submit(); }}
+        placeholder="241210258"
+        style={{ width: 100, fontSize: 11, padding: '3px 6px', borderRadius: 5, border: '1px solid #a5b8e8', outline: 'none', fontFamily: 'monospace' }}
+      />
+      <button onClick={submit} disabled={!val.trim() || loading}
+        style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 5, background: val.trim() && !loading ? '#1240CC' : '#d1d5db', color: '#fff', border: 'none', cursor: val.trim() && !loading ? 'pointer' : 'not-allowed' }}>
+        {loading ? '...' : 'Aplicar'}
       </button>
     </div>
   );

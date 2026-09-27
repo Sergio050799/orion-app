@@ -20,6 +20,7 @@ const COLUMNS = [
   { key: 'matricula',             header: 'MATRICULA',             width: 12 },
   { key: 'marca',                 header: 'MARCA',                 width: 14 },
   { key: 'modelo',                header: 'MODELO',                width: 18 },
+  { key: 'anyo',                  header: 'AÑO',                   width: 8  },
   { key: 'tipo_vehiculo',         header: 'TIPO VEHICULO',         width: 26 },
   { key: 'uso',                   header: 'USO',                   width: 22 },
   { key: 'ambito',                header: 'AMBITO',                width: 14 },

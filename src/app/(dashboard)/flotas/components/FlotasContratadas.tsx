@@ -104,15 +104,15 @@ export default function FlotasContratadas({ onSelect }: Props) {
   const handleDescargarPlantilla = async () => {
     const ExcelJS = (await import('exceljs')).default;
     const headers = [
-      'nombre', 'cif', 'tomador', 'actividad',
-      'corredor', 'comision', 'forma_pago', 'periodicidad',
-      'fecha_inicio', 'fecha_vencimiento', 'poliza_actual', 'cia_actual',
-      'observaciones', 'estado',
+      'NOMBRE', 'CIF', 'TOMADOR', 'ACTIVIDAD',
+      'CORREDOR', 'COMISION', 'FORMA PAGO', 'PERIODICIDAD',
+      'FECHA INICIO', 'FECHA VENCIMIENTO',
+      'OBSERVACIONES', 'ESTADO',
     ];
     const example = [
       'TRANSPORTES GARCIA SL', 'B12345678', 'Transportes Garcia SL', 'Transporte de mercancías',
       'MEDIACION MADRID', '10', 'Domiciliación', 'anual',
-      '01/01/2026', '31/12/2026', 'P-2024-001', 'MAPFRE',
+      '01/01/2026', '31/12/2026',
       'Renovación acordada', 'CONTRATADA',
     ];
     const wb = new ExcelJS.Workbook();

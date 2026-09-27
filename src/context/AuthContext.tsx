@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 interface AuthContextType {
     isAuthenticated: boolean;
     user: string | null;
+    role: string | null;
     login: (username: string) => void;
     logout: () => void;
 }
@@ -15,25 +16,30 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
     const [user, setUser] = useState<string | null>(null);
+    const [role, setRole] = useState<string | null>(null);
     const router = useRouter();
 
     useEffect(() => {
         fetch('/api/auth/me')
             .then(r => r.json())
-            .then((data: { authenticated: boolean; username?: string }) => {
+            .then((data: { authenticated: boolean; username?: string; role?: string }) => {
                 if (data.authenticated && data.username) {
                     sessionStorage.setItem('orion_user', data.username);
                     setUser(data.username);
+                    setRole(data.role ?? 'usuario');
                     setIsAuthenticated(true);
                 } else {
                     clearStorage();
                     setUser(null);
+                    setRole(null);
                     setIsAuthenticated(false);
                 }
             })
             .catch(() => {
-                const storedUser = sessionStorage.getItem('orion_user');
-                if (storedUser) { setUser(storedUser); setIsAuthenticated(true); }
+                clearStorage();
+                setUser(null);
+                setRole(null);
+                setIsAuthenticated(false);
             });
     }, []);
 
@@ -47,13 +53,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const logout = async () => {
         clearStorage();
         setUser(null);
+        setRole(null);
         setIsAuthenticated(false);
         await fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
         window.location.href = '/login';
     };
 
     return (
-        <AuthContext.Provider value={{ isAuthenticated, user, login, logout }}>
+        <AuthContext.Provider value={{ isAuthenticated, user, role, login, logout }}>
             {children}
         </AuthContext.Provider>
     );

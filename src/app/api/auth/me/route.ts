@@ -1,28 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createHmac } from 'crypto';
+import { createHmac, randomBytes } from 'crypto';
 
 export const runtime = 'nodejs';
 
-const SECRET = process.env.SESSION_SECRET ?? 'change_me_in_prod';
+const SECRET = process.env.SESSION_SECRET ?? randomBytes(32).toString('hex');
+const TOKEN_MAX_AGE = 24 * 60 * 60 * 1000; // 24 horas
 
-function extractUsername(token: string): string | null {
+function extractSession(token: string): { username: string; role: string } | null {
   const dot = token.lastIndexOf('.');
   if (dot < 0) return null;
   const payload = token.slice(0, dot);
   const sig = token.slice(dot + 1);
   const expected = createHmac('sha256', SECRET).update(payload).digest('hex');
   if (expected !== sig) return null;
-  // New token format: username:timestamp:random
-  const colonIdx = payload.indexOf(':');
-  if (colonIdx < 0) return null; // old-format token (no username encoded)
-  const username = payload.slice(0, colonIdx);
-  return username || null;
+
+  // Formato nuevo: username:role:timestamp:random  (4 partes)
+  // Formato viejo: username:timestamp:random        (3 partes)
+  const parts = payload.split(':');
+  const username = parts[0];
+  if (!username) return null;
+
+  const isNewFormat = parts.length >= 4;
+  const role    = isNewFormat ? parts[1] : 'usuario';
+  const tsStr   = isNewFormat ? parts[2] : parts[1];
+  const ts = parseInt(tsStr, 10);
+
+  if (!ts || Date.now() - ts > TOKEN_MAX_AGE) return null; // expirado
+
+  return { username, role };
 }
 
 export async function GET(req: NextRequest) {
   const tok = req.cookies.get('orion_session')?.value;
   if (!tok) return NextResponse.json({ authenticated: false }, { status: 401 });
-  const username = extractUsername(tok);
-  if (!username) return NextResponse.json({ authenticated: false }, { status: 401 });
-  return NextResponse.json({ authenticated: true, username });
+  const session = extractSession(tok);
+  if (!session) return NextResponse.json({ authenticated: false }, { status: 401 });
+  return NextResponse.json({ authenticated: true, username: session.username, role: session.role });
 }

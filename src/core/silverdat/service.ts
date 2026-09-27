@@ -31,7 +31,7 @@ if (g.__silverdatSession === undefined) g.__silverdatSession = null;
 function getSession(): SilverdatSession | null { return g.__silverdatSession ?? null; }
 function setSession(s: SilverdatSession | null) { g.__silverdatSession = s; }
 
-const SESSION_TTL = 30 * 60 * 1000; // 30 min
+const SESSION_TTL = 60 * 60 * 1000; // 1 hora
 
 export function hasSession(): boolean {
   const session = getSession();
@@ -61,7 +61,7 @@ function sdHeaders(extra?: Record<string, string>): Record<string, string> {
 
 async function sdFetch(url: string, init?: RequestInit): Promise<Response> {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 20000);
+  const timeout = setTimeout(() => controller.abort(), 12000);
   try {
     const res = await fetch(url, {
       ...init,

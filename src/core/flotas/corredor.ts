@@ -76,7 +76,7 @@ export function crearCorredor(
   const nextNum = all.length + 1;
   const corredor: Corredor = {
     ...datos,
-    id: `corredor_${Date.now()}`,
+    id: `corredor_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
     codigo: datos.codigo || `COR-${String(nextNum).padStart(3, '0')}`,
     creadoEn: now,
     actualizadoEn: now,

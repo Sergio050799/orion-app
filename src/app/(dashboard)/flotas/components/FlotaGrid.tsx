@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useMemo, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { DataGrid, renderTextEditor } from 'react-data-grid';
-import type { Column, FillEvent, CellCopyArgs, CellPasteArgs, CellMouseArgs, RenderCellProps, RowsChangeData } from 'react-data-grid';
+import type { Column, FillEvent, CellCopyArgs, CellPasteArgs, CellMouseArgs, RenderCellProps, RowsChangeData, DataGridHandle } from 'react-data-grid';
 import 'react-data-grid/lib/styles.css';
 import type { ColDef, FlotaGridHandle } from './types';
 import { TIPO_VEHICULO_OPTS, USO_OPTS, AMBITO_OPTS, COBERTURA_OPTS, ASISTENCIA_OPTS, LUNAS_OPTS } from '@/core/flotas';
@@ -509,6 +509,51 @@ const FlotaGrid = forwardRef<FlotaGridHandle, FlotaGridProps>(function FlotaGrid
     setSelRange(null);
   }, []);
 
+  // ─── Ref interno para la DataGrid (clic único = editar) ───────────────────
+  const gridRef = useRef<DataGridHandle>(null);
+
+  // ─── Descarga Excel ────────────────────────────────────────────────────────
+  const handleDownloadExcel = useCallback(async () => {
+    const ExcelJS = (await import('exceljs')).default;
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet('TRABAJO');
+
+    const dataCols = colDefs.filter(c => !c.isComputed);
+    ws.columns = dataCols.map(c => ({ header: c.name.toUpperCase(), key: c.id, width: Math.max(c.width / 7, 10) }));
+
+    const hr = ws.getRow(1);
+    hr.height = 22;
+    hr.eachCell(cell => {
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1240CC' } };
+      cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, name: 'Calibri', size: 10 };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+    });
+
+    const filledRows = rows.filter(r => dataCols.some(c => String(r[c.id] ?? '').trim()));
+    filledRows.forEach((row, ri) => {
+      const r = ws.addRow(dataCols.map(c => String(row[c.id] ?? '')));
+      r.height = 16;
+      r.eachCell(cell => {
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: ri % 2 === 0 ? 'FFFFFFFF' : 'FFF0F4FA' } };
+        cell.font = { name: 'Calibri', size: 9 };
+        cell.alignment = { horizontal: 'left', vertical: 'middle' };
+        cell.border = {
+          bottom: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+          right:  { style: 'thin', color: { argb: 'FFE5E7EB' } },
+        };
+      });
+    });
+
+    const buf = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'TRABAJO.xlsx';
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [rows, colDefs]);
+
   // ─── Columnas ──────────────────────────────────────────────────────────────
 
   const columns = useMemo((): Column<GridRow>[] => {
@@ -865,6 +910,13 @@ const FlotaGrid = forwardRef<FlotaGridHandle, FlotaGridProps>(function FlotaGrid
             </svg>
             Importar Excel
           </button>
+          <button onClick={handleDownloadExcel}
+            style={{ fontSize: 11, fontWeight: 700, padding: '5px 12px', borderRadius: 8, background: 'rgba(18,64,204,0.08)', color: '#3366FF', border: '1px solid rgba(18,64,204,0.2)', cursor: 'pointer', gap: 4, display: 'inline-flex', alignItems: 'center' }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Descargar Excel
+          </button>
           <input
             ref={fileInputRef}
             type="file"
@@ -912,6 +964,7 @@ const FlotaGrid = forwardRef<FlotaGridHandle, FlotaGridProps>(function FlotaGrid
           </div>
         )}
         <DataGrid
+          ref={gridRef}
           columns={columns}
           rows={rows}
           onRowsChange={handleRowsChange}
@@ -933,6 +986,16 @@ const FlotaGrid = forwardRef<FlotaGridHandle, FlotaGridProps>(function FlotaGrid
               setLastColKey(args.column.key);
               setFocusedRowIdx(args.rowIdx);
               setSelRange(colIdx >= 0 ? { r0: args.rowIdx, r1: args.rowIdx, c0: colIdx, c1: colIdx } : null);
+              // Clic único abre el editor (como Excel) en columnas editables.
+              // setTimeout evita que el evento de click cierre el editor inmediatamente.
+              if (colIdx >= 0 && !colDefs[colIdx]?.isComputed) {
+                const targetIdx = columns.findIndex(c => c.key === args.column.key);
+                if (targetIdx >= 0) {
+                  setTimeout(() => {
+                    gridRef.current?.selectCell({ idx: targetIdx, rowIdx: args.rowIdx }, { enableEditor: true });
+                  }, 0);
+                }
+              }
             }
           }}
           enableVirtualization
