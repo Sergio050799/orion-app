@@ -6,10 +6,31 @@ import type { FlotaHeader } from './types';
 
 // ─── Badge próxima renovación ─────────────────────────────────────────────────
 
+function parseFechaHoja(s?: string): Date | null {
+  if (!s) return null;
+  const m = s.match(/^(\d{1,2})\/(\d{1,2})(?:\/(\d{4}))?$/);
+  if (m) {
+    const year = m[3] ? parseInt(m[3]) : new Date().getFullYear();
+    const d = new Date(year, parseInt(m[2]) - 1, parseInt(m[1]));
+    return isNaN(d.getTime()) ? null : d;
+  }
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function autoCompletarAno(s: string): string {
+  if (!s.match(/^(\d{1,2})\/(\d{1,2})$/)) return s;
+  const [dd, mm] = s.split('/').map(Number);
+  const now = new Date();
+  const candidate = new Date(now.getFullYear(), mm - 1, dd);
+  const year = candidate > now ? now.getFullYear() : now.getFullYear() + 1;
+  return `${String(dd).padStart(2, '0')}/${String(mm).padStart(2, '0')}/${year}`;
+}
+
 function proximaRenovacion(fechaStr?: string): boolean {
   if (!fechaStr) return false;
-  const fecha = new Date(fechaStr);
-  if (isNaN(fecha.getTime())) return false;
+  const fecha = parseFechaHoja(fechaStr);
+  if (!fecha) return false;
   const hoy = new Date();
   const diff = (fecha.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24);
   return diff >= 0 && diff <= 30;
@@ -435,12 +456,16 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
           <p style={{ fontSize: 10, fontWeight: 900, color: 'rgba(178,198,245,0.5)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>
             Vigencia
           </p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}>
             <div>
               <label style={labelStyle}>Forma de pago</label>
-              <input style={inputStyle} value={header.formaPago} onChange={e => set('formaPago', e.target.value)} placeholder="Anual"
+              <select style={{ ...inputStyle, cursor: 'pointer' }} value={header.formaPago} onChange={e => set('formaPago', e.target.value)}
                 onFocus={e => (e.currentTarget.style.borderColor = 'rgba(18,64,204,0.5)')}
-                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.22)')} />
+                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.22)')}>
+                <option value="">Sin definir</option>
+                <option value="INTERNA">INTERNA</option>
+                <option value="EXTERNA">EXTERNA</option>
+              </select>
             </div>
             <div>
               <label style={labelStyle}>Periodicidad</label>
@@ -449,16 +474,11 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
                 onBlur={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.22)')}>
                 <option value="">Sin definir</option>
                 <option value="mensual">Mensual</option>
+                <option value="bimestral">Bimestral</option>
                 <option value="trimestral">Trimestral</option>
                 <option value="semestral">Semestral</option>
                 <option value="anual">Anual</option>
               </select>
-            </div>
-            <div>
-              <label style={labelStyle}>Fecha inicio</label>
-              <input type="date" style={inputStyle} value={header.fechaInicio ?? ''} onChange={e => set('fechaInicio', e.target.value)}
-                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(18,64,204,0.5)')}
-                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.22)')} />
             </div>
             <div>
               <label style={{ ...labelStyle, display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -469,15 +489,20 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
                     background: 'rgba(234,179,8,0.15)', border: '1px solid rgba(234,179,8,0.35)',
                     color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.05em',
                     whiteSpace: 'nowrap',
-                  }}>
-                    Próxima renovación
-                  </span>
+                  }}>Próxima renovación</span>
                 )}
               </label>
-              <input type="date" style={{ ...inputStyle, borderColor: venceProximo ? 'rgba(234,179,8,0.4)' : 'rgba(61,112,255,0.22)' }}
-                value={header.fechaVencimiento ?? ''} onChange={e => set('fechaVencimiento', e.target.value)}
+              <input
+                style={{ ...inputStyle, borderColor: venceProximo ? 'rgba(234,179,8,0.4)' : 'rgba(61,112,255,0.22)' }}
+                value={header.fechaVencimiento ?? ''}
+                placeholder="dd/mm"
+                onChange={e => set('fechaVencimiento', e.target.value)}
+                onBlur={e => {
+                  const v = autoCompletarAno(e.target.value.trim());
+                  if (v !== e.target.value) set('fechaVencimiento', v);
+                }}
                 onFocus={e => (e.currentTarget.style.borderColor = 'rgba(18,64,204,0.5)')}
-                onBlur={e => (e.currentTarget.style.borderColor = venceProximo ? 'rgba(234,179,8,0.4)' : 'rgba(255,255,255,0.1)')} />
+              />
             </div>
           </div>
         </section>

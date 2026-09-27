@@ -237,7 +237,7 @@ export default function DashboardPage() {
         const proxima = proximaRegularizacion(c.header.fechaVencimiento, c.header.periodicidad);
         if (proxima) {
           const dias = diasHasta(proxima);
-          if (dias <= 30) entries.push({ carpeta: c, dias, corredor, tipo: 'regularizacion', fecha: proxima });
+          if (dias >= 0 && dias <= 30) entries.push({ carpeta: c, dias, corredor, tipo: 'regularizacion', fecha: proxima });
         }
       }
 
@@ -246,7 +246,7 @@ export default function DashboardPage() {
         const fecha = parseFechaFlexible(c.header.fechaVencimiento);
         if (fecha) {
           const dias = diasHasta(fecha);
-          if (dias <= 30) entries.push({ carpeta: c, dias, corredor, tipo: 'vencimiento', fecha });
+          if (dias >= 0 && dias <= 30) entries.push({ carpeta: c, dias, corredor, tipo: 'vencimiento', fecha });
         }
       }
     }

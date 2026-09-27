@@ -23,6 +23,7 @@ import type { HojaOfertaHandle } from './components/HojaOferta';
 const HojaOferta = lazy(() => import('./components/HojaOferta'));
 import HojaPreEmision from './components/HojaPreEmision';
 import HojaDatosGenerales from './components/HojaDatosGenerales';
+import FichaContratada from './components/FichaContratada';
 import HojaAutomatico from './components/HojaAutomatico';
 import SilverdatChip from '@/components/saas/SilverdatChip';
 import type { FlotaGridHandle, FlotaHeader, CoberturaRow } from './components/types';
@@ -175,6 +176,7 @@ export default function FlotasPage() {
   const [saveFlash, setSaveFlash] = useState(false);
   const [estadoPopover, setEstadoPopover] = useState<{ estado: EstadoFlota; motivo: string } | null>(null);
   const [openFlotas, setOpenFlotas] = useState<FlotaCarpeta[]>([]);
+  const [fichaMode, setFichaMode] = useState(false);
 
   const originalRef = useRef<FlotaGridHandle>(null);
   const trabajoRef = useRef<FlotaGridHandle>(null);
@@ -240,6 +242,7 @@ export default function FlotasPage() {
     setOfertaRows(carpeta.oferta);
     setSincoResultRows(carpeta.sincoResultados);
     setShowCarpetaScreen(false);
+    setFichaMode(carpeta.estado === 'CONTRATADA');
     setTimeout(() => {
       if (carpeta.oferta.length > 0) ofertaRef.current?.setData(carpeta.oferta);
       if (carpeta.original.length > 0) originalRef.current?.setData(carpeta.original);
@@ -275,6 +278,7 @@ export default function FlotasPage() {
     setOfertaRows(fresh.oferta);
     setSincoResultRows(fresh.sincoResultados);
     setShowCarpetaScreen(false);
+    setFichaMode(fresh.estado === 'CONTRATADA');
     setTimeout(() => {
       if (fresh.oferta.length > 0) ofertaRef.current?.setData(fresh.oferta);
       if (fresh.original.length > 0) originalRef.current?.setData(fresh.original);
@@ -397,16 +401,20 @@ export default function FlotasPage() {
                   margin: 0, fontSize: 18, color: '#FFFFFF',
                   fontFamily: 'var(--font-display), Inter, sans-serif', fontWeight: 700,
                 }}>Estudio de Flotas</h1>
-                <p style={{ margin: '2px 0 0', fontSize: 12, color: 'rgba(178,198,245,0.6)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span>Paso {activeTabIndex + 1}/{TABS.length} — {activeTab}</span>
-                  <span style={{
-                    fontSize: 10, fontWeight: 700,
-                    color: completedCount === TABS.length ? '#10b981' : '#3366FF',
-                    background: completedCount === TABS.length ? 'rgba(16,185,129,0.12)' : 'rgba(51,102,255,0.12)',
-                    border: `1px solid ${completedCount === TABS.length ? 'rgba(16,185,129,0.3)' : 'rgba(51,102,255,0.25)'}`,
-                    borderRadius: 999, padding: '1px 7px',
-                  }}>{completedCount}/{TABS.length} completos</span>
-                </p>
+                {fichaMode ? (
+                  <p style={{ margin: '2px 0 0', fontSize: 12, color: 'rgba(16,185,129,0.65)' }}>Ficha de datos contratados</p>
+                ) : (
+                  <p style={{ margin: '2px 0 0', fontSize: 12, color: 'rgba(178,198,245,0.6)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span>Paso {activeTabIndex + 1}/{TABS.length} — {activeTab}</span>
+                    <span style={{
+                      fontSize: 10, fontWeight: 700,
+                      color: completedCount === TABS.length ? '#10b981' : '#3366FF',
+                      background: completedCount === TABS.length ? 'rgba(16,185,129,0.12)' : 'rgba(51,102,255,0.12)',
+                      border: `1px solid ${completedCount === TABS.length ? 'rgba(16,185,129,0.3)' : 'rgba(51,102,255,0.25)'}`,
+                      borderRadius: 999, padding: '1px 7px',
+                    }}>{completedCount}/{TABS.length} completos</span>
+                  </p>
+                )}
               </div>
             </div>
 
@@ -580,8 +588,17 @@ export default function FlotasPage() {
 
           {mainView === 'estudio' && showCarpetaScreen && <CarpetaScreen onSelect={handleSelectCarpeta} />}
 
+          {/* Ficha contratada */}
+          {mainView === 'estudio' && !showCarpetaScreen && fichaMode && carpetaActiva && (
+            <FichaContratada
+              carpeta={carpetaActiva}
+              corredor={carpetaActiva.corredor_id ? listarCorredores().find(c => c.id === carpetaActiva.corredor_id) : undefined}
+              onAbrirEstudio={() => setFichaMode(false)}
+            />
+          )}
+
           {/* Hojas */}
-          <div className="flex-1 min-h-0 relative" style={{ display: (mainView === 'estudio' && !showCarpetaScreen) ? 'block' : 'none' }}>
+          <div className="flex-1 min-h-0 relative" style={{ display: (mainView === 'estudio' && !showCarpetaScreen && !fichaMode) ? 'block' : 'none' }}>
             {TABS.map(tab => (
               <div key={tab} style={{ position: 'absolute', inset: 0, display: activeTab === tab ? 'flex' : 'none', flexDirection: 'column' }}>
                 {tab === 'DATOS GENERALES' && carpetaActiva && (
@@ -660,7 +677,7 @@ export default function FlotasPage() {
           </div>
 
           {/* Tab bar at bottom */}
-          {mainView === 'estudio' && !showCarpetaScreen && (
+          {mainView === 'estudio' && !showCarpetaScreen && !fichaMode && (
             <div style={{
               display: 'flex', alignItems: 'stretch', gap: 0, padding: '0 8px',
               borderTop: '1px solid rgba(61,112,255,0.16)', background: 'rgba(0,7,45,0.6)',
