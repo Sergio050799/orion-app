@@ -385,10 +385,11 @@ async function searchCatalogForSd(sd: SilverdatVehicle): Promise<CatalogMatch[]>
     if (sd.combustible) base.set('combustible', sd.combustible);
     if (sd.puertas) base.set('puertas', String(sd.puertas));
 
-    // Extract year from fecha_matriculacion (DD/MM/YYYY or YYYY-MM-DD)
-    const fechaStr = sd.fecha_matriculacion || sd.anyo_fabricacion || '';
+    // anyo_fabricacion primero (año de modelo = lo que indexa el catálogo)
+    const fechaStr = sd.anyo_fabricacion || sd.fecha_matriculacion || '';
     const yearMatch = fechaStr.match(/(\d{4})/);
-    if (yearMatch) base.set('anyo', yearMatch[1]);
+    const baseYear = yearMatch ? parseInt(yearMatch[1]) : null;
+    if (baseYear) base.set('anyo', String(baseYear));
 
     // Search 1: with kW
     const paramsWithKw = new URLSearchParams(base);
@@ -396,11 +397,27 @@ async function searchCatalogForSd(sd: SilverdatVehicle): Promise<CatalogMatch[]>
     let results = await doCatalogSearch(paramsWithKw);
     const topScore = results[0]?.score ?? 0;
 
-    // Search 2 fallback without kW (hybrids: Silverdat kW = thermal only, catalog may have combined)
+    // Search 2: without kW (hybrids: Silverdat kW = thermal only, catalog may have combined)
     if (topScore < 80 && sd.kw) {
         const paramsNoKw = new URLSearchParams(base);
         const fallback = await doCatalogSearch(paramsNoKw);
         if ((fallback[0]?.score ?? 0) > topScore) results = fallback;
+    }
+
+    // Search 3: año-1 (coche fabricado a finales del año anterior)
+    if (!results.length && baseYear) {
+        const p = new URLSearchParams(base); p.set('anyo', String(baseYear - 1));
+        results = await doCatalogSearch(p);
+    }
+    // Search 4: año+1
+    if (!results.length && baseYear) {
+        const p = new URLSearchParams(base); p.set('anyo', String(baseYear + 1));
+        results = await doCatalogSearch(p);
+    }
+    // Search 5: sin año
+    if (!results.length && baseYear) {
+        const p = new URLSearchParams(base); p.delete('anyo');
+        results = await doCatalogSearch(p);
     }
 
     if (!results.length) return [];
