@@ -145,6 +145,7 @@ export default function IdentificacionMasiva() {
   const [log,          setLog]          = useState<EnrichLog[]>([]);
   const abortRef = useRef(false);
   const fileRef  = useRef<HTMLInputElement>(null);
+  const [dupWarning, setDupWarning] = useState<{ plates: string[]; uniqueRows: Record<string, string>[] } | null>(null);
 
   const handleDescargarPlantilla = async () => {
     const ExcelJS = (await import('exceljs')).default;
@@ -245,6 +246,17 @@ export default function IdentificacionMasiva() {
     }
   }, []);
 
+  const proceedWithRows = async (rows: Record<string, string>[]) => {
+    setDupWarning(null);
+    setRawRows(rows);
+    setVehicles([]);
+    try {
+      const d = await (await fetch('/api/silverdat/login', { signal: AbortSignal.timeout(8000) })).json();
+      if (!d.hasSession) { setSdPending(true); setShowSdModal(true); return; }
+    } catch { setSdPending(true); setShowSdModal(true); return; }
+    startEnrichment(rows);
+  };
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -253,13 +265,30 @@ export default function IdentificacionMasiva() {
       const buf = await file.arrayBuffer();
       const rows = parseExcelRows(buf);
       if (rows.length === 0) { setParseError('El archivo no tiene filas válidas con matrícula.'); return; }
-      setRawRows(rows);
-      setVehicles([]);
-      try {
-        const d = await (await fetch('/api/silverdat/login', { signal: AbortSignal.timeout(8000) })).json();
-        if (!d.hasSession) { setSdPending(true); setShowSdModal(true); return; }
-      } catch { setSdPending(true); setShowSdModal(true); return; }
-      startEnrichment(rows);
+
+      // Detect duplicates
+      const countMap = new Map<string, number>();
+      rows.forEach(r => {
+        const mat = (r.matricula || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+        if (mat) countMap.set(mat, (countMap.get(mat) ?? 0) + 1);
+      });
+      const dupPlates = Array.from(countMap.entries()).filter(([, n]) => n > 1).map(([m]) => m);
+
+      // Always dedup before processing
+      const seenMats = new Set<string>();
+      const uniqueRows = rows.filter(r => {
+        const mat = (r.matricula || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+        if (!mat || seenMats.has(mat)) return false;
+        seenMats.add(mat);
+        return true;
+      });
+
+      if (dupPlates.length > 0) {
+        setDupWarning({ plates: dupPlates, uniqueRows });
+        return;
+      }
+
+      await proceedWithRows(uniqueRows);
     } catch {
       setParseError('Error al leer el archivo. Asegúrate de que es un Excel válido.');
     } finally {
@@ -304,7 +333,37 @@ export default function IdentificacionMasiva() {
           </div>
         )}
 
-        {!sdPending && (
+        {dupWarning && (
+          <div style={{ width: '100%', maxWidth: 520, padding: '18px 20px', background: 'rgba(239,68,68,0.08)', border: '1.5px solid rgba(239,68,68,0.35)', borderRadius: 14 }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: '#ef4444', marginBottom: 10 }}>
+              {dupWarning.plates.length} matrícula{dupWarning.plates.length !== 1 ? 's' : ''} duplicada{dupWarning.plates.length !== 1 ? 's' : ''} en el archivo
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 12 }}>
+              {dupWarning.plates.map(m => (
+                <span key={m} style={{ fontSize: 11, fontWeight: 800, fontFamily: 'monospace', color: '#ef4444', background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 5, padding: '2px 8px' }}>{m}</span>
+              ))}
+            </div>
+            <p style={{ margin: '0 0 14px', fontSize: 12, color: 'rgba(178,198,245,0.65)', lineHeight: 1.5 }}>
+              Se procesarán <strong style={{ color: '#FFFFFF' }}>{dupWarning.uniqueRows.length} vehículos únicos</strong>. Las duplicadas se eliminarán automáticamente para no consultar Silverdat más de una vez por matrícula.
+            </p>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                onClick={() => proceedWithRows(dupWarning.uniqueRows)}
+                style={{ flex: 1, padding: '10px 0', borderRadius: 9, background: 'linear-gradient(135deg,#d97706,#f59e0b)', color: '#fff', border: 'none', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}
+              >
+                Continuar ({dupWarning.uniqueRows.length} únicos)
+              </button>
+              <button
+                onClick={() => setDupWarning(null)}
+                style={{ padding: '10px 16px', borderRadius: 9, background: 'rgba(6,14,50,0.5)', color: 'rgba(178,198,245,0.6)', border: '1px solid rgba(61,112,255,0.2)', fontSize: 12, cursor: 'pointer' }}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
+
+        {!sdPending && !dupWarning && (
           <>
             <div style={{ textAlign: 'center', maxWidth: 480 }}>
               <h2 style={{ margin: '0 0 8px', fontSize: 20, color: '#FFFFFF', fontWeight: 700 }}>Identificación masiva</h2>

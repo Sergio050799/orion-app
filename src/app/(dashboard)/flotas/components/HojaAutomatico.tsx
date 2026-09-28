@@ -653,11 +653,20 @@ function Step2({
         setError('');
         setFinished(false);
 
+        // Dedup: same plate only queried once even if duplicated in input
+        const seenMats = new Set<string>();
+        const uniqueRows = rows.filter(r => {
+            const mat = r['matricula']?.trim().replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+            if (!mat || seenMats.has(mat)) return false;
+            seenMats.add(mat);
+            return true;
+        });
+
         const processed: ProcessedVehicle[] = mergeWith ? [...mergeWith] : [];
         const mergeMap = new Map(processed.map(v => [v.matricula, v]));
 
         let done = 0;
-        setProgress({ current: 0, total: rows.length, log: [] });
+        setProgress({ current: 0, total: uniqueRows.length, log: [] });
 
         const processOne = async (row: Record<string, string>) => {
             if (abortRef.current) return;
@@ -687,7 +696,7 @@ function Step2({
             mergeMap.set(matricula, vehicle);
 
             done++;
-            setProgress(p => ({ current: done, total: rows.length, log: [...p.log, { plate: matricula, ok: !!sd, marca: sd?.marca, modelo: sd?.modelo?.split(' ')[0], fromCache: !!result.fromCache }] }));
+            setProgress(p => ({ current: done, total: uniqueRows.length, log: [...p.log, { plate: matricula, ok: !!sd, marca: sd?.marca, modelo: sd?.modelo?.split(' ')[0], fromCache: !!result.fromCache }] }));
         };
 
         // 3 workers en paralelo — cola compartida
@@ -695,9 +704,9 @@ function Step2({
         const worker = async () => {
             while (!abortRef.current) {
                 const myIdx = queueIdx++;
-                if (myIdx >= rows.length) break;
-                await processOne(rows[myIdx]);
-                if (!abortRef.current && myIdx < rows.length - 1)
+                if (myIdx >= uniqueRows.length) break;
+                await processOne(uniqueRows[myIdx]);
+                if (!abortRef.current && myIdx < uniqueRows.length - 1)
                     await new Promise(r => setTimeout(r, 200));
             }
         };
@@ -706,7 +715,7 @@ function Step2({
         if (!abortRef.current) {
             const all = Array.from(mergeMap.values());
             allProcessedRef.current = all;
-            failedRowsRef.current = rows.filter(r => {
+            failedRowsRef.current = uniqueRows.filter(r => {
                 const mat = r['matricula'].trim().replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
                 return !mergeMap.get(mat)?.sd_ok;
             });
