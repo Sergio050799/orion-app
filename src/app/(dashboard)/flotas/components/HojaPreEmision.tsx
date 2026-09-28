@@ -113,8 +113,9 @@ function getDiffs(base: VehicleEmision, other: VehicleEmision): string[] {
 
 // ─── ManualSearchPanel ────────────────────────────────────────────────────────
 
-function ManualSearchPanel({ vehicle, onSelect, onClose }: {
+function ManualSearchPanel({ vehicle, yearHint, onSelect, onClose }: {
   vehicle: VehicleEmision;
+  yearHint?: number;
   onSelect: (c: CandidatoCatalogo) => void;
   onClose: () => void;
 }) {
@@ -129,7 +130,7 @@ function ManualSearchPanel({ vehicle, onSelect, onClose }: {
   const [modelo, setModelo]         = useState(initModelo);
   const [combustible, setCombustible] = useState('');
   const [kw, setKw]                 = useState(isRem ? '' : (vehicle.kw || ''));
-  const [anyo, setAnyo]             = useState('');
+  const [anyo, setAnyo]             = useState(yearHint ? String(yearHint) : '');
   const [results, setResults]       = useState<CandidatoCatalogo[]>([]);
   const [loading, setLoading]       = useState(false);
   const [searched, setSearched]     = useState(false);
@@ -410,7 +411,9 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
   }, [vehicles, applyToMultiple]);
 
   const extractYear = useCallback((v: VehicleEmision): number | null => {
-    for (const s of [v.fecha_matriculacion, v.anyo_fabricacion]) {
+    // anyo_fabricacion primero (año de modelo, que es el que usa el catálogo)
+    // fecha_matriculacion como fallback (año de primera matriculación)
+    for (const s of [v.anyo_fabricacion, v.fecha_matriculacion]) {
       if (!s) continue;
       const m = s.match(/(\d{4})/);
       if (m) { const y = parseInt(m[1]); if (y >= 1980 && y <= 2040) return y; }
@@ -469,6 +472,17 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
 
       let candidatos = await doSearch(body, ctrl.signal);
       if (ctrl.signal.aborted) return;
+      // Fallback año-1: coche de 2018 puede estar matriculado en 2019
+      if (candidatos.length === 0 && body.anyo) {
+        candidatos = await doSearch({ ...body, anyo: (body.anyo as number) - 1 }, ctrl.signal);
+      }
+      if (ctrl.signal.aborted) return;
+      // Fallback año+1: menos común pero posible
+      if (candidatos.length === 0 && body.anyo) {
+        candidatos = await doSearch({ ...body, anyo: (body.anyo as number) + 1 }, ctrl.signal);
+      }
+      if (ctrl.signal.aborted) return;
+      // Fallback sin año
       if (candidatos.length === 0 && body.anyo) {
         const { anyo: _, ...sinAnyo } = body; candidatos = await doSearch(sinAnyo, ctrl.signal);
       }
@@ -786,6 +800,10 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
                       </th>
                     );
                   })}
+                  <th style={{ ...thS, width: 52, cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSortCol('anyo_fabricacion')}>
+                    Año{' '}
+                    <span style={{ fontSize: 8, opacity: sortConfig?.col === 'anyo_fabricacion' ? 0.9 : 0.2 }}>{sortConfig?.col === 'anyo_fabricacion' && sortConfig.dir === 'desc' ? '▼' : '▲'}</span>
+                  </th>
                   <th style={{ ...thS }}>Versión / Acabado</th>
                   <th style={{ ...thS, width: 120 }}>ID Catálogo</th>
                   <th style={{ ...thS, width: 110, cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSortCol('status')}>
@@ -838,6 +856,23 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
                       <td style={{ ...tdS, fontFamily: 'monospace', fontWeight: 800, color: '#111827', letterSpacing: '0.04em' }}>{v.matricula}</td>
                       <td style={{ ...tdS, color: '#111827', fontWeight: 600 }}>{v.marca}</td>
                       <td style={{ ...tdS, color: '#111827' }}>{v.modelo}</td>
+
+                      {/* ── Año cell ─────────────────────────────────────── */}
+                      <td style={tdS}>
+                        {(() => {
+                          const y = extractYear(v);
+                          if (!y) return <span style={{ color: '#d1d5db', fontSize: 11 }}>—</span>;
+                          const fromFab = !!v.anyo_fabricacion;
+                          return (
+                            <span
+                              title={fromFab ? 'Año fabricación (Silverdat)' : 'Estimado de matrícula'}
+                              style={{
+                                fontSize: 11, fontWeight: 700, fontFamily: 'monospace',
+                                color: fromFab ? '#374151' : '#9ca3af',
+                              }}>{y}</span>
+                          );
+                        })()}
+                      </td>
 
                       {/* ── Versión cell ─────────────────────────────────── */}
                       <td style={tdS}>
@@ -907,9 +942,10 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
                     {/* ── Panel búsqueda manual (fila expandible) ─────────── */}
                     {openSearchRow === origIdx && (
                       <tr style={{ borderBottom: '1px solid #c8d8f5' }}>
-                        <td colSpan={7} style={{ padding: 0 }}>
+                        <td colSpan={8} style={{ padding: 0 }}>
                           <ManualSearchPanel
                             vehicle={v}
+                            yearHint={extractYear(v) ?? undefined}
                             onSelect={c => handleSelect(origIdx, c)}
                             onClose={() => setOpenSearchRow(null)}
                           />

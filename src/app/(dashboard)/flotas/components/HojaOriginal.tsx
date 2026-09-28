@@ -4,11 +4,11 @@ import React, { lazy, Suspense, useState, useRef, forwardRef, useImperativeHandl
 const FlotaGrid = lazy(() => import('./FlotaGrid'));
 import HeaderBlock from './HeaderBlock';
 import { BASE_COL_DEFS } from './constants';
-import { parseExcelTemplate, generarPlantillaExcel } from '@/core/flotas';
+import { parseExcelTemplate, generarPlantillaExcel, listarCorredores } from '@/core/flotas';
 import type { FlotaGridHandle, FlotaHeader } from './types';
 
 async function descargarPlantilla() {
-  const blob = await generarPlantillaExcel();
+  const blob = await generarPlantillaExcel(undefined, listarCorredores().map(c => c.nombre));
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;

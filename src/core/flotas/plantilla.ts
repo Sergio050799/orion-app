@@ -53,7 +53,7 @@ function fillRow(ws: ExcelJS.Worksheet, row: number, fill: ExcelJS.Fill) {
 
 // ─── Funcion principal ────────────────────────────────────────────────────────
 
-export async function generarPlantillaExcel(carpeta?: Pick<FlotaCarpeta, 'nombre' | 'header'>): Promise<Blob> {
+export async function generarPlantillaExcel(carpeta?: Pick<FlotaCarpeta, 'nombre' | 'header'>, corredores?: string[]): Promise<Blob> {
   const wb = new ExcelJS.Workbook();
   wb.creator = 'MMT Seguros';
   wb.created = new Date();
@@ -118,6 +118,26 @@ export async function generarPlantillaExcel(carpeta?: Pick<FlotaCarpeta, 'nombre
   ws.getCell(3, 2).value = carpeta?.header.formaPago ?? ''; ws.getCell(3, 2).font = valueFont; ws.getCell(3, 2).alignment = leftAlign;
   ws.getCell(3, 3).value = 'EFECTO:';     ws.getCell(3, 3).font = labelFont; ws.getCell(3, 3).alignment = leftAlign;
   ws.getCell(3, 4).value = carpeta?.header.efecto ?? ''; ws.getCell(3, 4).font = valueFont; ws.getCell(3, 4).alignment = leftAlign;
+
+  // ── Corredor dropdown (fila 3, derecha) ──────────────────────────────────
+  const hasCorredores = corredores && corredores.length > 0;
+  ws.getCell(3, 11).value = 'CORREDOR:'; ws.getCell(3, 11).font = labelFont; ws.getCell(3, 11).alignment = leftAlign;
+  const corrCell = ws.getCell(3, 12);
+  corrCell.value = '';
+  corrCell.font = { ...valueFont, italic: !hasCorredores, color: { argb: hasCorredores ? 'FF' + C.text : 'FF9CA3AF' } };
+  corrCell.alignment = leftAlign;
+  corrCell.border = { bottom: { style: 'thin', color: { argb: 'FF' + C.border } } };
+  if (hasCorredores) {
+    corrCell.dataValidation = {
+      type: 'list',
+      allowBlank: true,
+      formulae: [`_CORREDORES!$A$1:$A$${corredores!.length}`],
+      showErrorMessage: false,
+      showInputMessage: true,
+      promptTitle: 'Corredor',
+      prompt: 'Selecciona el corredor de la lista',
+    };
+  }
 
   // ── Fila 4: Separador (azul MMT) ──────────────────────────────────────────
   fillRow(ws, 4, azulFill);
@@ -193,6 +213,12 @@ export async function generarPlantillaExcel(carpeta?: Pick<FlotaCarpeta, 'nombre
   noteCell.value = 'MMT Seguros | LUNAS y ASISTENCIA: escribe Si o No';
   noteCell.font = { name: 'Calibri', size: 8, italic: true, color: { argb: 'FF9CA3AF' } };
   noteCell.alignment = { horizontal: 'left' };
+
+  // ── Hoja oculta con lista de corredores ──────────────────────────────────
+  if (hasCorredores) {
+    const wsCorr = wb.addWorksheet('_CORREDORES', { state: 'veryHidden' });
+    corredores!.forEach((nombre, i) => { wsCorr.getCell(i + 1, 1).value = nombre; });
+  }
 
   // ── Generar blob ────────────────────────────────────────────────────────
   const buffer = await wb.xlsx.writeBuffer();

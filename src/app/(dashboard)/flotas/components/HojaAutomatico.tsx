@@ -4,7 +4,7 @@ import React, { useState, useRef, useMemo } from 'react';
 import { generarPlantillaExcel } from '@/core/flotas/plantilla';
 import { normalizeTipoVehiculo, TIPO_VEHICULO_OPTS } from '@/core/flotas/normalizador';
 import type { FlotaHeader } from './types';
-import { listarCarpetas, type FlotaCarpeta } from '@/core/flotas';
+import { listarCarpetas, listarCorredores, type FlotaCarpeta } from '@/core/flotas';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -44,6 +44,7 @@ interface ProcessedVehicle {
     cv: number;
     combustible: string;
     fecha_matriculacion: string;
+    anyo_fabricacion: string;
     fecha_vencimiento: string;
     cia_actual: string;
     num_poliza_actual: string;
@@ -258,7 +259,10 @@ function Step1({
     const handleDownload = async () => {
         setDownloadLoading(true);
         try {
-            const blob = await generarPlantillaExcel(carpetaActiva ?? { nombre: header.tomador || 'Flota', header });
+            const blob = await generarPlantillaExcel(
+              carpetaActiva ?? { nombre: header.tomador || 'Flota', header },
+              listarCorredores().map(c => c.nombre),
+            );
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
@@ -622,6 +626,7 @@ function Step2({
             cv: sd?.cv || parseFloat(row['cv'] || '0') || 0,
             combustible: sd?.combustible || '',
             fecha_matriculacion: sd?.fecha_matriculacion || '',
+            anyo_fabricacion: sd?.anyo_fabricacion || '',
             fecha_vencimiento: row['fecha_vencimiento'] || '',
             cia_actual: row['cia_actual'] || '',
             num_poliza_actual: row['num_poliza_actual'] || row['n_poliza_actual'] || '',
@@ -936,6 +941,7 @@ function Step3({
                 prima_referencia: finalPrima > 0 ? finalPrima.toFixed(2) : '',
                 vin: v.vin,
                 fecha_matriculacion: v.fecha_matriculacion,
+                anyo_fabricacion: v.anyo_fabricacion || '',
                 combustible: v.combustible,
                 etiqueta_dgt: v.etiqueta_dgt,
                 euro: v.euro,
@@ -1171,6 +1177,7 @@ function rowsToVehicles(rows: Record<string, string>[]): ProcessedVehicle[] {
                 cv: parseFloat(r['cv'] || '0') || (kw > 0 ? Math.round(kw * 1.35962) : 0),
                 combustible: r['combustible'] || '',
                 fecha_matriculacion: r['fecha_matriculacion'] || '',
+                anyo_fabricacion: r['anyo_fabricacion'] || '',
                 fecha_vencimiento: r['fecha_vencimiento'] || '',
                 cia_actual: r['cia_actual'] || '',
                 num_poliza_actual: r['num_poliza_actual'] || r['n_poliza_actual'] || '',

@@ -239,7 +239,7 @@ export default function CarpetaScreen({ onSelect }: Props) {
   };
 
   const handleDescargarPlantilla = async () => {
-    const blob = await generarPlantillaExcel();
+    const blob = await generarPlantillaExcel(undefined, listarCorredores().map(c => c.nombre));
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a'); a.href = url; a.download = 'Plantilla_Flotas.xlsx'; a.click();
     URL.revokeObjectURL(url);
