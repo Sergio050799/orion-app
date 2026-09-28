@@ -868,7 +868,7 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
                               title={fromFab ? 'Año fabricación (Silverdat)' : 'Estimado de matrícula'}
                               style={{
                                 fontSize: 11, fontWeight: 700, fontFamily: 'monospace',
-                                color: fromFab ? '#374151' : '#9ca3af',
+                                color: fromFab ? '#f97316' : '#1240CC',
                               }}>{y}</span>
                           );
                         })()}
