@@ -441,8 +441,8 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
     searchAbortRef.current.get(i)?.abort();
     const ctrl = new AbortController();
     searchAbortRef.current.set(i, ctrl);
-    // Timeout de seguridad: si no responde en 12s, abortar y marcar sin_catalogo
-    const timeoutId = setTimeout(() => ctrl.abort(), 12000);
+    // Timeout de seguridad: si no responde en 20s, abortar y marcar sin_catalogo
+    const timeoutId = setTimeout(() => ctrl.abort(), 20000);
     setV(i, { searching: true });
     try {
       const body: Record<string, string | number> = {};
@@ -450,9 +450,20 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
       const isRem = TIPOS_REM.has((v.tipo || '').toLowerCase())
         || /^R[\s-]?\d{4}/i.test(v.matricula);
 
+      // Detectar modelo tipo "R450", "R500", "TGX 460" que Silverdat devuelve para camiones
+      // El catálogo los tiene como modelo="SERIE R" + version="450 DE 3950" o modelo="TGX" + version="18 460"
+      let serieBody: Record<string, string | number> | null = null;
+      if (!isRem && v.modelo) {
+        const mSerie = v.modelo.match(/^([A-Za-z]+)\s*(\d{3,4})$/);
+        if (mSerie) {
+          const serie = mSerie[1].trim().toUpperCase();
+          const cvNum = parseInt(mSerie[2]);
+          const kwFromCv = Math.round(cvNum / 1.36);
+          serieBody = { marca: v.marca ?? '', modelo: `SERIE ${serie}`, kw: kwFromCv };
+        }
+      }
+
       if (isRem) {
-        // En el catálogo todos los remolques/semirremolques tienen marca="REMOLQUE"
-        // y el fabricante está en modelo: "SEMIRREMOLQUE KRONE", "SEMIRREMOLQUE SCHMITZ", etc.
         body.marca = 'REMOLQUE';
         const prefix = (v.tipo || '').toLowerCase() === 'semirremolque' ? 'SEMIRREMOLQUE' : 'REMOLQUE';
         body.modelo = v.marca ? `${prefix} ${v.marca}` : prefix;
@@ -470,14 +481,24 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
       if (realYear)      body.anyo = realYear;
       else if (plateEst) body.anyo = plateEst.year;
 
-      let candidatos = await doSearch(body, ctrl.signal);
+      // Si detectamos patrón serie+potencia, intentar primero con el body normalizado
+      let candidatos: CandidatoCatalogo[] = [];
+      if (serieBody) {
+        if (body.anyo) candidatos = await doSearch({ ...serieBody, anyo: body.anyo }, ctrl.signal);
+        if (ctrl.signal.aborted) return;
+        if (candidatos.length === 0) candidatos = await doSearch(serieBody, ctrl.signal);
+        if (ctrl.signal.aborted) return;
+      }
+
+      // Búsqueda normal con datos de Silverdat
+      if (candidatos.length === 0) candidatos = await doSearch(body, ctrl.signal);
       if (ctrl.signal.aborted) return;
-      // Fallback año-1: coche de 2018 puede estar matriculado en 2019
+      // Fallback año-1
       if (candidatos.length === 0 && body.anyo) {
         candidatos = await doSearch({ ...body, anyo: (body.anyo as number) - 1 }, ctrl.signal);
       }
       if (ctrl.signal.aborted) return;
-      // Fallback año+1: menos común pero posible
+      // Fallback año+1
       if (candidatos.length === 0 && body.anyo) {
         candidatos = await doSearch({ ...body, anyo: (body.anyo as number) + 1 }, ctrl.signal);
       }
@@ -489,26 +510,6 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
       if (ctrl.signal.aborted) return;
       if (candidatos.length === 0 && body.marca && body.modelo) {
         candidatos = await doSearch({ marca: body.marca, modelo: body.modelo }, ctrl.signal);
-      }
-      if (ctrl.signal.aborted) return;
-      // Fallback camiones: Silverdat devuelve "R450" pero el catálogo tiene modelo="SERIE R" + version="450..."
-      // Detectar patrón [LETRAS][NÚMERO] o [LETRAS] [NÚMERO] y buscar "SERIE X" con kW convertido desde CV
-      if (candidatos.length === 0 && !isRem && body.modelo) {
-        const m = String(body.modelo).match(/^([A-Z]+)\s*(\d{3,4})$/i);
-        if (m) {
-          const serie = m[1].trim().toUpperCase();
-          const kwFromCv = Math.round(parseInt(m[2]) / 1.36);
-          candidatos = await doSearch({ marca: body.marca, modelo: `SERIE ${serie}`, kw: kwFromCv }, ctrl.signal);
-          if (ctrl.signal.aborted) return;
-          if (candidatos.length === 0) {
-            candidatos = await doSearch({ marca: body.marca, modelo: serie, kw: kwFromCv }, ctrl.signal);
-            if (ctrl.signal.aborted) return;
-          }
-          if (candidatos.length === 0) {
-            candidatos = await doSearch({ marca: body.marca, modelo: `SERIE ${serie}` }, ctrl.signal);
-            if (ctrl.signal.aborted) return;
-          }
-        }
       }
       if (ctrl.signal.aborted) return;
       // Extra fallbacks para remolques: prefijo alternativo y búsqueda por marca sola
