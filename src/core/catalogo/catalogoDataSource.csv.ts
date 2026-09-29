@@ -3,11 +3,10 @@ import path from 'path';
 import type { CatalogoVehiculo, CatalogoCandidato, CatalogoDataSource, SearchParams, ScoreDetail } from './catalogoDataSource';
 import { normalizeFuel, normalizeFuelForCatalog } from '../pipelines/_shared/formatUtils';
 
-const CSV_PATH_DEFAULT = path.join(process.cwd(), 'Catalogo_vehiculo', 'dim_vehiculos.csv');
 const DATA_DIR = path.join(process.cwd(), 'data', 'catalogo');
 
-/** Devuelve la ruta del CSV más reciente (versión con fecha o el original). */
-function resolvecsvPath(): string {
+/** Devuelve la ruta del CSV más reciente subido por orion-admin, o null si no hay ninguno. */
+function resolvecsvPath(): string | null {
     try {
         if (fs.existsSync(DATA_DIR)) {
             const versions = fs.readdirSync(DATA_DIR)
@@ -20,7 +19,7 @@ function resolvecsvPath(): string {
             }
         }
     } catch { /* ignora errores de fs */ }
-    return CSV_PATH_DEFAULT;
+    return null;
 }
 
 /** Limpia el singleton para forzar recarga del catálogo en la próxima búsqueda. */
@@ -142,6 +141,7 @@ function loadCsv(): CatalogoCache {
     if (global._catalogoCache) return global._catalogoCache;
 
     const csvPath = resolvecsvPath();
+    if (!csvPath) throw new Error('Catálogo no disponible. Sube una versión desde orion-admin.');
     const raw = fs.readFileSync(csvPath, 'utf8');
     const lines = raw.split('\n');
 
