@@ -47,3 +47,12 @@ env.local
 # Local data / catalogos
 data/
 *.log
+
+# Catálogo vehículos (143k rows, 24MB)
+Catalogo_vehiculo/
+
+# Runtime snapshots OCR (PDFs grandes, no deben ir a git)
+src/core/_source_of_truth/runtime_snapshots/
+
+# Inspection reports generados
+excel_inspection_report.txt
