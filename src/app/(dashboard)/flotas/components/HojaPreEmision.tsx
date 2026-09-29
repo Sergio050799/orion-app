@@ -491,6 +491,26 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
         candidatos = await doSearch({ marca: body.marca, modelo: body.modelo }, ctrl.signal);
       }
       if (ctrl.signal.aborted) return;
+      // Fallback camiones: Silverdat devuelve "R450" pero el catálogo tiene modelo="SERIE R" + version="450..."
+      // Detectar patrón [LETRAS][NÚMERO] o [LETRAS] [NÚMERO] y buscar "SERIE X" con kW convertido desde CV
+      if (candidatos.length === 0 && !isRem && body.modelo) {
+        const m = String(body.modelo).match(/^([A-Z]+)\s*(\d{3,4})$/i);
+        if (m) {
+          const serie = m[1].trim().toUpperCase();
+          const kwFromCv = Math.round(parseInt(m[2]) / 1.36);
+          candidatos = await doSearch({ marca: body.marca, modelo: `SERIE ${serie}`, kw: kwFromCv }, ctrl.signal);
+          if (ctrl.signal.aborted) return;
+          if (candidatos.length === 0) {
+            candidatos = await doSearch({ marca: body.marca, modelo: serie, kw: kwFromCv }, ctrl.signal);
+            if (ctrl.signal.aborted) return;
+          }
+          if (candidatos.length === 0) {
+            candidatos = await doSearch({ marca: body.marca, modelo: `SERIE ${serie}` }, ctrl.signal);
+            if (ctrl.signal.aborted) return;
+          }
+        }
+      }
+      if (ctrl.signal.aborted) return;
       // Extra fallbacks para remolques: prefijo alternativo y búsqueda por marca sola
       if (isRem && candidatos.length === 0 && v.marca) {
         const altPrefix = (v.tipo || '').toLowerCase() === 'semirremolque' ? 'REMOLQUE' : 'SEMIRREMOLQUE';
