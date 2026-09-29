@@ -4,7 +4,6 @@ import Topbar from "@/components/saas/layout/Topbar";
 import { LayoutProvider } from "@/context/LayoutContext";
 import { ToastProvider } from "@/components/ui/Toast";
 import { NotificationProvider } from "@/context/NotificationContext";
-
 // Auth is handled by middleware — no client-side redirect needed.
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
     return (

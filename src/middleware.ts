@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const PUBLIC = ['/login', '/api/auth/login', '/api/auth/logout'];
+const PUBLIC = ['/login', '/api/auth/login', '/api/auth/logout', '/api/admin'];
 const TOKEN_MAX_AGE = 24 * 60 * 60 * 1000; // 24 horas
 
 async function verifyToken(token: string): Promise<boolean> {

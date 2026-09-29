@@ -15,15 +15,21 @@ export type Producto =
     | 'terceros_ampliado'
     | 'todo_riesgo';
 
+// ─── CONFIGURACIÓN EXTERNA (del panel admin) ──────────────────────────────────
+
+export interface PrimasConfig {
+  primas:  Record<string, number>; // "tipo_vehiculo:cobertura:ambito" → prima base
+  ajustes: Record<string, number>; // "clave" → valor (animales, asistencia_*, ...)
+}
+
 // ─── METADATOS INTERNOS ───────────────────────────────────────────────────────
 
-// Familia de pricing en tablas cat.2
 type FamiliaCat2 = 'cabeza_tractora' | 'camion_rigido' | 'remolque';
 
 interface VehMeta {
     categoria:  1 | 2;
     puedelunas: boolean;
-    familia2?:  FamiliaCat2; // solo cat.2; undefined = sin tarifa
+    familia2?:  FamiliaCat2;
 }
 
 const VEH_META: Record<TipoVehiculo, VehMeta> = {
@@ -36,10 +42,8 @@ const VEH_META: Record<TipoVehiculo, VehMeta> = {
     industrial_no_matriculado:  { categoria: 2, puedelunas: false },
 };
 
-// ─── TABLAS DE PRIMAS — FUENTE DE VERDAD FIJA ────────────────────────────────
+// ─── TABLAS HARDCODEADAS (fallback si la API no responde) ─────────────────────
 
-// Cat.1 — todo_riesgo y terceros_ampliado tienen precio; otros productos devuelven null
-// Industriales — precio fijo 190€ solo para terceros; cualquier otro producto → null
 const PRIMAS_CAT1: Partial<Record<TipoVehiculo, Partial<Record<Producto, number>>>> = {
     turismo:                    { todo_riesgo: 395, terceros_ampliado: 395 },
     furgoneta:                  { todo_riesgo: 640, terceros_ampliado: 640 },
@@ -47,7 +51,6 @@ const PRIMAS_CAT1: Partial<Record<TipoVehiculo, Partial<Record<Producto, number>
     industrial_no_matriculado:  { terceros: 190 },
 };
 
-// Cat.2 — null = combinación sin precio (semirremolque + terceros_con_luna)
 const PRIMAS_CAT2_NAC: Record<FamiliaCat2, Record<Producto, number | null>> = {
     cabeza_tractora: { terceros: 820,  terceros_con_luna: 970,  terceros_ampliado: 1500, todo_riesgo: 2355 },
     camion_rigido:   { terceros: 800,  terceros_con_luna: 950,  terceros_ampliado: 1400, todo_riesgo: 2305 },
@@ -60,7 +63,6 @@ const PRIMAS_CAT2_INT: Record<FamiliaCat2, Record<Producto, number | null>> = {
     remolque:        { terceros: 300,  terceros_con_luna: null, terceros_ampliado: 1200, todo_riesgo: 1950 },
 };
 
-// Ajustes fijos
 const AJUSTES = {
     animales:                25,
     asistencia_particular:   110,
@@ -86,7 +88,7 @@ export interface CalcPrimaParams {
     perdidaTotal?: boolean;
 }
 
-export function calcularPrima(params: CalcPrimaParams): number | null {
+export function calcularPrima(params: CalcPrimaParams, config?: PrimasConfig | null): number | null {
     const {
         tipoVehiculo, producto, uso,
         ambito = 'nacional', asistencia = 'no', animales = false,
@@ -95,51 +97,67 @@ export function calcularPrima(params: CalcPrimaParams): number | null {
 
     const meta = VEH_META[tipoVehiculo];
 
-    // ── CATEGORÍA 1 ──────────────────────────────────────────────────────────
+    // Ajuste: config primero, hardcoded como fallback
+    const adj = (key: keyof typeof AJUSTES): number =>
+        config?.ajustes?.[key] !== undefined ? config.ajustes[key] : AJUSTES[key];
+
+    // Prima base: config primero (del admin), tablas hardcodeadas como fallback
+    function getBase(): number | null {
+        if (config) {
+            const key = `${tipoVehiculo}:${producto}:${ambito}`;
+            return key in config.primas ? config.primas[key] : null;
+        }
+        // Fallback hardcodeado
+        if (meta.categoria === 1) {
+            return PRIMAS_CAT1[tipoVehiculo]?.[producto] ?? null;
+        }
+        if (!meta.familia2) {
+            return PRIMAS_CAT1[tipoVehiculo]?.[producto] ?? null;
+        }
+        const tabla = ambito === 'internacional' ? PRIMAS_CAT2_INT : PRIMAS_CAT2_NAC;
+        return tabla[meta.familia2][producto] ?? null;
+    }
+
+    const primaBase = getBase();
+    if (primaBase === null || primaBase === undefined) return null;
+
+    const applyGlobal = (n: number): number => {
+        const pct = config?.ajustes?.['ajuste_global_pct'];
+        if (!pct) return Math.round(n);
+        return Math.round(n * (1 + pct / 100));
+    };
+
+    // ── CATEGORÍA 1 (turismo / furgoneta) ────────────────────────────────────
     if (meta.categoria === 1) {
-        const primaBase = PRIMAS_CAT1[tipoVehiculo]?.[producto];
-        if (primaBase === undefined || primaBase === null) return null; // producto sin tarifa cat.1
-
         let total = primaBase;
-        if (animales) total += AJUSTES.animales;
-
-        // Asistencia Cat.1 (oro o oro_plus activan el ajuste)
+        if (animales) total += adj('animales');
         if (asistencia === 'oro' || asistencia === 'oro_plus') {
             if (tipoVehiculo === 'furgoneta') {
-                if (uso === 'servicio_publico') total += AJUSTES.asistencia_servicio_pub;
-                else total += AJUSTES.asistencia_transportes; // transportes_propios o sin especificar
+                total += uso === 'servicio_publico'
+                    ? adj('asistencia_servicio_pub')
+                    : adj('asistencia_transportes');
             } else if (tipoVehiculo === 'turismo') {
-                total += AJUSTES.asistencia_particular;
+                total += adj('asistencia_particular');
             }
         }
-
-        return total;
+        return applyGlobal(total);
     }
 
     // ── INDUSTRIALES — precio fijo, sin ajustes ──────────────────────────────
-    if (tipoVehiculo === 'industrial_matriculado' || tipoVehiculo === 'industrial_no_matriculado') {
-        return PRIMAS_CAT1[tipoVehiculo]?.[producto] ?? null;
-    }
+    if (!meta.familia2) return applyGlobal(primaBase);
 
     // ── CATEGORÍA 2 ──────────────────────────────────────────────────────────
-    if (!meta.familia2) return null;
-
-    const tabla = ambito === 'internacional' ? PRIMAS_CAT2_INT : PRIMAS_CAT2_NAC;
-    const primaBase = tabla[meta.familia2][producto];
-    if (primaBase === null || primaBase === undefined) return null;
-
     let total = primaBase;
     if (isotermo && (meta.familia2 === 'remolque' || meta.familia2 === 'camion_rigido')) {
-        total += primaBase * AJUSTES.isotermo_pct;
+        total += primaBase * adj('isotermo_pct');
     }
-    if (perdidaTotal) total += primaBase * AJUSTES.perdida_total_pct;
+    if (perdidaTotal) total += primaBase * adj('perdida_total_pct');
     if (asistencia === 'oro' || asistencia === 'oro_plus') {
-        total += ambito === 'internacional' ? AJUSTES.asistencia_internacional : AJUSTES.asistencia_nacional;
+        total += ambito === 'internacional' ? adj('asistencia_internacional') : adj('asistencia_nacional');
     }
 
-    return Math.round(total);
+    return applyGlobal(total);
 }
 
-// Exportar metadatos para uso en auxiliares y coberturas
 export { VEH_META };
 export type { VehMeta, FamiliaCat2 };

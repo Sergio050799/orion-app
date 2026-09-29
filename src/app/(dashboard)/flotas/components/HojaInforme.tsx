@@ -3,6 +3,7 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { consolidarSinco } from '@/core/flotas';
 import type { FlotaHeader, CoberturaRow } from './types';
+import type { DanosPropiosData } from '@/core/flotas';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -40,6 +41,7 @@ interface Props {
   onPrimasMmtChange?: (primas: Record<string, number>) => void;
   tarifaFlota?: TarifaEntry[];
   corredorLabel?: string;
+  danosPropios?: DanosPropiosData;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -85,12 +87,13 @@ function buildPdfHtml(data: {
   totalVehiculos: number;
   ambitoLabel: string | null;
   sinco: { label: string; values: [string, string][] } | null;
+  danosPropiosPdf?: { values: [string, string][] } | null;
   primasSol: { tipo: string; cob: string; count: number; media: number; total: number }[];
   mmtRows: { tipo: string; cob: string; count: number; prima: number | null; total: number | null }[];
   corredorLabel?: string;
   cobAnexo: { titulo: string; tipologias?: string[]; garantias: string[] }[];
 }): string {
-  const { header, pivot, totalVehiculos, ambitoLabel, sinco, primasSol, mmtRows, corredorLabel, cobAnexo } = data;
+  const { header, pivot, totalVehiculos, ambitoLabel, sinco, danosPropiosPdf, primasSol, mmtRows, corredorLabel, cobAnexo } = data;
   const totalSol = primasSol.reduce((a, r) => a + r.total, 0);
   const totalMmt = mmtRows.reduce((a, r) => a + (r.total ?? 0), 0);
   const dif = totalMmt - totalSol;
@@ -130,6 +133,18 @@ function buildPdfHtml(data: {
       <div class="sinco-head">Siniestralidad SINCO</div>
       <div class="sinco-grid">
         ${sinco.values.map(([l, v]) => `
+        <div class="sinco-item">
+          <div class="sinco-label">${l}</div>
+          <div class="sinco-val">${v}</div>
+        </div>`).join('')}
+      </div>
+    </div>` : '';
+
+  const danosPropiosPdfHtml = danosPropiosPdf ? `
+    <div class="sinco-wrap">
+      <div class="sinco-head">Siniestralidad Daños Propios</div>
+      <div class="sinco-grid">
+        ${danosPropiosPdf.values.map(([l, v]) => `
         <div class="sinco-item">
           <div class="sinco-label">${l}</div>
           <div class="sinco-val">${v}</div>
@@ -291,6 +306,8 @@ function buildPdfHtml(data: {
 
 ${sincoHtml}
 
+${danosPropiosPdfHtml}
+
 <div class="section">
   <div class="section-title">Comparativa de primas</div>
   <table>
@@ -362,7 +379,7 @@ ${cobAnexo.length > 0 ? `
 export default function HojaInforme({
   header,
   trabajoRows, coberturas, sincoResultRows, sincoManual, sincoGlobal,
-  primasMmtValues, onPrimasMmtChange, tarifaFlota, corredorLabel,
+  primasMmtValues, onPrimasMmtChange, tarifaFlota, corredorLabel, danosPropios,
 }: Props) {
 
   // ── Pivot tipo × cobertura ──────────────────────────────────────────────────
@@ -403,6 +420,33 @@ export default function HojaInforme({
   }, [sincoManual]);
 
   const hasSincoData = resumenAuto !== null || resumenManual !== null || sincoGlobal !== null;
+
+  // ── Daños Propios ────────────────────────────────────────────────────────────
+  const danosPropiosItems = useMemo((): [string, string][] | null => {
+    if (!danosPropios?.mostrarEnInforme) return null;
+    const numSin = danosPropios.numSiniestros ?? 0;
+    const totalVeh = trabajoRows.filter(r => r['matricula']?.trim()).length;
+    // Antigüedad media de sincoResultRows (igual que SINCO automático)
+    const exitosas = sincoResultRows.filter(r => {
+      const c = r['Codigo_Retorno'] ?? r['codigo_retorno'] ?? '';
+      return !c || c.trim() === '' || c.trim() === '0';
+    });
+    const aniosList = exitosas.map(r => {
+      const raw = r['Num_Anios_Asegurado'] ?? r['num_anios_asegurado'] ?? '';
+      if (raw.trim()) { const n = parseFloat(raw); if (!isNaN(n) && n >= 0.08) return n; }
+      return 0;
+    }).filter(n => n > 0);
+    const antiguedMedia = aniosList.length > 0 ? aniosList.reduce((a, b) => a + b, 0) / aniosList.length : 0;
+    const sinAnio = antiguedMedia > 0 ? numSin / antiguedMedia : 0;
+    const frecuencia = totalVeh > 0 ? sinAnio / totalVeh : 0;
+    return [
+      ['Vehículos', String(totalVeh)],
+      ['Siniestros', String(numSin)],
+      ['Años media', fmt2(antiguedMedia) + 'a'],
+      ['Sin./año', fmt2(sinAnio)],
+      ['Frecuencia', fmtFreq(frecuencia)],
+    ];
+  }, [danosPropios, trabajoRows, sincoResultRows]);
 
   // ── Primas agrupadas ─────────────────────────────────────────────────────────
   const isYes = (v?: string) => { const u = (v ?? '').trim().toUpperCase(); return u !== '' && u !== 'NO' && u !== 'N' && u !== '0'; };
@@ -598,12 +642,38 @@ export default function HojaInforme({
       return null;
     })();
 
+    const danosPropiosPdfValues: [string, string][] | null = (() => {
+      if (!danosPropios?.mostrarEnInforme) return null;
+      const numSin = danosPropios.numSiniestros ?? 0;
+      const tVeh = trabajoRows.filter(r => r['matricula']?.trim()).length;
+      const exitosas2 = sincoResultRows.filter(r => {
+        const c = r['Codigo_Retorno'] ?? r['codigo_retorno'] ?? '';
+        return !c || c.trim() === '' || c.trim() === '0';
+      });
+      const aniosList2 = exitosas2.map(r => {
+        const raw = r['Num_Anios_Asegurado'] ?? r['num_anios_asegurado'] ?? '';
+        if (raw.trim()) { const n = parseFloat(raw); if (!isNaN(n) && n >= 0.08) return n; }
+        return 0;
+      }).filter(n => n > 0);
+      const antiguedMedia2 = aniosList2.length > 0 ? aniosList2.reduce((a, b) => a + b, 0) / aniosList2.length : 0;
+      const sinAnio2 = antiguedMedia2 > 0 ? numSin / antiguedMedia2 : 0;
+      const frecuencia2 = tVeh > 0 ? sinAnio2 / tVeh : 0;
+      return [
+        ['Vehículos', String(tVeh)],
+        ['Siniestros', String(numSin)],
+        ['Antigüedad', fmt2(antiguedMedia2) + ' años'],
+        ['Sin./año', fmt2(sinAnio2)],
+        ['Frecuencia', fmtFreq(frecuencia2)],
+      ];
+    })();
+
     const html = buildPdfHtml({
       header,
       pivot,
       totalVehiculos,
       ambitoLabel: ambito.label,
       sinco: sincoValues ? { label: 'SINCO', values: sincoValues } : null,
+      danosPropiosPdf: danosPropiosPdfValues ? { values: danosPropiosPdfValues } : null,
       primasSol,
       mmtRows,
       corredorLabel,
@@ -614,7 +684,7 @@ export default function HojaInforme({
     if (!w) return;
     w.document.write(html);
     w.document.close();
-  }, [header, pivot, totalVehiculos, ambito, primasSol, mmtRows, resumenAuto, resumenManual, sincoGlobal, cobAnexo]);
+  }, [header, pivot, totalVehiculos, ambito, primasSol, mmtRows, resumenAuto, resumenManual, sincoGlobal, danosPropios, cobAnexo]);
 
   // ── Render ────────────────────────────────────────────────────────────────────
   return (
@@ -719,6 +789,23 @@ export default function HojaInforme({
                 </div>
               );
             })()}
+          </div>
+        )}
+
+        {/* ── Siniestralidad Daños Propios ──────────────────────────────── */}
+        {danosPropiosItems && (
+          <div style={{ borderRadius: 10, overflow: 'hidden', border: '1px solid #e5e7eb', background: '#ffffff', flexShrink: 0 }}>
+            <div style={{ padding: '6px 14px', borderBottom: '1px solid #e5e7eb', background: '#f9fafb' }}>
+              <span style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.12em', color: '#374151' }}>Siniestralidad Daños Propios</span>
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 1, background: '#e5e7eb' }}>
+              {danosPropiosItems.map(([l, v]) => (
+                <div key={l} style={{ background: '#fff', padding: '8px 14px', flex: '1 0 80px' }}>
+                  <div style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#9ca3af' }}>{l}</div>
+                  <div style={{ fontSize: 16, fontWeight: 900, color: '#111827', fontFamily: 'monospace' }}>{v}</div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 

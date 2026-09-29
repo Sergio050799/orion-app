@@ -5,6 +5,7 @@ import React, {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { calcularPrima, validarCobertura, productosDisponibles, franquiciasValidas, getCategoria } from '@/core/flotas';
+import { usePrimasConfig } from '@/core/flotas/primasContext';
 import {
   TIPO_VEH_MAP, PRODUCT_LABELS, PRODUCT_CODES, AMBITO_OPTIONS,
 } from './constants';
@@ -43,7 +44,7 @@ function getOptions(tipo: string): { coberturas: string[]; frqs: string[]; asist
   return { coberturas, frqs, asistencias, isIndustrial };
 }
 
-function computePrima(row: VehicleRow): number | null {
+function computePrima(row: VehicleRow, config: ReturnType<typeof usePrimasConfig>): number | null {
   const tv = TIPO_VEH_MAP[row.tipo] as TipoVehiculo | undefined;
   const prod = PRODUCT_CODES[row.cobertura] as Producto | undefined;
   if (!tv || !prod) return null;
@@ -55,7 +56,7 @@ function computePrima(row: VehicleRow): number | null {
     asistencia: (row.asistencia || 'no') as any,
     animales: row.animales,
     perdidaTotal: row.perdidaTotal,
-  });
+  }, config);
 }
 
 // ─── Mini dropdown inline ─────────────────────────────────────────────────────
@@ -110,6 +111,7 @@ function CellDropdown({ value, options, disabled, onChange }: {
 
 const HojaCoberturas = forwardRef<HojaCoberturasHandle, Props>(
   function HojaCoberturas({ trabajoRows, onCoberturasChange }, ref) {
+    const primasConfig = usePrimasConfig();
     const vehicles = useMemo<VehicleRow[]>(() =>
       trabajoRows
         .filter(r => r['matricula']?.trim())
@@ -149,7 +151,7 @@ const HojaCoberturas = forwardRef<HojaCoberturasHandle, Props>(
       onCoberturasChange?.(rows.map(r => ({
         cobertura: r.cobertura, frq: r.frq, asistencia: r.asistencia,
         animales: r.animales, perdidaTotal: r.perdidaTotal,
-        primaMmt: computePrima(r),
+        primaMmt: computePrima(r, primasConfig),
       })));
     }, [rows]); // eslint-disable-line
 
@@ -157,7 +159,7 @@ const HojaCoberturas = forwardRef<HojaCoberturasHandle, Props>(
       getCoberturas: () => rows.map(r => ({
         cobertura: r.cobertura, frq: r.frq, asistencia: r.asistencia,
         animales: r.animales, perdidaTotal: r.perdidaTotal,
-        primaMmt: computePrima(r),
+        primaMmt: computePrima(r, primasConfig),
       })),
       setCoberturas: (coberturas) => {
         setRows(prev => prev.map((v, i) => coberturas[i]
@@ -190,7 +192,7 @@ const HojaCoberturas = forwardRef<HojaCoberturasHandle, Props>(
       setBulkCobertura('');
     };
 
-    const totalPrima = rows.reduce((acc, r) => acc + (computePrima(r) ?? 0), 0);
+    const totalPrima = rows.reduce((acc, r) => acc + (computePrima(r, primasConfig) ?? 0), 0);
 
     const cols = ['#', 'MATRÍCULA', 'TIPO', 'COBERTURA', 'FRQ', 'ASISTENCIA', 'ANIMALES', 'PÉRDIDA TOTAL', 'PRIMA MMT'];
 
@@ -247,7 +249,7 @@ const HojaCoberturas = forwardRef<HojaCoberturasHandle, Props>(
                 </td></tr>
               ) : rows.map((row, i) => {
                 const opts = getOptions(row.tipo);
-                const prima = computePrima(row);
+                const prima = computePrima(row, primasConfig);
                 const isSel = selected.has(i);
                 const isTR = PRODUCT_CODES[row.cobertura] === 'todo_riesgo';
                 const tv = TIPO_VEH_MAP[row.tipo] as TipoVehiculo | undefined;

@@ -19,6 +19,11 @@ export interface TarifaEntry {
   precio: number;
 }
 
+export interface DanosPropiosData {
+  mostrarEnInforme: boolean;
+  numSiniestros: number;
+}
+
 export interface FlotaCarpeta {
   id: string;
   nombre: string;
@@ -60,6 +65,7 @@ export interface FlotaCarpeta {
   sincoResultados: Record<string, string>[];
   sincoManual?:    { matricula: string; num_siniestros: number; fec_ini_cobertura: string; fec_vcto: string; codigo_retorno: string; garantias: string; observaciones: string; }[];
   sincoGlobal?:    { siniestrosTotales: number; anyosExperiencia: number; frecuencia: number; observaciones: string; };
+  danosPropios?:   DanosPropiosData;
   oferta:          Record<string, string>[];
   primasMmtInforme?: Record<string, number>;
   catalogoSeleccion?: Record<string, string>;

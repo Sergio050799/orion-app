@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { listarCarpetas, listarCorredores, cargarCarpetasDelServidor, cargarCorredoresDelServidor, type FlotaCarpeta, type Corredor } from '@/core/flotas';
@@ -167,6 +167,120 @@ const TIPO_NORMALIZE: Record<string, string> = {
 function normalizeTipo(raw: string): string {
   const key = raw.toLowerCase().trim();
   return TIPO_NORMALIZE[key] ?? (raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase());
+}
+
+function SugerenciasSection({ user }: { user: string | null }) {
+  const [titulo, setTitulo] = useState('');
+  const [desc,   setDesc]   = useState('');
+  const [status, setStatus] = useState<'idle' | 'sending' | 'done'>('idle');
+
+  const send = useCallback(async () => {
+    if (!titulo.trim() || !desc.trim()) return;
+    setStatus('sending');
+    try {
+      const me = await fetch('/api/auth/me').then(r => r.ok ? r.json() : null).catch(() => null);
+      await fetch('/api/admin/mejoras', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ usuario: me?.username || user || '', titulo: titulo.trim(), descripcion: desc.trim() }),
+      });
+      setStatus('done');
+      setTimeout(() => { setStatus('idle'); setTitulo(''); setDesc(''); }, 2500);
+    } catch {
+      setStatus('idle');
+    }
+  }, [titulo, desc, user]);
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%', padding: '10px 14px', borderRadius: 10, fontSize: 13,
+    background: 'rgba(6,14,50,0.55)', border: '1px solid rgba(61,112,255,0.22)',
+    color: '#FFFFFF', outline: 'none', fontFamily: 'inherit',
+    transition: 'border-color 0.15s',
+  };
+
+  return (
+    <div style={{ ...glass, padding: '24px 26px', position: 'relative', overflow: 'hidden' }}>
+      <div className="grain-subtle" />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+        <div style={{
+          width: 30, height: 30, borderRadius: 8, flexShrink: 0,
+          background: 'rgba(51,102,255,0.15)', border: '1px solid rgba(61,112,255,0.3)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(100,150,255,0.9)" strokeWidth="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+        </div>
+        <div>
+          <h3 style={{ fontFamily: 'var(--font-display), Inter, sans-serif', fontWeight: 600, fontSize: 15, margin: 0, color: '#FFFFFF' }}>
+            Sugerencias de mejora
+          </h3>
+          <span style={{ fontSize: 11, color: 'rgba(178,206,255,0.5)', letterSpacing: '0.04em' }}>
+            Cualquier idea que te parezca útil — se revisa en el panel de administración
+          </span>
+        </div>
+      </div>
+
+      {status === 'done' ? (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10, padding: '16px 20px',
+          borderRadius: 10, background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)',
+        }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2.5">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+          <span style={{ fontSize: 13, color: '#34d399', fontWeight: 500 }}>Sugerencia enviada — gracias.</span>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, alignItems: 'start' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div>
+              <label style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(80,130,255,0.75)', marginBottom: 5 }}>
+                Título
+              </label>
+              <input
+                type="text" value={titulo} maxLength={100}
+                onChange={e => setTitulo(e.target.value)}
+                placeholder="Resumen breve de la mejora"
+                style={inputStyle}
+                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.6)')}
+                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.22)')}
+              />
+            </div>
+            <button
+              onClick={send}
+              disabled={status === 'sending' || !titulo.trim() || !desc.trim()}
+              style={{
+                padding: '10px 20px', borderRadius: 10, fontSize: 12, fontWeight: 700,
+                textTransform: 'uppercase', letterSpacing: '0.08em', cursor: 'pointer',
+                background: titulo.trim() && desc.trim() ? 'rgba(51,102,255,0.2)' : 'rgba(51,102,255,0.07)',
+                border: `1px solid ${titulo.trim() && desc.trim() ? 'rgba(61,112,255,0.5)' : 'rgba(61,112,255,0.18)'}`,
+                color: titulo.trim() && desc.trim() ? '#6699FF' : 'rgba(100,130,255,0.4)',
+                transition: 'all 0.15s', alignSelf: 'flex-start',
+              }}
+              onMouseEnter={e => { if (titulo.trim() && desc.trim()) e.currentTarget.style.background = 'rgba(51,102,255,0.3)'; }}
+              onMouseLeave={e => { if (titulo.trim() && desc.trim()) e.currentTarget.style.background = 'rgba(51,102,255,0.2)'; }}
+            >
+              {status === 'sending' ? 'Enviando...' : 'Enviar sugerencia'}
+            </button>
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(80,130,255,0.75)', marginBottom: 5 }}>
+              Descripción
+            </label>
+            <textarea
+              value={desc} maxLength={1000} rows={4}
+              onChange={e => setDesc(e.target.value)}
+              placeholder="Explica la mejora con detalle"
+              style={{ ...inputStyle, resize: 'vertical', minHeight: 90 }}
+              onFocus={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.6)')}
+              onBlur={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.22)')}
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function DashboardPage() {
@@ -361,6 +475,10 @@ export default function DashboardPage() {
           </table>
         )}
       </div>
+
+      {/* Sugerencias */}
+      <SugerenciasSection user={user} />
+
     </div>
   );
 }

@@ -61,6 +61,8 @@ export async function POST(req: NextRequest) {
     const res = await apiPost('/auth/verify', { username, password });
     const data = await res.json() as { ok: boolean; username?: string; rol?: string; error?: string };
     if (data.ok && data.username) {
+      // Registrar login en auditoría (fire-and-forget)
+      apiPost('/admin/audit', { usuario: data.username, accion: 'login', detalle: 'Inicio de sesión', ip }).catch(() => {});
       return setCookieAndReturn(data.username, data.rol || 'usuario');
     }
   } catch (err) {

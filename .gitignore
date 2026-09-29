@@ -43,3 +43,7 @@ env.local
 
 # modelo OCR Donut (773MB)
 /models/
+
+# Local data / catalogos
+data/
+*.log
