@@ -232,6 +232,11 @@ export default function FlotasPage() {
 
   const handleSelectCarpeta = useCallback((raw: FlotaCarpeta) => {
     const carpeta = normalizarCarpeta(raw);
+    // Pre-populate refs BEFORE state updates so the rebuild useEffect in HojaOferta
+    // sees savedEditsRef already filled when it fires — prevents spurious auto-calc
+    if (carpeta.oferta.length > 0) ofertaRef.current?.setData(carpeta.oferta);
+    if (carpeta.original.length > 0) originalRef.current?.setData(carpeta.original);
+    if (carpeta.trabajo.length > 0) trabajoRef.current?.setData(carpeta.trabajo);
     setOpenFlotas(prev => {
       const rest = prev.filter(f => f.id !== carpeta.id);
       return [carpeta, ...rest].slice(0, 3);
@@ -243,11 +248,6 @@ export default function FlotasPage() {
     setSincoResultRows(carpeta.sincoResultados);
     setShowCarpetaScreen(false);
     setFichaMode(carpeta.estado === 'CONTRATADA');
-    setTimeout(() => {
-      if (carpeta.oferta.length > 0) ofertaRef.current?.setData(carpeta.oferta);
-      if (carpeta.original.length > 0) originalRef.current?.setData(carpeta.original);
-      if (carpeta.trabajo.length > 0) trabajoRef.current?.setData(carpeta.trabajo);
-    }, 0);
     setTrabajoRows(carpeta.trabajo);
   }, []);
 
@@ -272,6 +272,9 @@ export default function FlotasPage() {
     }
     // Load fresh from localStorage (autosave already persisted the target)
     const fresh = normalizarCarpeta(cargarCarpeta(target.id) ?? target);
+    if (fresh.oferta.length > 0) ofertaRef.current?.setData(fresh.oferta);
+    if (fresh.original.length > 0) originalRef.current?.setData(fresh.original);
+    if (fresh.trabajo.length > 0) trabajoRef.current?.setData(fresh.trabajo);
     setCarpetaActiva(fresh);
     setFlotaHeader(fresh.header);
     setOriginalData(fresh.original);
@@ -279,11 +282,6 @@ export default function FlotasPage() {
     setSincoResultRows(fresh.sincoResultados);
     setShowCarpetaScreen(false);
     setFichaMode(fresh.estado === 'CONTRATADA');
-    setTimeout(() => {
-      if (fresh.oferta.length > 0) ofertaRef.current?.setData(fresh.oferta);
-      if (fresh.original.length > 0) originalRef.current?.setData(fresh.original);
-      if (fresh.trabajo.length > 0) trabajoRef.current?.setData(fresh.trabajo);
-    }, 0);
     setTrabajoRows(fresh.trabajo);
   }, [carpetaActiva, flotaHeader, originalData, trabajoRows, sincoResultRows, ofertaRows]);
 

@@ -432,13 +432,15 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
       // Force lunas='No' for types that can't have lunas
       if (NO_LUNAS_TIPOS.has(row.tipo_vehiculo.toLowerCase())) row.lunas = 'No';
 
-      // Prima priority: manual override (keep) > tarifa auto-calc > grupo MMT del Informe > empty
-      if (!row._primaOverride) {
+      // Prima priority:
+      // 1. Si hay prima guardada (saved o existing) → respetarla siempre
+      // 2. Solo auto-calc si no hay ninguna prima guardada en absoluto
+      const hasSavedPrima = !!(saved?.oferta_prima_mmt || existing?.oferta_prima_mmt);
+      if (!hasSavedPrima) {
         const auto = calcPrimaForRow(row);
         if (auto) {
           row.oferta_prima_mmt = auto;
         } else {
-          // Tarifa no cubre este vehículo → usar prima de grupo del Informe si existe
           const tipoKey = (row.tipo_vehiculo || '').toUpperCase().trim() || 'SIN TIPO';
           const tNorm = tipoKey === 'DERIVADO DE TURISMO' ? 'TURISMO' : tipoKey;
           const informePrima = primasMmt?.[`${tNorm}||${row.coberturas || 'Sin cobertura'}`];
