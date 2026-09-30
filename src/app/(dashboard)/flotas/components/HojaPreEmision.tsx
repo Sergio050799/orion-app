@@ -108,9 +108,14 @@ function ManualSearchPanel({ vehicle, yearHint, onSelect, onClose }: {
 }) {
   const isRem = ['semirremolque', 'remolque'].includes((vehicle.tipo || '').toLowerCase())
     || /^R[\s-]?\d{4}/i.test(vehicle.matricula);
-  const initMarca  = isRem ? 'REMOLQUE' : vehicle.marca;
+  // Si marca contiene el modelo concatenado ("Scania R450") y modelo está vacío, pre-separar
+  const hasCombinedMarca = !isRem && !!vehicle.marca && vehicle.marca.includes(' ') && !vehicle.modelo;
+  const initMarca  = isRem ? 'REMOLQUE'
+    : hasCombinedMarca ? vehicle.marca.slice(0, vehicle.marca.indexOf(' '))
+    : vehicle.marca;
   const initModelo = isRem
     ? ((vehicle.tipo || '').toLowerCase() === 'semirremolque' ? 'SEMIRREMOLQUE' : 'REMOLQUE') + (vehicle.marca ? ` ${vehicle.marca}` : '')
+    : hasCombinedMarca ? vehicle.marca.slice(vehicle.marca.indexOf(' ')).trim()
     : vehicle.modelo;
 
   const [marca, setMarca]           = useState(initMarca);
@@ -135,6 +140,8 @@ function ManualSearchPanel({ vehicle, yearHint, onSelect, onClose }: {
       if (combustible) body.combustible = combustible;
       if (kw)         body.kw         = kw;
       if (anyo)       body.anyo       = parseInt(anyo);
+      // Si marca parece combinada (tiene espacio y no hay modelo), enviar rawText para que el servidor separe la marca real
+      if (marca && marca.includes(' ') && !modelo) body.rawText = marca;
       const res  = await fetch('/api/catalogo/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
