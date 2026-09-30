@@ -610,20 +610,20 @@ export default function VehiculosPage() {
         headers.forEach((h, i) => { headerRow.getCell(i + 1).value = h; });
         headerRow.height = 24;
         headerRow.eachCell(cell => {
-            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF002F82' } };
-            cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, name: 'Calibri', size: 9 };
+            cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF002F82' } };
+            cell.font      = { bold: true, color: { argb: 'FFFFFFFF' }, name: 'Calibri', size: 10 };
             cell.alignment = { horizontal: 'center', vertical: 'middle' };
-            cell.border = { bottom: { style: 'medium', color: { argb: 'FF002F82' } }, right: { style: 'thin', color: { argb: 'FFFFFFFF' } } };
+            cell.border    = { bottom: { style: 'medium', color: { argb: 'FF002F82' } }, right: { style: 'thin', color: { argb: 'FFFFFFFF' } } };
         });
 
         rows.forEach((rowData, i) => {
             const row = ws.addRow(headers.map(h => rowData[h] ?? ''));
-            row.height = 18;
+            row.height = 16;
             row.eachCell({ includeEmpty: true }, cell => {
-                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: i % 2 === 0 ? 'FFFFFFFF' : 'FFF0F4FA' } };
-                cell.font = { name: 'Calibri', size: 9, color: { argb: 'FF0A1628' } };
+                cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: i % 2 === 0 ? 'FFFFFFFF' : 'FFF0F4FA' } };
+                cell.font      = { name: 'Calibri', size: 9, color: { argb: 'FF0A1628' } };
                 cell.alignment = { horizontal: 'left', vertical: 'middle' };
-                cell.border = { bottom: { style: 'thin', color: { argb: 'FFB8C8E8' } }, right: { style: 'thin', color: { argb: 'FFB8C8E8' } } };
+                cell.border    = { bottom: { style: 'thin', color: { argb: 'FFB8C8E8' } }, right: { style: 'thin', color: { argb: 'FFB8C8E8' } } };
             });
         });
 

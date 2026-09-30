@@ -79,6 +79,7 @@ export interface VehiculoExport {
   kw: number;
   cv: number;
   tara: number;
+  plazas: number;
   status: string;
 }
 
@@ -617,6 +618,7 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
       kw:          v.seleccionado?.kw ?? 0,
       cv:          v.seleccionado?.cv ?? 0,
       tara:        v.seleccionado?.tara ?? 0,
+      plazas:      v.seleccionado?.plazas ?? 0,
       status:      v.status,
     })));
   }, [vehicles, onCatalogoChange, onVehiclesUpdate]);
@@ -665,6 +667,7 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
     if (listos.length === 0) { alert('No hay vehículos con catálogo asignado todavía.'); return; }
     const ExcelJS = (await import('exceljs')).default;
     const wb = new ExcelJS.Workbook();
+    wb.creator = 'MMT Seguros';
     const ws = wb.addWorksheet('PRE-EMISION');
     const COLS = ['MATRICULA', 'MARCA', 'MODELO', 'TIPO', 'VERSION', 'AÑO', 'COMBUSTIBLE', 'KW', 'CV', 'TARA', 'PLAZAS', 'ID'];
     const COL_WIDTHS: Record<string, number> = { MATRICULA: 14, MARCA: 14, MODELO: 14, TIPO: 16, VERSION: 36, AÑO: 8, COMBUSTIBLE: 12, KW: 8, CV: 8, TARA: 10, PLAZAS: 8, ID: 16 };
@@ -672,9 +675,10 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
     const hr = ws.getRow(1);
     hr.height = 22;
     hr.eachCell(cell => {
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1240CC' } };
-      cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, name: 'Calibri', size: 10 };
+      cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF002F82' } };
+      cell.font      = { bold: true, color: { argb: 'FFFFFFFF' }, name: 'Calibri', size: 10 };
       cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      cell.border    = { bottom: { style: 'medium', color: { argb: 'FF002F82' } }, right: { style: 'thin', color: { argb: 'FFFFFFFF' } } };
     });
     listos.forEach((v, ri) => {
       const r = ws.addRow([
@@ -693,13 +697,10 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
       ]);
       r.height = 16;
       r.eachCell(cell => {
-        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: ri % 2 === 0 ? 'FFFFFFFF' : 'FFF0F4FA' } };
-        cell.font = { name: 'Calibri', size: 9 };
+        cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: ri % 2 === 0 ? 'FFFFFFFF' : 'FFF0F4FA' } };
+        cell.font      = { name: 'Calibri', size: 9, color: { argb: 'FF0A1628' } };
         cell.alignment = { horizontal: 'left', vertical: 'middle' };
-        cell.border = {
-          bottom: { style: 'thin', color: { argb: 'FFE5E7EB' } },
-          right:  { style: 'thin', color: { argb: 'FFE5E7EB' } },
-        };
+        cell.border    = { bottom: { style: 'thin', color: { argb: 'FFB8C8E8' } }, right: { style: 'thin', color: { argb: 'FFB8C8E8' } } };
       });
     });
     const buf = await wb.xlsx.writeBuffer();

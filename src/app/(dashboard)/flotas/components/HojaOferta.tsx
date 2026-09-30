@@ -1014,9 +1014,9 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
             <div style={{ overflowX: 'auto', padding: '0' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
                 <thead>
-                  <tr style={{ background: '#00B050' }}>
-                    {['Tomador', 'Tipología', 'Matrícula', 'Marca', 'Modelo', 'Coberturas', 'Total Actual', 'Periodicidad', 'F.Vencimiento', 'Prima Ofertada MMT'].map(h => (
-                      <th key={h} style={{ padding: '14px 12px', color: '#fff', fontWeight: 800, fontSize: 12, textTransform: 'uppercase', textAlign: 'center', borderBottom: '3px solid #009040', whiteSpace: 'nowrap', letterSpacing: '0.04em' }}>
+                  <tr style={{ background: '#002F82' }}>
+                    {['Tomador', 'Tipología', 'Matrícula', 'Marca', 'Modelo', 'Coberturas', 'Periodicidad', 'F.Vencimiento', 'Prima Ofertada MMT'].map(h => (
+                      <th key={h} style={{ padding: '14px 12px', color: '#fff', fontWeight: 800, fontSize: 12, textTransform: 'uppercase', textAlign: 'center', borderBottom: '3px solid #001a4f', whiteSpace: 'nowrap', letterSpacing: '0.04em' }}>
                         {h}
                       </th>
                     ))}
@@ -1037,7 +1037,6 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
                         <td style={{ padding: '12px 10px', textAlign: 'center', color: '#000', fontSize: 13, fontWeight: 600 }}>{(marca ?? '').toUpperCase()}</td>
                         <td style={{ padding: '12px 10px', textAlign: 'center', color: '#000', fontSize: 13 }}>{modeloParts.join(' ').toUpperCase()}</td>
                         <td style={{ padding: '12px 10px', textAlign: 'center', color: '#000', fontSize: 13, fontWeight: 600 }}>{r.coberturas.toUpperCase()}</td>
-                        <td style={{ padding: '12px 10px', textAlign: 'center', fontFamily: 'monospace', color: '#000', fontWeight: 700, fontSize: 14 }}>{r.prima_referencia ? `${r.prima_referencia} €` : '—'}</td>
                         <td style={{ padding: '12px 10px', textAlign: 'center', color: '#000', fontSize: 13 }}>{(header?.periodicidad ?? 'anual').toUpperCase()}</td>
                         <td style={{ padding: '12px 10px', textAlign: 'center', color: '#000', fontSize: 13, fontWeight: 600 }}>{parseFecha(header?.efecto)}</td>
                         <td style={{ padding: '10px 8px', textAlign: 'center' }}>
@@ -1062,12 +1061,8 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
                   })}
                   {/* Totals row */}
                   <tr style={{ background: '#f0f2f5', borderTop: '3px solid #002F82' }}>
-                    <td colSpan={6} style={{ padding: '16px 12px', textAlign: 'right', fontWeight: 900, fontSize: 15, color: '#000', letterSpacing: '0.03em' }}>TOTALES</td>
-                    <td style={{ padding: '16px 12px', textAlign: 'center', fontWeight: 800, fontFamily: 'monospace', fontSize: 15, color: '#000' }}>
-                      {(() => { const t = rows.reduce((s, r) => s + (parseFloat(r.prima_referencia) || 0), 0); return t > 0 ? fmtEUR(t) : '—'; })()}
-                    </td>
-                    <td colSpan={2}></td>
-                    <td style={{ padding: '16px 12px', textAlign: 'center', fontWeight: 900, fontFamily: 'monospace', fontSize: 16, color: '#002F82' }}>
+                    <td colSpan={8} style={{ padding: '16px 12px', textAlign: 'right', fontWeight: 900, fontSize: 15, color: '#000', letterSpacing: '0.03em' }}>TOTALES</td>
+                    <td style={{ padding: '16px 12px', textAlign: 'right', fontWeight: 900, fontFamily: 'monospace', fontSize: 16, color: '#002F82' }}>
                       {fmtEUR(primaTotal)}
                     </td>
                   </tr>

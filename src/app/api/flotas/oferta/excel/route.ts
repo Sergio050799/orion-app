@@ -52,7 +52,7 @@ function fmtEUR(n: number): string {
 // ── Paleta ──────────────────────────────────────────────────────────────────
 const DARK_BLUE  = 'FF002F82';
 const WHITE      = 'FFFFFFFF';
-const STRIPE_ODD = 'FFF9FAFB';
+const STRIPE_ODD = 'FFF0F4FA';
 const INDIGO_BG  = 'FFEEF3FF';
 const COB_DARK   = 'FF0A3D91';
 const COB_LIGHT  = 'FFEEF3FF';

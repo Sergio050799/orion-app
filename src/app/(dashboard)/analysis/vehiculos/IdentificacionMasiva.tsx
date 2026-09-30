@@ -43,27 +43,65 @@ function parseExcelRows(buffer: ArrayBuffer): Record<string, string>[] {
 
 // ─── Export Excel ─────────────────────────────────────────────────────────────
 
-function exportExcel(vehicles: VehiculoExport[]) {
-  const rows = vehicles.map(v => ({
-    'Matrícula':   v.matricula,
-    'Tipo':        v.tipo,
-    'Marca':       v.marca,
-    'Modelo':      v.modelo,
-    'Versión':     v.version,
-    'ID Catálogo': v.id_catalogo,
-    'Año':         v.anyo > 0 ? v.anyo : '',
-    'Combustible': FUEL_LABEL[v.combustible] ?? v.combustible,
-    'kW':          v.kw > 0 ? v.kw : '',
-    'CV':          v.cv > 0 ? v.cv : '',
-    'Tara (kg)':   v.tara > 0 ? v.tara : '',
-    'Estado':      v.status,
-  }));
-  const ws = XLSX.utils.json_to_sheet(rows);
-  ws['!cols'] = Object.keys(rows[0] ?? {}).map((_, i) => ({ wch: [12,16,16,22,40,14,8,12,8,8,10,14][i] ?? 14 }));
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Vehículos');
-  const buf = XLSX.write(wb, { type: 'array', bookType: 'xlsx' }) as number[];
-  const blob = new Blob([new Uint8Array(buf)], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+async function exportExcel(vehicles: VehiculoExport[]) {
+  const ExcelJS = (await import('exceljs')).default;
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'MMT Seguros';
+  const ws = wb.addWorksheet('Vehículos');
+
+  const COLS = [
+    { header: 'Matrícula',   width: 13 },
+    { header: 'Tipo',        width: 18 },
+    { header: 'Marca',       width: 16 },
+    { header: 'Modelo',      width: 22 },
+    { header: 'Versión',     width: 38 },
+    { header: 'ID Catálogo', width: 14 },
+    { header: 'Año',         width: 8  },
+    { header: 'Combustible', width: 13 },
+    { header: 'kW',          width: 8  },
+    { header: 'CV',          width: 8  },
+    { header: 'Plazas',      width: 9  },
+    { header: 'Tara (kg)',   width: 11 },
+    { header: 'Estado',      width: 16 },
+  ];
+  ws.columns = COLS.map(c => ({ width: c.width }));
+
+  const hr = ws.addRow(COLS.map(c => c.header));
+  hr.height = 22;
+  hr.eachCell(cell => {
+    cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF002F82' } };
+    cell.font      = { bold: true, color: { argb: 'FFFFFFFF' }, name: 'Calibri', size: 10 };
+    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+    cell.border    = { bottom: { style: 'medium', color: { argb: 'FF002F82' } }, right: { style: 'thin', color: { argb: 'FFFFFFFF' } } };
+  });
+
+  vehicles.forEach((v, i) => {
+    const r = ws.addRow([
+      v.matricula,
+      v.tipo,
+      v.marca,
+      v.modelo,
+      v.version,
+      v.id_catalogo,
+      v.anyo > 0 ? v.anyo : '',
+      FUEL_LABEL[v.combustible] ?? v.combustible,
+      v.kw > 0 ? v.kw : '',
+      v.cv > 0 ? v.cv : '',
+      v.plazas > 0 ? v.plazas : '',
+      v.tara > 0 ? v.tara : '',
+      v.status,
+    ]);
+    r.height = 16;
+    r.eachCell({ includeEmpty: true }, cell => {
+      cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: i % 2 === 0 ? 'FFFFFFFF' : 'FFF0F4FA' } };
+      cell.font      = { name: 'Calibri', size: 9, color: { argb: 'FF0A1628' } };
+      cell.alignment = { horizontal: 'left', vertical: 'middle' };
+      cell.border    = { bottom: { style: 'thin', color: { argb: 'FFB8C8E8' } }, right: { style: 'thin', color: { argb: 'FFB8C8E8' } } };
+    });
+  });
+
+  const buf = await wb.xlsx.writeBuffer();
+  const blob = new Blob([new Uint8Array(buf as ArrayBuffer)], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url; a.download = `identificacion_vehiculos_${new Date().toISOString().slice(0, 10)}.xlsx`; a.click();
@@ -152,18 +190,20 @@ export default function IdentificacionMasiva() {
     const headers = ['matricula', 'marca', 'modelo', 'tipo_vehiculo', 'kw', 'cv', 'tn', 'anyo_fabricacion'];
     const example = ['1234ABC', 'RENAULT', 'MEGANE', 'Turismo', '85', '', '', '2019'];
     const wb = new ExcelJS.Workbook();
+    wb.creator = 'MMT Seguros';
     const ws = wb.addWorksheet('Vehículos');
     ws.columns = headers.map(() => ({ width: 22 }));
     const hr = ws.addRow(headers);
     hr.height = 22;
     hr.eachCell(cell => {
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1240CC' } };
-      cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, name: 'Calibri', size: 10 };
+      cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF002F82' } };
+      cell.font      = { bold: true, color: { argb: 'FFFFFFFF' }, name: 'Calibri', size: 10 };
       cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      cell.border    = { bottom: { style: 'medium', color: { argb: 'FF002F82' } }, right: { style: 'thin', color: { argb: 'FFFFFFFF' } } };
     });
     const er = ws.addRow(example);
     er.eachCell(cell => {
-      cell.font = { color: { argb: 'FFAAAAAA' }, name: 'Calibri', size: 10, italic: true };
+      cell.font      = { color: { argb: 'FFAAAAAA' }, name: 'Calibri', size: 10, italic: true };
       cell.alignment = { horizontal: 'left', vertical: 'middle' };
     });
     const buf = await wb.xlsx.writeBuffer();
