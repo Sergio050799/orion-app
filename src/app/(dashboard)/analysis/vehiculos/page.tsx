@@ -574,8 +574,8 @@ export default function VehiculosPage() {
                 const manCat = c.manualSelected || c.manualMatches[0];
                 return {
                     'Matrícula': c.plate, 'Fecha': c.date || '', 'Antigüedad': c.age,
-                    'Marca': sd?.marca || manCat?.marca || '',
-                    'Modelo': sd?.modelo || manCat?.modelo || '',
+                    'Marca': sd?.marca || cat?.marca || manCat?.marca || '',
+                    'Modelo': sd?.modelo || cat?.modelo || manCat?.modelo || '',
                     'Versión': sd?.version || cat?.version || manCat?.version || '',
                     'VIN': sd?.vin || '',
                     'Combustible': sd?.combustible || cat?.combustible || '',

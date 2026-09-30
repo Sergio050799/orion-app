@@ -58,6 +58,7 @@ interface VehicleEmision {
   kw: string;
   cv: string;
   tn: string;
+  combustible: string;
   anyo_fabricacion: string;
   fecha_matriculacion: string;
   status: EmisionStatus;
@@ -344,6 +345,7 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
       kw:                  r['kw'] ?? '',
       cv:                  r['cv'] ?? '',
       tn:                  r['tn'] ?? '',
+      combustible:         r['combustible'] ?? '',
       anyo_fabricacion:    r['anyo_fabricacion'] ?? '',
       fecha_matriculacion: r['fecha_matriculacion'] ?? '',
       status:              'pendiente' as EmisionStatus,
@@ -476,10 +478,11 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
         body.modelo = v.marca ? `${prefix} ${v.marca}` : prefix;
         if (v.tn) { const n = parseFloat(v.tn); if (!isNaN(n) && n > 0) body.tara = n >= 100 ? n : n * 1000; }
       } else {
-        if (v.marca)       body.marca  = v.marca;
-        if (modeloClean)   body.modelo = modeloClean;
-        if (v.kw)          body.kw     = v.kw;
-        else if (v.cv)     body.kw = String(Math.round(parseFloat(v.cv) / 1.36));
+        if (v.marca)        body.marca       = v.marca;
+        if (modeloClean)    body.modelo      = modeloClean;
+        if (v.kw)           body.kw          = v.kw;
+        else if (v.cv)      body.kw          = String(Math.round(parseFloat(v.cv) / 1.36));
+        if (v.combustible)  body.combustible = v.combustible;
         if (v.tn) { const n = parseFloat(v.tn); body.tara = n >= 100 ? n : n * 1000; }
       }
 
@@ -663,8 +666,9 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
     const ExcelJS = (await import('exceljs')).default;
     const wb = new ExcelJS.Workbook();
     const ws = wb.addWorksheet('PRE-EMISION');
-    const COLS = ['MATRICULA', 'MARCA', 'MODELO', 'VERSION', 'AÑO', 'PLAZAS', 'ID'];
-    ws.columns = COLS.map(h => ({ header: h, key: h, width: h === 'VERSION' ? 36 : h === 'MATRICULA' ? 14 : h === 'ID' ? 16 : 12 }));
+    const COLS = ['MATRICULA', 'MARCA', 'MODELO', 'TIPO', 'VERSION', 'AÑO', 'COMBUSTIBLE', 'KW', 'CV', 'TARA', 'PLAZAS', 'ID'];
+    const COL_WIDTHS: Record<string, number> = { MATRICULA: 14, MARCA: 14, MODELO: 14, TIPO: 16, VERSION: 36, AÑO: 8, COMBUSTIBLE: 12, KW: 8, CV: 8, TARA: 10, PLAZAS: 8, ID: 16 };
+    ws.columns = COLS.map(h => ({ header: h, key: h, width: COL_WIDTHS[h] ?? 12 }));
     const hr = ws.getRow(1);
     hr.height = 22;
     hr.eachCell(cell => {
@@ -677,8 +681,13 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
         v.matricula,
         v.seleccionado!.marca,
         v.seleccionado!.modelo ?? v.modelo,
+        v.tipo,
         v.seleccionado!.version,
         v.seleccionado!.anyo || '',
+        FUEL_LABEL[v.seleccionado!.combustible] ?? v.seleccionado!.combustible,
+        v.seleccionado!.kw || '',
+        v.seleccionado!.cv || '',
+        v.seleccionado!.tara || '',
         v.seleccionado!.plazas || '',
         v.seleccionado!.id_veh,
       ]);
