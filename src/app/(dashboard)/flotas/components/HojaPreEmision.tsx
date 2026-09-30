@@ -44,6 +44,7 @@ interface VehicleEmision {
   cv: string;
   tn: string;
   combustible: string;
+  anyo_matricula: string;
   anyo_fabricacion: string;
   fecha_matriculacion: string;
   status: EmisionStatus;
@@ -349,6 +350,7 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
       cv:                  r['cv'] ?? '',
       tn:                  r['tn'] ?? '',
       combustible:         r['combustible'] ?? '',
+      anyo_matricula:      r['anyo_matricula'] ?? '',
       anyo_fabricacion:    r['anyo_fabricacion'] ?? '',
       fecha_matriculacion: r['fecha_matriculacion'] ?? '',
       status:              'pendiente' as EmisionStatus,
@@ -416,9 +418,8 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
   }, [vehicles, applyToMultiple]);
 
   const extractYear = useCallback((v: VehicleEmision): number | null => {
-    // anyo_fabricacion primero (año de modelo, que es el que usa el catálogo)
-    // fecha_matriculacion como fallback (año de primera matriculación)
-    for (const s of [v.anyo_fabricacion, v.fecha_matriculacion]) {
+    // anyo_fabricacion primero (Silverdat), luego anyo_matricula (TRABAJO), luego fecha_matriculacion
+    for (const s of [v.anyo_fabricacion, v.anyo_matricula, v.fecha_matriculacion]) {
       if (!s) continue;
       const m = s.match(/(\d{4})/);
       if (m) { const y = parseInt(m[1]); if (y >= 1980 && y <= 2040) return y; }
@@ -472,6 +473,11 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
           marcaClean = v.marca.slice(0, spaceIdx).trim();
           if (!modeloClean) modeloClean = marcaSuffix;
         }
+      }
+      // Actualizar estado con valores limpios para que el grid muestre Marca/Modelo correctos
+      if (marcaClean !== v.marca || modeloClean !== v.modelo) {
+        setV(i, { marca: marcaClean, modelo: modeloClean });
+        v = { ...v, marca: marcaClean, modelo: modeloClean };
       }
 
       // Detectar patrón camión: "R450", "R 450", "SERIE R 450", "XF 460", "TGX 460"
@@ -935,22 +941,54 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
                         />
                       </td>
                       <td style={{ ...tdS, fontFamily: 'monospace', fontWeight: 800, color: '#111827', letterSpacing: '0.04em' }}>{v.matricula}</td>
-                      <td style={{ ...tdS, color: '#111827', fontWeight: 600 }}>{v.marca}</td>
-                      <td style={{ ...tdS, color: '#111827' }}>{v.modelo}</td>
 
-                      {/* ── Año cell ─────────────────────────────────────── */}
-                      <td style={tdS}>
+                      {/* ── Marca editable ──────────────────────────────── */}
+                      <td style={{ ...tdS, padding: '2px 6px' }}>
+                        <input
+                          value={v.marca}
+                          onChange={e => setV(origIdx, { marca: e.target.value })}
+                          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleSearch(origIdx); } }}
+                          title="Edita y pulsa Enter para re-buscar"
+                          style={{ width: '100%', border: 'none', borderBottom: '1px dashed #d1d5db', background: 'transparent', fontWeight: 600, color: '#111827', fontSize: 12, outline: 'none', cursor: 'text', padding: '2px 0' }}
+                        />
+                      </td>
+
+                      {/* ── Modelo editable ─────────────────────────────── */}
+                      <td style={{ ...tdS, padding: '2px 6px' }}>
+                        <input
+                          value={v.modelo}
+                          onChange={e => setV(origIdx, { modelo: e.target.value })}
+                          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleSearch(origIdx); } }}
+                          title="Edita y pulsa Enter para re-buscar"
+                          placeholder="—"
+                          style={{ width: '100%', border: 'none', borderBottom: '1px dashed #d1d5db', background: 'transparent', color: '#374151', fontSize: 12, outline: 'none', cursor: 'text', padding: '2px 0' }}
+                        />
+                      </td>
+
+                      {/* ── Año cell + editable ──────────────────────────── */}
+                      <td style={{ ...tdS, padding: '2px 6px' }}>
                         {(() => {
                           const y = extractYear(v);
-                          if (!y) return <span style={{ color: '#d1d5db', fontSize: 11 }}>—</span>;
+                          const yPlate = !y ? estimateYear(v.matricula)?.year : null;
+                          const display = y ?? yPlate;
                           const fromFab = !!v.anyo_fabricacion;
+                          const fromPlate = !y && !!yPlate;
                           return (
-                            <span
-                              title={fromFab ? 'Año fabricación (Silverdat)' : 'Estimado de matrícula'}
+                            <input
+                              value={display ?? ''}
+                              onChange={e => {
+                                const val = e.target.value.trim();
+                                setV(origIdx, { anyo_fabricacion: val, anyo_matricula: val });
+                              }}
+                              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleSearch(origIdx); } }}
+                              title={fromFab ? 'Año fabricación (Silverdat) — edita y Enter para re-buscar' : fromPlate ? 'Estimado del diccionario de matrícula — edita y Enter para re-buscar' : 'Introduce el año y pulsa Enter'}
+                              placeholder="—"
                               style={{
-                                fontSize: 11, fontWeight: 700, fontFamily: 'monospace',
-                                color: fromFab ? '#f97316' : '#1240CC',
-                              }}>{y}</span>
+                                width: 48, border: 'none', borderBottom: '1px dashed #d1d5db', background: 'transparent',
+                                fontSize: 11, fontWeight: 700, fontFamily: 'monospace', outline: 'none', cursor: 'text', padding: '2px 0',
+                                color: fromFab ? '#f97316' : fromPlate ? '#1240CC' : '#6b7280',
+                              }}
+                            />
                           );
                         })()}
                       </td>
