@@ -42,7 +42,7 @@ interface OfertaFields {
 
 interface Props {
   trabajoRows: Record<string, string>[];
-  header?: { cif: string; tomador: string; actividad: string; formaPago: string; efecto: string };
+  header?: { cif: string; tomador: string; actividad: string; formaPago: string; efecto: string; periodicidad?: string };
   carpetaNombre?: string;
   primasMmt?: Record<string, number>;  // key: "TIPO||COBERTURA", value: prima media (from Informe)
   onDataChange?: (data: Record<string, string>[]) => void;
@@ -174,7 +174,7 @@ function buildOfertaPdfHtml(data: {
       <td>${(marca ?? '').toUpperCase()}</td>
       <td>${mp.join(' ').toUpperCase()}</td>
       <td style="font-weight:700">${r.coberturas.toUpperCase()}</td>
-      <td>${(header?.formaPago ?? 'ANUAL').toUpperCase()}</td>
+      <td>${(header?.periodicidad ?? 'anual').toUpperCase()}</td>
       <td>${parseFecha(header?.efecto) || '—'}</td>
       <td style="font-weight:700;color:#002F82;text-align:right;font-family:monospace">${r.oferta_prima_mmt ? fmtE(parseFloat(r.oferta_prima_mmt)||0) : '—'}</td>
     </tr>`;
@@ -226,7 +226,7 @@ function buildOfertaPdfHtml(data: {
 <table>
   <thead><tr>
     <th>Tomador</th><th>Tipología</th><th>Matrícula</th><th>Marca</th><th>Modelo</th>
-    <th>Coberturas</th><th>Forma Pago</th><th>Vencimiento</th><th>Prima Ofertada MMT</th>
+    <th>Coberturas</th><th>Periodicidad</th><th>Vencimiento</th><th>Prima Ofertada MMT</th>
   </tr></thead>
   <tbody>${vehiculosHtml}</tbody>
   <tfoot><tr class="tfoot">
@@ -652,7 +652,7 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
           marca: (marca ?? '').toUpperCase(),
           modelo: modeloParts.join(' ').toUpperCase(),
           coberturas: (r.coberturas ?? '').toUpperCase(),
-          forma_pago: (header?.formaPago ?? 'ANUAL').toUpperCase(),
+          periodicidad: (header?.periodicidad ?? 'anual').toUpperCase(),
           fecha_vencimiento: parseFecha(header?.efecto),
           prima_ofertada: parseFloat(r.oferta_prima_mmt) || 0,
         };
@@ -1015,7 +1015,7 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
                 <thead>
                   <tr style={{ background: '#00B050' }}>
-                    {['Tomador', 'Tipología', 'Matrícula', 'Marca', 'Modelo', 'Coberturas', 'Total Actual', 'Forma Pago', 'F.Vencimiento', 'Prima Ofertada MMT'].map(h => (
+                    {['Tomador', 'Tipología', 'Matrícula', 'Marca', 'Modelo', 'Coberturas', 'Total Actual', 'Periodicidad', 'F.Vencimiento', 'Prima Ofertada MMT'].map(h => (
                       <th key={h} style={{ padding: '14px 12px', color: '#fff', fontWeight: 800, fontSize: 12, textTransform: 'uppercase', textAlign: 'center', borderBottom: '3px solid #009040', whiteSpace: 'nowrap', letterSpacing: '0.04em' }}>
                         {h}
                       </th>
@@ -1038,7 +1038,7 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
                         <td style={{ padding: '12px 10px', textAlign: 'center', color: '#000', fontSize: 13 }}>{modeloParts.join(' ').toUpperCase()}</td>
                         <td style={{ padding: '12px 10px', textAlign: 'center', color: '#000', fontSize: 13, fontWeight: 600 }}>{r.coberturas.toUpperCase()}</td>
                         <td style={{ padding: '12px 10px', textAlign: 'center', fontFamily: 'monospace', color: '#000', fontWeight: 700, fontSize: 14 }}>{r.prima_referencia ? `${r.prima_referencia} €` : '—'}</td>
-                        <td style={{ padding: '12px 10px', textAlign: 'center', color: '#000', fontSize: 13 }}>{(header?.formaPago ?? 'ANUAL').toUpperCase()}</td>
+                        <td style={{ padding: '12px 10px', textAlign: 'center', color: '#000', fontSize: 13 }}>{(header?.periodicidad ?? 'anual').toUpperCase()}</td>
                         <td style={{ padding: '12px 10px', textAlign: 'center', color: '#000', fontSize: 13, fontWeight: 600 }}>{parseFecha(header?.efecto)}</td>
                         <td style={{ padding: '10px 8px', textAlign: 'center' }}>
                           <input

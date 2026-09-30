@@ -279,6 +279,7 @@ function buildPdfHtml(data: {
   ${header?.actividad ? `<div><span class="cf-label">Actividad</span><span class="cf-val">${header.actividad}</span></div>` : ''}
   ${header?.efecto   ? `<div><span class="cf-label">Fecha efecto</span><span class="cf-val">${fmtDateField(header.efecto)}</span></div>` : ''}
   ${header?.formaPago ? `<div><span class="cf-label">Forma de pago</span><span class="cf-val">${header.formaPago}</span></div>` : ''}
+  ${header?.periodicidad ? `<div><span class="cf-label">Periodicidad</span><span class="cf-val">${header.periodicidad.toUpperCase()}</span></div>` : ''}
   ${header?.ciaActual ? `<div><span class="cf-label">Compañía actual</span><span class="cf-val">${header.ciaActual}</span></div>` : ''}
   ${ambitoLabel ? `<div><span class="cf-label">Ámbito</span><span class="cf-val"><span class="ambito-badge">${ambitoLabel}</span></span></div>` : ''}
 </div>
