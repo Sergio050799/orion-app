@@ -109,6 +109,9 @@ export async function POST(req: NextRequest) {
 
     ws.columns = COLS.map(c => ({ key: c.key, width: c.width }));
 
+    // Track max content length per column for auto-fit after rows are added
+    const colMaxLen: number[] = COLS.map(c => c.header.length);
+
     // ── Fila 1: Título ────────────────────────────────────────────────────────
     const titleRow = ws.addRow([`OFERTA PARA LA FLOTA ${body.flota_nombre}`, '', '', '', '', '', '', '', '']);
     titleRow.height = 56;
@@ -123,12 +126,13 @@ export async function POST(req: NextRequest) {
       cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: DARK_BLUE } };
     }
 
-    // Add logo in the title row (left side)
+    // Add logo in the title row — oneCell keeps it anchored to the row without overflowing
     if (logoId !== undefined) {
       ws.addImage(logoId, {
-        tl: { col: 0, row: 0 },
-        ext: { width: 160, height: 50 },
-        editAs: 'absolute',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        tl: { col: 0, row: 0 } as any,
+        ext: { width: 150, height: 48 },
+        editAs: 'oneCell',
       });
     }
 
@@ -163,13 +167,20 @@ export async function POST(req: NextRequest) {
     body.vehiculos.forEach((v, idx) => {
       const even = idx % 2 === 0;
       const bgColor = even ? 'FFFFFFFF' : STRIPE_ODD;
-      const dr = ws.addRow([
+      const rowValues = [
         v.tomador, v.tipologia, v.matricula, v.marca, v.modelo,
         v.coberturas, v.periodicidad,
         fmtFecha(v.fecha_vencimiento),
         fmtEUR(v.prima_ofertada),
-      ]);
-      dr.height = 22;
+      ];
+      // Track max col lengths for auto-fit
+      rowValues.forEach((val, ci) => {
+        const len = val ? String(val).length : 0;
+        if (len > colMaxLen[ci]) colMaxLen[ci] = len;
+      });
+      const cobLen = v.coberturas?.length || 0;
+      const dr = ws.addRow(rowValues);
+      dr.height = cobLen > 60 ? Math.min(22 + Math.ceil((cobLen - 30) / 40) * 14, 90) : 22;
       dr.eachCell((cell, colNumber) => {
         const isLast = colNumber === 9;
         cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: bgColor } };
@@ -195,6 +206,13 @@ export async function POST(req: NextRequest) {
     // Label in merged cell
     ws.getCell(`A${totalRow.number}`).alignment = { horizontal: 'right', vertical: 'middle' };
     ws.getCell(`A${totalRow.number}`).value = 'TOTALES';
+
+    // Auto-fit column widths based on content
+    ws.columns.forEach((col, i) => {
+      const minW = COLS[i]?.width ?? 10;
+      const autoW = Math.min(colMaxLen[i] + 3, 55);
+      col.width = Math.max(minW, autoW);
+    });
 
     // ── Hoja 2: Coberturas ────────────────────────────────────────────────────
     if (body.cobAnexo && body.cobAnexo.length > 0) {

@@ -825,10 +825,7 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
             fontWeight: hasValue ? 700 : 400,
             color: hasValue ? '#000000' : '#9ca3af',
             fontFamily: hasValue ? 'monospace' : 'inherit',
-            borderLeft: isOverride ? '3px solid #f59e0b' : 'none',
-            background: isOverride ? 'rgba(245,158,11,0.05)' : undefined,
-          }}
-            title={isOverride ? 'Override manual — borra para volver al cálculo automático' : undefined}>
+          }}>
             {row.oferta_prima_mmt ? `${row.oferta_prima_mmt} €` : '—'}
           </div>
         );
@@ -887,7 +884,7 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
           {/* Ajustes toggle */}
           <button
             onClick={() => setShowAjustes(!showAjustes)}
-            style={{ fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 6, background: showAjustes ? 'rgba(245,158,11,0.12)' : 'rgba(0,0,0,0.04)', color: showAjustes ? '#b45309' : '#6b7280', border: '1px solid ' + (showAjustes ? 'rgba(245,158,11,0.35)' : '#e5e7eb'), cursor: 'pointer' }}>
+            style={{ fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 6, background: showAjustes ? 'rgba(0,48,132,0.12)' : 'rgba(0,0,0,0.04)', color: showAjustes ? '#002F82' : '#6b7280', border: '1px solid ' + (showAjustes ? 'rgba(0,48,132,0.3)' : '#e5e7eb'), cursor: 'pointer' }}>
             Ajustes
           </button>
           {/* Toggle preview/grid */}
@@ -919,18 +916,18 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
 
       {/* Ajustes panel */}
       {showAjustes && (
-        <div style={{ padding: '10px 16px', borderBottom: '1px solid #e5e7eb', background: '#fffbf0', display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start', flexShrink: 0 }}>
+        <div style={{ padding: '10px 16px', borderBottom: '1px solid #e5e7eb', background: '#f9fafb', display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start', flexShrink: 0 }}>
 
           {/* Ajuste global */}
           <div>
-            <div style={{ fontSize: 10, fontWeight: 700, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Ajuste (%)</div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: '#002F82', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Ajuste (%)</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <input
                 type="number" step="0.1" placeholder="ej. -5 ó +10"
                 value={localDescuento}
                 onChange={e => setLocalDescuento(e.target.value)}
                 onBlur={() => emitAjustes({ descuentoOferta: localDescuento ? parseFloat(localDescuento) : undefined, descuentosCoberturas: Object.fromEntries(Object.entries(localDescCob).filter(([,v]) => v).map(([k,v]) => [k, parseFloat(v)])) })}
-                style={{ width: 100, padding: '4px 8px', borderRadius: 6, border: '1px solid #d97706', fontSize: 12, fontFamily: 'monospace', outline: 'none' }}
+                style={{ width: 100, padding: '4px 8px', borderRadius: 6, border: '1px solid #d1d5db', fontSize: 12, fontFamily: 'monospace', outline: 'none' }}
               />
               <span style={{ fontSize: 11, color: '#6b7280' }}>%</span>
               {localDescuento && primaTotal > 0 && (() => {
@@ -949,7 +946,7 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
           {/* Ajuste por cobertura */}
           {coberturasList.length > 0 && (
             <div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Ajuste por cobertura (%)</div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: '#002F82', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Ajuste por cobertura (%)</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                 {coberturasList.map(cob => (
                   <div key={cob} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -959,7 +956,7 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
                       value={localDescCob[cob] ?? ''}
                       onChange={e => setLocalDescCob(prev => ({ ...prev, [cob]: e.target.value }))}
                       onBlur={() => emitAjustes({ descuentoOferta: localDescuento ? parseFloat(localDescuento) : undefined, descuentosCoberturas: Object.fromEntries(Object.entries({ ...localDescCob }).filter(([,v]) => v).map(([k,v]) => [k, parseFloat(v)])) })}
-                      style={{ width: 50, padding: '2px 6px', borderRadius: 4, border: '1px solid #d97706', fontSize: 11, fontFamily: 'monospace', outline: 'none' }}
+                      style={{ width: 50, padding: '2px 6px', borderRadius: 4, border: '1px solid #d1d5db', fontSize: 11, fontFamily: 'monospace', outline: 'none' }}
                     />
                     <span style={{ fontSize: 10, color: '#6b7280' }}>%</span>
                   </div>
@@ -1033,12 +1030,12 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
                             style={{
                               width: 110, textAlign: 'right', fontSize: 14, fontWeight: 800, fontFamily: 'monospace',
                               padding: '6px 10px', borderRadius: 6, color: '#000',
-                              border: isOverride ? '2px solid #f59e0b' : '2px solid #d1d5db',
-                              background: isOverride ? 'rgba(245,158,11,0.06)' : '#fff',
+                              border: '2px solid #d1d5db',
+                              background: '#fff',
                               outline: 'none', transition: 'border-color 0.15s',
                             }}
                             onFocus={e => { e.target.style.borderColor = '#002F82'; e.target.style.boxShadow = '0 0 0 3px rgba(0,48,132,0.12)'; }}
-                            onBlur={e => { e.target.style.borderColor = isOverride ? '#f59e0b' : '#d1d5db'; e.target.style.boxShadow = 'none'; }}
+                            onBlur={e => { e.target.style.borderColor = '#d1d5db'; e.target.style.boxShadow = 'none'; }}
                             placeholder="0.00"
                           />
                         </td>
