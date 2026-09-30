@@ -194,7 +194,7 @@ function buildPdfHtml(data: {
   .client-card {
     border: 1px solid #d4dff5; border-radius: 7px; padding: 9px 14px;
     margin-bottom: 9px; background: #f4f7ff;
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px 16px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px;
   }
   .cf-label { font-size: 8.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.11em; color: #6b85b5; display: block; margin-bottom: 1px; }
   .cf-val { font-size: 13px; font-weight: 700; color: #1e2a4a; }
@@ -274,13 +274,8 @@ function buildPdfHtml(data: {
 </div>
 
 <div class="client-card">
-  ${header?.tomador  ? `<div><span class="cf-label">Tomador</span><span class="cf-val">${header.tomador}</span></div>` : ''}
+  ${header?.tomador  ? `<div><span class="cf-label">Nombre de la flota</span><span class="cf-val">${header.tomador}</span></div>` : ''}
   ${header?.cif      ? `<div><span class="cf-label">CIF / NIF</span><span class="cf-val">${header.cif}</span></div>` : ''}
-  ${header?.actividad ? `<div><span class="cf-label">Actividad</span><span class="cf-val">${header.actividad}</span></div>` : ''}
-  ${header?.efecto   ? `<div><span class="cf-label">Fecha efecto</span><span class="cf-val">${fmtDateField(header.efecto)}</span></div>` : ''}
-  ${header?.periodicidad ? `<div><span class="cf-label">Periodicidad</span><span class="cf-val">${header.periodicidad.toUpperCase()}</span></div>` : ''}
-  ${header?.ciaActual ? `<div><span class="cf-label">Compañía actual</span><span class="cf-val">${header.ciaActual}</span></div>` : ''}
-  ${ambitoLabel ? `<div><span class="cf-label">Ámbito</span><span class="cf-val"><span class="ambito-badge">${ambitoLabel}</span></span></div>` : ''}
 </div>
 
 <div class="section">

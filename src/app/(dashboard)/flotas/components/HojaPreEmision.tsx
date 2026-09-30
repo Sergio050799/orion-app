@@ -770,7 +770,7 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
                 setVehicles(prev => prev.map(v => v.searching ? { ...v, searching: false, status: v.candidatos.length > 0 ? 'pendiente' : 'sin_catalogo' } : v));
               }}
               style={{ fontSize: 10, fontWeight: 700, padding: '4px 12px', borderRadius: 7, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', color: '#dc2626', cursor: 'pointer' }}>
-              Detener
+              Detener todo
             </button>
           )}
           <div style={{ height: 6, width: 120, background: '#e5e7eb', borderRadius: 3, overflow: 'hidden' }}>
