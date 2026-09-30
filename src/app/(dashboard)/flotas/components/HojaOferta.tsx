@@ -667,7 +667,7 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
       };
 
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000);
+      const timeoutId = setTimeout(() => controller.abort(), 60000);
       let res: Response;
       try {
         res = await fetch('/api/flotas/oferta/excel', {

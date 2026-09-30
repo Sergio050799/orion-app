@@ -319,15 +319,21 @@ function Step1({
             if (withPlate.length === 0) throw new Error('No se encontraron matrículas en la plantilla');
 
             // Extract header info from rows 2-3 of the plantilla (CIF, Tomador, Actividad, etc.)
+            const rawPer = cellStr(ws[XLSX.utils.encode_cell({ r: 2, c: 1 })] as XlsxCell).toLowerCase();
+            const parsedPer = rawPer.includes('mensual') ? 'mensual' :
+                              rawPer.includes('bimestral') ? 'bimestral' :
+                              rawPer.includes('trimestral') ? 'trimestral' :
+                              rawPer.includes('semestral') ? 'semestral' :
+                              rawPer.includes('anual') ? 'anual' : undefined;
             const detectedHeader: Partial<FlotaHeader> = {
-                cif:       cellStr(ws[XLSX.utils.encode_cell({ r: 1, c: 1 })] as XlsxCell),
-                tomador:   cellStr(ws[XLSX.utils.encode_cell({ r: 1, c: 3 })] as XlsxCell),
-                actividad: cellStr(ws[XLSX.utils.encode_cell({ r: 1, c: 6 })] as XlsxCell),
-                formaPago: cellStr(ws[XLSX.utils.encode_cell({ r: 2, c: 1 })] as XlsxCell),
-                efecto:    cellStr(ws[XLSX.utils.encode_cell({ r: 2, c: 3 })] as XlsxCell),
+                cif:          cellStr(ws[XLSX.utils.encode_cell({ r: 1, c: 1 })] as XlsxCell),
+                tomador:      cellStr(ws[XLSX.utils.encode_cell({ r: 1, c: 3 })] as XlsxCell),
+                actividad:    cellStr(ws[XLSX.utils.encode_cell({ r: 1, c: 6 })] as XlsxCell),
+                efecto:       cellStr(ws[XLSX.utils.encode_cell({ r: 2, c: 3 })] as XlsxCell),
+                ...(parsedPer ? { periodicidad: parsedPer } : {}),
             };
             // Only keep values that are non-empty and not label text
-            const labels = new Set(['cif:', 'tomador:', 'actividad:', 'forma de pago:', 'efecto:', 'estudio:']);
+            const labels = new Set(['cif:', 'tomador:', 'actividad:', 'periodicidad:', 'efecto:', 'estudio:']);
             for (const k of Object.keys(detectedHeader) as (keyof FlotaHeader)[]) {
                 const v = detectedHeader[k] as string;
                 if (!v || labels.has(v.toLowerCase())) delete detectedHeader[k];

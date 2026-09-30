@@ -114,8 +114,8 @@ export async function generarPlantillaExcel(carpeta?: Pick<FlotaCarpeta, 'nombre
   ws.getRow(3).height = 22;
   fillRow(ws, 3, { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + C.gray_100 } });
 
-  ws.getCell(3, 1).value = 'FORMA DE PAGO:'; ws.getCell(3, 1).font = labelFont; ws.getCell(3, 1).alignment = leftAlign;
-  ws.getCell(3, 2).value = carpeta?.header.formaPago ?? ''; ws.getCell(3, 2).font = valueFont; ws.getCell(3, 2).alignment = leftAlign;
+  ws.getCell(3, 1).value = 'PERIODICIDAD:'; ws.getCell(3, 1).font = labelFont; ws.getCell(3, 1).alignment = leftAlign;
+  ws.getCell(3, 2).value = (carpeta?.header.periodicidad ?? '').toUpperCase(); ws.getCell(3, 2).font = valueFont; ws.getCell(3, 2).alignment = leftAlign;
   ws.getCell(3, 3).value = 'EFECTO:';     ws.getCell(3, 3).font = labelFont; ws.getCell(3, 3).alignment = leftAlign;
   ws.getCell(3, 4).value = carpeta?.header.efecto ?? ''; ws.getCell(3, 4).font = valueFont; ws.getCell(3, 4).alignment = leftAlign;
 

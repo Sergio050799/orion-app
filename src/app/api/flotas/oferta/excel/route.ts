@@ -264,11 +264,10 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Generar buffer ────────────────────────────────────────────────────────
-    const rawBuffer = await wb.xlsx.writeBuffer();
-    const buffer = new Uint8Array(rawBuffer as unknown as ArrayBuffer);
+    const buffer = await wb.xlsx.writeBuffer();
     const safeName = body.flota_nombre.replace(/[^a-zA-Z0-9_\- ]/g, '').trim() || 'OFERTA';
 
-    return new Response(buffer, {
+    return new Response(new Uint8Array(buffer as unknown as ArrayBuffer), {
       status: 200,
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',

@@ -458,16 +458,6 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}>
             <div>
-              <label style={labelStyle}>Forma de pago</label>
-              <select style={{ ...inputStyle, cursor: 'pointer' }} value={header.formaPago} onChange={e => set('formaPago', e.target.value)}
-                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(18,64,204,0.5)')}
-                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.22)')}>
-                <option value="">Sin definir</option>
-                <option value="INTERNA">INTERNA</option>
-                <option value="EXTERNA">EXTERNA</option>
-              </select>
-            </div>
-            <div>
               <label style={labelStyle}>Periodicidad</label>
               <select style={{ ...inputStyle, cursor: 'pointer' }} value={header.periodicidad ?? ''} onChange={e => set('periodicidad', e.target.value)}
                 onFocus={e => (e.currentTarget.style.borderColor = 'rgba(18,64,204,0.5)')}
