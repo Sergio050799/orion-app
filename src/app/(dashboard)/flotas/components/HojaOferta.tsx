@@ -619,7 +619,7 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
       const tNorm = tipoKey === 'DERIVADO DE TURISMO' ? 'TURISMO' : tipoKey;
       const key = `${tNorm}||${row.coberturas || 'Sin cobertura'}`;
       const prima = primasMmt[key];
-      if (prima != null) return { ...row, oferta_prima_mmt: String(prima), _primaOverride: '' };
+      if (prima != null) return { ...row, oferta_prima_mmt: String(prima), _primaOverride: 'true' };
       return row;
     }));
   }, [primasMmt]);
