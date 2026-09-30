@@ -375,9 +375,16 @@ async function searchCatalogForSd(sd: SilverdatVehicle): Promise<CatalogMatch[]>
     if (sd.marca && modeloClean.toUpperCase().startsWith(sd.marca.toUpperCase())) {
         modeloClean = modeloClean.slice(sd.marca.length).trim();
     }
-    // Take up to 2 words of the model (e.g. "PRIUS+" or "RAV 4" → "RAV")
-    const modeloWord = modeloClean.split(' ')[0];
-    if (modeloWord) base.set('modelo', modeloWord);
+    // For truck models like "R 450", "R450 LA": detect pattern and map to "SERIE R"
+    const mTruck = modeloClean.match(/^([A-Za-z]+)\s*(\d{3,4})/);
+    if (mTruck) {
+        const serie = mTruck[1].toUpperCase();
+        base.set('modelo', `SERIE ${serie}`);
+        const kwFromCv = Math.round(parseInt(mTruck[2]) / 1.36);
+        if (!sd.kw) base.set('kw', String(kwFromCv));
+    } else if (modeloClean) {
+        base.set('modelo', modeloClean);
+    }
 
     if (sd.version) base.set('acabado', sd.version);
     if (sd.cilindrada) base.set('cilindrada', String(sd.cilindrada));

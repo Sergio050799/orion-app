@@ -450,15 +450,22 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
       const isRem = TIPOS_REM.has((v.tipo || '').toLowerCase())
         || /^R[\s-]?\d{4}/i.test(v.matricula);
 
-      // Detectar modelo tipo "R450", "R500", "TGX 460" que Silverdat devuelve para camiones
-      // El catálogo los tiene como modelo="SERIE R" + version="450 DE 3950" o modelo="TGX" + version="18 460"
+      // Silverdat a veces devuelve el modelo con la marca incluida: "SCANIA R 450" → limpiar
+      let modeloClean = (v.modelo || '').trim();
+      if (v.marca && modeloClean.toUpperCase().startsWith(v.marca.toUpperCase())) {
+        modeloClean = modeloClean.slice(v.marca.length).trim();
+      }
+
+      // Detectar patrón camión: "R450", "R 450", "R450 LA", "XF 460", "TGX 460"
+      // Catálogo los tiene como modelo="SERIE R" + version="450 DE 3950"
       let serieBody: Record<string, string | number> | null = null;
-      if (!isRem && v.modelo) {
-        const mSerie = v.modelo.match(/^([A-Za-z]+)\s*(\d{3,4})$/);
+      if (!isRem && modeloClean) {
+        const mSerie = modeloClean.match(/^([A-Za-z]+)\s*(\d{3,4})/);
         if (mSerie) {
           const serie = mSerie[1].trim().toUpperCase();
           const cvNum = parseInt(mSerie[2]);
           const kwFromCv = Math.round(cvNum / 1.36);
+          // Intentar "SERIE X" (Scania), "X" solo, y solo marca+kw
           serieBody = { marca: v.marca ?? '', modelo: `SERIE ${serie}`, kw: kwFromCv };
         }
       }
@@ -469,10 +476,10 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
         body.modelo = v.marca ? `${prefix} ${v.marca}` : prefix;
         if (v.tn) { const n = parseFloat(v.tn); if (!isNaN(n) && n > 0) body.tara = n >= 100 ? n : n * 1000; }
       } else {
-        if (v.marca)  body.marca  = v.marca;
-        if (v.modelo) body.modelo = v.modelo;
-        if (v.kw)     body.kw     = v.kw;
-        else if (v.cv) body.kw = String(Math.round(parseFloat(v.cv) / 1.36));
+        if (v.marca)       body.marca  = v.marca;
+        if (modeloClean)   body.modelo = modeloClean;
+        if (v.kw)          body.kw     = v.kw;
+        else if (v.cv)     body.kw = String(Math.round(parseFloat(v.cv) / 1.36));
         if (v.tn) { const n = parseFloat(v.tn); body.tara = n >= 100 ? n : n * 1000; }
       }
 
@@ -481,16 +488,20 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
       if (realYear)      body.anyo = realYear;
       else if (plateEst) body.anyo = plateEst.year;
 
-      // Si detectamos patrón serie+potencia, intentar primero con el body normalizado
+      // Para camiones con patrón serie+potencia, intentar primero sin año (el catálogo
+      // tiene modelos de la generación actual aunque la matrícula sea antigua)
       let candidatos: CandidatoCatalogo[] = [];
       if (serieBody) {
-        if (body.anyo) candidatos = await doSearch({ ...serieBody, anyo: body.anyo }, ctrl.signal);
+        candidatos = await doSearch(serieBody, ctrl.signal);
         if (ctrl.signal.aborted) return;
-        if (candidatos.length === 0) candidatos = await doSearch(serieBody, ctrl.signal);
-        if (ctrl.signal.aborted) return;
+        // Si no encontró "SERIE R", probar solo marca+kw
+        if (candidatos.length === 0 && serieBody.kw) {
+          candidatos = await doSearch({ marca: serieBody.marca, kw: serieBody.kw }, ctrl.signal);
+          if (ctrl.signal.aborted) return;
+        }
       }
 
-      // Búsqueda normal con datos de Silverdat
+      // Búsqueda normal con datos de Silverdat (sin año primero para camiones viejos)
       if (candidatos.length === 0) candidatos = await doSearch(body, ctrl.signal);
       if (ctrl.signal.aborted) return;
       // Fallback año-1

@@ -351,16 +351,6 @@ export const catalogoDataSource: CatalogoDataSource = {
             }
         }
 
-        // Filtro por año — primero intenta con filtro duro, si no hay resultados reintenta sin él
-        let filteredByYear = candidates;
-        if (params.anyo) {
-            filteredByYear = candidates.filter(veh => {
-                const ini = veh.fec_ini_comerc ? parseInt(veh.fec_ini_comerc.substring(0, 4)) : 0;
-                const fin = veh.fec_fin_comerc ? parseInt(veh.fec_fin_comerc.substring(0, 4)) : 9999;
-                return params.anyo! >= ini && params.anyo! <= fin;
-            });
-        }
-
         const scoreAndCollect = (pool: CatalogoVehiculo[], p: SearchParams, minScore = 70): CatalogoCandidato[] => {
             const scored: CatalogoCandidato[] = [];
             for (const veh of pool) {
@@ -375,19 +365,12 @@ export const catalogoDataSource: CatalogoDataSource = {
             return scored.slice(0, 20); // cap results
         };
 
-        // Intento 1: con filtro de año, score >= 70
-        let results = scoreAndCollect(filteredByYear, params);
+        // Búsqueda directa: año es solo puntuación (+4pts), nunca filtro duro
+        let results = scoreAndCollect(candidates, params);
 
-        // Fallback 1: sin filtro de año, score >= 70
-        if (results.length === 0 && params.anyo && filteredByYear.length < candidates.length) {
-            const paramsNoYear = { ...params, anyo: undefined };
-            results = scoreAndCollect(candidates, paramsNoYear);
-        }
-
-        // Fallback 2: sin año + score rebajado a 50 (mejor que nada)
+        // Fallback: bajar umbral a 55 si no hay resultados con 70
         if (results.length === 0) {
-            const paramsNoYear = { ...params, anyo: undefined };
-            results = scoreAndCollect(candidates, paramsNoYear, 50);
+            results = scoreAndCollect(candidates, params, 55);
         }
 
         return results;
