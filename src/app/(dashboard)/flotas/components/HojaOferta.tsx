@@ -342,9 +342,8 @@ function trabajoToOferta(rows: Record<string, string>[]): OfertaRow[] {
 }
 
 function rowToRecord(row: OfertaRow): Record<string, string> {
-  const { _id, _primaOverride, ...rest } = row;
+  const { _id, ...rest } = row;
   void _id;
-  void _primaOverride;
   return rest;
 }
 
