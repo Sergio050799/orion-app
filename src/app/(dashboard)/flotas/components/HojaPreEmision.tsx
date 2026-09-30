@@ -108,8 +108,12 @@ function ManualSearchPanel({ vehicle, yearHint, onSelect, onClose }: {
 }) {
   const isRem = ['semirremolque', 'remolque'].includes((vehicle.tipo || '').toLowerCase())
     || /^R[\s-]?\d{4}/i.test(vehicle.matricula);
-  // Si marca contiene el modelo concatenado ("Scania R450") y modelo está vacío, pre-separar
-  const hasCombinedMarca = !isRem && !!vehicle.marca && vehicle.marca.includes(' ') && !vehicle.modelo;
+  // Si marca tiene formato combinado "Scania R450" (modelo vacío O igual al sufijo de marca), pre-separar
+  const hasCombinedMarca = !isRem && !!vehicle.marca && vehicle.marca.includes(' ') && (() => {
+    const suffix = vehicle.marca.slice(vehicle.marca.indexOf(' ')).trim();
+    const mod = (vehicle.modelo || '').trim();
+    return !mod || mod.toUpperCase() === suffix.toUpperCase();
+  })();
   const initMarca  = isRem ? 'REMOLQUE'
     : hasCombinedMarca ? vehicle.marca.slice(0, vehicle.marca.indexOf(' '))
     : vehicle.marca;
@@ -457,13 +461,17 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
         modeloClean = modeloClean.slice(v.marca.length).trim();
       }
 
-      // Si modelo vacío y marca tiene formato combinado "Scania R450" (SINCO sin Silverdat),
-      // separar la marca real de la parte modelo para que la detección de serie funcione
+      // Si marca tiene formato combinado "Scania R450" (SINCO a veces mete marca+modelo juntos),
+      // separar la marca real. Aplica cuando modelo está vacío O contiene exactamente el sufijo
+      // de la marca (dato duplicado: marca="Scania R450" Y modelo="R450" a la vez).
       let marcaClean = v.marca || '';
-      if (!modeloClean && v.marca && v.marca.includes(' ')) {
+      if (v.marca && v.marca.includes(' ')) {
         const spaceIdx = v.marca.indexOf(' ');
-        marcaClean = v.marca.slice(0, spaceIdx).trim();
-        modeloClean = v.marca.slice(spaceIdx).trim();
+        const marcaSuffix = v.marca.slice(spaceIdx).trim();
+        if (!modeloClean || modeloClean.toUpperCase() === marcaSuffix.toUpperCase()) {
+          marcaClean = v.marca.slice(0, spaceIdx).trim();
+          if (!modeloClean) modeloClean = marcaSuffix;
+        }
       }
 
       // Detectar patrón camión: "R450", "R 450", "SERIE R 450", "XF 460", "TGX 460"
