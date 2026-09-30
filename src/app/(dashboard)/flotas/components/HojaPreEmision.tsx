@@ -1,26 +1,11 @@
 "use client";
 
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { resolvePlate } from '@/core/_source_of_truth/plates/engine';
 
-// ─── Estimación año por matrícula (NNNN-LLL) ─────────────────────────────────
-
-const PLATE_YEAR_RANGES: [string, string, number, number][] = [
-  ['0000', '1999', 2000, 2003],
-  ['2000', '3999', 2003, 2007],
-  ['4000', '5999', 2007, 2011],
-  ['6000', '7999', 2011, 2015],
-  ['8000', '9999', 2015, 2023],
-];
-
-function estimateYear(plate: string): { year: number; range: string } | null {
-  const m = plate.toUpperCase().match(/(\d{4})[- ]?[A-Z]{3}/);
-  if (!m) return null;
-  const num = parseInt(m[1]);
-  for (const [from, to, yf, yt] of PLATE_YEAR_RANGES) {
-    if (num >= parseInt(from) && num <= parseInt(to))
-      return { year: Math.round((yf + yt) / 2), range: `${yf}–${yt}` };
-  }
-  return null;
+function estimateYear(plate: string): { year: number } | null {
+  const r = resolvePlate(plate.trim().toUpperCase());
+  return r ? { year: r.year } : null;
 }
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
