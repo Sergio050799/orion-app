@@ -3,7 +3,8 @@ import path from 'path';
 import type { CatalogoVehiculo, CatalogoCandidato, CatalogoDataSource, SearchParams, ScoreDetail } from './catalogoDataSource';
 import { normalizeFuel, normalizeFuelForCatalog } from '../pipelines/_shared/formatUtils';
 
-const DATA_DIR = path.join(process.cwd(), 'data', 'catalogo');
+const DATA_DIR = process.env.ORION_CATALOGO_DIR
+    || path.join(process.cwd(), 'data', 'catalogo');
 
 /** Devuelve la ruta del CSV más reciente subido por orion-admin, o null si no hay ninguno. */
 function resolvecsvPath(): string | null {
