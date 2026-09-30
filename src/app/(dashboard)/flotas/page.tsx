@@ -317,9 +317,10 @@ export default function FlotasPage() {
   }, [carpetaActiva, isDownloading, sincoResultRows]);
 
   const handleSave = useCallback(() => {
-    if (!carpetaActiva) return;
+    const current = carpetaActivaRef.current;
+    if (!current) return;
     const updated: FlotaCarpeta = {
-      ...carpetaActiva,
+      ...current,
       header: flotaHeader,
       original: originalRef.current?.getData() ?? originalData,
       trabajo: trabajoRef.current?.getData() ?? trabajoRows,
@@ -330,7 +331,7 @@ export default function FlotasPage() {
     setCarpetaActiva(updated);
     setSaveFlash(true);
     setTimeout(() => setSaveFlash(false), 1500);
-  }, [carpetaActiva, flotaHeader, originalData, trabajoRows, sincoResultRows, ofertaRows]);
+  }, [flotaHeader, originalData, trabajoRows, sincoResultRows, ofertaRows]);
 
   const numVeh = carpetaActiva
     ? ((carpetaActiva.trabajo?.length > 0 ? carpetaActiva.trabajo : carpetaActiva.original)?.filter(r => r['matricula']?.trim()).length ?? 0)
@@ -645,7 +646,7 @@ export default function FlotasPage() {
                     ? [corredor.comercial, corredor.nombre].filter(Boolean).join(' · ')
                     : undefined;
                   return (
-                    <HojaInforme header={flotaHeader} trabajoRows={trabajoRows} coberturas={coberturas} sincoResultRows={sincoResultRows} sincoManual={carpetaActiva?.sincoManual ?? []} sincoGlobal={carpetaActiva?.sincoGlobal ?? null} primasMmtValues={carpetaActiva?.primasMmtInforme} onPrimasMmtChange={(primas) => { if (carpetaActiva) { const updated = { ...carpetaActiva, primasMmtInforme: primas }; setCarpetaActiva(updated); guardarCarpeta(updated); } }} tarifaFlota={carpetaActiva?.tarifaFlota} corredorLabel={corredorLabel} danosPropios={carpetaActiva?.danosPropios} />
+                    <HojaInforme header={flotaHeader} trabajoRows={trabajoRows} coberturas={coberturas} sincoResultRows={sincoResultRows} sincoManual={carpetaActiva?.sincoManual ?? []} sincoGlobal={carpetaActiva?.sincoGlobal ?? null} primasMmtValues={carpetaActiva?.primasMmtInforme} onPrimasMmtChange={(primas) => { const cur = carpetaActivaRef.current; if (cur) { const updated = { ...cur, primasMmtInforme: primas }; setCarpetaActiva(updated); guardarCarpeta(updated); } }} tarifaFlota={carpetaActiva?.tarifaFlota} corredorLabel={corredorLabel} danosPropios={carpetaActiva?.danosPropios} />
                   );
                 })()}
                 {tab === 'OFERTA' && (
