@@ -87,7 +87,20 @@ function saveAll(carpetas: FlotaCarpeta[]): void {
 }
 
 export function initMemCache(carpetas: FlotaCarpeta[]): void {
-  memCache = [...carpetas];
+  if (!memCache) {
+    memCache = [...carpetas];
+    return;
+  }
+  // Race condition guard: if local copy was saved more recently than server version,
+  // keep local (syncUpsert may not have reached the server yet when this fetch ran)
+  const serverMap = new Map(carpetas.map(c => [c.id, c]));
+  const merged = carpetas.map(sc => {
+    const lc = memCache!.find(c => c.id === sc.id);
+    if (!lc) return sc;
+    return new Date(lc.actualizadaEn).getTime() > new Date(sc.actualizadaEn).getTime() ? lc : sc;
+  });
+  const localOnly = memCache.filter(c => !serverMap.has(c.id));
+  memCache = [...merged, ...localOnly];
 }
 
 // ─── Server sync ─────────────────────────────────────────────────────────────
