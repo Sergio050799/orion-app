@@ -364,7 +364,6 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
 
   // ─── Ajustes de oferta ────────────────────────────────────────────────────
   const [showAjustes, setShowAjustes] = useState(false);
-  const [localPrimaCliente, setLocalPrimaCliente] = useState('');
   const [localDescuento, setLocalDescuento] = useState('');
   const [localDescCob, setLocalDescCob] = useState<Record<string, string>>({});
   const onOfertaFieldsRef = useRef(onOfertaFieldsChange);
@@ -372,7 +371,6 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
 
   // Sync props → local state cuando cambia la carpeta
   useEffect(() => {
-    setLocalPrimaCliente(primaClienteTotal != null ? String(primaClienteTotal) : '');
     setLocalDescuento(descuentoOferta != null ? String(descuentoOferta) : '');
     const cobMap: Record<string, string> = {};
     if (descuentosCoberturas) {
@@ -380,7 +378,7 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
     }
     setLocalDescCob(cobMap);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [primaClienteTotal, descuentoOferta, descuentosCoberturas]);
+  }, [descuentoOferta, descuentosCoberturas]);
 
   const emitAjustes = useCallback((fields: OfertaFields) => {
     onOfertaFieldsRef.current?.(fields);
@@ -550,17 +548,18 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
     }, 0);
   }, [rows]);
 
-  // Prima neta con descuentos aplicados
+  // Prima ajustada: positivo = sube, negativo = baja
   const primaNetaTotal = useMemo(() => {
-    const descG = parseFloat(localDescuento) || 0;
+    const ajusteG = parseFloat(localDescuento) || 0;
+    if (ajusteG === 0 && Object.values(localDescCob).every(v => !v || parseFloat(v) === 0)) return primaTotal;
     return rows.reduce((sum, r) => {
       const v = parseFloat(r.oferta_prima_mmt);
       if (isNaN(v)) return sum;
-      const descCob = parseFloat(localDescCob[r.coberturas] ?? '') || 0;
-      const desc = descCob > 0 ? descCob : descG;
-      return sum + v * (1 - desc / 100);
+      const ajusteCob = parseFloat(localDescCob[r.coberturas] ?? '') || 0;
+      const ajuste = ajusteCob !== 0 ? ajusteCob : ajusteG;
+      return sum + v * (1 + ajuste / 100);
     }, 0);
-  }, [rows, localDescuento, localDescCob]);
+  }, [rows, localDescuento, localDescCob, primaTotal]);
 
   // ── Coberturas para el anexo ──────────────────────────────────────────────
   const cobAnexo = useMemo(() => {
@@ -633,7 +632,7 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
     if (!w) return;
     w.document.write(html);
     w.document.close();
-  }, [rows, header, carpetaNombre, cobAnexo, primaTotal, primaNetaTotal, localPrimaCliente, localDescuento]);
+  }, [rows, header, carpetaNombre, cobAnexo, primaTotal, primaNetaTotal, localDescuento]);
 
   // ─── Generar Oferta Excel (via endpoint con formato MMT) ───────────────────
   const [exporting, setExporting] = useState(false);
@@ -920,50 +919,36 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
       {/* Ajustes panel */}
       {showAjustes && (
         <div style={{ padding: '10px 16px', borderBottom: '1px solid #e5e7eb', background: '#fffbf0', display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start', flexShrink: 0 }}>
-          {/* Prima cliente */}
-          <div>
-            <div style={{ fontSize: 10, fontWeight: 700, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Prima cliente actual</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <input
-                type="number" min="0" step="0.01" placeholder="0.00"
-                value={localPrimaCliente}
-                onChange={e => setLocalPrimaCliente(e.target.value)}
-                onBlur={() => emitAjustes({ primaClienteTotal: localPrimaCliente ? parseFloat(localPrimaCliente) : undefined, descuentoOferta: localDescuento ? parseFloat(localDescuento) : undefined, descuentosCoberturas: Object.fromEntries(Object.entries(localDescCob).filter(([,v]) => v).map(([k,v]) => [k, parseFloat(v)])) })}
-                style={{ width: 110, padding: '4px 8px', borderRadius: 6, border: '1px solid #d97706', fontSize: 12, fontFamily: 'monospace', outline: 'none' }}
-              />
-              <span style={{ fontSize: 11, color: '#6b7280' }}>€</span>
-              {localPrimaCliente && filledRows > 0 && (
-                <span style={{ fontSize: 10, color: '#92400e', fontFamily: 'monospace', background: 'rgba(245,158,11,0.1)', padding: '2px 6px', borderRadius: 4 }}>
-                  {fmtEUR(parseFloat(localPrimaCliente) / filledRows)} / veh.
-                </span>
-              )}
-            </div>
-          </div>
 
           {/* Ajuste global */}
           <div>
-            <div style={{ fontSize: 10, fontWeight: 700, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Ajuste global (%)</div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Ajuste (%)</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <input
-                type="number" step="0.1" placeholder="0"
+                type="number" step="0.1" placeholder="ej. -5 ó +10"
                 value={localDescuento}
                 onChange={e => setLocalDescuento(e.target.value)}
-                onBlur={() => emitAjustes({ primaClienteTotal: localPrimaCliente ? parseFloat(localPrimaCliente) : undefined, descuentoOferta: localDescuento ? parseFloat(localDescuento) : undefined, descuentosCoberturas: Object.fromEntries(Object.entries(localDescCob).filter(([,v]) => v).map(([k,v]) => [k, parseFloat(v)])) })}
-                style={{ width: 70, padding: '4px 8px', borderRadius: 6, border: '1px solid #d97706', fontSize: 12, fontFamily: 'monospace', outline: 'none' }}
+                onBlur={() => emitAjustes({ descuentoOferta: localDescuento ? parseFloat(localDescuento) : undefined, descuentosCoberturas: Object.fromEntries(Object.entries(localDescCob).filter(([,v]) => v).map(([k,v]) => [k, parseFloat(v)])) })}
+                style={{ width: 100, padding: '4px 8px', borderRadius: 6, border: '1px solid #d97706', fontSize: 12, fontFamily: 'monospace', outline: 'none' }}
               />
               <span style={{ fontSize: 11, color: '#6b7280' }}>%</span>
-              {localDescuento && primaTotal > 0 && (
-                <span style={{ fontSize: 10, color: '#16a34a', fontFamily: 'monospace', background: 'rgba(22,163,74,0.1)', padding: '2px 6px', borderRadius: 4 }}>
-                  = {fmtEUR(primaTotal * (1 - (parseFloat(localDescuento)||0) / 100))}
-                </span>
-              )}
+              {localDescuento && primaTotal > 0 && (() => {
+                const ajuste = parseFloat(localDescuento) || 0;
+                const total = primaTotal * (1 + ajuste / 100);
+                const sube = ajuste > 0;
+                return (
+                  <span style={{ fontSize: 10, color: sube ? '#dc2626' : '#16a34a', fontFamily: 'monospace', background: sube ? 'rgba(220,38,38,0.08)' : 'rgba(22,163,74,0.1)', padding: '2px 6px', borderRadius: 4 }}>
+                    = {fmtEUR(total)}
+                  </span>
+                );
+              })()}
             </div>
           </div>
 
-          {/* Descuentos por cobertura */}
+          {/* Ajuste por cobertura */}
           {coberturasList.length > 0 && (
             <div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Desc. por cobertura</div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Ajuste por cobertura (%)</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                 {coberturasList.map(cob => (
                   <div key={cob} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -972,7 +957,7 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
                       type="number" step="0.1" placeholder="0"
                       value={localDescCob[cob] ?? ''}
                       onChange={e => setLocalDescCob(prev => ({ ...prev, [cob]: e.target.value }))}
-                      onBlur={() => emitAjustes({ primaClienteTotal: localPrimaCliente ? parseFloat(localPrimaCliente) : undefined, descuentoOferta: localDescuento ? parseFloat(localDescuento) : undefined, descuentosCoberturas: Object.fromEntries(Object.entries({ ...localDescCob }).filter(([,v]) => v).map(([k,v]) => [k, parseFloat(v)])) })}
+                      onBlur={() => emitAjustes({ descuentoOferta: localDescuento ? parseFloat(localDescuento) : undefined, descuentosCoberturas: Object.fromEntries(Object.entries({ ...localDescCob }).filter(([,v]) => v).map(([k,v]) => [k, parseFloat(v)])) })}
                       style={{ width: 50, padding: '2px 6px', borderRadius: 4, border: '1px solid #d97706', fontSize: 11, fontFamily: 'monospace', outline: 'none' }}
                     />
                     <span style={{ fontSize: 10, color: '#6b7280' }}>%</span>
@@ -1077,27 +1062,20 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
                   <div style={{ fontSize: 10, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Vehículos</div>
                   <div style={{ fontSize: 22, fontWeight: 900, color: '#002F82', fontFamily: 'monospace' }}>{filledRows}</div>
                 </div>
-                {localPrimaCliente && parseFloat(localPrimaCliente) > 0 && (
-                  <div>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Prima Cliente Actual</div>
-                    <div style={{ fontSize: 22, fontWeight: 900, color: '#b45309', fontFamily: 'monospace' }}>{fmtEUR(parseFloat(localPrimaCliente))}</div>
-                    {filledRows > 0 && <div style={{ fontSize: 10, color: '#92400e', fontFamily: 'monospace' }}>{fmtEUR(parseFloat(localPrimaCliente)/filledRows)} / veh.</div>}
-                  </div>
-                )}
                 <div>
                   <div style={{ fontSize: 10, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Prima Ofertada MMT</div>
                   <div style={{ fontSize: 22, fontWeight: 900, color: '#002F82', fontFamily: 'monospace' }}>{fmtEUR(primaTotal)}</div>
                 </div>
                 {primaNetaTotal > 0 && primaNetaTotal !== primaTotal && (
                   <div>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: '#15803d', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                      Prima Neta ({localDescuento}% dto.)
+                    <div style={{ fontSize: 10, fontWeight: 700, color: (parseFloat(localDescuento)||0) < 0 ? '#15803d' : '#dc2626', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                      Prima Ajustada ({localDescuento}%)
                     </div>
-                    <div style={{ fontSize: 22, fontWeight: 900, color: '#16a34a', fontFamily: 'monospace' }}>{fmtEUR(primaNetaTotal)}</div>
+                    <div style={{ fontSize: 22, fontWeight: 900, color: (parseFloat(localDescuento)||0) < 0 ? '#16a34a' : '#dc2626', fontFamily: 'monospace' }}>{fmtEUR(primaNetaTotal)}</div>
                   </div>
                 )}
                 {(() => {
-                  const base = localPrimaCliente && parseFloat(localPrimaCliente) > 0 ? parseFloat(localPrimaCliente) : rows.reduce((s, r) => s + (parseFloat(r.prima_referencia) || 0), 0);
+                  const base = rows.reduce((s, r) => s + (parseFloat(r.prima_referencia) || 0), 0);
                   const comparar = primaNetaTotal > 0 && primaNetaTotal !== primaTotal ? primaNetaTotal : primaTotal;
                   if (base <= 0 || comparar <= 0) return null;
                   const diff = comparar - base;
