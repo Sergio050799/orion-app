@@ -450,6 +450,15 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
         modeloClean = modeloClean.slice(v.marca.length).trim();
       }
 
+      // Si modelo vacío y marca tiene formato combinado "Scania R450" (SINCO sin Silverdat),
+      // separar la marca real de la parte modelo para que la detección de serie funcione
+      let marcaClean = v.marca || '';
+      if (!modeloClean && v.marca && v.marca.includes(' ')) {
+        const spaceIdx = v.marca.indexOf(' ');
+        marcaClean = v.marca.slice(0, spaceIdx).trim();
+        modeloClean = v.marca.slice(spaceIdx).trim();
+      }
+
       // Detectar patrón camión: "R450", "R 450", "SERIE R 450", "XF 460", "TGX 460"
       // Catálogo los tiene como modelo="SERIE R" + version="450 DE 3950"
       let serieBody: Record<string, string | number> | null = null;
@@ -469,7 +478,7 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
             // Serie de 1-3 letras → añadir prefijo "SERIE" (Scania: R, S, P; DAF: XF)
             const isShortCode = /^[A-Z]{1,3}$/.test(serieLabel);
             serieBody = {
-              marca:  v.marca ?? '',
+              marca:  marcaClean,
               modelo: isShortCode ? `SERIE ${serieLabel}` : serieLabel,
               kw:     kwFromCv,
             };
@@ -478,7 +487,7 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
           const cvNum    = parseInt(mAny[1]);
           const kwFromCv = Math.round(cvNum / 1.36);
           if (kwFromCv > 80 && kwFromCv < 900) {
-            serieBody = { marca: v.marca ?? '', kw: kwFromCv };
+            serieBody = { marca: marcaClean, kw: kwFromCv };
           }
         }
       }
@@ -489,7 +498,7 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
         body.modelo = v.marca ? `${prefix} ${v.marca}` : prefix;
         if (v.tn) { const n = parseFloat(v.tn); if (!isNaN(n) && n > 0) body.tara = n >= 100 ? n : n * 1000; }
       } else {
-        if (v.marca)        body.marca       = v.marca;
+        if (marcaClean)     body.marca       = marcaClean;
         if (modeloClean)    body.modelo      = modeloClean;
         if (v.kw)           body.kw          = v.kw;
         else if (v.cv)      body.kw          = String(Math.round(parseFloat(v.cv) / 1.36));

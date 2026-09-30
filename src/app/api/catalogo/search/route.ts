@@ -96,11 +96,13 @@ export async function POST(req: NextRequest) {
         if (body.acabado)    params.acabado    = String(body.acabado);
         if (body.version)    params.acabado    = String(body.version);
 
-        // rawText: si no viene marca, intentar extraerla del texto libre
-        if (body.rawText && !params.marca) {
+        // rawText: siempre intentar parsear si viene (puede corregir marca combinada como "Scania R450")
+        if (body.rawText) {
             const parsed = parseFreeText(String(body.rawText));
-            if (parsed.marca) params.marca = parsed.marca;
-            if (parsed.modelo && !params.modelo) params.modelo = parsed.modelo;
+            if (parsed.marca) {
+                params.marca = parsed.marca;
+                if (parsed.modelo && !params.modelo) params.modelo = parsed.modelo;
+            }
         }
 
         if (Object.keys(params).length === 0) {
