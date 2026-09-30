@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { login, hasSession } from "@/core/silverdat/service";
+import { login, hasSession, loadSessionFromDB } from "@/core/silverdat/service";
 
 export const runtime = "nodejs";
 
@@ -25,5 +25,6 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET() {
+  await loadSessionFromDB();
   return NextResponse.json({ ok: true, hasSession: hasSession() });
 }

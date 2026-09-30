@@ -14,7 +14,9 @@
 
 import { normalizeTipoVehiculo } from "@/core/flotas/normalizador";
 
-const BASE = "https://www.silverdat.es/fastValuate_facelift";
+const BASE      = "https://www.silverdat.es/fastValuate_facelift";
+const ORION_API = process.env.ORION_API_URL ?? "http://localhost:3001";
+const ORION_KEY = process.env.ORION_API_KEY ?? "dev_secret_local";
 
 // ─── In-memory session ──────────────────────────────────────────────────────
 
@@ -29,9 +31,51 @@ const g = globalThis as unknown as { __silverdatSession?: SilverdatSession | nul
 if (g.__silverdatSession === undefined) g.__silverdatSession = null;
 
 function getSession(): SilverdatSession | null { return g.__silverdatSession ?? null; }
-function setSession(s: SilverdatSession | null) { g.__silverdatSession = s; }
+
+function setSession(s: SilverdatSession | null) {
+  g.__silverdatSession = s;
+  // Persist to shared DB so other PM2 instances can pick it up
+  const url = `${ORION_API}/silverdat-session`;
+  const headers = { "X-Api-Key": ORION_KEY, "Content-Type": "application/json" };
+  if (s) {
+    const expiresAt = new Date(s.loggedInAt + SESSION_TTL).toISOString();
+    fetch(url, {
+      method: "POST", headers,
+      body: JSON.stringify({
+        cookie: s.cookie,
+        dat_id: s.datId,
+        logged_in_at: new Date(s.loggedInAt).toISOString(),
+        expires_at: expiresAt,
+      }),
+    }).catch(() => {});
+  } else {
+    fetch(url, { method: "POST", headers, body: JSON.stringify({ clear: true }) }).catch(() => {});
+  }
+}
 
 const SESSION_TTL = 60 * 60 * 1000; // 1 hora
+
+/**
+ * Carga la sesión desde la BD compartida si la memoria está vacía.
+ * Llamar antes de hasSession() en los endpoints que necesitan sesión.
+ */
+export async function loadSessionFromDB(): Promise<void> {
+  if (g.__silverdatSession) return; // ya hay sesión en memoria
+  try {
+    const res = await fetch(`${ORION_API}/silverdat-session`, {
+      headers: { "X-Api-Key": ORION_KEY },
+      signal: AbortSignal.timeout(3000),
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data.ok && data.cookie) {
+      const loggedInAt = new Date(data.logged_in_at).getTime();
+      if (Date.now() - loggedInAt <= SESSION_TTL) {
+        g.__silverdatSession = { cookie: data.cookie, loggedInAt, datId: data.dat_id };
+      }
+    }
+  } catch { /* silent — si la BD falla, continúa sin sesión */ }
+}
 
 export function hasSession(): boolean {
   const session = getSession();

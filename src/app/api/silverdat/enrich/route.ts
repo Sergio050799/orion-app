@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHmac, randomBytes } from "crypto";
-import { hasSession, queryByMatricula, type SilverdatVehicle } from "@/core/silverdat/service";
+import { hasSession, queryByMatricula, loadSessionFromDB, type SilverdatVehicle } from "@/core/silverdat/service";
 
 export const runtime = "nodejs";
 
@@ -63,6 +63,7 @@ async function saveToDB(
 
 export async function POST(req: NextRequest) {
   try {
+    await loadSessionFromDB(); // carga desde BD si esta instancia no tiene sesión en memoria
     if (!hasSession()) {
       return NextResponse.json(
         { ok: false, error: "No hay sesión Silverdat activa. Inicie sesión primero." },
