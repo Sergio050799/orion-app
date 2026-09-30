@@ -686,17 +686,25 @@ function Step2({
             if (result.fromCache) setCacheCount(n => n + 1);
             if (abortRef.current) return;
 
-            if (sd?.marca || sd?.kw) {
-                try {
-                    const params = new URLSearchParams();
-                    if (sd?.marca) params.set('marca', sd.marca);
-                    if (sd?.modelo) params.set('modelo', sd.modelo.split(' ')[0]);
-                    if (sd?.kw) params.set('kw', String(sd.kw));
-                    if (sd?.cilindrada) params.set('cilindrada', String(sd.cilindrada));
-                    const catData = await (await fetch(`/api/catalogo/search?${params}`)).json();
-                    if (catData.ok && catData.candidatos?.length > 0) id_veh = catData.candidatos[0].id_veh;
-                } catch { /* catálogo opcional */ }
-            }
+            try {
+                const rowMarca = row['marca'] || '';
+                const rowModelo = row['modelo'] || '';
+                const body: Record<string, string | number> = {};
+                if (sd?.marca)      body.marca      = sd.marca;
+                else if (rowMarca)  body.rawText    = [rowMarca, rowModelo].filter(Boolean).join(' ');
+                if (sd?.modelo)     body.modelo     = sd.modelo;
+                if (sd?.kw)         body.kw         = sd.kw;
+                if (sd?.cilindrada) body.cilindrada = sd.cilindrada;
+                if (Object.keys(body).length > 0) {
+                    const catData = await (await fetch('/api/catalogo/search', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(body),
+                    })).json();
+                    const lista = catData.candidates ?? catData.candidatos ?? [];
+                    if (lista.length > 0) id_veh = lista[0].id_veh;
+                }
+            } catch { /* catálogo opcional */ }
 
             const vehicle = buildVehicle(row, sd, id_veh);
             mergeMap.set(matricula, vehicle);
