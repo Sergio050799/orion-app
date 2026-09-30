@@ -940,12 +940,12 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
             </div>
           </div>
 
-          {/* Descuento global */}
+          {/* Ajuste global */}
           <div>
-            <div style={{ fontSize: 10, fontWeight: 700, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Descuento global</div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Ajuste global (%)</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <input
-                type="number" min="0" max="100" step="0.1" placeholder="0"
+                type="number" step="0.1" placeholder="0"
                 value={localDescuento}
                 onChange={e => setLocalDescuento(e.target.value)}
                 onBlur={() => emitAjustes({ primaClienteTotal: localPrimaCliente ? parseFloat(localPrimaCliente) : undefined, descuentoOferta: localDescuento ? parseFloat(localDescuento) : undefined, descuentosCoberturas: Object.fromEntries(Object.entries(localDescCob).filter(([,v]) => v).map(([k,v]) => [k, parseFloat(v)])) })}
@@ -969,7 +969,7 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
                   <div key={cob} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                     <span style={{ fontSize: 10, color: '#374151', maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={cob}>{cob}</span>
                     <input
-                      type="number" min="0" max="100" step="0.1" placeholder="0"
+                      type="number" step="0.1" placeholder="0"
                       value={localDescCob[cob] ?? ''}
                       onChange={e => setLocalDescCob(prev => ({ ...prev, [cob]: e.target.value }))}
                       onBlur={() => emitAjustes({ primaClienteTotal: localPrimaCliente ? parseFloat(localPrimaCliente) : undefined, descuentoOferta: localDescuento ? parseFloat(localDescuento) : undefined, descuentosCoberturas: Object.fromEntries(Object.entries({ ...localDescCob }).filter(([,v]) => v).map(([k,v]) => [k, parseFloat(v)])) })}
