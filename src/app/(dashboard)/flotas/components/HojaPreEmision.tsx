@@ -130,6 +130,7 @@ function ManualSearchPanel({ vehicle, yearHint, onSelect, onClose }: {
 
   const [marca, setMarca]           = useState(initMarca);
   const [modelo, setModelo]         = useState(initModelo);
+  const [version, setVersion]       = useState('');
   const [combustible, setCombustible] = useState('');
   const [kw, setKw]                 = useState(isRem ? '' : (vehicle.kw || ''));
   const [anyo, setAnyo]             = useState(yearHint ? String(yearHint) : '');
@@ -145,6 +146,7 @@ function ManualSearchPanel({ vehicle, yearHint, onSelect, onClose }: {
       const body: Record<string, string | number> = {};
       if (marca)      body.marca      = marca;
       if (modelo)     body.modelo     = modelo;
+      if (version)    body.version    = version;
       if (combustible) body.combustible = combustible;
       if (kw)         body.kw         = kw;
       if (anyo)       body.anyo       = parseInt(anyo);
@@ -179,6 +181,10 @@ function ManualSearchPanel({ vehicle, yearHint, onSelect, onClose }: {
         <Fld label="Modelo">
           <input value={modelo} onChange={e => setModelo(e.target.value)} onKeyDown={onKey}
             style={{ ...inS, width: 160 }} />
+        </Fld>
+        <Fld label="Versión">
+          <input value={version} onChange={e => setVersion(e.target.value)} placeholder="ej. 450" onKeyDown={onKey}
+            style={{ ...inS, width: 90 }} />
         </Fld>
         <Fld label="Combustible">
           <select value={combustible} onChange={e => setCombustible(e.target.value)} style={{ ...inS, width: 90 }}>
@@ -459,17 +465,36 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
         modeloClean = modeloClean.slice(v.marca.length).trim();
       }
 
-      // Detectar patrón camión: "R450", "R 450", "R450 LA", "XF 460", "TGX 460"
+      // Detectar patrón camión: "R450", "R 450", "SERIE R 450", "XF 460", "TGX 460"
       // Catálogo los tiene como modelo="SERIE R" + version="450 DE 3950"
       let serieBody: Record<string, string | number> | null = null;
       if (!isRem && modeloClean) {
-        const mSerie = modeloClean.match(/^([A-Za-z]+)\s*(\d{3,4})/);
-        if (mSerie) {
-          const serie = mSerie[1].trim().toUpperCase();
-          const cvNum = parseInt(mSerie[2]);
+        // Patrón 1: "SERIE X 450" o "SERIE XF 450"
+        const mSerie2 = modeloClean.match(/^(SERIE\s+[A-Za-z0-9]{1,5})\s+(\d{3,4})\b/i);
+        // Patrón 2: letra(s) cortas + número: "R450", "R 450", "XF 460", "TGX 460"
+        const mDirect = modeloClean.match(/^([A-Za-z]{1,5})\s*(\d{3,4})\b/);
+        // Patrón 3: número de potencia en cualquier parte: "450 LA", "ACTROS 450"
+        const mAny    = modeloClean.match(/\b(\d{3,4})\b/);
+        const mUse = mSerie2 ?? mDirect;
+        if (mUse) {
+          const serieLabel = mUse[1].trim().toUpperCase();
+          const cvNum      = parseInt(mUse[2]);
+          const kwFromCv   = Math.round(cvNum / 1.36);
+          if (kwFromCv > 80 && kwFromCv < 900) {
+            // Serie de 1-3 letras → añadir prefijo "SERIE" (Scania: R, S, P; DAF: XF)
+            const isShortCode = /^[A-Z]{1,3}$/.test(serieLabel);
+            serieBody = {
+              marca:  v.marca ?? '',
+              modelo: isShortCode ? `SERIE ${serieLabel}` : serieLabel,
+              kw:     kwFromCv,
+            };
+          }
+        } else if (mAny) {
+          const cvNum    = parseInt(mAny[1]);
           const kwFromCv = Math.round(cvNum / 1.36);
-          // Intentar "SERIE X" (Scania), "X" solo, y solo marca+kw
-          serieBody = { marca: v.marca ?? '', modelo: `SERIE ${serie}`, kw: kwFromCv };
+          if (kwFromCv > 80 && kwFromCv < 900) {
+            serieBody = { marca: v.marca ?? '', kw: kwFromCv };
+          }
         }
       }
 
@@ -485,6 +510,10 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
         else if (v.cv)      body.kw          = String(Math.round(parseFloat(v.cv) / 1.36));
         if (v.combustible)  body.combustible = v.combustible;
         if (v.tn) { const n = parseFloat(v.tn); body.tara = n >= 100 ? n : n * 1000; }
+        // Sin Silverdat (sin kw ni combustible): pasar texto crudo para detección de marca en servidor
+        if (!v.kw && !v.combustible && v.marca) {
+          body.rawText = [v.marca, v.modelo].filter(Boolean).join(' ');
+        }
       }
 
       const realYear = extractYear(v);
@@ -613,7 +642,7 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
       tipo:        v.tipo,
       id_catalogo: v.seleccionado?.id_veh ?? '',
       version:     v.seleccionado?.version ?? '',
-      anyo:        v.seleccionado?.anyo ?? 0,
+      anyo:        extractYear(v) ?? v.seleccionado?.anyo ?? 0,
       combustible: v.seleccionado?.combustible ?? '',
       kw:          v.seleccionado?.kw ?? 0,
       cv:          v.seleccionado?.cv ?? 0,

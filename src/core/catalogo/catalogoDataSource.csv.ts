@@ -315,23 +315,77 @@ function scoreVehiculo(veh: CatalogoVehiculo, params: SearchParams): { score: nu
         }
     }
 
-    // AÑO — max 4pts (más puntos si año cae cerca del centro del rango)
+    // AÑO — filtro duro: excluye vehículos fuera del rango de comercialización
     if (params.anyo && veh.fec_ini_comerc) {
-        maxEfectivo += FIELD_MAX.anyo;
         const ini = parseInt(veh.fec_ini_comerc.substring(0, 4));
-        const fin = veh.fec_fin_comerc ? parseInt(veh.fec_fin_comerc.substring(0, 4)) : 9999;
-        if (params.anyo >= ini && params.anyo <= fin) {
-            const centro = (ini + Math.min(fin, ini + 10)) / 2;
-            const distCentro = Math.abs(params.anyo - centro) / Math.max(1, fin - ini);
-            const pts = distCentro < 0.3 ? 4 : 2;
-            score += pts;
-            detail.anyo = pts;
+        const fin = veh.fec_fin_comerc?.length >= 4
+            ? parseInt(veh.fec_fin_comerc.substring(0, 4)) : 9999;
+        if (params.anyo < ini || params.anyo > fin) {
+            detail.maxEfectivo = 0;
+            return { score: 0, detail };
         }
+        maxEfectivo += FIELD_MAX.anyo;
+        score += 3;
+        detail.anyo = 3;
     }
 
     detail.maxEfectivo = maxEfectivo;
     if (maxEfectivo === 0) return { score: 0, detail };
     return { score: Math.round((score / maxEfectivo) * 100), detail };
+}
+
+// ─── Utilidades públicas ──────────────────────────────────────────────────────
+
+/** Lista de marcas únicas disponibles en el catálogo cargado. */
+export function getAllMarcas(): string[] {
+    try {
+        const cache = loadCsv();
+        const out: string[] = [];
+        cache.byMarca.forEach(vehs => { if (vehs[0]?.marca) out.push(vehs[0].marca); });
+        return out.sort();
+    } catch { return []; }
+}
+
+/**
+ * Detecta marca (y modelo sobrante) en texto libre de una celda sin Silverdat.
+ * Ej: "IVECO DACIA 450" → { marca: "IVECO", modelo: "DACIA 450" }
+ * Ej: "SEMIRREMOLQUE KRONE" → { marca: "REMOLQUE" }
+ */
+export function parseFreeText(text: string): { marca?: string; modelo?: string } {
+    if (!text?.trim()) return {};
+
+    if (/\bremolque\b|\bsemirremolque\b/i.test(text)) return { marca: 'REMOLQUE' };
+
+    let cache: CatalogoCache;
+    try { cache = loadCsv(); } catch { return {}; }
+
+    const textNorm   = normalize(text.trim());
+    const textTokens = text.trim().split(/\s+/);
+
+    // Construye lista de candidatos (marca normalizada → nombre canónico)
+    const candidates: { normKey: string; displayName: string }[] = [];
+    cache.byMarca.forEach((vehs, normKey) => {
+        if (vehs[0]?.marca) candidates.push({ normKey, displayName: vehs[0].marca });
+    });
+    // Añadir aliases: "VW" → "VOLKSWAGEN", "MERCEDES" → "MERCEDES-BENZ", etc.
+    for (const [alias, canonical] of Object.entries(MARCA_ALIAS)) {
+        const normAlias = normalize(alias);
+        const normCanon = normalize(normalizeMarca(canonical));
+        if (cache.byMarca.has(normCanon) && !candidates.find(c => c.normKey === normAlias)) {
+            candidates.push({ normKey: normAlias, displayName: canonical });
+        }
+    }
+    // Ordenar por longitud del normKey (descendente) para evitar matches cortos incorrectos
+    candidates.sort((a, b) => b.normKey.length - a.normKey.length);
+
+    for (const { normKey, displayName } of candidates) {
+        if (textNorm === normKey || textNorm.startsWith(normKey + ' ')) {
+            const skipTokens = normKey.split(/\s+/).length;
+            const resto = textTokens.slice(skipTokens).join(' ');
+            return { marca: displayName, modelo: resto || undefined };
+        }
+    }
+    return {};
 }
 
 export const catalogoDataSource: CatalogoDataSource = {

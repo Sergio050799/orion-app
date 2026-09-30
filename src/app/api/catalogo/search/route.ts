@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { catalogoDataSource } from "@/core/catalogo/catalogoDataSource.csv";
+import { catalogoDataSource, parseFreeText } from "@/core/catalogo/catalogoDataSource.csv";
 import type { SearchParams, CatalogoCandidato } from "@/core/catalogo/catalogoDataSource";
 
 export const runtime = "nodejs";
@@ -94,6 +94,14 @@ export async function POST(req: NextRequest) {
         if (body.anio)       params.anyo       = parseInt(body.anio);
         if (body.anyo)       params.anyo       = parseInt(body.anyo);
         if (body.acabado)    params.acabado    = String(body.acabado);
+        if (body.version)    params.acabado    = String(body.version);
+
+        // rawText: si no viene marca, intentar extraerla del texto libre
+        if (body.rawText && !params.marca) {
+            const parsed = parseFreeText(String(body.rawText));
+            if (parsed.marca) params.marca = parsed.marca;
+            if (parsed.modelo && !params.modelo) params.modelo = parsed.modelo;
+        }
 
         if (Object.keys(params).length === 0) {
             return NextResponse.json(
