@@ -518,8 +518,9 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
 
       const realYear = extractYear(v);
       const plateEst = estimateYear(v.matricula);
-      if (realYear)      body.anyo = realYear;
-      else if (plateEst) body.anyo = plateEst.year;
+      // Solo usar año como filtro si viene de datos reales (anyo_fabricacion/fecha_matriculacion).
+      // El año estimado por matrícula es demasiado impreciso para el filtro duro del catálogo.
+      if (realYear) body.anyo = realYear;
 
       // Para camiones con patrón serie+potencia, intentar primero sin año (el catálogo
       // tiene modelos de la generación actual aunque la matrícula sea antigua)
