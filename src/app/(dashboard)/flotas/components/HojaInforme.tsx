@@ -286,6 +286,7 @@ function buildPdfHtml(data: {
 <div class="client-card">
   ${header?.tomador  ? `<div><span class="cf-label">Nombre de la flota</span><span class="cf-val">${header.tomador}</span></div>` : ''}
   ${header?.cif      ? `<div><span class="cf-label">CIF / NIF</span><span class="cf-val">${header.cif}</span></div>` : ''}
+  ${ambitoLabel      ? `<div><span class="cf-label">Ámbito</span><span class="cf-val"><span class="ambito-badge">${ambitoLabel}</span></span></div>` : ''}
 </div>
 
 <div class="section">
@@ -685,7 +686,7 @@ export default function HojaInforme({
       header,
       pivot,
       totalVehiculos,
-      ambitoLabel: ambito.label,
+      ambitoLabel: totalVehiculos > 0 ? (ambito.label ?? 'Nacional') : null,
       adrActivo,
       sinco: sincoValues ? { label: 'SINCO', values: sincoValues } : null,
       danosPropiosPdf: danosPropiosPdfValues ? { values: danosPropiosPdfValues } : null,
