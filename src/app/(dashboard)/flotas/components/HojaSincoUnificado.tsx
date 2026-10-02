@@ -85,7 +85,6 @@ function AutomaticoContent({ header, trabajoRows, sincoResultRows, onSincoResult
       if (first === 'X' || first === 'Y' || first === 'Z') return 'R';
       return 'C';
     }
-    const tipoDoc = inferTipoDocumento(header.cif);
     const wb = new ExcelJS.Workbook();
     wb.creator = 'MMT Seguros';
     const ws = wb.addWorksheet('SINCO');
@@ -103,10 +102,11 @@ function AutomaticoContent({ header, trabajoRows, sincoResultRows, onSincoResult
     trabajoRows
       .filter(r => r['matricula']?.trim())
       .forEach((r, i) => {
+        const rowCif = r['cif_nif']?.trim() || header.cif;
         const rowData: string[] = Array(16).fill('');
         rowData[0] = 'MMT';
-        rowData[1] = tipoDoc;
-        rowData[2] = header.cif;
+        rowData[1] = inferTipoDocumento(rowCif);
+        rowData[2] = rowCif;
         const polizaRaw = r['num_poliza_actual']?.trim() || r['n_poliza_actual']?.trim() || r['poliza_sinco']?.trim() || '';
         rowData[3] = polizaRaw ? normalizarPoliza(polizaRaw) : '';
         rowData[4] = (r['matricula'] ?? '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();

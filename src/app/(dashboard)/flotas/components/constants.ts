@@ -46,6 +46,8 @@ export const ASISTENCIA_CODES: Record<string, string> = {
 // ─── Columnas base (ORIGINAL) ────────────────────────────────────────────────
 
 export const BASE_COL_DEFS: ColDef[] = [
+  { id: 'cif_nif',           name: 'CIF/NIF',            width: 130 },
+  { id: 'tomador',           name: 'TOMADOR',             width: 160 },
   { id: 'cia_actual',        name: 'CIA_ACTUAL',        width: 120 },
   { id: 'num_poliza_actual', name: 'Nº_POLIZA_ACTUAL',  width: 150,
     normalizeFn: (v) => ({ value: normalizePoliza(v), matched: true }) },
@@ -116,6 +118,8 @@ function base(id: string, overrides?: Partial<ColDef>): ColDef {
 export function makeTrabajoColDefs(): ColDef[] {
   return [
     // ── Póliza ────────────────────────────────────────────────────
+    base('cif_nif',           { name: 'CIF/NIF',               width: 130 }),
+    base('tomador',           { name: 'TOMADOR',               width: 160 }),
     base('cia_actual',        { name: 'CIA ACTUAL',            width: 120 }),
     base('num_poliza_actual', { name: 'Nº PÓLIZA ACTUAL',     width: 150 }),
     { ...POLIZA_SINCO_DEF,      name: 'Nº PÓLIZA SINCO',      width: 140 },

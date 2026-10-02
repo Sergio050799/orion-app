@@ -11,6 +11,7 @@ import { calcularPrima, type CalcPrimaParams, type TipoVehiculo, type Producto }
 
 interface OfertaRow {
   _id: number;
+  tomador: string;
   matricula: string;
   marca_modelo: string;
   tipo_vehiculo: string;
@@ -168,7 +169,7 @@ function buildOfertaPdfHtml(data: {
     const [marca, ...mp] = r.marca_modelo.split(' ');
     const stripe = i % 2 === 1 ? '#f7f8fa' : '#ffffff';
     return `<tr style="background:${stripe};border-bottom:1px solid #e8eaed">
-      <td>${(header?.tomador ?? '').toUpperCase()}</td>
+      <td>${(r.tomador ?? '').toUpperCase()}</td>
       <td>${r.tipo_vehiculo.toUpperCase()}</td>
       <td style="font-weight:800;color:#002F82;letter-spacing:.04em">${r.matricula}</td>
       <td>${(marca ?? '').toUpperCase()}</td>
@@ -322,6 +323,7 @@ function trabajoToOferta(rows: Record<string, string>[]): OfertaRow[] {
     .filter(r => r['matricula']?.trim())
     .map((r, i) => ({
       _id: i,
+      tomador:         r['tomador'] ?? '',
       matricula:       (r['matricula'] ?? '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase(),
       marca_modelo:    `${r['marca'] ?? ''} ${r['modelo'] ?? ''}`.trim(),
       tipo_vehiculo:   r['tipo_vehiculo']          ?? '',
@@ -648,7 +650,7 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
         const marcaModelo = r.marca_modelo ?? '';
         const [marca, ...modeloParts] = marcaModelo.split(' ');
         return {
-          tomador: (header?.tomador ?? '').toUpperCase(),
+          tomador: (r.tomador ?? '').toUpperCase(),
           tipologia: (r.tipo_vehiculo ?? '').toUpperCase(),
           matricula: (r.matricula ?? '').toUpperCase(),
           marca: (marca ?? '').toUpperCase(),
@@ -1016,7 +1018,7 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
                       <tr key={r._id} style={{ borderBottom: '1px solid #e8eaed', background: stripe, transition: 'background 0.15s' }}
                         onMouseEnter={e => { e.currentTarget.style.background = '#eef3ff'; }}
                         onMouseLeave={e => { e.currentTarget.style.background = stripe; }}>
-                        <td style={{ padding: '12px 10px', textAlign: 'center', color: '#000', fontSize: 13 }}>{(header?.tomador ?? '').toUpperCase()}</td>
+                        <td style={{ padding: '12px 10px', textAlign: 'center', color: '#000', fontSize: 13 }}>{(r.tomador ?? '').toUpperCase()}</td>
                         <td style={{ padding: '12px 10px', textAlign: 'center', color: '#000', fontSize: 13, fontWeight: 600 }}>{r.tipo_vehiculo.toUpperCase()}</td>
                         <td style={{ padding: '12px 10px', textAlign: 'center', fontWeight: 800, color: '#002F82', fontSize: 14, letterSpacing: '0.04em' }}>{r.matricula.toUpperCase()}</td>
                         <td style={{ padding: '12px 10px', textAlign: 'center', color: '#000', fontSize: 13, fontWeight: 600 }}>{(marca ?? '').toUpperCase()}</td>

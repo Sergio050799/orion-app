@@ -86,6 +86,7 @@ function buildPdfHtml(data: {
   pivot: { tipos: string[]; cobs: string[]; counts: Record<string, Record<string, number>> };
   totalVehiculos: number;
   ambitoLabel: string | null;
+  numTomadores: number;
   adrActivo: boolean;
   sinco: { label: string; values: [string, string][] } | null;
   danosPropiosPdf?: { values: [string, string][] } | null;
@@ -94,7 +95,7 @@ function buildPdfHtml(data: {
   corredorLabel?: string;
   cobAnexo: { titulo: string; tipologias?: string[]; garantias: string[] }[];
 }): string {
-  const { header, pivot, totalVehiculos, ambitoLabel, adrActivo, sinco, danosPropiosPdf, primasSol, mmtRows, corredorLabel, cobAnexo } = data;
+  const { header, pivot, totalVehiculos, ambitoLabel, numTomadores, adrActivo, sinco, danosPropiosPdf, primasSol, mmtRows, corredorLabel, cobAnexo } = data;
   const totalSol = primasSol.reduce((a, r) => a + r.total, 0);
   const totalMmt = mmtRows.reduce((a, r) => a + (r.total ?? 0), 0);
   const dif = totalMmt - totalSol;
@@ -287,6 +288,7 @@ function buildPdfHtml(data: {
   ${header?.tomador  ? `<div><span class="cf-label">Nombre de la flota</span><span class="cf-val">${header.tomador}</span></div>` : ''}
   ${header?.cif      ? `<div><span class="cf-label">CIF / NIF</span><span class="cf-val">${header.cif}</span></div>` : ''}
   ${ambitoLabel      ? `<div><span class="cf-label">Ámbito</span><span class="cf-val"><span class="ambito-badge">${ambitoLabel}</span></span></div>` : ''}
+  ${numTomadores > 1 ? `<div><span class="cf-label">Composición</span><span class="cf-val">Flota compuesta por ${numTomadores} tomadores</span></div>` : ''}
 </div>
 
 <div class="section">
@@ -415,6 +417,16 @@ export default function HojaInforme({
     // Si hay vehículos pero ninguno tiene ámbito explícito → Nacional por defecto
     const label: string | null = internacional > 0 ? 'Internacional' : (nacional > 0 || rows.length > 0) ? 'Nacional' : null;
     return { nacional, internacional, sinDato, label };
+  }, [trabajoRows]);
+
+  // ── Tomadores ────────────────────────────────────────────────────────────────
+  const tomadores = useMemo(() => {
+    const set = new Set<string>();
+    trabajoRows.filter(r => r['matricula']?.trim()).forEach(r => {
+      const t = (r['tomador'] ?? '').trim();
+      if (t) set.add(t.toUpperCase());
+    });
+    return set;
   }, [trabajoRows]);
 
   // ── ADR ─────────────────────────────────────────────────────────────────────
@@ -687,6 +699,7 @@ export default function HojaInforme({
       pivot,
       totalVehiculos,
       ambitoLabel: totalVehiculos > 0 ? (ambito.label ?? 'Nacional') : null,
+      numTomadores: tomadores.size,
       adrActivo,
       sinco: sincoValues ? { label: 'SINCO', values: sincoValues } : null,
       danosPropiosPdf: danosPropiosPdfValues ? { values: danosPropiosPdfValues } : null,
@@ -731,6 +744,16 @@ export default function HojaInforme({
                 : `ADR ${adrActivo ? 'SÍ' : 'NO'}`}
             </span>
           </span>
+          {tomadores.size > 1 && (
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: 5,
+              background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.3)',
+              borderRadius: 20, padding: '3px 12px',
+              fontSize: 10, fontWeight: 800, letterSpacing: '0.04em', color: 'rgba(165,180,252,0.9)',
+            }}>
+              FLOTA COMPUESTA POR {tomadores.size} TOMADORES
+            </span>
+          )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <button onClick={handleRecalcPrimas} style={{

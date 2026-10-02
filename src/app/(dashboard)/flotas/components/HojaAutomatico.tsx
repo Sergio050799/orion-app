@@ -45,6 +45,8 @@ interface ProcessedVehicle {
     combustible: string;
     fecha_matriculacion: string;
     anyo_fabricacion: string;
+    cif_nif: string;
+    tomador: string;
     fecha_vencimiento: string;
     cia_actual: string;
     num_poliza_actual: string;
@@ -634,6 +636,8 @@ function Step2({
             combustible: sd?.combustible || '',
             fecha_matriculacion: sd?.fecha_matriculacion || '',
             anyo_fabricacion: sd?.anyo_fabricacion || '',
+            cif_nif: row['cif_nif'] || '',
+            tomador: row['tomador'] || '',
             fecha_vencimiento: row['fecha_vencimiento'] || '',
             cia_actual: row['cia_actual'] || '',
             num_poliza_actual: row['num_poliza_actual'] || row['n_poliza_actual'] || '',
@@ -954,6 +958,8 @@ function Step3({
                 tipo_vehiculo: effectiveTipo(v) || 'Turismo',
                 kw: v.kw > 0 ? String(v.kw) : '',
                 cv: v.cv > 0 ? String(v.cv) : '',
+                cif_nif: v.cif_nif,
+                tomador: v.tomador,
                 cia_actual: v.cia_actual,
                 num_poliza_actual: cleanPoliza(polizaRaw),
                 fecha_vencimiento: v.fecha_vencimiento,
@@ -1204,6 +1210,8 @@ function rowsToVehicles(rows: Record<string, string>[]): ProcessedVehicle[] {
                 combustible: r['combustible'] || '',
                 fecha_matriculacion: r['fecha_matriculacion'] || '',
                 anyo_fabricacion: r['anyo_fabricacion'] || '',
+                cif_nif: r['cif_nif'] || '',
+                tomador: r['tomador'] || '',
                 fecha_vencimiento: r['fecha_vencimiento'] || '',
                 cia_actual: r['cia_actual'] || '',
                 num_poliza_actual: r['num_poliza_actual'] || r['n_poliza_actual'] || '',

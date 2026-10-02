@@ -56,6 +56,10 @@ const HEADER_MAP: Record<string, string> = {
   // Prima referencia
   'prima referencia': 'prima_referencia', 'prima': 'prima_referencia', 'importe': 'prima_referencia',
   'tirea': 'prima_referencia', 'prima actual': 'prima_referencia',
+  // CIF/NIF tomador (nivel fila)
+  'cif nif': 'cif_nif', 'nif': 'cif_nif', 'cif': 'cif_nif',
+  // Tomador (nivel fila)
+  'tomador': 'tomador', 'nombre tomador': 'tomador', 'razon social': 'tomador',
   // Compañía / póliza
   'cia actual': 'cia_actual', 'cia': 'cia_actual', 'compania': 'cia_actual', 'aseguradora': 'cia_actual',
   'num poliza actual': 'num_poliza_actual', 'n poliza actual': 'num_poliza_actual',

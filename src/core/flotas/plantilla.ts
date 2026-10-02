@@ -14,6 +14,8 @@ const C = {
 
 // ─── Columnas de datos ────────────────────────────────────────────────────────
 const COLUMNS = [
+  { key: 'cif_nif',               header: 'CIF / NIF',             width: 16 },
+  { key: 'tomador',               header: 'TOMADOR',               width: 22 },
   { key: 'cia_actual',            header: 'CIA ACTUAL',            width: 18 },
   { key: 'num_poliza_actual',     header: 'N POLIZA ACTUAL',       width: 20 },
   { key: 'fecha_vencimiento',     header: 'FECHA VENCIMIENTO',     width: 18 },
