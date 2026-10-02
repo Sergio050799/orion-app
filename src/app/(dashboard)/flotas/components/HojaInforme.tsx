@@ -86,6 +86,7 @@ function buildPdfHtml(data: {
   pivot: { tipos: string[]; cobs: string[]; counts: Record<string, Record<string, number>> };
   totalVehiculos: number;
   ambitoLabel: string | null;
+  adrActivo: boolean;
   sinco: { label: string; values: [string, string][] } | null;
   danosPropiosPdf?: { values: [string, string][] } | null;
   primasSol: { tipo: string; cob: string; count: number; media: number; total: number }[];
@@ -93,7 +94,7 @@ function buildPdfHtml(data: {
   corredorLabel?: string;
   cobAnexo: { titulo: string; tipologias?: string[]; garantias: string[] }[];
 }): string {
-  const { header, pivot, totalVehiculos, ambitoLabel, sinco, danosPropiosPdf, primasSol, mmtRows, corredorLabel, cobAnexo } = data;
+  const { header, pivot, totalVehiculos, ambitoLabel, adrActivo, sinco, danosPropiosPdf, primasSol, mmtRows, corredorLabel, cobAnexo } = data;
   const totalSol = primasSol.reduce((a, r) => a + r.total, 0);
   const totalMmt = mmtRows.reduce((a, r) => a + (r.total ?? 0), 0);
   const dif = totalMmt - totalSol;
@@ -152,9 +153,14 @@ function buildPdfHtml(data: {
       </div>
     </div>` : '';
 
-  const corredorBadgeHtml = corredorLabel
-    ? `<div class="corredor-badge"><span class="dot"></span>${corredorLabel}</div>`
-    : '';
+  const adrTexto = corredorLabel
+    ? `que ${adrActivo ? 'SÍ' : 'NO'} lleva ADR`
+    : `ADR ${adrActivo ? 'SÍ' : 'NO'}`;
+  const corredorAdrHtml = `
+    <div class="corredor-adr-badge ${adrActivo ? 'adr-si' : 'adr-no'}">
+      ${corredorLabel ? `<span class="dot"></span><span class="corredor-txt">${corredorLabel}</span><span class="sep">·</span>` : ''}
+      <span class="adr-txt">${adrTexto}</span>
+    </div>`;
 
   return `<!DOCTYPE html>
 <html lang="es">
@@ -189,6 +195,14 @@ function buildPdfHtml(data: {
     font-family: 'Arial Black', Arial, sans-serif;
   }
   .dot { width: 7px; height: 7px; border-radius: 50%; background: #fbbf24; display: inline-block; flex-shrink: 0; }
+  .corredor-adr-badge { display: inline-flex; align-items: center; gap: 6px; border-radius: 5px; padding: 5px 12px; font-size: 11px; font-weight: 800; letter-spacing: 0.05em; font-family: 'Arial Black', Arial, sans-serif; margin-top: 5px; }
+  .corredor-adr-badge.adr-si { background: rgba(220,38,38,0.18); border: 1px solid rgba(220,38,38,0.45); }
+  .corredor-adr-badge.adr-no { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.25); }
+  .corredor-txt { color: #fbbf24; }
+  .sep { color: rgba(255,255,255,0.3); font-weight: 400; }
+  .adr-txt.adr-si-txt { color: #ff6b6b; }
+  .corredor-adr-badge.adr-si .adr-txt { color: #ff8080; }
+  .corredor-adr-badge.adr-no .adr-txt { color: rgba(255,255,255,0.6); }
 
   /* ── Client card ── */
   .client-card {
@@ -269,7 +283,7 @@ function buildPdfHtml(data: {
       <div><strong>Fecha:</strong> ${today()}</div>
       <div><strong>Total vehículos:</strong> ${totalVehiculos}</div>
     </div>
-    ${corredorBadgeHtml}
+    ${corredorAdrHtml}
   </div>
 </div>
 
@@ -397,11 +411,19 @@ export default function HojaInforme({
   // ── Ámbito ──────────────────────────────────────────────────────────────────
   const ambito = useMemo(() => {
     const rows = trabajoRows.filter(r => r['matricula']?.trim());
-    const nacional = rows.filter(r => (r['ambito'] || '').toLowerCase().includes('nac')).length;
-    const internacional = rows.filter(r => (r['ambito'] || '').toLowerCase().includes('int')).length;
+    const getAmb = (r: Record<string, string>) => (r['ambito'] || r['ámbito'] || '').toLowerCase();
+    const nacional = rows.filter(r => getAmb(r).includes('nac')).length;
+    const internacional = rows.filter(r => getAmb(r).includes('int')).length;
     const sinDato = rows.length - nacional - internacional;
-    const label: string | null = internacional > 0 ? 'Internacional' : nacional > 0 ? 'Nacional' : null;
+    // Si hay vehículos pero ninguno tiene ámbito explícito → Nacional por defecto
+    const label: string | null = internacional > 0 ? 'Internacional' : (nacional > 0 || rows.length > 0) ? 'Nacional' : null;
     return { nacional, internacional, sinDato, label };
+  }, [trabajoRows]);
+
+  // ── ADR ─────────────────────────────────────────────────────────────────────
+  const adrActivo = useMemo(() => {
+    const rows = trabajoRows.filter(r => r['matricula']?.trim());
+    return rows.some(r => (r['adr'] || '').toLowerCase().includes('s'));
   }, [trabajoRows]);
 
   // ── SINCO ────────────────────────────────────────────────────────────────────
@@ -667,6 +689,7 @@ export default function HojaInforme({
       pivot,
       totalVehiculos,
       ambitoLabel: ambito.label,
+      adrActivo,
       sinco: sincoValues ? { label: 'SINCO', values: sincoValues } : null,
       danosPropiosPdf: danosPropiosPdfValues ? { values: danosPropiosPdfValues } : null,
       primasSol,
@@ -679,7 +702,7 @@ export default function HojaInforme({
     if (!w) return;
     w.document.write(html);
     w.document.close();
-  }, [header, pivot, totalVehiculos, ambito, primasSol, mmtRows, resumenAuto, resumenManual, sincoGlobal, danosPropios, cobAnexo]);
+  }, [header, pivot, totalVehiculos, ambito, adrActivo, primasSol, mmtRows, resumenAuto, resumenManual, sincoGlobal, danosPropios, cobAnexo]);
 
   // ── Render ────────────────────────────────────────────────────────────────────
   return (
@@ -691,16 +714,25 @@ export default function HojaInforme({
           <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(178,198,245,0.5)' }}>
             Informe · {totalVehiculos} vehículos
           </span>
-          {corredorLabel && (
-            <span style={{
-              display: 'inline-flex', alignItems: 'center', gap: 5,
-              background: 'rgba(251,191,36,0.12)', border: '1px solid rgba(251,191,36,0.3)',
-              borderRadius: 20, padding: '2px 10px',
-              fontSize: 10, fontWeight: 800, letterSpacing: '0.05em', color: '#fbbf24',
-            }}>
-              ★ {corredorLabel}
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            background: adrActivo ? 'rgba(220,38,38,0.1)' : 'rgba(251,191,36,0.08)',
+            border: `1px solid ${adrActivo ? 'rgba(220,38,38,0.3)' : 'rgba(251,191,36,0.25)'}`,
+            borderRadius: 20, padding: '3px 12px',
+            fontSize: 10, fontWeight: 800, letterSpacing: '0.04em',
+          }}>
+            {corredorLabel && (
+              <span style={{ color: '#fbbf24' }}>★ {corredorLabel}</span>
+            )}
+            {corredorLabel && (
+              <span style={{ color: 'rgba(178,198,245,0.3)', fontWeight: 400 }}>·</span>
+            )}
+            <span style={{ color: adrActivo ? '#ef4444' : 'rgba(178,198,245,0.45)' }}>
+              {corredorLabel
+                ? `que ${adrActivo ? 'SÍ' : 'NO'} lleva ADR`
+                : `ADR ${adrActivo ? 'SÍ' : 'NO'}`}
             </span>
-          )}
+          </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <button onClick={handleRecalcPrimas} style={{

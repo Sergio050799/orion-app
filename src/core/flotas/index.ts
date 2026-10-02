@@ -46,6 +46,7 @@ export {
     normalizeTipoVehiculo,
     TIPO_VEHICULO_OPTS,
     USO_OPTS,
+    ADR_OPTS,
     AMBITO_OPTS,
     COBERTURA_OPTS,
     ASISTENCIA_OPTS,

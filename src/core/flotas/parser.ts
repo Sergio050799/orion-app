@@ -39,6 +39,8 @@ const HEADER_MAP: Record<string, string> = {
   'tn': 'tn', 'toneladas': 'tn', 'tara': 'tn', 'mma': 'tn',
   // PMA
   'pma': 'pma', 'peso maximo': 'pma', 'peso maximo autorizado': 'pma',
+  // ADR
+  'adr': 'adr',
   // Ámbito
   'ambito': 'ambito', 'scope': 'ambito',
   // Coberturas
@@ -129,7 +131,7 @@ export async function parseExcelTemplate(file: File): Promise<ParseResult> {
   });
 
   // Columnas que se normalizan al importar
-  const NORMALIZE_COLS = new Set(['tipo_vehiculo', 'uso', 'ambito', 'coberturas_solicitadas', 'lunas']);
+  const NORMALIZE_COLS = new Set(['tipo_vehiculo', 'uso', 'adr', 'ambito', 'coberturas_solicitadas', 'lunas']);
 
   // Convertir filas
   const rows: Record<string, string>[] = dataRows.map(row => {

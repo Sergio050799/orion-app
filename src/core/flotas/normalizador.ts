@@ -20,6 +20,8 @@ export const COBERTURA_OPTS = [
 
 export const LUNAS_OPTS = ['Sí', 'No'];
 
+export const ADR_OPTS = ['No', 'Sí'];
+
 export const ASISTENCIA_OPTS = ['no', 'oro', 'oro_plus'];
 
 // ─── Diccionario de alias → tipo canónico ────────────────────────────────────
@@ -118,6 +120,7 @@ export function normalizeTipoVehiculo(raw: string): string {
 const COLUMN_OPTS: Record<string, string[]> = {
   tipo_vehiculo:          TIPO_VEHICULO_OPTS,
   uso:                    USO_OPTS,
+  adr:                    ADR_OPTS,
   ambito:                 AMBITO_OPTS,
   coberturas_solicitadas: COBERTURA_OPTS,
   asistencia:             ASISTENCIA_OPTS,

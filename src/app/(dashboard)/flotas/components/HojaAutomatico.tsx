@@ -49,6 +49,7 @@ interface ProcessedVehicle {
     cia_actual: string;
     num_poliza_actual: string;
     uso: string;
+    adr: string;
     ambito: string;
     coberturas_solicitadas: string;
     lunas: string;
@@ -637,7 +638,8 @@ function Step2({
             cia_actual: row['cia_actual'] || '',
             num_poliza_actual: row['num_poliza_actual'] || row['n_poliza_actual'] || '',
             uso: row['uso'] || 'Particular',
-            ambito: row['ambito'] || 'Nacional',
+            adr: row['adr'] || 'No',
+            ambito: row['ambito'] || row['ámbito'] || 'Nacional',
             coberturas_solicitadas: row['coberturas_solicitadas'] || '',
             lunas: sinLunas ? 'No' : (row['lunas'] || 'No'),
             frq: row['frq'] || '',
@@ -956,6 +958,7 @@ function Step3({
                 num_poliza_actual: cleanPoliza(polizaRaw),
                 fecha_vencimiento: v.fecha_vencimiento,
                 uso: v.uso,
+                adr: v.adr,
                 ambito: v.ambito,
                 coberturas_solicitadas: v.coberturas_solicitadas,
                 lunas: v.lunas,
@@ -1205,7 +1208,8 @@ function rowsToVehicles(rows: Record<string, string>[]): ProcessedVehicle[] {
                 cia_actual: r['cia_actual'] || '',
                 num_poliza_actual: r['num_poliza_actual'] || r['n_poliza_actual'] || '',
                 uso: r['uso'] || 'Particular',
-                ambito: r['ambito'] || 'Nacional',
+                adr: r['adr'] || 'No',
+                ambito: r['ambito'] || r['ámbito'] || 'Nacional',
                 coberturas_solicitadas: r['coberturas_solicitadas'] || '',
                 lunas: sinLunas ? 'No' : (r['lunas'] || 'No'),
                 frq: r['frq'] || '',

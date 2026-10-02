@@ -5,7 +5,7 @@ import { DataGrid, renderTextEditor } from 'react-data-grid';
 import type { Column, FillEvent, CellCopyArgs, CellPasteArgs, CellMouseArgs, RenderCellProps, RowsChangeData, DataGridHandle } from 'react-data-grid';
 import 'react-data-grid/lib/styles.css';
 import type { ColDef, FlotaGridHandle } from './types';
-import { TIPO_VEHICULO_OPTS, USO_OPTS, AMBITO_OPTS, COBERTURA_OPTS, ASISTENCIA_OPTS, LUNAS_OPTS } from '@/core/flotas';
+import { TIPO_VEHICULO_OPTS, USO_OPTS, ADR_OPTS, AMBITO_OPTS, COBERTURA_OPTS, ASISTENCIA_OPTS, LUNAS_OPTS } from '@/core/flotas';
 import { parseExcelTemplate } from '@/core/flotas/parser';
 
 const EMPTY_ROWS_PADDING = 5;
@@ -47,6 +47,7 @@ const USO_DEFAULT: Record<string, string> = {
 const BULK_OPTS: Record<string, string[]> = {
   tipo_vehiculo:          TIPO_VEHICULO_OPTS,
   uso:                    USO_OPTS,
+  adr:                    ADR_OPTS,
   ambito:                 AMBITO_OPTS,
   coberturas_solicitadas: COBERTURA_OPTS,
   asistencia:             ASISTENCIA_OPTS,

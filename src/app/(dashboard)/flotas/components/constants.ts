@@ -16,6 +16,7 @@ export const TIPO_VEHICULO_OPTIONS = [
 ];
 export const USO_OPTIONS = ['Particular', 'Servicio público', 'Transportes propios'];
 export const AMBITO_OPTIONS = ['Nacional', 'Internacional'];
+export const ADR_OPTIONS = ['No', 'Sí'];
 
 // ─── Mapas de conversión ─────────────────────────────────────────────────────
 
@@ -66,6 +67,8 @@ export const BASE_COL_DEFS: ColDef[] = [
     },
   },
   { id: 'tn',     name: 'TN',     width: 65 },
+  { id: 'adr',    name: 'ADR',    width: 75,
+    normalizeFn: (v) => normalizeColumnValue('adr', v) },
   { id: 'ambito', name: 'AMBITO', width: 125,
     normalizeFn: (v) => normalizeColumnValue('ambito', v) },
   { id: 'coberturas_solicitadas', name: 'COBERTURAS_SOLICITADAS', width: 210,
@@ -138,6 +141,7 @@ export function makeTrabajoColDefs(): ColDef[] {
     { id: 'valor_compra',       name: 'VALOR COMPRA',          width: 110 },
 
     // ── Cotización ────────────────────────────────────────────────
+    base('adr',               { name: 'ADR',                   width: 75  }),
     base('ambito',            { name: 'ÁMBITO',                width: 120 }),
     base('coberturas_solicitadas', { name: 'COBERTURAS',       width: 195 }),
     base('lunas',             { name: 'LUNAS',                 width: 75  }),

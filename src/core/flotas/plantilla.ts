@@ -23,6 +23,7 @@ const COLUMNS = [
   { key: 'anyo',                  header: 'AÑO',                   width: 8  },
   { key: 'tipo_vehiculo',         header: 'TIPO VEHICULO',         width: 26 },
   { key: 'uso',                   header: 'USO',                   width: 22 },
+  { key: 'adr',                   header: 'ADR',                   width: 8  },
   { key: 'ambito',                header: 'AMBITO',                width: 14 },
   { key: 'coberturas_solicitadas',header: 'COBERTURAS SOLICITADAS',width: 28 },
   { key: 'lunas',                 header: 'LUNAS',                 width: 10 },
@@ -161,6 +162,7 @@ export async function generarPlantillaExcel(carpeta?: Pick<FlotaCarpeta, 'nombre
   // ── Filas de datos (100 filas) ───────────────────────────────────────────
   const TIPO_OPTIONS   = '"Turismo,Furgoneta,Cabeza tractora,Camion rigido,Semirremolque,Industrial matriculado,Industrial no matriculado"';
   const USO_OPTIONS    = '"Particular,Servicio publico,Transportes propios"';
+  const ADR_OPTIONS_DV = '"No,Si"';
   const AMBITO_OPTIONS = '"Nacional,Internacional"';
   const COB_OPTIONS    = '"Terceros,Terceros Ampliado,Todo Riesgo con Franquicia"';
   const LUNAS_OPTIONS  = '"Si,No"';
@@ -169,6 +171,7 @@ export async function generarPlantillaExcel(carpeta?: Pick<FlotaCarpeta, 'nombre
   const dvMap: Record<string, string> = {
     tipo_vehiculo:          TIPO_OPTIONS,
     uso:                    USO_OPTIONS,
+    adr:                    ADR_OPTIONS_DV,
     ambito:                 AMBITO_OPTIONS,
     coberturas_solicitadas: COB_OPTIONS,
     lunas:                  LUNAS_OPTIONS,
@@ -210,7 +213,7 @@ export async function generarPlantillaExcel(carpeta?: Pick<FlotaCarpeta, 'nombre
   // ── Nota al pie ───────────────────────────────────────────────────────────
   const noteRow = DATA_START_ROW + 101;
   const noteCell = ws.getCell(noteRow, 1);
-  noteCell.value = 'MMT Seguros | LUNAS y ASISTENCIA: escribe Si o No';
+  noteCell.value = 'MMT Seguros | ADR, LUNAS y ASISTENCIA: escribe Si o No';
   noteCell.font = { name: 'Calibri', size: 8, italic: true, color: { argb: 'FF9CA3AF' } };
   noteCell.alignment = { horizontal: 'left' };
 
