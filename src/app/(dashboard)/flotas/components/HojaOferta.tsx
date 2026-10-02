@@ -579,7 +579,7 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
       const tip = r.tipo_vehiculo.charAt(0).toUpperCase() + r.tipo_vehiculo.slice(1).toLowerCase();
       if (isRem) entry.rem.add(tip);
       else entry.nonRem.add(tip);
-      if (['sí', 'si', 'true', 's'].includes((r.lunas ?? '').toLowerCase())) entry.hasLunas = true;
+      if (!isRem && ['sí', 'si', 'true', 's'].includes((r.lunas ?? '').toLowerCase())) entry.hasLunas = true;
     });
     const result: { titulo: string; tipologias: string[]; garantias: string[] }[] = [];
     const seen = new Set<string>();
@@ -603,7 +603,7 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
         if (rem.size > 0 && !seen.has(keyFull + '_rem')) {
           seen.add(keyFull + '_rem');
           const tipologias = [...rem];
-          if (key === 't') result.push({ titulo: 'Terceros — Remolques', tipologias, garantias: [...BASE_NO_CONDUCTOR, ...lunasGar, ...asistGar] });
+          if (key === 't') result.push({ titulo: 'Terceros — Remolques', tipologias, garantias: [...BASE_NO_CONDUCTOR, ...asistGar] });
           else if (key === 'ta') result.push({ titulo: 'Terceros Ampliado — Remolques', tipologias, garantias: [...BASE_NO_CONDUCTOR, 'Robo', 'Incendio', ...asistGar] });
           else if (key === 'tr') result.push({ titulo: 'Todo Riesgo — Remolques', tipologias, garantias: [...BASE_NO_CONDUCTOR, 'Robo', 'Incendio', 'Daños propios con franquicia de 1.800 €', ...asistGar] });
         }

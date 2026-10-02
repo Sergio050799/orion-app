@@ -195,14 +195,10 @@ function buildPdfHtml(data: {
     font-family: 'Arial Black', Arial, sans-serif;
   }
   .dot { width: 7px; height: 7px; border-radius: 50%; background: #fbbf24; display: inline-block; flex-shrink: 0; }
-  .corredor-adr-badge { display: inline-flex; align-items: center; gap: 6px; border-radius: 5px; padding: 5px 12px; font-size: 11px; font-weight: 800; letter-spacing: 0.05em; font-family: 'Arial Black', Arial, sans-serif; margin-top: 5px; }
-  .corredor-adr-badge.adr-si { background: rgba(220,38,38,0.18); border: 1px solid rgba(220,38,38,0.45); }
-  .corredor-adr-badge.adr-no { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.25); }
+  .corredor-adr-badge { display: inline-flex; align-items: center; gap: 6px; border-radius: 5px; padding: 5px 12px; font-size: 11px; font-weight: 800; letter-spacing: 0.05em; font-family: 'Arial Black', Arial, sans-serif; margin-top: 5px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.25); }
   .corredor-txt { color: #fbbf24; }
-  .sep { color: rgba(255,255,255,0.3); font-weight: 400; }
-  .adr-txt.adr-si-txt { color: #ff6b6b; }
-  .corredor-adr-badge.adr-si .adr-txt { color: #ff8080; }
-  .corredor-adr-badge.adr-no .adr-txt { color: rgba(255,255,255,0.6); }
+  .sep { color: rgba(255,255,255,0.4); font-weight: 400; }
+  .adr-txt { color: #fff; }
 
   /* ── Client card ── */
   .client-card {
@@ -520,7 +516,7 @@ export default function HojaInforme({
       const tip = tipo.charAt(0).toUpperCase() + tipo.slice(1).toLowerCase();
       if (isRem) entry.rem.add(tip);
       else entry.nonRem.add(tip);
-      if (isYes(r['lunas'])) entry.hasLunas = true;
+      if (!isRem && isYes(r['lunas'])) entry.hasLunas = true;
     });
     const result: { titulo: string; tipologias: string[]; garantias: string[] }[] = [];
     const seen = new Set<string>();
@@ -544,7 +540,7 @@ export default function HojaInforme({
         if (rem.size > 0 && !seen.has(keyFull + '_rem')) {
           seen.add(keyFull + '_rem');
           const tipologias = [...rem];
-          if (key === 't') result.push({ titulo: 'Terceros — Remolques', tipologias, garantias: [...BASE_NO_CONDUCTOR, ...lunasGar, ...asistGar] });
+          if (key === 't') result.push({ titulo: 'Terceros — Remolques', tipologias, garantias: [...BASE_NO_CONDUCTOR, ...asistGar] });
           else if (key === 'ta') result.push({ titulo: 'Terceros Ampliado — Remolques', tipologias, garantias: [...BASE_NO_CONDUCTOR, 'Robo', 'Incendio', ...asistGar] });
           else if (key === 'tr') result.push({ titulo: 'Todo Riesgo — Remolques', tipologias, garantias: [...BASE_NO_CONDUCTOR, 'Robo', 'Incendio', 'Daños propios con franquicia de 1.800 €', ...asistGar] });
         }
@@ -772,9 +768,9 @@ export default function HojaInforme({
       <div className="flex-1 custom-scrollbar" style={{ overflowY: 'auto', overflowX: 'auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 12, width: '100%', boxSizing: 'border-box' }}>
 
         {/* ── Fila top: Ámbito + SINCO ────────────────────────────────────── */}
-        {(ambito.label || hasSincoData) && (
+        {(totalVehiculos > 0 || hasSincoData) && (
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', width: '100%', minWidth: 0, boxSizing: 'border-box', flexShrink: 0 }}>
-            {ambito.label && (
+            {totalVehiculos > 0 && (
               <div style={{ borderRadius: 10, overflow: 'hidden', border: '1px solid #e5e7eb', background: '#ffffff', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px' }}>
                 <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: '#6b7280', letterSpacing: '0.1em' }}>Ámbito</span>
                 <span style={{
@@ -783,7 +779,7 @@ export default function HojaInforme({
                   border: `1px solid ${ambito.label === 'Internacional' ? '#d8b4fe' : '#bfdbfe'}`,
                   color: ambito.label === 'Internacional' ? '#7c3aed' : '#1d4ed8',
                   fontSize: 12, fontWeight: 800,
-                }}>{ambito.label}</span>
+                }}>{ambito.label ?? 'Nacional'}</span>
               </div>
             )}
             {hasSincoData && (() => {
