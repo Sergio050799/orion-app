@@ -218,9 +218,6 @@ export default function DashboardPage() {
     return map;
   }, [corredores]);
 
-  const contratadas = carpetas.filter(c => c.estado === 'CONTRATADA').length;
-  const tasaContratacion = carpetas.length > 0 ? Math.round((contratadas / carpetas.length) * 100) : null;
-
   const flotasEstadoCounts = useMemo(() => {
     const counts: Record<string, number> = { 'EN ESTUDIO': 0, 'OFERTADA': 0, 'CONTRATADA': 0, 'RECHAZADA': 0 };
     carpetas.forEach(c => { counts[c.estado] = (counts[c.estado] ?? 0) + 1; });
@@ -230,6 +227,11 @@ export default function DashboardPage() {
     });
     return counts;
   }, [carpetas, historicas]);
+
+  // Usar totales del donut (incluye historicas) para que KPIs y donut cuadren
+  const totalPortfolio = Object.values(flotasEstadoCounts).reduce((s, v) => s + v, 0);
+  const contratadas = flotasEstadoCounts['CONTRATADA'] ?? 0;
+  const tasaContratacion = totalPortfolio > 0 ? Math.round((contratadas / totalPortfolio) * 100) : null;
 
   const donutData = useMemo(() => {
     const total = Object.values(flotasEstadoCounts).reduce((s, v) => s + v, 0);
@@ -321,7 +323,7 @@ export default function DashboardPage() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }} className="animate-in fade-in duration-500">
       <style>{`
         .dash-kpi-grid  { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-        .dash-main-grid { display: grid; grid-template-columns: 380px 1fr; gap: 14px; align-items: start; }
+        .dash-main-grid { display: grid; grid-template-columns: 380px 1fr; gap: 14px; }
         .dash-kpi-num   { font-size: 52px; }
         @keyframes orion-blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
         .dash-alert-dot { animation: orion-blink 2s ease-in-out infinite; }
@@ -371,7 +373,7 @@ export default function DashboardPage() {
           title="Tasa de éxito"
           value={tasaContratacion !== null ? `${tasaContratacion}%` : '—'}
           color="#3b82f6"
-          sub={`${contratadas} contratadas / ${carpetas.length} portfolio`}
+          sub={`${contratadas} contratadas / ${totalPortfolio} portfolio`}
         />
         <KpiCard
           title="Corredores activos"
@@ -429,7 +431,7 @@ export default function DashboardPage() {
         <div style={{ ...glass, padding: '26px 28px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 20 }}>
             <span style={{ fontSize: 14, fontWeight: 600, color: '#FFFFFF' }}>Renovaciones próximas</span>
-            <span style={{ fontSize: 11, color: 'rgba(178,198,245,0.55)' }}>Contratadas · {contratadas}</span>
+            <span style={{ fontSize: 11, color: 'rgba(178,198,245,0.55)' }}>Contratadas activas · {contratadas}</span>
           </div>
 
           {renovaciones.length === 0 ? (
@@ -437,7 +439,7 @@ export default function DashboardPage() {
               Sin flotas contratadas con fecha de vencimiento.
             </p>
           ) : (
-            <div style={{ maxHeight: 400, overflowY: 'auto' }} className="custom-scrollbar">
+            <div style={{ overflowY: 'auto' }} className="custom-scrollbar">
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr>
