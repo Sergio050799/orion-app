@@ -130,6 +130,25 @@ export default function CarpetaScreen({ onSelect }: Props) {
   const sseRef = useRef<EventSource | null>(null);
   const cargarAbortRef = useRef<AbortController | null>(null);
 
+  // ── Historial (flotas_historicas) ──────────────────────────────────────────
+  const [historial, setHistorial] = useState<{ id: string; nombre: string; estado: string; cif: string; corredor_nombre: string }[]>([]);
+  const histTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length < 2) { setHistorial([]); return; }
+    if (histTimerRef.current) clearTimeout(histTimerRef.current);
+    histTimerRef.current = setTimeout(async () => {
+      try {
+        const isCif = /^[A-Z0-9]{8,9}$/i.test(q.replace(/\s/g, ''));
+        const param = isCif ? `cif=${encodeURIComponent(q.replace(/\s/g, '').toUpperCase())}` : `q=${encodeURIComponent(q)}`;
+        const res = await fetch(`/api/flotas/historicas?${param}`);
+        if (res.ok) setHistorial(await res.json());
+      } catch { /* silent */ }
+    }, 500);
+    return () => { if (histTimerRef.current) clearTimeout(histTimerRef.current); };
+  }, [query]);
+
   // Estado change confirmation per row
   const [pendingEstado, setPendingEstado] = useState<{ id: string; estado: EstadoFlota; motivo: string; fechaVencimiento: string } | null>(null);
 
@@ -145,9 +164,21 @@ export default function CarpetaScreen({ onSelect }: Props) {
 
     try {
       const serverCarpetas = await cargarCarpetasDelServidor(ctrl.signal);
-      if (!ctrl.signal.aborted) setCarpetas(serverCarpetas.map(normalizarCarpeta));
+      if (!ctrl.signal.aborted) {
+        // Guard: server returning empty when we have local data = transient failure
+        if (serverCarpetas.length > 0) {
+          setCarpetas(serverCarpetas.map(normalizarCarpeta));
+        } else {
+          const local = listarCarpetas();
+          if (local.length === 0) setCarpetas([]);
+          // else: keep current state, server is temporarily empty
+        }
+      }
     } catch {
-      if (!ctrl.signal.aborted) setCarpetas(listarCarpetas().map(normalizarCarpeta));
+      if (!ctrl.signal.aborted) {
+        const local = listarCarpetas();
+        if (local.length > 0) setCarpetas(local.map(normalizarCarpeta));
+      }
     }
   };
 
@@ -637,6 +668,41 @@ export default function CarpetaScreen({ onSelect }: Props) {
         )}
         </div>
       </div>
+
+      {/* ── Historial previo (flotas_historicas) ── */}
+      {query.trim().length >= 2 && historial.length > 0 && (
+        <div style={{ marginTop: 16, padding: '14px 20px', borderRadius: 14, background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)' }}>
+          <p style={{ fontSize: 10, fontWeight: 900, color: 'rgba(245,158,11,0.7)', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 10px 0' }}>
+            Historial · {historial.length} resultado{historial.length !== 1 ? 's' : ''} en base de datos
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {historial.map(h => {
+              const cfg: Record<string, { color: string; border: string; bg: string }> = {
+                CONTRATADA:   { color: '#10b981', border: 'rgba(16,185,129,0.3)',  bg: 'rgba(16,185,129,0.1)' },
+                RECHAZADA:    { color: '#ef4444', border: 'rgba(239,68,68,0.3)',   bg: 'rgba(239,68,68,0.08)' },
+                'EN ESTUDIO': { color: '#f59e0b', border: 'rgba(245,158,11,0.3)',  bg: 'rgba(245,158,11,0.08)' },
+                COTIZADA:     { color: '#8b5cf6', border: 'rgba(139,92,246,0.3)',  bg: 'rgba(139,92,246,0.08)' },
+              };
+              const c = cfg[h.estado] ?? cfg['EN ESTUDIO'];
+              return (
+                <div key={h.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 10, background: 'rgba(6,14,50,0.5)', border: `1px solid ${c.border}` }}>
+                  <span style={{ fontSize: 9, fontWeight: 900, padding: '2px 7px', borderRadius: 5, background: c.bg, color: c.color, border: `1px solid ${c.border}`, textTransform: 'uppercase', letterSpacing: '0.06em', flexShrink: 0 }}>
+                    {h.estado}
+                  </span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: '#FFFFFF' }}>{h.nombre}</span>
+                    <div style={{ fontSize: 10, color: 'rgba(178,198,245,0.5)', marginTop: 1, display: 'flex', gap: 8 }}>
+                      {h.cif && <span style={{ fontFamily: 'monospace' }}>{h.cif}</span>}
+                      {h.corredor_nombre && <span>{h.corredor_nombre}</span>}
+                    </div>
+                  </div>
+                  <a href="/emission" target="_blank" rel="noreferrer" style={{ fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 6, background: 'rgba(51,102,255,0.1)', color: '#3366FF', border: '1px solid rgba(51,102,255,0.25)', textDecoration: 'none', flexShrink: 0 }}>Ver ficha</a>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
