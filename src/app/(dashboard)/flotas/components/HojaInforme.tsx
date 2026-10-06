@@ -830,6 +830,12 @@ export default function HojaInforme({
                 }}>{ambito.label ?? 'Nacional'}</span>
               </div>
             )}
+            {header?.fechaVencimiento && (
+              <div style={{ borderRadius: 10, border: '1px solid #e5e7eb', background: '#ffffff', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px' }}>
+                <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: '#6b7280', letterSpacing: '0.1em' }}>Vencimiento</span>
+                <span style={{ fontSize: 12, fontWeight: 800, color: '#111827' }}>{header.fechaVencimiento}</span>
+              </div>
+            )}
             {hasSincoData && (() => {
               const r = resumenAuto ?? resumenManual;
               const items: [string, string][] = r ? [
