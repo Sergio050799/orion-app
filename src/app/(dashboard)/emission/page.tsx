@@ -457,6 +457,7 @@ export default function FlotasPage() {
   const { flotas, loading, createHistorica, updateHistorica, removeHistorica } = usePortfolio();
 
   const [tab,      setTab]      = useState<EstadoFlota>('CONTRATADA');
+  const [search,   setSearch]   = useState('');
   const [modal,    setModal]    = useState<'create' | 'edit' | null>(null);
   const [selected, setSelected] = useState<FlotaView | null>(null);
   const [ficha,    setFicha]    = useState<FlotaView | null>(null);
@@ -465,7 +466,17 @@ export default function FlotasPage() {
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 2200); };
 
-  const filtered = flotas.filter(f => f.estado === tab);
+  const q = search.trim().toLowerCase();
+  const searchResults = q.length >= 2
+    ? flotas.filter(f =>
+        f.nombre.toLowerCase().includes(q) ||
+        f.tomador.toLowerCase().includes(q) ||
+        f.cif.toLowerCase().includes(q) ||
+        f.corredor_nombre.toLowerCase().includes(q)
+      )
+    : null;
+
+  const filtered = searchResults ?? flotas.filter(f => f.estado === tab);
   const counts: Record<EstadoFlota, number> = {
     CONTRATADA:   flotas.filter(f => f.estado === 'CONTRATADA').length,
     RECHAZADA:    flotas.filter(f => f.estado === 'RECHAZADA').length,
@@ -517,8 +528,23 @@ export default function FlotasPage() {
             </button>
           </div>
 
+          {/* Buscador */}
+          <div style={{ marginTop: 16, position: 'relative' }}>
+            <svg style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(178,198,245,0.5)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input
+              type="text"
+              placeholder="Buscar por nombre, CIF o corredor…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              style={{ ...inputStyle, paddingLeft: 34, paddingRight: search ? 34 : 12 }}
+            />
+            {search && (
+              <button onClick={() => setSearch('')} style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'rgba(178,198,245,0.5)', cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: 0 }}>×</button>
+            )}
+          </div>
+
           {/* Tabs */}
-          <div style={{ display: 'flex', gap: 4, marginTop: 16, borderTop: '1px solid rgba(61,112,255,0.12)', paddingTop: 14, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 4, marginTop: 12, borderTop: '1px solid rgba(61,112,255,0.12)', paddingTop: 14, flexWrap: 'wrap' }}>
             {(['CONTRATADA', 'EN ESTUDIO', 'COTIZADA', 'RECHAZADA'] as EstadoFlota[]).map(t => {
               const active = tab === t;
               const cfg    = ESTADO_CFG[t];
@@ -559,12 +585,14 @@ export default function FlotasPage() {
         ) : filtered.length === 0 ? (
           <div style={{ ...glass, padding: '60px 40px', textAlign: 'center' }}>
             <p style={{ fontSize: 14, fontWeight: 700, color: '#BDD4FF', margin: '0 0 8px 0' }}>
-              No hay flotas en este estado
+              {searchResults ? `Sin resultados para "${search}"` : 'No hay flotas en este estado'}
             </p>
-            <p style={{ fontSize: 12, color: 'rgba(178,198,245,0.45)', margin: 0 }}>
-              Las flotas Orion aparecen aquí al cambiar su estado en <strong style={{ color: '#818cf8' }}>Estudio</strong>.
-              Las históricas se crean con el botón de arriba.
-            </p>
+            {!searchResults && (
+              <p style={{ fontSize: 12, color: 'rgba(178,198,245,0.45)', margin: 0 }}>
+                Las flotas Orion aparecen aquí al cambiar su estado en <strong style={{ color: '#818cf8' }}>Estudio</strong>.
+                Las históricas se crean con el botón de arriba.
+              </p>
+            )}
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
