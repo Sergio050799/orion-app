@@ -40,7 +40,7 @@ export default function FlotasContratadas({ onSelect }: Props) {
   const [carpetas, setCarpetas]     = useState<FlotaCarpeta[]>([]);
   const [corredores, setCorredores] = useState<Corredor[]>([]);
   const [query, setQuery]           = useState('');
-  const [estadoFilter, setEstadoFilter] = useState('EN ESTUDIO');
+  const estadoFilter = 'EN ESTUDIO';
   const [uploading, setUploading]   = useState(false);
   const [uploadResult, setUploadResult] = useState<{ created: number; updated: number; errors: string[] } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -78,7 +78,7 @@ export default function FlotasContratadas({ onSelect }: Props) {
   const filtered = useMemo(() => {
     return carpetas
       .filter(c => {
-        if (estadoFilter !== 'TODAS' && c.estado !== estadoFilter) return false;
+        if (c.estado !== 'EN ESTUDIO') return false;
         const q = query.trim().toLowerCase();
         if (q) {
           const cif     = (c.header?.cif     ?? '').toLowerCase();
@@ -237,22 +237,6 @@ export default function FlotasContratadas({ onSelect }: Props) {
         <span style={{ fontSize: 11, color: 'rgba(178,198,245,0.5)' }}>{filtered.length} resultado{filtered.length !== 1 ? 's' : ''}</span>
       </div>
 
-      {/* Estado pills */}
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        {([
-          ['EN ESTUDIO', 'En estudio'],
-          ['TODAS', 'Todas'],
-        ] as const).map(([k, l]) => (
-          <button key={k} onClick={() => setEstadoFilter(k)} style={{
-            padding: '6px 14px', borderRadius: 999, fontSize: 12, fontWeight: 500,
-            border: 'none', cursor: 'pointer',
-            background: estadoFilter === k ? 'rgba(16,185,129,0.2)' : 'rgba(6,14,50,0.5)',
-            color: estadoFilter === k ? '#10b981' : 'rgba(178,198,245,0.6)',
-            boxShadow: estadoFilter === k ? '0 0 0 1px rgba(16,185,129,0.4) inset' : 'none',
-            transition: 'all 180ms',
-          }}>{l} <span style={{ opacity: 0.6 }}>({counts[k] ?? 0})</span></button>
-        ))}
-      </div>
 
       {/* Aviso vencimientos próximos */}
       {(() => {

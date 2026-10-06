@@ -200,7 +200,7 @@ function usePortfolio() {
       .filter((f): f is FlotaView => f !== null);
     const carpetaNombres = new Set(fromCarpetas.map(f => f.nombre.toUpperCase().trim()));
     const fromHistoricas = historicas
-      .filter(h => h.estado !== 'EN ESTUDIO' && !carpetaNombres.has((h.nombre ?? '').toUpperCase().trim()))
+      .filter(h => !carpetaNombres.has((h.nombre ?? '').toUpperCase().trim()))
       .map(normalizarHistorica);
     return [...fromCarpetas, ...fromHistoricas].sort((a, b) => a.nombre.localeCompare(b.nombre));
   }, [carpetas, historicas, corredoresMap]);
@@ -515,9 +515,10 @@ export default function FlotasPage() {
 
   const filtered = searchResults ?? flotas.filter(f => f.estado === tab);
   const counts = {
-    CONTRATADA: flotas.filter(f => f.estado === 'CONTRATADA').length,
-    OFERTADA:   flotas.filter(f => f.estado === 'OFERTADA').length,
-    RECHAZADA:  flotas.filter(f => f.estado === 'RECHAZADA').length,
+    CONTRATADA:   flotas.filter(f => f.estado === 'CONTRATADA').length,
+    'EN ESTUDIO': flotas.filter(f => f.estado === 'EN ESTUDIO').length,
+    OFERTADA:     flotas.filter(f => f.estado === 'OFERTADA').length,
+    RECHAZADA:    flotas.filter(f => f.estado === 'RECHAZADA').length,
   };
 
   const handleCreate = async (data: typeof EMPTY_FORM) => {
@@ -581,10 +582,10 @@ export default function FlotasPage() {
 
           {/* Tabs */}
           <div style={{ display: 'flex', gap: 4, marginTop: 12, borderTop: '1px solid rgba(61,112,255,0.12)', paddingTop: 14, flexWrap: 'wrap' }}>
-            {(['CONTRATADA', 'OFERTADA', 'RECHAZADA'] as const).map(t => {
+            {(['CONTRATADA', 'EN ESTUDIO', 'OFERTADA', 'RECHAZADA'] as const).map(t => {
               const active = tab === t;
               const cfg    = ESTADO_CFG[t];
-              const label  = t.charAt(0) + t.slice(1).toLowerCase();
+              const label  = t === 'EN ESTUDIO' ? 'En estudio' : t.charAt(0) + t.slice(1).toLowerCase();
               return (
                 <button key={t} onClick={() => setTab(t)} style={{ fontSize: 12, fontWeight: 700, padding: '8px 18px', borderRadius: 10, cursor: 'pointer', border: 'none', background: active ? cfg.bg : 'transparent', color: active ? cfg.color : 'rgba(178,198,245,0.55)', boxShadow: active ? `0 0 0 1px ${cfg.border} inset` : 'none', transition: 'all 180ms', display: 'flex', alignItems: 'center', gap: 6 }}>
                   {label}
