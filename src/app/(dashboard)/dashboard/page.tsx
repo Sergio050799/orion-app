@@ -4,6 +4,7 @@ import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { listarCarpetas, listarCorredores, cargarCarpetasDelServidor, cargarCorredoresDelServidor, type FlotaCarpeta, type Corredor } from '@/core/flotas';
+import type { CatStats } from './components/VehiculosCategorias';
 import { useAuth } from '@/context/AuthContext';
 
 const DashboardCharts = dynamic(() => import('./components/DashboardCharts'), {
@@ -283,6 +284,52 @@ function SugerenciasSection({ user }: { user: string | null }) {
   );
 }
 
+// ─── Vehículos por Categoría — clasificación ────────────────────────────────
+
+const SUBTITULOS_CAT: Record<string, string> = {
+  '1ª Categoría':   'Turismo · todoterreno · furgoneta',
+  '2ª Categoría':   'Camión · tractocamión · autobús',
+  '3ª Categoría':   'Moto · ciclomotor · microcar',
+  'Sin clasificar': 'Tipo no identificado',
+};
+
+function getCategoria(raw: string): string {
+  const l = raw.toLowerCase().trim();
+  if (/moto(cicleta)?|ciclomotor|microcar|triciclo|cuadri/.test(l)) return '3ª Categoría';
+  if (/\bcami[oó]n|tractocami|\btractor\b|cabeza\s*tractora|autob[uú]s|autobus|autocar|microb[uú]s|microbus|semirremolque|\bremolque\b|maquinaria|industrial\s+(?:no\s+)?matriculado|pesado/.test(l)) return '2ª Categoría';
+  if (/furg[oó]n(?!eta)/.test(l)) return '2ª Categoría';
+  if (/turismo|berlina|familiar|todoterreno|todo[\s-]terreno|furgoneta|derivado|coupe|cabri|monovolumen|hatchback/.test(l)) return '1ª Categoría';
+  return 'Sin clasificar';
+}
+
+function getTipologia(raw: string): string {
+  const MAP: Record<string, string> = {
+    'furgoneta': 'Furgoneta', 'furgonetas': 'Furgoneta',
+    'furgon': 'Furgón', 'furgones': 'Furgón', 'furgón': 'Furgón',
+    'turismo': 'Turismo', 'turismos': 'Turismo',
+    'berlina': 'Berlina', 'familiar': 'Familiar',
+    'todoterreno': 'Todoterreno', 'todo terreno': 'Todoterreno', 'todo-terreno': 'Todoterreno',
+    'motocicleta': 'Motocicleta', 'motocicletas': 'Motocicleta', 'moto': 'Motocicleta', 'motos': 'Motocicleta',
+    'ciclomotor': 'Ciclomotor', 'ciclomotores': 'Ciclomotor',
+    'microcar': 'Microcar',
+    'camion rigido': 'Camión rígido', 'camión rígido': 'Camión rígido', 'camiones rigidos': 'Camión rígido',
+    'cabeza tractora': 'Cabeza tractora', 'cabezas tractoras': 'Cabeza tractora',
+    'tractocamion': 'Tractocamión', 'tractocamión': 'Tractocamión',
+    'semirremolque': 'Semirremolque', 'semirremolques': 'Semirremolque',
+    'autobus': 'Autobús', 'autobuses': 'Autobús', 'autobús': 'Autobús',
+    'autocar': 'Autocar', 'autocares': 'Autocar',
+    'microbus': 'Microbús', 'microbús': 'Microbús',
+    'maquinaria': 'Maquinaria',
+    'derivado de turismo': 'Derivado de turismo',
+    'industrial matriculado': 'Industrial matriculado',
+    'industrial no matriculado': 'Industrial no matriculado',
+  };
+  const l = raw.toLowerCase().trim();
+  return MAP[l] ?? (raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase());
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 export default function DashboardPage() {
   const { user } = useAuth();
   const [carpetas, setCarpetas] = useState<FlotaCarpeta[]>(() => listarCarpetas());
@@ -333,6 +380,48 @@ export default function DashboardPage() {
     return Object.entries(counts)
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value);
+  }, [carpetas]);
+
+  const vehiculosCatStats = useMemo((): CatStats[] => {
+    const acc: Record<string, Record<string, Record<string, number>>> = {
+      '1ª Categoría': {}, '2ª Categoría': {}, '3ª Categoría': {}, 'Sin clasificar': {},
+    };
+    for (const carpeta of carpetas) {
+      const rows = carpeta.trabajo?.length > 0 ? carpeta.trabajo : carpeta.original;
+      const estado = carpeta.estado;
+      for (const row of (rows ?? [])) {
+        const raw = row['tipo_vehiculo']?.trim();
+        if (!raw) continue;
+        const cat = getCategoria(raw);
+        const tip = getTipologia(raw);
+        if (!acc[cat][tip]) acc[cat][tip] = {};
+        acc[cat][tip][estado] = (acc[cat][tip][estado] ?? 0) + 1;
+      }
+    }
+    const ORDERED = ['1ª Categoría', '2ª Categoría', '3ª Categoría', 'Sin clasificar'];
+    return ORDERED
+      .map(cat => {
+        const tipMap = acc[cat];
+        const tipologias = Object.entries(tipMap)
+          .map(([tip, estadoMap]) => ({
+            tipologia: tip,
+            estudio:    estadoMap['EN ESTUDIO']  ?? 0,
+            ofertada:   estadoMap['OFERTADA']    ?? 0,
+            contratada: estadoMap['CONTRATADA']  ?? 0,
+            total: Object.values(estadoMap).reduce((s, v) => s + v, 0),
+          }))
+          .sort((a, b) => b.total - a.total);
+        return {
+          categoria:  cat,
+          subtitulo:  SUBTITULOS_CAT[cat] ?? '',
+          tipologias,
+          estudio:    tipologias.reduce((s, t) => s + t.estudio, 0),
+          ofertada:   tipologias.reduce((s, t) => s + t.ofertada, 0),
+          contratada: tipologias.reduce((s, t) => s + t.contratada, 0),
+          total:      tipologias.reduce((s, t) => s + t.total, 0),
+        };
+      })
+      .filter(c => c.total > 0);
   }, [carpetas]);
 
   const alertas = useMemo(() => {
@@ -397,6 +486,7 @@ export default function DashboardPage() {
         flotasPorEstado={flotasPorEstado}
         vehiculosPorTipo={vehiculosPorTipo}
         hasCarpetas={carpetas.length > 0}
+        vehiculosCatStats={vehiculosCatStats}
       />
 
       {/* Renewal alerts */}

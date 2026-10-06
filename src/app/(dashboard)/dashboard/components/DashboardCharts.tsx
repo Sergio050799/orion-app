@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import VehiculosCategorias, { type CatStats } from './VehiculosCategorias';
 
 const ESTADO_COLORS: Record<string, string> = {
   'EN ESTUDIO': '#3366FF',
@@ -38,9 +39,10 @@ interface DashboardChartsProps {
   flotasPorEstado: { name: string; value: number }[];
   vehiculosPorTipo: { name: string; value: number }[];
   hasCarpetas: boolean;
+  vehiculosCatStats: CatStats[];
 }
 
-export default function DashboardCharts({ flotasPorEstado, vehiculosPorTipo, hasCarpetas }: DashboardChartsProps) {
+export default function DashboardCharts({ flotasPorEstado, vehiculosPorTipo, hasCarpetas, vehiculosCatStats }: DashboardChartsProps) {
   const total = flotasPorEstado.reduce((s, d) => s + d.value, 0);
 
   return (
@@ -88,40 +90,7 @@ export default function DashboardCharts({ flotasPorEstado, vehiculosPorTipo, has
         )}
       </div>
 
-      {/* Vehiculos por tipo — horizontal bars */}
-      <div style={glass}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 22 }}>
-          <div>
-            <h3 style={{ fontFamily: 'var(--font-display), Inter, sans-serif', fontWeight: 600, fontSize: 17, margin: 0, color: '#FFFFFF' }}>
-              Vehículos por tipo
-            </h3>
-            <span style={{ fontSize: 12, color: 'rgba(178,206,255,0.65)', letterSpacing: '0.06em' }}>
-              Total: {vehiculosPorTipo.reduce((s, d) => s + d.value, 0).toLocaleString('es')}
-            </span>
-          </div>
-        </div>
-        {vehiculosPorTipo.length === 0 ? (
-          <p style={{ color: 'rgba(178,198,245,0.38)', fontSize: 12, textAlign: 'center', padding: '40px 0', margin: 0 }}>Sin datos</p>
-        ) : (
-          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {vehiculosPorTipo.slice(0, 6).map(b => {
-              const maxVal = vehiculosPorTipo[0]?.value ?? 1;
-              const pct = Math.round((b.value / maxVal) * 100);
-              return (
-                <li key={b.name} style={{ display: 'grid', gridTemplateColumns: '130px 1fr 56px', alignItems: 'center', gap: 14 }}>
-                  <span style={{ fontSize: 13, color: '#D0DFFF', fontWeight: 500 }}>{b.name}</span>
-                  <span style={{ height: 8, borderRadius: 4, background: 'rgba(6,14,50,0.65)', border: '1px solid rgba(61,112,255,0.22)', overflow: 'hidden' }}>
-                    <span style={{ display: 'block', height: '100%', width: `${pct}%`, background: 'linear-gradient(90deg, #1240CC, #3366FF)', borderRadius: 4, boxShadow: '0 0 12px rgba(51,102,255,0.4)' }} />
-                  </span>
-                  <span style={{ fontFamily: 'var(--font-display), Inter, sans-serif', fontWeight: 600, fontSize: 14, color: '#FFFFFF', textAlign: 'right' }}>
-                    {b.value.toLocaleString('es')}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </div>
+      <VehiculosCategorias stats={vehiculosCatStats} />
     </div>
   );
 }
