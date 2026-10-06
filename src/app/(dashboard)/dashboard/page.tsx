@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { listarCarpetas, listarCorredores, cargarCarpetasDelServidor, cargarCorredoresDelServidor, type FlotaCarpeta, type Corredor } from '@/core/flotas';
+import { cargarCarpetasDelServidor, cargarCorredoresDelServidor, type FlotaCarpeta, type Corredor } from '@/core/flotas';
 import type { CatStats } from './components/VehiculosCategorias';
 import VehiculosCategorias from './components/VehiculosCategorias';
 import { useAuth } from '@/context/AuthContext';
@@ -197,8 +197,8 @@ function getTipologia(raw: string): string {
 
 export default function DashboardPage() {
   const { user } = useAuth();
-  const [carpetas, setCarpetas] = useState<FlotaCarpeta[]>(() => listarCarpetas());
-  const [corredores, setCorredores] = useState<Corredor[]>(() => listarCorredores());
+  const [carpetas, setCarpetas] = useState<FlotaCarpeta[]>([]);
+  const [corredores, setCorredores] = useState<Corredor[]>([]);
   const [historicas, setHistoricas] = useState<{ estado: string }[]>([]);
 
   useEffect(() => {
