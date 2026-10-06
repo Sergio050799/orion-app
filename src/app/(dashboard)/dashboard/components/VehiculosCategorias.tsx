@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 export type TipologiaStat = {
   tipologia: string;
@@ -29,6 +30,7 @@ const glass: React.CSSProperties = {
 };
 
 const CAT_BORDER = ['#1240cc', '#6366f1', '#10b981', '#6b7280'];
+const CAT_COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#6b7280'];
 
 function Badge({ type, sm, children }: { type: 'estudio' | 'ofertada' | 'contratada'; sm?: boolean; children: React.ReactNode }) {
   const s: Record<string, React.CSSProperties> = {
@@ -183,19 +185,30 @@ export default function VehiculosCategorias({ stats }: { stats: CatStats[] }) {
   const totalVeh   = stats.reduce((s, c) => s + c.total, 0);
   const totalContr = stats.reduce((s, c) => s + c.contratada, 0);
   const totalEst   = stats.reduce((s, c) => s + c.estudio, 0);
-  const tasa = totalVeh > 0 ? Math.round((totalContr / totalVeh) * 100) : 0;
+
+  const thStyle: React.CSSProperties = {
+    padding: '0 0 12px 0', fontSize: 10, fontWeight: 700,
+    textTransform: 'uppercase', letterSpacing: '0.12em',
+    color: 'rgba(80,130,255,0.80)', borderBottom: '1px solid rgba(61,112,255,0.20)',
+    textAlign: 'left',
+  };
 
   return (
     <>
-      {/* ── Tarjeta compacta ── */}
+      {/* ── Tarjeta compacta — V4 style ── */}
       <div style={glass}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
-          <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+          <button
+            onClick={() => setOpen(true)}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+          >
             <h3 style={{ fontFamily: 'var(--font-display), Inter, sans-serif', fontWeight: 600, fontSize: 17, margin: 0, color: '#FFFFFF' }}>
               Vehículos por categoría
             </h3>
-            <span style={{ fontSize: 12, color: 'rgba(178,206,255,0.65)', letterSpacing: '0.06em' }}>Total del período</span>
-          </div>
+            <span style={{ fontSize: 11, color: 'rgba(80,130,255,0.80)', background: 'rgba(51,102,255,0.12)', border: '1px solid rgba(61,112,255,0.25)', padding: '2px 8px', borderRadius: 6, whiteSpace: 'nowrap' }}>
+              Ver informe →
+            </span>
+          </button>
           {totalVeh > 0 && (
             <span style={{ fontSize: 11, color: 'rgba(178,206,255,0.35)', background: 'rgba(51,102,255,0.1)', border: '1px solid rgba(51,102,255,0.2)', borderRadius: 6, padding: '4px 10px', letterSpacing: '0.06em' }}>
               {totalVeh.toLocaleString('es')} vehículos
@@ -206,44 +219,85 @@ export default function VehiculosCategorias({ stats }: { stats: CatStats[] }) {
         {totalVeh === 0 ? (
           <p style={{ color: 'rgba(178,198,245,0.38)', fontSize: 12, textAlign: 'center', padding: '40px 0', margin: 0 }}>Sin datos</p>
         ) : (
-          <>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px 100px', gap: 8, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(178,206,255,0.45)', paddingBottom: 10, borderBottom: '1px solid rgba(61,112,255,0.15)', marginBottom: 8 }}>
-              <span>Categoría</span>
-              <span style={{ textAlign: 'center' }}>En estudio</span>
-              <span style={{ textAlign: 'center' }}>Contratados</span>
-            </div>
-
-            {visibleStats.map((c, i) => (
-              <div
-                key={c.categoria}
-                onClick={() => setOpen(true)}
-                style={{ display: 'grid', gridTemplateColumns: '1fr 100px 100px', gap: 8, alignItems: 'center', padding: '11px 8px', borderBottom: i < visibleStats.length - 1 ? '1px solid rgba(61,112,255,0.08)' : 'none', cursor: 'pointer', borderRadius: 8, marginLeft: -8, transition: 'background 0.15s' }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(51,102,255,0.08)'; }}
-                onMouseLeave={e => { e.currentTarget.style.background = ''; }}
-              >
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <strong style={{ fontSize: 13, fontWeight: 600, color: '#FFFFFF' }}>{c.categoria}</strong>
-                  <span style={{ fontSize: 10, color: 'rgba(178,206,255,0.45)', letterSpacing: '0.05em' }}>{c.subtitulo}</span>
-                </div>
-                <span style={{ textAlign: 'center', fontSize: 20, fontWeight: 700, letterSpacing: '-0.03em', color: '#f59e0b', lineHeight: 1, display: 'block' }}>{c.estudio}</span>
-                <span style={{ textAlign: 'center', fontSize: 20, fontWeight: 700, letterSpacing: '-0.03em', color: '#10b981', lineHeight: 1, display: 'block' }}>{c.contratada}</span>
-              </div>
-            ))}
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px 100px', gap: 8, marginTop: 8, paddingTop: 12, borderTop: '1px solid rgba(61,112,255,0.18)' }}>
-              <span style={{ fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'rgba(178,206,255,0.5)', alignSelf: 'center' }}>Total</span>
-              <span style={{ textAlign: 'center', fontSize: 20, fontWeight: 700, letterSpacing: '-0.03em', color: '#f59e0b', lineHeight: 1 }}>{totalEst}</span>
-              <span style={{ textAlign: 'center', fontSize: 20, fontWeight: 700, letterSpacing: '-0.03em', color: '#10b981', lineHeight: 1 }}>{totalContr}</span>
-            </div>
-          </>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', minWidth: 480 }}>
+              <colgroup>
+                <col />
+                <col style={{ width: 200 }} />
+                <col style={{ width: 100 }} />
+                <col style={{ width: 110 }} />
+                <col style={{ width: 80 }} />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th style={thStyle}>Categoría</th>
+                  <th style={thStyle}>Distribución</th>
+                  <th style={{ ...thStyle, textAlign: 'right' }}>En estudio</th>
+                  <th style={{ ...thStyle, textAlign: 'right' }}>Contratados</th>
+                  <th style={{ ...thStyle, textAlign: 'right' }}>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visibleStats.map((c, i) => {
+                  const pct = totalVeh > 0 ? Math.round((c.total / totalVeh) * 100) : 0;
+                  return (
+                    <tr
+                      key={c.categoria}
+                      onClick={() => setOpen(true)}
+                      style={{ cursor: 'pointer', transition: 'background 0.15s' }}
+                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(51,102,255,0.05)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = ''; }}
+                    >
+                      <td style={{ padding: '16px 0', borderBottom: '1px solid rgba(61,112,255,0.07)', verticalAlign: 'middle' }}>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: '#FFFFFF' }}>{c.categoria}</div>
+                        <div style={{ fontSize: 11, color: 'rgba(178,198,245,0.55)', marginTop: 2 }}>{c.subtitulo}</div>
+                      </td>
+                      <td style={{ padding: '16px 0 16px 8px', borderBottom: '1px solid rgba(61,112,255,0.07)', verticalAlign: 'middle' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <div style={{ flex: 1, height: 6, background: 'rgba(61,112,255,0.10)', borderRadius: 99, overflow: 'hidden' }}>
+                            <div style={{ width: `${pct}%`, height: '100%', background: CAT_COLORS[i] ?? '#3b82f6', borderRadius: 99 }} />
+                          </div>
+                          <span style={{ fontSize: 13, fontWeight: 600, color: 'rgba(178,198,245,0.70)', whiteSpace: 'nowrap', minWidth: 36, textAlign: 'right' }}>{pct}%</span>
+                        </div>
+                      </td>
+                      <td style={{ padding: '16px 0', borderBottom: '1px solid rgba(61,112,255,0.07)', textAlign: 'right', verticalAlign: 'middle' }}>
+                        <span style={{ fontSize: 16, fontWeight: 700, color: '#f59e0b', fontVariantNumeric: 'tabular-nums' }}>{c.estudio}</span>
+                      </td>
+                      <td style={{ padding: '16px 0', borderBottom: '1px solid rgba(61,112,255,0.07)', textAlign: 'right', verticalAlign: 'middle' }}>
+                        <span style={{ fontSize: 16, fontWeight: 700, color: '#10b981', fontVariantNumeric: 'tabular-nums' }}>{c.contratada}</span>
+                      </td>
+                      <td style={{ padding: '16px 0', borderBottom: '1px solid rgba(61,112,255,0.07)', textAlign: 'right', verticalAlign: 'middle' }}>
+                        <span style={{ fontSize: 16, fontWeight: 600, color: 'rgba(178,198,245,0.70)', fontVariantNumeric: 'tabular-nums' }}>{c.total}</span>
+                      </td>
+                    </tr>
+                  );
+                })}
+                <tr>
+                  <td style={{ padding: '12px 0', borderTop: '1px solid rgba(61,112,255,0.18)' }}>
+                    <span style={{ fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'rgba(178,206,255,0.5)' }}>Total</span>
+                  </td>
+                  <td style={{ padding: '12px 0', borderTop: '1px solid rgba(61,112,255,0.18)' }} />
+                  <td style={{ padding: '12px 0', borderTop: '1px solid rgba(61,112,255,0.18)', textAlign: 'right' }}>
+                    <span style={{ fontSize: 16, fontWeight: 700, color: '#f59e0b' }}>{totalEst}</span>
+                  </td>
+                  <td style={{ padding: '12px 0', borderTop: '1px solid rgba(61,112,255,0.18)', textAlign: 'right' }}>
+                    <span style={{ fontSize: 16, fontWeight: 700, color: '#10b981' }}>{totalContr}</span>
+                  </td>
+                  <td style={{ padding: '12px 0', borderTop: '1px solid rgba(61,112,255,0.18)', textAlign: 'right' }}>
+                    <span style={{ fontSize: 16, fontWeight: 600, color: 'rgba(178,198,245,0.70)' }}>{totalVeh}</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
-      {/* ── Modal informe completo ── */}
-      {open && (
+      {/* ── Modal informe completo — renderizado en document.body (portal) ── */}
+      {open && createPortal(
         <div
           onClick={e => { if (e.target === e.currentTarget) setOpen(false); }}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.72)', zIndex: 1000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '32px 24px', overflowY: 'auto', backdropFilter: 'blur(4px)' }}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.72)', zIndex: 9999, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '32px 24px', overflowY: 'auto', backdropFilter: 'blur(4px)' }}
         >
           <div style={{ background: '#fff', borderRadius: 16, maxWidth: 860, width: '100%', overflow: 'hidden', boxShadow: '0 24px 80px rgba(0,0,0,0.45)', marginBottom: 32 }}>
 
@@ -281,7 +335,7 @@ export default function VehiculosCategorias({ stats }: { stats: CatStats[] }) {
                   { label: 'Total vehículos', val: totalVeh, sub: 'todos los estudios', color: '#0c1c52' },
                   { label: 'En estudio',      val: totalEst,   sub: `${totalVeh > 0 ? Math.round(totalEst/totalVeh*100) : 0}% del total`, color: '#b45309' },
                   { label: 'Contratados',     val: totalContr, sub: `${totalVeh > 0 ? Math.round(totalContr/totalVeh*100) : 0}% del total`, color: '#0d7a50' },
-                  { label: 'Tasa contratación', val: `${tasa}%`, sub: 'sobre total vehículos', color: '#1240cc' },
+                  { label: 'Tasa contratación', val: `${totalVeh > 0 ? Math.round((totalContr / totalVeh) * 100) : 0}%`, sub: 'sobre total vehículos', color: '#1240cc' },
                 ] as const).map(k => (
                   <div key={k.label} style={{ background: '#f8faff', border: '1px solid #dde6ff', borderRadius: 12, padding: '14px 16px' }}>
                     <span style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#6b7ea0', display: 'block' }}>{k.label}</span>
@@ -368,7 +422,7 @@ export default function VehiculosCategorias({ stats }: { stats: CatStats[] }) {
                 <div style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#6b7ea0', marginBottom: 12, fontWeight: 700 }}>Cómo se calculan los porcentajes</div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 28px' }}>
                   {[
-                    { label: 'Tasa contratación (KPI global)',   code: 'contratados / total_vehículos × 100', desc: `Ej: ${totalContr} / ${totalVeh} = ${tasa}%` },
+                    { label: 'Tasa contratación (KPI global)',   code: 'contratados / total_vehículos × 100', desc: `Ej: ${totalContr} / ${totalVeh} = ${totalVeh > 0 ? Math.round((totalContr / totalVeh) * 100) : 0}%` },
                     { label: 'Tasa contr. por categoría',        code: 'contratados_cat / total_cat × 100',   desc: 'Solo vehículos de esa categoría' },
                     { label: '% s/ categoría (tipología)',       code: 'total_tip / total_cat × 100',         desc: 'Peso de la tipología dentro de su categoría' },
                     { label: 'Fuente de datos',                  code: 'trabajoRows de todas las carpetas',   desc: 'Clasificado por tipo_vehiculo · sin tipo → Sin clasificar' },
@@ -389,7 +443,8 @@ export default function VehiculosCategorias({ stats }: { stats: CatStats[] }) {
               <span style={{ fontSize: 10, color: '#8fa0c0' }}>Datos: todas las carpetas del período</span>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );

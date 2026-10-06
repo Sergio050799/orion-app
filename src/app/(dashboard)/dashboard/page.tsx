@@ -2,15 +2,10 @@
 
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import dynamic from 'next/dynamic';
 import { listarCarpetas, listarCorredores, cargarCarpetasDelServidor, cargarCorredoresDelServidor, type FlotaCarpeta, type Corredor } from '@/core/flotas';
 import type { CatStats } from './components/VehiculosCategorias';
+import VehiculosCategorias from './components/VehiculosCategorias';
 import { useAuth } from '@/context/AuthContext';
-
-const DashboardCharts = dynamic(() => import('./components/DashboardCharts'), {
-    loading: () => <div className="h-64 animate-pulse rounded-xl" style={{ background: 'rgba(8,22,72,0.3)' }} />,
-    ssr: false,
-});
 
 function parseFechaFlexible(s: string): Date | null {
   if (!s) return null;
@@ -29,33 +24,14 @@ function diasHasta(fecha: Date): number {
   return Math.floor((fecha.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-function formatFecha(fechaStr: string): string {
-  const d = parseFechaFlexible(fechaStr);
-  if (!d) return fechaStr || '—';
-  return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+function displayName(email: string | null): string {
+  if (!email) return 'Usuario';
+  const local = email.split('@')[0];
+  const first = local.split(/[._-]/)[0];
+  return first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
 }
 
-const PERIODICIDAD_MESES: Record<string, number> = {
-  mensual: 1, bimestral: 2, trimestral: 3, semestral: 6, anual: 12,
-};
-
-function isSameDay(a: Date, b: Date): boolean {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
-}
-
-function proximaRegularizacion(fechaVencimiento: string, periodicidad: string): Date | null {
-  const vto = parseFechaFlexible(fechaVencimiento);
-  if (!vto) return null;
-  const meses = PERIODICIDAD_MESES[periodicidad.toLowerCase()];
-  if (!meses) return null;
-  const now = new Date();
-  const candidate = new Date(vto);
-  while (candidate > now) candidate.setMonth(candidate.getMonth() - meses);
-  candidate.setMonth(candidate.getMonth() + meses);
-  // Si coincide con el vencimiento es Renovación, no Regularización
-  if (isSameDay(candidate, vto)) return null;
-  return candidate;
-}
+const CURRENT_YEAR = new Date().getFullYear();
 
 const glass: React.CSSProperties = {
   background: 'rgba(12, 28, 82, 0.75)',
@@ -64,110 +40,36 @@ const glass: React.CSSProperties = {
   boxShadow: '0 30px 80px -20px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.08) inset, 0 0 0 1px rgba(61,112,255,0.12) inset',
 };
 
-function KpiCard({ title, value, color }: { title: string; value: string; color?: string }) {
+function KpiCard({ title, value, color, sub }: { title: string; value: string; color?: string; sub?: string }) {
   return (
-    <div style={{ ...glass, padding: '24px 26px', position: 'relative', overflow: 'hidden' }}>
-      {/* Corner glow */}
-      <div style={{
-        position: 'absolute', top: 0, right: 0,
-        width: 80, height: 80,
-        background: 'radial-gradient(circle, rgba(51,102,255,0.22), transparent 70%)',
-        filter: 'blur(20px)',
-        pointerEvents: 'none',
-      }} />
+    <div style={{ ...glass, padding: '26px 28px', position: 'relative', overflow: 'hidden' }}>
       <div className="grain-subtle" />
-      <strong style={{
-        fontFamily: 'var(--font-display), Inter, sans-serif',
-        fontWeight: 700, fontSize: 28, color: color ?? '#FFFFFF',
-        letterSpacing: '-0.01em', display: 'block',
-      }}>
+      <span className="dash-kpi-num" style={{ display: 'block', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1, color: color ?? '#FFFFFF', marginBottom: 10 }}>
         {value}
-      </strong>
-      <em style={{
-        fontStyle: 'normal',
-        fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.10em',
-        color: 'rgba(80,130,255,0.75)', fontWeight: 600,
-        display: 'block', marginTop: 8,
-      }}>
+      </span>
+      <em style={{ fontStyle: 'normal', display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.13em', color: 'rgba(80,130,255,0.80)', marginBottom: 4 }}>
         {title}
       </em>
+      {sub && <span style={{ display: 'block', fontSize: 12, color: 'rgba(178,198,245,0.55)' }}>{sub}</span>}
     </div>
   );
 }
 
-function UrgenciaBadge({ dias }: { dias: number }) {
-  let cls: string, text: string;
-
-  if (dias < 0) {
-    cls = 'urg-red';
-    text = 'Vencida';
-  } else if (dias < 30) {
-    cls = 'urg-orange';
-    text = `${dias} días`;
-  } else if (dias <= 60) {
-    cls = 'urg-yellow';
-    text = `${dias} días`;
-  } else {
-    cls = 'urg-green';
-    text = `${dias} días`;
+function RenovBadge({ dias, fecha }: { dias: number; fecha: Date }) {
+  const s: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', padding: '4px 11px', borderRadius: 999, fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap' };
+  if (dias < 0 && fecha.getFullYear() < CURRENT_YEAR) {
+    return <span style={{ ...s, background: 'rgba(239,68,68,0.14)', border: '1px solid rgba(239,68,68,0.30)', color: '#fca5a5' }}>Vencida {Math.abs(dias)}d</span>;
   }
-
-  const styles: Record<string, React.CSSProperties> = {
-    'urg-red': { color: '#fecaca', background: 'rgba(239,68,68,0.18)', border: '1px solid rgba(239,68,68,0.4)' },
-    'urg-orange': { color: '#fed7aa', background: 'rgba(249,115,22,0.18)', border: '1px solid rgba(249,115,22,0.4)' },
-    'urg-yellow': { color: '#fef3c7', background: 'rgba(234,179,8,0.18)', border: '1px solid rgba(234,179,8,0.4)' },
-    'urg-green': { color: '#bbf7d0', background: 'rgba(16,185,129,0.18)', border: '1px solid rgba(16,185,129,0.4)' },
-  };
-
-  return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center',
-      padding: '4px 10px', borderRadius: 999,
-      fontSize: 11, fontWeight: 500,
-      ...styles[cls],
-    }}>
-      {text}
-    </span>
-  );
-}
-
-/** Extrae nombre legible del email: "sergio.garcia@..." → "Sergio" */
-function displayName(email: string | null): string {
-  if (!email) return 'Usuario';
-  const local = email.split('@')[0]; // "sergio.garcia"
-  const first = local.split(/[._-]/)[0]; // "sergio"
-  return first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
-}
-
-/** Normaliza tipo de vehículo: singular, primera letra mayúscula */
-const TIPO_NORMALIZE: Record<string, string> = {
-  'furgoneta': 'Furgoneta',
-  'furgonetas': 'Furgoneta',
-  'furgon': 'Furgoneta',
-  'furgones': 'Furgoneta',
-  'turismo': 'Turismo',
-  'turismos': 'Turismo',
-  'cabeza tractora': 'Cabeza tractora',
-  'cabezas tractoras': 'Cabeza tractora',
-  'camion rigido': 'Camión rígido',
-  'camión rígido': 'Camión rígido',
-  'camiones rigidos': 'Camión rígido',
-  'semirremolque': 'Semirremolque',
-  'semirremolques': 'Semirremolque',
-  'derivado de turismo': 'Derivado de turismo',
-  'industrial matriculado': 'Industrial matriculado',
-  'industrial no matriculado': 'Industrial no matriculado',
-  'motocicleta': 'Motocicleta',
-  'motocicletas': 'Motocicleta',
-  'ciclomotor': 'Ciclomotor',
-  'ciclomotores': 'Ciclomotor',
-  'autobus': 'Autobús',
-  'autobuses': 'Autobús',
-};
-
-function normalizeTipo(raw: string): string {
-  const key = raw.toLowerCase().trim();
-  return TIPO_NORMALIZE[key] ?? (raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase());
+  if (dias < 0) {
+    return <span style={{ ...s, background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.28)', color: '#fcd34d' }}>−{Math.abs(dias)}d</span>;
+  }
+  if (dias <= 30) {
+    return <span style={{ ...s, background: 'rgba(239,68,68,0.14)', border: '1px solid rgba(239,68,68,0.30)', color: '#fca5a5' }}>{dias}d</span>;
+  }
+  if (dias <= 90) {
+    return <span style={{ ...s, background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.28)', color: '#fcd34d' }}>{dias}d</span>;
+  }
+  return <span style={{ ...s, background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.28)', color: '#6ee7b7' }}>{dias}d</span>;
 }
 
 function SugerenciasSection({ user }: { user: string | null }) {
@@ -195,88 +97,51 @@ function SugerenciasSection({ user }: { user: string | null }) {
   const inputStyle: React.CSSProperties = {
     width: '100%', padding: '10px 14px', borderRadius: 10, fontSize: 13,
     background: 'rgba(6,14,50,0.55)', border: '1px solid rgba(61,112,255,0.22)',
-    color: '#FFFFFF', outline: 'none', fontFamily: 'inherit',
-    transition: 'border-color 0.15s',
+    color: '#FFFFFF', outline: 'none', fontFamily: 'inherit', transition: 'border-color 0.15s',
   };
 
   return (
     <div style={{ ...glass, padding: '24px 26px', position: 'relative', overflow: 'hidden' }}>
       <div className="grain-subtle" />
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-        <div style={{
-          width: 30, height: 30, borderRadius: 8, flexShrink: 0,
-          background: 'rgba(51,102,255,0.15)', border: '1px solid rgba(61,112,255,0.3)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
+        <div style={{ width: 30, height: 30, borderRadius: 8, flexShrink: 0, background: 'rgba(51,102,255,0.15)', border: '1px solid rgba(61,112,255,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(100,150,255,0.9)" strokeWidth="2">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
           </svg>
         </div>
         <div>
-          <h3 style={{ fontFamily: 'var(--font-display), Inter, sans-serif', fontWeight: 600, fontSize: 15, margin: 0, color: '#FFFFFF' }}>
-            Sugerencias de mejora
-          </h3>
-          <span style={{ fontSize: 11, color: 'rgba(178,206,255,0.5)', letterSpacing: '0.04em' }}>
-            Cualquier idea que te parezca útil — se revisa en el panel de administración
-          </span>
+          <h3 style={{ fontFamily: 'var(--font-display), Inter, sans-serif', fontWeight: 600, fontSize: 15, margin: 0, color: '#FFFFFF' }}>Sugerencias de mejora</h3>
+          <span style={{ fontSize: 11, color: 'rgba(178,206,255,0.5)', letterSpacing: '0.04em' }}>Cualquier idea que te parezca útil — se revisa en el panel de administración</span>
         </div>
       </div>
 
       {status === 'done' ? (
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 10, padding: '16px 20px',
-          borderRadius: 10, background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)',
-        }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2.5">
-            <polyline points="20 6 9 17 4 12"/>
-          </svg>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 20px', borderRadius: 10, background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)' }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
           <span style={{ fontSize: 13, color: '#34d399', fontWeight: 500 }}>Sugerencia enviada — gracias.</span>
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, alignItems: 'start' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <div>
-              <label style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(80,130,255,0.75)', marginBottom: 5 }}>
-                Título
-              </label>
-              <input
-                type="text" value={titulo} maxLength={100}
-                onChange={e => setTitulo(e.target.value)}
-                placeholder="Resumen breve de la mejora"
-                style={inputStyle}
+              <label style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(80,130,255,0.75)', marginBottom: 5 }}>Título</label>
+              <input type="text" value={titulo} maxLength={100} onChange={e => setTitulo(e.target.value)} placeholder="Resumen breve de la mejora" style={inputStyle}
                 onFocus={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.6)')}
-                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.22)')}
-              />
+                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.22)')} />
             </div>
-            <button
-              onClick={send}
-              disabled={status === 'sending' || !titulo.trim() || !desc.trim()}
-              style={{
-                padding: '10px 20px', borderRadius: 10, fontSize: 12, fontWeight: 700,
-                textTransform: 'uppercase', letterSpacing: '0.08em', cursor: 'pointer',
-                background: titulo.trim() && desc.trim() ? 'rgba(51,102,255,0.2)' : 'rgba(51,102,255,0.07)',
-                border: `1px solid ${titulo.trim() && desc.trim() ? 'rgba(61,112,255,0.5)' : 'rgba(61,112,255,0.18)'}`,
-                color: titulo.trim() && desc.trim() ? '#6699FF' : 'rgba(100,130,255,0.4)',
-                transition: 'all 0.15s', alignSelf: 'flex-start',
-              }}
+            <button onClick={send} disabled={status === 'sending' || !titulo.trim() || !desc.trim()}
+              style={{ padding: '10px 20px', borderRadius: 10, fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', cursor: 'pointer', background: titulo.trim() && desc.trim() ? 'rgba(51,102,255,0.2)' : 'rgba(51,102,255,0.07)', border: `1px solid ${titulo.trim() && desc.trim() ? 'rgba(61,112,255,0.5)' : 'rgba(61,112,255,0.18)'}`, color: titulo.trim() && desc.trim() ? '#6699FF' : 'rgba(100,130,255,0.4)', transition: 'all 0.15s', alignSelf: 'flex-start' }}
               onMouseEnter={e => { if (titulo.trim() && desc.trim()) e.currentTarget.style.background = 'rgba(51,102,255,0.3)'; }}
-              onMouseLeave={e => { if (titulo.trim() && desc.trim()) e.currentTarget.style.background = 'rgba(51,102,255,0.2)'; }}
-            >
+              onMouseLeave={e => { if (titulo.trim() && desc.trim()) e.currentTarget.style.background = 'rgba(51,102,255,0.2)'; }}>
               {status === 'sending' ? 'Enviando...' : 'Enviar sugerencia'}
             </button>
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(80,130,255,0.75)', marginBottom: 5 }}>
-              Descripción
-            </label>
-            <textarea
-              value={desc} maxLength={1000} rows={4}
-              onChange={e => setDesc(e.target.value)}
-              placeholder="Explica la mejora con detalle"
+            <label style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(80,130,255,0.75)', marginBottom: 5 }}>Descripción</label>
+            <textarea value={desc} maxLength={1000} rows={4} onChange={e => setDesc(e.target.value)} placeholder="Explica la mejora con detalle"
               style={{ ...inputStyle, resize: 'vertical', minHeight: 90 }}
               onFocus={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.6)')}
-              onBlur={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.22)')}
-            />
+              onBlur={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.22)')} />
           </div>
         </div>
       )}
@@ -284,7 +149,7 @@ function SugerenciasSection({ user }: { user: string | null }) {
   );
 }
 
-// ─── Vehículos por Categoría — clasificación ────────────────────────────────
+// ─── Category classification ──────────────────────────────────────────────────
 
 const SUBTITULOS_CAT: Record<string, string> = {
   '1ª Categoría':   'Turismo · todoterreno · furgoneta',
@@ -353,43 +218,59 @@ export default function DashboardPage() {
     return map;
   }, [corredores]);
 
-  const flotasActivas = carpetas.filter(c => c.estado !== 'RECHAZADA').length;
-  const totalVehiculos = carpetas.reduce((sum, c) => {
-    const rows = c.trabajo?.length > 0 ? c.trabajo : c.original;
-    return sum + (rows?.length ?? 0);
-  }, 0);
-  const totalCorredores = corredores.length;
   const contratadas = carpetas.filter(c => c.estado === 'CONTRATADA').length;
-  const tasaContratacion = carpetas.length > 0
-    ? Math.round((contratadas / carpetas.length) * 100) : null;
-  const tasaColor = tasaContratacion === null ? '#fff' : tasaContratacion >= 50 ? '#34d399' : '#f87171';
+  const tasaContratacion = carpetas.length > 0 ? Math.round((contratadas / carpetas.length) * 100) : null;
 
-  const flotasPorEstado = useMemo(() => {
+  const flotasEstadoCounts = useMemo(() => {
     const counts: Record<string, number> = { 'EN ESTUDIO': 0, 'OFERTADA': 0, 'CONTRATADA': 0, 'RECHAZADA': 0 };
     carpetas.forEach(c => { counts[c.estado] = (counts[c.estado] ?? 0) + 1; });
     historicas.forEach(h => {
       const estado = h.estado === 'COTIZADA' ? 'OFERTADA' : h.estado;
       if (estado in counts) counts[estado] = (counts[estado] ?? 0) + 1;
     });
-    return Object.entries(counts).map(([name, value]) => ({ name, value }));
+    return counts;
   }, [carpetas, historicas]);
 
-  const vehiculosPorTipo = useMemo(() => {
-    const counts: Record<string, number> = {};
-    carpetas.forEach(c => {
-      const rows = c.trabajo?.length > 0 ? c.trabajo : c.original;
-      (rows ?? []).forEach(r => {
-        const raw = r['tipo_vehiculo']?.trim();
-        if (raw) {
-          const tipo = normalizeTipo(raw);
-          counts[tipo] = (counts[tipo] ?? 0) + 1;
-        }
-      });
+  const donutData = useMemo(() => {
+    const total = Object.values(flotasEstadoCounts).reduce((s, v) => s + v, 0);
+    if (total === 0) return null;
+    const SEGS = [
+      { key: 'CONTRATADA', label: 'Contratadas', color: '#10b981' },
+      { key: 'EN ESTUDIO',  label: 'En estudio',  color: '#3b82f6' },
+      { key: 'OFERTADA',    label: 'Ofertadas',   color: '#8b5cf6' },
+      { key: 'RECHAZADA',   label: 'Rechazadas',  color: '#ef4444' },
+    ];
+    let acc = 0;
+    const segments = SEGS.map(({ key, label, color }) => {
+      const val = flotasEstadoCounts[key] ?? 0;
+      const pct = (val / total) * 100;
+      const start = acc;
+      acc += pct;
+      return { key, label, color, val, pct, start, end: acc };
     });
-    return Object.entries(counts)
-      .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value);
-  }, [carpetas]);
+    const gradient = segments
+      .filter(s => s.val > 0)
+      .map(s => `${s.color} ${s.start.toFixed(2)}% ${s.end.toFixed(2)}%`)
+      .join(', ');
+    return { total, segments, gradient };
+  }, [flotasEstadoCounts]);
+
+  const renovaciones = useMemo(() => {
+    return carpetas
+      .filter(c => c.estado === 'CONTRATADA' && c.header?.fechaVencimiento)
+      .flatMap(c => {
+        const fecha = parseFechaFlexible(c.header!.fechaVencimiento!);
+        if (!fecha) return [];
+        const dias = diasHasta(fecha);
+        const corredor = c.corredor_id ? (corredorMap.get(c.corredor_id) ?? null) : null;
+        return [{ carpeta: c, corredor, fecha, dias }];
+      })
+      .sort((a, b) => a.dias - b.dias);
+  }, [carpetas, corredorMap]);
+
+  const vencidasUrgentes = renovaciones.filter(
+    r => r.dias < 0 && r.fecha.getFullYear() < CURRENT_YEAR,
+  );
 
   const vehiculosCatStats = useMemo((): CatStats[] => {
     const acc: Record<string, Record<string, Record<string, number>>> = {
@@ -433,150 +314,182 @@ export default function DashboardPage() {
       .filter(c => c.total > 0);
   }, [carpetas]);
 
-  const alertas = useMemo(() => {
-    const entries: { carpeta: FlotaCarpeta; dias: number; corredor: Corredor | null | undefined; tipo: 'vencimiento' | 'regularizacion'; fecha: Date }[] = [];
-
-    for (const c of carpetas) {
-      const corredor = c.corredor_id ? corredorMap.get(c.corredor_id) : null;
-
-      // Próxima regularización (solo EXTERNA con fechaVencimiento + periodicidad)
-      if (
-        c.header?.formaPago?.toUpperCase() === 'EXTERNA' &&
-        c.header?.fechaVencimiento &&
-        c.header?.periodicidad
-      ) {
-        const proxima = proximaRegularizacion(c.header.fechaVencimiento, c.header.periodicidad);
-        if (proxima) {
-          const dias = diasHasta(proxima);
-          if (dias >= 0 && dias <= 30) entries.push({ carpeta: c, dias, corredor, tipo: 'regularizacion', fecha: proxima });
-        }
-      }
-
-      // Vencimiento de póliza
-      if (c.header?.fechaVencimiento) {
-        const fecha = parseFechaFlexible(c.header.fechaVencimiento);
-        if (fecha) {
-          const dias = diasHasta(fecha);
-          if (dias >= 0 && dias <= 30) entries.push({ carpeta: c, dias, corredor, tipo: 'vencimiento', fecha });
-        }
-      }
-    }
-
-    return entries.sort((a, b) => a.dias - b.dias);
-  }, [carpetas, corredorMap]);
+  const hora = new Date().getHours();
+  const saludo = hora < 14 ? 'Buenos días' : hora < 21 ? 'Buenas tardes' : 'Buenas noches';
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }} className="animate-in fade-in duration-500">
+      <style>{`
+        .dash-kpi-grid  { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+        .dash-main-grid { display: grid; grid-template-columns: 380px 1fr; gap: 14px; align-items: start; }
+        .dash-kpi-num   { font-size: 52px; }
+        @keyframes orion-blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+        .dash-alert-dot { animation: orion-blink 2s ease-in-out infinite; }
+        @media (max-width: 960px) {
+          .dash-main-grid { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 700px) {
+          .dash-kpi-grid { grid-template-columns: 1fr 1fr; }
+          .dash-kpi-num  { font-size: 38px; }
+        }
+        @media (max-width: 440px) {
+          .dash-kpi-grid { grid-template-columns: 1fr; }
+        }
+      `}</style>
 
-      {/* Greeting */}
+      {/* ── Greeting ── */}
       <div>
-        <h2 style={{
-          fontFamily: 'var(--font-display), Inter, sans-serif',
-          fontWeight: 700, fontSize: 24, margin: 0, color: '#FFFFFF',
-          letterSpacing: '-0.01em',
-        }}>
-          {(() => { const h = new Date().getHours(); return h < 14 ? 'Buenos días' : h < 21 ? 'Buenas tardes' : 'Buenas noches'; })()}, {displayName(user)}
+        <h2 style={{ fontFamily: 'var(--font-display), Inter, sans-serif', fontWeight: 700, fontSize: 24, margin: 0, color: '#FFFFFF', letterSpacing: '-0.01em' }}>
+          {saludo}, {displayName(user)}
         </h2>
         <span style={{ fontSize: 14, color: 'rgba(178,206,255,0.65)' }}>
           {new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
         </span>
       </div>
 
-      {/* KPIs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
-        <KpiCard title="Flotas activas" value={String(flotasActivas)} />
-        <KpiCard title="Vehículos totales" value={totalVehiculos.toLocaleString('es-ES')} />
-        <KpiCard title="Corredores" value={String(totalCorredores)} />
-        <KpiCard title="Tasa contratación" value={tasaContratacion !== null ? `${tasaContratacion}%` : '—'} color={tasaColor} />
+      {/* ── Alert banner (solo si hay vencidas reales de año anterior) ── */}
+      {vencidasUrgentes.length > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 18px', borderRadius: 10, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.22)', fontSize: 12, color: '#fca5a5', fontWeight: 500 }}>
+          <div className="dash-alert-dot" style={{ width: 7, height: 7, borderRadius: '50%', background: '#ef4444', flexShrink: 0 }} />
+          {vencidasUrgentes.length === 1
+            ? `${vencidasUrgentes[0].carpeta.nombre} — póliza vencida, pendiente de renovación`
+            : `${vencidasUrgentes.length} pólizas vencidas pendientes de renovación`}
+        </div>
+      )}
+
+      {/* ── 3 KPI cards ── */}
+      <div className="dash-kpi-grid">
+        <KpiCard
+          title="Renovaciones urgentes"
+          value={String(vencidasUrgentes.length)}
+          color={vencidasUrgentes.length > 0 ? '#ef4444' : '#FFFFFF'}
+          sub={vencidasUrgentes.length > 0
+            ? `${vencidasUrgentes.length === 1 ? 'Póliza vencida' : 'Pólizas vencidas'} de año anterior`
+            : 'Sin vencidas urgentes'}
+        />
+        <KpiCard
+          title="Tasa de éxito"
+          value={tasaContratacion !== null ? `${tasaContratacion}%` : '—'}
+          color="#3b82f6"
+          sub={`${contratadas} contratadas / ${carpetas.length} portfolio`}
+        />
+        <KpiCard
+          title="Corredores activos"
+          value={String(corredores.length)}
+          sub="Gestionando cartera"
+        />
       </div>
 
-      {/* Charts */}
-      <DashboardCharts
-        flotasPorEstado={flotasPorEstado}
-        vehiculosPorTipo={vehiculosPorTipo}
-        hasCarpetas={carpetas.length > 0}
-        vehiculosCatStats={vehiculosCatStats}
-      />
+      {/* ── Main grid: donut | renovaciones ── */}
+      <div className="dash-main-grid">
 
-      {/* Renewal alerts */}
-      <div style={{ ...glass, padding: '24px 26px', position: 'relative', overflow: 'hidden' }}>
-        <div className="grain-subtle" />
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 22 }}>
-          <h3 style={{
-            fontFamily: 'var(--font-display), Inter, sans-serif',
-            fontWeight: 600, fontSize: 17, margin: 0, color: '#FFFFFF',
-          }}>
-            Regularizaciones y renovaciones
-          </h3>
-          <span style={{ fontSize: 12, color: 'rgba(178,206,255,0.65)', letterSpacing: '0.06em' }}>
-            Distribución actual
-          </span>
+        {/* Donut card */}
+        <div style={{ ...glass, padding: '26px 28px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 20 }}>
+            <span style={{ fontSize: 14, fontWeight: 600, color: '#FFFFFF' }}>Distribución cartera</span>
+            <span style={{ fontSize: 11, color: 'rgba(178,198,245,0.55)' }}>{donutData?.total ?? 0} flotas</span>
+          </div>
+
+          {!donutData ? (
+            <p style={{ color: 'rgba(178,198,245,0.38)', fontSize: 12, textAlign: 'center', padding: '40px 0', margin: 0 }}>Sin datos</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 26 }}>
+              {/* Ring */}
+              <div style={{ position: 'relative', width: 180, height: 180, flexShrink: 0 }}>
+                <div style={{
+                  width: 180, height: 180, borderRadius: '50%',
+                  background: `conic-gradient(${donutData.gradient})`,
+                  filter: 'drop-shadow(0 0 18px rgba(51,102,255,0.18))',
+                }} />
+                {/* Hole */}
+                <div style={{ position: 'absolute', inset: 40, borderRadius: '50%', background: 'rgba(6,16,60,0.97)' }} />
+                {/* Center text */}
+                <div style={{ position: 'absolute', inset: 40, borderRadius: '50%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
+                  <span style={{ fontSize: 30, fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1 }}>{donutData.total}</span>
+                  <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(178,198,245,0.55)', marginTop: 4 }}>flotas</span>
+                </div>
+              </div>
+
+              {/* Legend */}
+              <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 11 }}>
+                {donutData.segments.map(seg => (
+                  <div key={seg.key} style={{ display: 'grid', gridTemplateColumns: '10px 1fr 44px 40px', alignItems: 'center', gap: 10 }}>
+                    <div style={{ width: 10, height: 10, borderRadius: 3, background: seg.color, flexShrink: 0 }} />
+                    <span style={{ fontSize: 13, color: 'rgba(178,198,245,0.75)' }}>{seg.label}</span>
+                    <span style={{ fontSize: 16, fontWeight: 700, textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: seg.color }}>{seg.val}</span>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: 'rgba(178,198,245,0.55)', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{Math.round(seg.pct)}%</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
-        {alertas.length === 0 ? (
-          <p style={{ color: 'rgba(178,198,245,0.38)', fontSize: 12, textAlign: 'center', padding: '30px 0', margin: 0 }}>
-            Sin regularizaciones ni renovaciones en los próximos 30 días.
-          </p>
-        ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-            <thead>
-              <tr>
-                {['Flota', 'Corredor', 'Fecha', 'Tipo', 'Estado'].map(h => (
-                  <th key={h} style={{
-                    textAlign: 'left', padding: '10px 14px', fontSize: 11, fontWeight: 600,
-                    textTransform: 'uppercase', letterSpacing: '0.10em',
-                    color: 'rgba(80,130,255,0.75)',
-                    borderBottom: '1px solid rgba(61,112,255,0.22)',
-                  }}>
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {alertas.map(({ carpeta, dias, corredor, tipo, fecha }) => (
-                <tr key={`${carpeta.id}_${tipo}`} style={{ transition: 'background 180ms' }}
-                  onMouseEnter={e => (e.currentTarget.style.background = 'rgba(51,102,255,0.04)')}
-                  onMouseLeave={e => (e.currentTarget.style.background = '')}>
-                  <td style={{ padding: '14px', fontSize: 13, borderBottom: '1px solid rgba(51,102,255,0.08)' }}>
-                    <Link href={`/flotas?id=${carpeta.id}`}
-                      style={{ color: '#6699FF', fontWeight: 600, textDecoration: 'none' }}
-                      onMouseEnter={e => (e.currentTarget.style.color = '#FFFFFF')}
-                      onMouseLeave={e => (e.currentTarget.style.color = '#6699FF')}>
-                      {carpeta.nombre}
-                    </Link>
-                  </td>
-                  <td style={{ padding: '14px', fontSize: 13, color: '#D0DFFF', borderBottom: '1px solid rgba(51,102,255,0.08)' }}>
-                    {corredor?.nombre ?? 'Sin corredor'}
-                  </td>
-                  <td style={{ padding: '14px', fontSize: 13, color: '#D0DFFF', fontFamily: 'monospace', borderBottom: '1px solid rgba(51,102,255,0.08)' }}>
-                    {fecha.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                  </td>
-                  <td style={{ padding: '14px', fontSize: 12, borderBottom: '1px solid rgba(51,102,255,0.08)' }}>
-                    <span style={{
-                      padding: '3px 8px', borderRadius: 999, fontWeight: 600,
-                      background: tipo === 'regularizacion' ? 'rgba(245,158,11,0.15)' : 'rgba(239,68,68,0.12)',
-                      color: tipo === 'regularizacion' ? '#fbbf24' : '#f87171',
-                      border: `1px solid ${tipo === 'regularizacion' ? 'rgba(245,158,11,0.3)' : 'rgba(239,68,68,0.25)'}`,
-                    }}>
-                      {tipo === 'regularizacion'
-                        ? `Reg. ${carpeta.header?.periodicidad ?? ''}`
-                        : 'Renovación'}
-                    </span>
-                  </td>
-                  <td style={{ padding: '14px', borderBottom: '1px solid rgba(51,102,255,0.08)' }}>
-                    <UrgenciaBadge dias={dias} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+        {/* Renovaciones card */}
+        <div style={{ ...glass, padding: '26px 28px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 20 }}>
+            <span style={{ fontSize: 14, fontWeight: 600, color: '#FFFFFF' }}>Renovaciones próximas</span>
+            <span style={{ fontSize: 11, color: 'rgba(178,198,245,0.55)' }}>Contratadas · {contratadas}</span>
+          </div>
+
+          {renovaciones.length === 0 ? (
+            <p style={{ color: 'rgba(178,198,245,0.38)', fontSize: 12, textAlign: 'center', padding: '40px 0', margin: 0 }}>
+              Sin flotas contratadas con fecha de vencimiento.
+            </p>
+          ) : (
+            <div style={{ maxHeight: 400, overflowY: 'auto' }} className="custom-scrollbar">
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr>
+                    {[{ label: 'Flota', align: 'left' }, { label: 'Vencimiento', align: 'left' }, { label: '', align: 'right' }].map(h => (
+                      <th key={h.label} style={{ textAlign: h.align as 'left' | 'right', padding: '0 14px 10px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(80,130,255,0.80)', borderBottom: '1px solid rgba(61,112,255,0.20)' }}>
+                        {h.label}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {renovaciones.map(({ carpeta, corredor, fecha, dias }) => {
+                    const isVencidaVieja = dias < 0 && fecha.getFullYear() < CURRENT_YEAR;
+                    const fechaColor = isVencidaVieja ? '#fca5a5' : dias < 0 ? '#fcd34d' : dias <= 90 ? '#fcd34d' : '#6ee7b7';
+                    return (
+                      <tr key={carpeta.id}
+                        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(51,102,255,0.04)')}
+                        onMouseLeave={e => (e.currentTarget.style.background = '')}>
+                        <td style={{ padding: '13px 14px', borderBottom: '1px solid rgba(61,112,255,0.07)', verticalAlign: 'middle' }}>
+                          <Link href={`/flotas?id=${carpeta.id}`}
+                            style={{ fontSize: 13, fontWeight: 600, color: '#FFFFFF', textDecoration: 'none', display: 'block' }}
+                            onMouseEnter={e => (e.currentTarget.style.color = '#6699FF')}
+                            onMouseLeave={e => (e.currentTarget.style.color = '#FFFFFF')}>
+                            {carpeta.nombre}
+                          </Link>
+                          <span style={{ fontSize: 11, color: 'rgba(178,198,245,0.55)', marginTop: 3, display: 'block' }}>
+                            {corredor?.nombre ?? 'Sin corredor'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '13px 14px', borderBottom: '1px solid rgba(61,112,255,0.07)', verticalAlign: 'middle' }}>
+                          <span style={{ fontFamily: 'monospace', fontSize: 12, whiteSpace: 'nowrap', color: fechaColor }}>
+                            {fecha.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                          </span>
+                        </td>
+                        <td style={{ padding: '13px 14px', borderBottom: '1px solid rgba(61,112,255,0.07)', textAlign: 'right', verticalAlign: 'middle' }}>
+                          <RenovBadge dias={dias} fecha={fecha} />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Sugerencias */}
-      <SugerenciasSection user={user} />
+      {/* ── Vehículos por categoría ── */}
+      <VehiculosCategorias stats={vehiculosCatStats} />
 
+      {/* ── Sugerencias ── */}
+      <SugerenciasSection user={user} />
     </div>
   );
 }
