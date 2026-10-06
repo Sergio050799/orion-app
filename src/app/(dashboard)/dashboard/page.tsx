@@ -161,8 +161,8 @@ const SUBTITULOS_CAT: Record<string, string> = {
 function getCategoria(raw: string): string {
   const l = raw.toLowerCase().trim();
   if (/moto(cicleta)?|ciclomotor|microcar|triciclo|cuadri/.test(l)) return '3ª Categoría';
-  if (/\bcami[oó]n|tractocami|\btractor\b|cabeza\s*tractora|autob[uú]s|autobus|autocar|microb[uú]s|microbus|semirremolque|\bremolque\b|maquinaria|industrial\s+(?:no\s+)?matriculado|pesado/.test(l)) return '2ª Categoría';
-  if (/furg[oó]n(?!eta)/.test(l)) return '2ª Categoría';
+  if (/\bcami[oó]n|tractocami|\btractor\b|cabeza\s*tractora|autob[uú]s|autobus|autocar|microb[uú]s|microbus|semirremolque|\bremolque\b|maquinaria|industrial\s+(?:no\s+)?matriculado|pesado|v\.?\s*industrial|veh[ií]culo\s*industrial/.test(l)) return '2ª Categoría';
+  if (/fug[oó]n(?!eta)|furg[oó]n(?!eta)/.test(l)) return '2ª Categoría';
   if (/turismo|berlina|familiar|todoterreno|todo[\s-]terreno|furgoneta|derivado|coupe|cabri|monovolumen|hatchback/.test(l)) return '1ª Categoría';
   return 'Sin clasificar';
 }
@@ -171,6 +171,9 @@ function getTipologia(raw: string): string {
   const MAP: Record<string, string> = {
     'furgoneta': 'Furgoneta', 'furgonetas': 'Furgoneta',
     'furgon': 'Furgón', 'furgones': 'Furgón', 'furgón': 'Furgón',
+    'fugon': 'Furgón', 'fugones': 'Furgón', 'fugón': 'Furgón',
+    'v.industrial': 'Industrial', 'v industrial': 'Industrial', 'vindustrial': 'Industrial',
+    'vehiculo industrial': 'Industrial', 'vehículo industrial': 'Industrial',
     'turismo': 'Turismo', 'turismos': 'Turismo',
     'berlina': 'Berlina', 'familiar': 'Familiar',
     'todoterreno': 'Todoterreno', 'todo terreno': 'Todoterreno', 'todo-terreno': 'Todoterreno',
