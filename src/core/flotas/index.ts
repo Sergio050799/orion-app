@@ -19,6 +19,7 @@ export {
     contarVehiculosConSinco,
     filtrarFilasReales,
     consolidarSinco,
+    consolidarSincoPorTipo,
     mergeSincoToTrabajo,
 } from './sinco';
 

@@ -6,6 +6,7 @@ import { saveAs } from 'file-saver';
 import {
   listarCarpetas, crearCarpeta, guardarCarpeta, cargarCarpeta, eliminarCarpeta,
   cambiarEstado, listarCorredores, sesionJoin, sesionLeave, sesionHeartbeat,
+  cargarCarpetasDelServidor,
   type FlotaCarpeta, type EstadoFlota,
 } from '@/core/flotas';
 
@@ -173,6 +174,7 @@ export default function FlotasPage() {
   const [ofertaRows, setOfertaRows] = useState<Record<string, string>[]>([]);
   const [sincoResultRows, setSincoResultRows] = useState<Record<string, string>[]>([]);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [saveFlash, setSaveFlash] = useState(false);
   const [estadoPopover, setEstadoPopover] = useState<{ estado: EstadoFlota; motivo: string } | null>(null);
   const [openFlotas, setOpenFlotas] = useState<FlotaCarpeta[]>([]);
@@ -331,6 +333,25 @@ export default function FlotasPage() {
     setTimeout(() => setSaveFlash(false), 1500);
   }, [flotaHeader, originalData, trabajoRows, sincoResultRows, ofertaRows]);
 
+  const handleRefresh = useCallback(async () => {
+    if (!carpetaActiva || isRefreshing) return;
+    setIsRefreshing(true);
+    try {
+      const serverCarpetas = await cargarCarpetasDelServidor();
+      const fresh = normalizarCarpeta(serverCarpetas.find(c => c.id === carpetaActiva.id) ?? carpetaActiva);
+      if (fresh.oferta.length > 0) ofertaRef.current?.setData(fresh.oferta);
+      if (fresh.original.length > 0) originalRef.current?.setData(fresh.original);
+      if (fresh.trabajo.length > 0) trabajoRef.current?.setData(fresh.trabajo);
+      setCarpetaActiva(fresh);
+      setFlotaHeader(fresh.header);
+      setOriginalData(fresh.original);
+      setOfertaRows(fresh.oferta);
+      setSincoResultRows(fresh.sincoResultados);
+      setTrabajoRows(fresh.trabajo);
+    } catch { /* si falla, mantiene estado actual */ }
+    finally { setIsRefreshing(false); }
+  }, [carpetaActiva, isRefreshing]);
+
   const numVeh = carpetaActiva
     ? ((carpetaActiva.trabajo?.length > 0 ? carpetaActiva.trabajo : carpetaActiva.original)?.filter(r => r['matricula']?.trim()).length ?? 0)
     : 0;
@@ -354,6 +375,7 @@ export default function FlotasPage() {
   return (
     <>
       <style>{`
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .rdg-light {
           --rdg-background-color: #ffffff;
           --rdg-header-background-color: #f3f4f6;
@@ -484,6 +506,23 @@ export default function FlotasPage() {
                 background: 'rgba(6,14,50,0.5)', border: '1px solid rgba(61,112,255,0.22)',
                 borderRadius: 8, padding: '5px 12px', color: '#BDD4FF', fontSize: 13, cursor: 'pointer', fontWeight: 500,
               }}>Cambiar</button>
+
+              {/* Actualizar estudio */}
+              <button onClick={handleRefresh} disabled={isRefreshing} title="Recargar datos del servidor" style={{
+                background: 'rgba(6,14,50,0.5)', border: '1px solid rgba(61,112,255,0.22)',
+                borderRadius: 8, padding: '6px 12px',
+                color: isRefreshing ? 'rgba(178,198,245,0.4)' : '#BDD4FF',
+                fontSize: 13, fontWeight: 500, cursor: isRefreshing ? 'not-allowed' : 'pointer',
+                display: 'flex', alignItems: 'center', gap: 5,
+                opacity: isRefreshing ? 0.6 : 1,
+              }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+                  style={{ animation: isRefreshing ? 'spin 0.8s linear infinite' : 'none' }}>
+                  <polyline points="23 4 23 10 17 10"/>
+                  <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                </svg>
+                {isRefreshing ? 'Actualizando...' : 'Actualizar estudio'}
+              </button>
 
               {/* Guardar */}
               <button onClick={handleSave} style={{

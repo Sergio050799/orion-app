@@ -127,6 +127,33 @@ export function consolidarSinco(rows: Record<string, string>[]): ResumenSinco {
 }
 
 /**
+ * Consolida SINCO agrupado por tipología de vehículo.
+ * Empareja sincoRows con trabajoRows por matrícula para obtener la tipología.
+ */
+export function consolidarSincoPorTipo(
+    sincoRows: Record<string, string>[],
+    trabajoRows: Record<string, string>[],
+): { tipologia: string; resumen: ResumenSinco }[] {
+    const tipoMap = new Map<string, string>();
+    for (const r of trabajoRows) {
+        const mat = (r['matricula'] ?? '').trim();
+        if (mat) tipoMap.set(mat.toUpperCase(), r['tipo_vehiculo'] || 'Sin tipo');
+    }
+    const groups = new Map<string, Record<string, string>[]>();
+    for (const r of sincoRows) {
+        const mat = (r['matricula'] ?? r['Matrícula'] ?? '').trim();
+        const tipo = tipoMap.get(mat.toUpperCase()) || 'Sin tipo';
+        if (!groups.has(tipo)) groups.set(tipo, []);
+        groups.get(tipo)!.push(r);
+    }
+    const result: { tipologia: string; resumen: ResumenSinco }[] = [];
+    groups.forEach((rows, tipologia) => {
+        result.push({ tipologia, resumen: consolidarSinco(rows) });
+    });
+    return result.sort((a, b) => a.tipologia.localeCompare(b.tipologia));
+}
+
+/**
  * Aplica datos SINCO a filas TRABAJO sin sobreescribir celdas con contenido.
  * Empareja por `matchField` (default: 'matricula').
  */

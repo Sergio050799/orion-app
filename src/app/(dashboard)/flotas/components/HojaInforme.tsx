@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
-import { consolidarSinco } from '@/core/flotas';
+import { consolidarSinco, consolidarSincoPorTipo } from '@/core/flotas';
+import type { ResumenSinco } from '@/core/flotas';
 import type { FlotaHeader, CoberturaRow } from './types';
 import type { DanosPropiosData } from '@/core/flotas';
 
@@ -94,8 +95,9 @@ function buildPdfHtml(data: {
   mmtRows: { tipo: string; cob: string; count: number; prima: number | null; total: number | null }[];
   corredorLabel?: string;
   cobAnexo: { titulo: string; tipologias?: string[]; garantias: string[] }[];
+  sincoPorTipo?: { tipologia: string; resumen: ResumenSinco }[];
 }): string {
-  const { header, pivot, totalVehiculos, ambitoLabel, numTomadores, adrActivo, sinco, danosPropiosPdf, primasSol, mmtRows, corredorLabel, cobAnexo } = data;
+  const { header, pivot, totalVehiculos, ambitoLabel, numTomadores, adrActivo, sinco, danosPropiosPdf, primasSol, mmtRows, corredorLabel, cobAnexo, sincoPorTipo } = data;
   const totalSol = primasSol.reduce((a, r) => a + r.total, 0);
   const totalMmt = mmtRows.reduce((a, r) => a + (r.total ?? 0), 0);
   const dif = totalMmt - totalSol;
@@ -140,6 +142,36 @@ function buildPdfHtml(data: {
           <div class="sinco-val">${v}</div>
         </div>`).join('')}
       </div>
+    </div>` : '';
+
+  const sincoPorTipoHtml = (sincoPorTipo && sincoPorTipo.length > 1) ? `
+    <div class="section" style="margin-top:8px">
+      <div class="section-title">Siniestralidad SINCO por tipología</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Tipología</th>
+            <th class="center">Vehículos</th>
+            <th class="center">Con SINCO</th>
+            <th class="center">Siniestros</th>
+            <th class="right">Antigüedad</th>
+            <th class="right">Sin./año</th>
+            <th class="right">Frecuencia</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${sincoPorTipo.map(({ tipologia, resumen: r }) => `
+          <tr>
+            <td>${tipologia}</td>
+            <td class="center">${r.totalVehiculos}</td>
+            <td class="center">${r.vehiculosConSinco}</td>
+            <td class="center">${r.totalSiniestros}</td>
+            <td class="right mono">${fmt2(r.antiguedadMedia)}a</td>
+            <td class="right mono">${fmt2(r.siniestrosPorAnio)}</td>
+            <td class="right mono">${fmtFreq(r.frecuencia)}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
     </div>` : '';
 
   const danosPropiosPdfHtml = danosPropiosPdf ? `
@@ -287,6 +319,7 @@ function buildPdfHtml(data: {
 <div class="client-card">
   ${header?.tomador  ? `<div><span class="cf-label">Nombre de la flota</span><span class="cf-val">${header.tomador}</span></div>` : ''}
   ${header?.cif      ? `<div><span class="cf-label">CIF / NIF</span><span class="cf-val">${header.cif}</span></div>` : ''}
+  ${header?.fechaVencimiento ? `<div><span class="cf-label">Vencimiento</span><span class="cf-val">${fmtDateField(header.fechaVencimiento)}</span></div>` : ''}
   ${ambitoLabel      ? `<div><span class="cf-label">Ámbito</span><span class="cf-val"><span class="ambito-badge">${ambitoLabel}</span></span></div>` : ''}
   ${numTomadores > 1 ? `<div><span class="cf-label">Composición</span><span class="cf-val">Flota compuesta por ${numTomadores} tomadores</span></div>` : ''}
 </div>
@@ -313,6 +346,8 @@ function buildPdfHtml(data: {
 </div>
 
 ${sincoHtml}
+
+${sincoPorTipoHtml}
 
 ${danosPropiosPdfHtml}
 
@@ -447,22 +482,17 @@ export default function HojaInforme({
 
   const hasSincoData = resumenAuto !== null || resumenManual !== null || sincoGlobal !== null;
 
+  const sincoPorTipo = useMemo(
+    () => sincoResultRows.length > 0 ? consolidarSincoPorTipo(sincoResultRows, trabajoRows) : [],
+    [sincoResultRows, trabajoRows],
+  );
+
   // ── Daños Propios ────────────────────────────────────────────────────────────
   const danosPropiosItems = useMemo((): [string, string][] | null => {
     if (!danosPropios?.mostrarEnInforme) return null;
     const numSin = danosPropios.numSiniestros ?? 0;
     const totalVeh = trabajoRows.filter(r => r['matricula']?.trim()).length;
-    // Antigüedad media de sincoResultRows (igual que SINCO automático)
-    const exitosas = sincoResultRows.filter(r => {
-      const c = r['Codigo_Retorno'] ?? r['codigo_retorno'] ?? '';
-      return !c || c.trim() === '' || c.trim() === '0';
-    });
-    const aniosList = exitosas.map(r => {
-      const raw = r['Num_Anios_Asegurado'] ?? r['num_anios_asegurado'] ?? '';
-      if (raw.trim()) { const n = parseFloat(raw); if (!isNaN(n) && n >= 0.08) return n; }
-      return 0;
-    }).filter(n => n > 0);
-    const antiguedMedia = aniosList.length > 0 ? aniosList.reduce((a, b) => a + b, 0) / aniosList.length : 0;
+    const antiguedMedia = resumenAuto?.antiguedadMedia ?? 0;
     const sinAnio = antiguedMedia > 0 ? numSin / antiguedMedia : 0;
     const frecuencia = totalVeh > 0 ? sinAnio / totalVeh : 0;
     return [
@@ -472,7 +502,7 @@ export default function HojaInforme({
       ['Sin./año', fmt2(sinAnio)],
       ['Frecuencia', fmtFreq(frecuencia)],
     ];
-  }, [danosPropios, trabajoRows, sincoResultRows]);
+  }, [danosPropios, trabajoRows, resumenAuto]);
 
   // ── Primas agrupadas ─────────────────────────────────────────────────────────
   const isYes = (v?: string) => { const u = (v ?? '').trim().toUpperCase(); return u !== '' && u !== 'NO' && u !== 'N' && u !== '0'; };
@@ -523,18 +553,20 @@ export default function HojaInforme({
       if (!cob) return;
       const tipo = normTipo(r['tipo_vehiculo'] || '');
       const isRem = TIPOS_REMOLQUE.has(tipo);
+      const hasLunas = !isRem && isYes(r['lunas']);
+      const cobKey = `${cob}||${hasLunas ? 'lunas' : 'no_lunas'}`;
       const targetMap = isYes(r['asistencia']) ? cobMapCon : cobMapSin;
-      if (!targetMap.has(cob)) targetMap.set(cob, { nonRem: new Set(), rem: new Set(), hasLunas: false });
-      const entry = targetMap.get(cob)!;
+      if (!targetMap.has(cobKey)) targetMap.set(cobKey, { nonRem: new Set(), rem: new Set(), hasLunas });
+      const entry = targetMap.get(cobKey)!;
       const tip = tipo.charAt(0).toUpperCase() + tipo.slice(1).toLowerCase();
       if (isRem) entry.rem.add(tip);
       else entry.nonRem.add(tip);
-      if (!isRem && isYes(r['lunas'])) entry.hasLunas = true;
     });
     const result: { titulo: string; tipologias: string[]; garantias: string[] }[] = [];
     const seen = new Set<string>();
     const buildEntries = (cobMap: Map<string, { nonRem: Set<string>; rem: Set<string>; hasLunas: boolean }>, asistGar: string[]) => {
-      cobMap.forEach(({ nonRem, rem, hasLunas }, rawCob) => {
+      cobMap.forEach(({ nonRem, rem, hasLunas }, cobKey) => {
+        const rawCob = cobKey.split('||')[0];
         const v = rawCob.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
         let key = '';
         if (v.includes('todo') || v.includes('franquicia') || v.includes('riesgo')) key = 'tr';
@@ -542,7 +574,7 @@ export default function HojaInforme({
         else if (v.includes('tercero')) key = 't';
         if (!key) return;
         const lunasGar = hasLunas ? ['Lunas'] : [];
-        const keyFull = key + (asistGar.length ? '_asist' : '');
+        const keyFull = key + (hasLunas ? '_l' : '') + (asistGar.length ? '_asist' : '');
         if (nonRem.size > 0 && !seen.has(keyFull)) {
           seen.add(keyFull);
           const tipologias = [...nonRem];
@@ -673,16 +705,7 @@ export default function HojaInforme({
       if (!danosPropios?.mostrarEnInforme) return null;
       const numSin = danosPropios.numSiniestros ?? 0;
       const tVeh = trabajoRows.filter(r => r['matricula']?.trim()).length;
-      const exitosas2 = sincoResultRows.filter(r => {
-        const c = r['Codigo_Retorno'] ?? r['codigo_retorno'] ?? '';
-        return !c || c.trim() === '' || c.trim() === '0';
-      });
-      const aniosList2 = exitosas2.map(r => {
-        const raw = r['Num_Anios_Asegurado'] ?? r['num_anios_asegurado'] ?? '';
-        if (raw.trim()) { const n = parseFloat(raw); if (!isNaN(n) && n >= 0.08) return n; }
-        return 0;
-      }).filter(n => n > 0);
-      const antiguedMedia2 = aniosList2.length > 0 ? aniosList2.reduce((a, b) => a + b, 0) / aniosList2.length : 0;
+      const antiguedMedia2 = resumenAuto?.antiguedadMedia ?? 0;
       const sinAnio2 = antiguedMedia2 > 0 ? numSin / antiguedMedia2 : 0;
       const frecuencia2 = tVeh > 0 ? sinAnio2 / tVeh : 0;
       return [
@@ -707,13 +730,14 @@ export default function HojaInforme({
       mmtRows,
       corredorLabel,
       cobAnexo,
+      sincoPorTipo,
     });
 
     const w = window.open('', '_blank', 'width=860,height=700');
     if (!w) return;
     w.document.write(html);
     w.document.close();
-  }, [header, pivot, totalVehiculos, ambito, adrActivo, primasSol, mmtRows, resumenAuto, resumenManual, sincoGlobal, danosPropios, cobAnexo]);
+  }, [header, pivot, totalVehiculos, ambito, adrActivo, primasSol, mmtRows, resumenAuto, resumenManual, sincoGlobal, danosPropios, cobAnexo, sincoPorTipo]);
 
   // ── Render ────────────────────────────────────────────────────────────────────
   return (
@@ -838,6 +862,35 @@ export default function HojaInforme({
               );
             })()}
           </div>
+        )}
+
+        {/* ── Desglose SINCO por tipología ─────────────────────────────── */}
+        {sincoPorTipo.length > 1 && (
+          <Card title="Siniestralidad SINCO por tipología">
+            <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', width: '100%', boxSizing: 'border-box' }}>
+              <table style={{ minWidth: 400, width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                <thead>
+                  <tr style={{ background: '#f3f4f6' }}>
+                    {['Tipología', 'Veh.', 'Con SINCO', 'Siniestros', 'Antigüedad', 'Sin./año', 'Frecuencia'].map(h =>
+                      <th key={h} style={thS}>{h}</th>)}
+                  </tr>
+                </thead>
+                <tbody>
+                  {sincoPorTipo.map(({ tipologia, resumen: r }) => (
+                    <tr key={tipologia} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                      <td style={{ ...tdS, fontWeight: 600 }}>{tipologia}</td>
+                      <td style={{ ...tdS, textAlign: 'center' }}>{r.totalVehiculos}</td>
+                      <td style={{ ...tdS, textAlign: 'center' }}>{r.vehiculosConSinco}</td>
+                      <td style={{ ...tdS, textAlign: 'center' }}>{r.totalSiniestros}</td>
+                      <td style={{ ...tdS, textAlign: 'right', fontFamily: 'monospace' }}>{fmt2(r.antiguedadMedia)}a</td>
+                      <td style={{ ...tdS, textAlign: 'right', fontFamily: 'monospace' }}>{fmt2(r.siniestrosPorAnio)}</td>
+                      <td style={{ ...tdS, textAlign: 'right', fontFamily: 'monospace' }}>{fmtFreq(r.frecuencia)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
         )}
 
         {/* ── Siniestralidad Daños Propios ──────────────────────────────── */}
