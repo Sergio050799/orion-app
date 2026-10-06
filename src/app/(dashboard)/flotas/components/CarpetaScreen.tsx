@@ -123,7 +123,7 @@ export default function CarpetaScreen({ onSelect }: Props) {
   const [showCrearCorredor, setShowCrearCorredor] = useState(false);
   const [query, setQuery] = useState('');
   const [corredorFilter, setCorredorFilter] = useState('TODOS');
-  const [estadoFilter, setEstadoFilter] = useState('TODAS');
+  const estadoFilter = 'EN ESTUDIO';
   const [sucursalFilter, setSucursalFilter] = useState('');
   const [comercialFilter, setComercialFilter] = useState('');
   const [creating, setCreating] = useState(false);
@@ -238,7 +238,7 @@ export default function CarpetaScreen({ onSelect }: Props) {
       const corrName = corr?.nombre ?? 'Sin corredor';
 
       if (corredorFilter !== 'TODOS' && corrName !== corredorFilter) return false;
-      if (estadoFilter !== 'TODAS' && c.estado !== estadoFilter) return false;
+      if (c.estado !== 'EN ESTUDIO') return false;
       if (sucursalFilter && corr?.sucursal !== sucursalFilter) return false;
       if (comercialFilter && (corr?.comercial ?? '').toLowerCase() !== comercialFilter.toLowerCase()) return false;
       const q = query.trim().toLowerCase();
@@ -390,24 +390,6 @@ export default function CarpetaScreen({ onSelect }: Props) {
       </div>
 
       {/* Filtro de estado (pills) */}
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        {([
-          ['TODAS', 'Todas'],
-          ['EN ESTUDIO', 'En estudio'],
-          ['OFERTADA', 'Ofertadas'],
-          ['CONTRATADA', 'Contratadas'],
-          ['RECHAZADA', 'Rechazadas'],
-        ] as const).map(([k, l]) => (
-          <button key={k} onClick={() => setEstadoFilter(k)} style={{
-            padding: '6px 14px', borderRadius: 999, fontSize: 12, fontWeight: 500,
-            border: 'none', cursor: 'pointer',
-            background: estadoFilter === k ? 'rgba(18,64,204,0.35)' : 'rgba(6,14,50,0.5)',
-            color: estadoFilter === k ? '#FFFFFF' : 'rgba(178,198,245,0.6)',
-            boxShadow: estadoFilter === k ? '0 0 0 1px rgba(70,120,255,0.5) inset' : 'none',
-            transition: 'all 180ms',
-          }}>{l} <span style={{ opacity: 0.6 }}>({counts[k]})</span></button>
-        ))}
-      </div>
 
       {/* Confirmacion cambio de estado */}
       {pendingEstado && (
