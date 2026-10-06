@@ -3,9 +3,18 @@ import { apiGet, apiPost } from '@/lib/orionApi';
 
 export const runtime = 'nodejs';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const res  = await apiGet('/flotas-historicas');
+    const { searchParams } = new URL(req.url);
+    const cif    = searchParams.get('cif')    ?? '';
+    const q      = searchParams.get('q')      ?? '';
+    const estado = searchParams.get('estado') ?? '';
+    const qs = new URLSearchParams();
+    if (cif)    qs.set('cif',    cif);
+    if (q)      qs.set('q',      q);
+    if (estado) qs.set('estado', estado);
+    const suffix = qs.toString() ? `?${qs}` : '';
+    const res  = await apiGet(`/flotas-historicas${suffix}`);
     const data = await res.json();
     if (!res.ok) return NextResponse.json(data, { status: res.status });
     return NextResponse.json(data);

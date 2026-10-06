@@ -4,6 +4,49 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { listarCorredores, guardarCarpeta, normalizeTipoVehiculo, type FlotaCarpeta, type Corredor, type TarifaEntry, TIPO_VEHICULO_OPTS, COBERTURA_OPTS } from '@/core/flotas';
 import type { FlotaHeader } from './types';
 
+// ─── Hook historial previo ─────────────────────────────────────────────────────
+
+interface HistorialItem {
+  id: string; nombre: string; estado: string;
+  tomador: string; cif: string; corredor_nombre: string; notas: string;
+}
+
+const ESTADO_COLOR: Record<string, { bg: string; color: string; border: string }> = {
+  CONTRATADA:    { bg: 'rgba(16,185,129,0.15)',  color: '#10b981', border: 'rgba(16,185,129,0.35)' },
+  RECHAZADA:     { bg: 'rgba(239,68,68,0.12)',   color: '#ef4444', border: 'rgba(239,68,68,0.3)'   },
+  'EN ESTUDIO':  { bg: 'rgba(245,158,11,0.12)',  color: '#f59e0b', border: 'rgba(245,158,11,0.3)'  },
+  COTIZADA:      { bg: 'rgba(139,92,246,0.12)',  color: '#8b5cf6', border: 'rgba(139,92,246,0.3)'  },
+};
+
+function useHistorial(cif: string, tomador: string) {
+  const [results, setResults] = useState<HistorialItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const cifClean    = cif.trim().toUpperCase();
+    const tomadorClean = tomador.trim();
+    if (!cifClean && tomadorClean.length < 3) { setResults([]); return; }
+
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const params = cifClean
+          ? `cif=${encodeURIComponent(cifClean)}`
+          : `q=${encodeURIComponent(tomadorClean)}`;
+        const res = await fetch(`/api/flotas/historicas?${params}`);
+        if (res.ok) setResults(await res.json());
+      } catch { /* silent */ }
+      finally { setLoading(false); }
+    }, 600);
+
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+  }, [cif, tomador]);
+
+  return { results, loading };
+}
+
 // ─── Badge próxima renovación ─────────────────────────────────────────────────
 
 function parseFechaHoja(s?: string): Date | null {
@@ -302,6 +345,7 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
   };
 
   const venceProximo = proximaRenovacion(header.fechaVencimiento);
+  const { results: historial, loading: histLoading } = useHistorial(header.cif ?? '', header.tomador ?? '');
 
   return (
     <div style={{ flex: 1, overflowY: 'auto', padding: '24px 32px' }} className="custom-scrollbar">
@@ -373,6 +417,43 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
             </div>
           </div>
         </section>
+
+        {/* ── Historial previo ── */}
+        {(histLoading || historial.length > 0) && (
+          <section>
+            <p style={{ fontSize: 10, fontWeight: 900, color: 'rgba(245,158,11,0.7)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>
+              {histLoading ? 'Buscando en historial…' : `Historial previo · ${historial.length} resultado${historial.length !== 1 ? 's' : ''}`}
+            </p>
+            {!histLoading && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {historial.map(h => {
+                  const cfg = ESTADO_COLOR[h.estado] ?? ESTADO_COLOR['EN ESTUDIO'];
+                  return (
+                    <div key={h.id} style={{
+                      display: 'flex', alignItems: 'center', gap: 12,
+                      padding: '10px 14px', borderRadius: 10,
+                      background: 'rgba(6,14,50,0.5)', border: `1px solid ${cfg.border}`,
+                    }}>
+                      <span style={{ fontSize: 9, fontWeight: 900, padding: '2px 8px', borderRadius: 5, background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}`, textTransform: 'uppercase', letterSpacing: '0.07em', flexShrink: 0 }}>
+                        {h.estado}
+                      </span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: '#FFFFFF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{h.nombre}</div>
+                        <div style={{ fontSize: 11, color: 'rgba(178,198,245,0.5)', marginTop: 1, display: 'flex', gap: 8 }}>
+                          {h.cif && <span style={{ fontFamily: 'monospace' }}>{h.cif}</span>}
+                          {h.corredor_nombre && <span>Corredor: {h.corredor_nombre}</span>}
+                        </div>
+                      </div>
+                      <a href="/emission" target="_blank" style={{ fontSize: 10, fontWeight: 700, padding: '5px 10px', borderRadius: 7, background: 'rgba(51,102,255,0.1)', color: '#3366FF', border: '1px solid rgba(51,102,255,0.25)', textDecoration: 'none', flexShrink: 0 }}>
+                        Ver ficha
+                      </a>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        )}
 
         {/* ── Corredor ── */}
         <section>
