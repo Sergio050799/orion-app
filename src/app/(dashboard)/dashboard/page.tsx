@@ -334,11 +334,16 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const [carpetas, setCarpetas] = useState<FlotaCarpeta[]>(() => listarCarpetas());
   const [corredores, setCorredores] = useState<Corredor[]>(() => listarCorredores());
+  const [historicas, setHistoricas] = useState<{ estado: string }[]>([]);
 
   useEffect(() => {
     const ac = new AbortController();
     cargarCarpetasDelServidor(ac.signal).then(setCarpetas).catch(() => {});
     cargarCorredoresDelServidor(ac.signal).then(setCorredores).catch(() => {});
+    fetch('/api/flotas/historicas', { signal: ac.signal })
+      .then(r => r.ok ? r.json() : [])
+      .then(d => setHistoricas(Array.isArray(d) ? d : []))
+      .catch(() => {});
     return () => ac.abort();
   }, []);
 
@@ -480,6 +485,44 @@ export default function DashboardPage() {
         <KpiCard title="Corredores" value={String(totalCorredores)} />
         <KpiCard title="Tasa contratación" value={tasaContratacion !== null ? `${tasaContratacion}%` : '—'} color={tasaColor} />
       </div>
+
+      {/* Portfolio de flotas */}
+      {(() => {
+        const contratadas  = carpetas.filter(c => c.estado === 'CONTRATADA').length
+          + historicas.filter(h => h.estado === 'CONTRATADA').length;
+        const enEstudio    = carpetas.filter(c => c.estado === 'EN ESTUDIO').length
+          + historicas.filter(h => h.estado === 'EN ESTUDIO').length;
+        const ofertadas    = carpetas.filter(c => c.estado === 'OFERTADA').length
+          + historicas.filter(h => h.estado === 'COTIZADA' || h.estado === 'OFERTADA').length;
+        const rechazadas   = carpetas.filter(c => c.estado === 'RECHAZADA').length
+          + historicas.filter(h => h.estado === 'RECHAZADA').length;
+        const total = contratadas + enEstudio + ofertadas + rechazadas;
+        const CHIPS: { label: string; count: number; color: string; bg: string; border: string }[] = [
+          { label: 'Contratadas',  count: contratadas, color: '#10b981', bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.3)' },
+          { label: 'En estudio',   count: enEstudio,   color: '#f59e0b', bg: 'rgba(245,158,11,0.10)', border: 'rgba(245,158,11,0.3)' },
+          { label: 'Ofertadas',    count: ofertadas,   color: '#8b5cf6', bg: 'rgba(139,92,246,0.10)', border: 'rgba(139,92,246,0.3)' },
+          { label: 'Rechazadas',   count: rechazadas,  color: '#ef4444', bg: 'rgba(239,68,68,0.10)',  border: 'rgba(239,68,68,0.3)'  },
+        ];
+        return (
+          <div style={{ ...glass, padding: '20px 26px', position: 'relative', overflow: 'hidden' }}>
+            <div className="grain-subtle" />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <h3 style={{ fontFamily: 'var(--font-display), Inter, sans-serif', fontWeight: 600, fontSize: 15, margin: 0, color: '#FFFFFF' }}>
+                Portfolio de flotas
+              </h3>
+              <span style={{ fontSize: 11, color: 'rgba(178,206,255,0.5)', letterSpacing: '0.06em' }}>{total} flotas en total</span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+              {CHIPS.map(({ label, count, color, bg, border }) => (
+                <div key={label} style={{ padding: '14px 18px', borderRadius: 14, background: bg, border: `1px solid ${border}` }}>
+                  <div style={{ fontSize: 26, fontWeight: 900, color, fontFamily: 'var(--font-display), Inter, sans-serif', letterSpacing: '-0.01em' }}>{count}</div>
+                  <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.09em', color, opacity: 0.8, marginTop: 6 }}>{label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Charts */}
       <DashboardCharts

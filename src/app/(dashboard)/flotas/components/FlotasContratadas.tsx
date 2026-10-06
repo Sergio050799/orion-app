@@ -40,7 +40,7 @@ export default function FlotasContratadas({ onSelect }: Props) {
   const [carpetas, setCarpetas]     = useState<FlotaCarpeta[]>([]);
   const [corredores, setCorredores] = useState<Corredor[]>([]);
   const [query, setQuery]           = useState('');
-  const [estadoFilter, setEstadoFilter] = useState('CONTRATADA');
+  const [estadoFilter, setEstadoFilter] = useState('EN ESTUDIO');
   const [uploading, setUploading]   = useState(false);
   const [uploadResult, setUploadResult] = useState<{ created: number; updated: number; errors: string[] } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -68,11 +68,11 @@ export default function FlotasContratadas({ onSelect }: Props) {
   }, [corredores]);
 
   const counts = useMemo(() => ({
-    TODAS:       carpetas.length,
-    CONTRATADA:  carpetas.filter(c => c.estado === 'CONTRATADA').length,
+    TODAS:        carpetas.length,
     'EN ESTUDIO': carpetas.filter(c => c.estado === 'EN ESTUDIO').length,
-    OFERTADA:    carpetas.filter(c => c.estado === 'OFERTADA').length,
-    RECHAZADA:   carpetas.filter(c => c.estado === 'RECHAZADA').length,
+    CONTRATADA:   carpetas.filter(c => c.estado === 'CONTRATADA').length,
+    OFERTADA:     carpetas.filter(c => c.estado === 'OFERTADA').length,
+    RECHAZADA:    carpetas.filter(c => c.estado === 'RECHAZADA').length,
   }), [carpetas]);
 
   const filtered = useMemo(() => {
@@ -171,7 +171,7 @@ export default function FlotasContratadas({ onSelect }: Props) {
           <div>
             <h1 style={{ margin: 0, fontSize: 22, color: '#FFFFFF', fontFamily: 'var(--font-display), Inter, sans-serif', fontWeight: 700, letterSpacing: '-0.01em' }}>Flotas</h1>
             <p style={{ margin: '4px 0 0', fontSize: 12, color: 'rgba(178,198,245,0.6)' }}>
-              {counts.CONTRATADA} contratada{counts.CONTRATADA !== 1 ? 's' : ''} · {counts['EN ESTUDIO']} en estudio
+              {counts['EN ESTUDIO']} en estudio · {carpetas.length} total
             </p>
           </div>
         </div>
@@ -240,11 +240,8 @@ export default function FlotasContratadas({ onSelect }: Props) {
       {/* Estado pills */}
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         {([
-          ['CONTRATADA', 'Contratadas'],
-          ['TODAS', 'Todas'],
           ['EN ESTUDIO', 'En estudio'],
-          ['OFERTADA', 'Ofertadas'],
-          ['RECHAZADA', 'Rechazadas'],
+          ['TODAS', 'Todas'],
         ] as const).map(([k, l]) => (
           <button key={k} onClick={() => setEstadoFilter(k)} style={{
             padding: '6px 14px', borderRadius: 999, fontSize: 12, fontWeight: 500,

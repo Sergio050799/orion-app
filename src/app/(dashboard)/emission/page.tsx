@@ -8,7 +8,7 @@ import type { FlotaCarpeta } from '@/core/flotas';
 
 interface Cobertura { nombre: string; prima: number; }
 
-type EstadoFlota = 'CONTRATADA' | 'RECHAZADA' | 'EN ESTUDIO' | 'COTIZADA';
+type EstadoFlota = 'CONTRATADA' | 'RECHAZADA' | 'EN ESTUDIO' | 'OFERTADA';
 
 interface FlotaHistorica {
   id: string; nombre: string; estado: EstadoFlota;
@@ -29,6 +29,7 @@ interface FlotaView {
   estado: EstadoFlota;
   tomador: string; cif: string; actividad: string;
   corredor_nombre: string; comision: number;
+  formaPago: string;
   coberturas: Cobertura[];
   prima_total: number;
   prima_mmt?: number;
@@ -41,7 +42,7 @@ interface FlotaView {
 }
 
 const EMPTY_FORM: Omit<FlotaHistorica, 'id' | 'created_at' | 'created_by'> = {
-  nombre: '', estado: 'EN ESTUDIO', tomador: '', cif: '', actividad: '',
+  nombre: '', estado: 'CONTRATADA', tomador: '', cif: '', actividad: '',
   corredor_nombre: '', comision: 0, coberturas: [], prima_total: 0,
   fecha_inicio: '', fecha_vencimiento: '', periodicidad: 'anual',
   num_poliza: '', compania: '', total_vehiculos: 0, categoria_flota: '', notas: '',
@@ -60,18 +61,20 @@ function extractCoberturas(oferta: Record<string, string>[]): Cobertura[] {
 }
 
 function normalizarCarpeta(c: FlotaCarpeta, corredoresMap: Map<string, Corredor>): FlotaView | null {
-  if (c.estado !== 'CONTRATADA' && c.estado !== 'RECHAZADA') return null;
+  if (c.estado === 'EN ESTUDIO') return null;
   const cor     = c.corredor_id ? corredoresMap.get(c.corredor_id) : undefined;
   const oferta  = c.oferta ?? [];
   const primaMmt = oferta.reduce((s, r) => s + (parseFloat(r['oferta_prima_mmt'] ?? '') || 0), 0);
   const primaFinal = c.descuentoOferta && primaMmt > 0
     ? primaMmt * (1 - c.descuentoOferta / 100) : primaMmt;
   return {
-    id: c.id, origen: 'orion', nombre: c.nombre, estado: c.estado,
+    id: c.id, origen: 'orion', nombre: c.nombre,
+    estado: c.estado as EstadoFlota,
     tomador: c.header?.tomador ?? '', cif: c.header?.cif ?? '',
     actividad: c.header?.actividad ?? '',
     corredor_nombre: cor?.nombre ?? '',
     comision: c.porcentajeComision ?? cor?.comision ?? 0,
+    formaPago: c.header?.formaPago ?? '',
     coberturas: extractCoberturas(oferta),
     prima_total: primaFinal,
     prima_mmt: primaMmt > 0 ? primaMmt : undefined,
@@ -89,16 +92,18 @@ function normalizarCarpeta(c: FlotaCarpeta, corredoresMap: Map<string, Corredor>
 }
 
 function normalizarHistorica(h: FlotaHistorica): FlotaView {
-  const prima = h.prima_total || h.coberturas.reduce((s, c) => s + (Number(c.prima) || 0), 0);
+  const prima = h.prima_total || (h.coberturas ?? []).reduce((s, c) => s + (Number(c.prima) || 0), 0);
+  const estado: EstadoFlota = (h.estado as string) === 'COTIZADA' ? 'OFERTADA' : (h.estado as EstadoFlota);
   return {
-    id: h.id, origen: 'historica', nombre: h.nombre, estado: h.estado,
-    tomador: h.tomador, cif: h.cif, actividad: h.actividad,
-    corredor_nombre: h.corredor_nombre, comision: h.comision,
-    coberturas: h.coberturas, prima_total: prima,
-    fecha_inicio: h.fecha_inicio, fecha_vencimiento: h.fecha_vencimiento,
-    periodicidad: h.periodicidad, num_poliza: h.num_poliza, compania: h.compania,
-    total_vehiculos: h.total_vehiculos, categoria_flota: h.categoria_flota,
-    notas: h.notas, raw_historica: h,
+    id: h.id, origen: 'historica', nombre: h.nombre, estado,
+    tomador: h.tomador ?? '', cif: h.cif ?? '', actividad: h.actividad ?? '',
+    corredor_nombre: h.corredor_nombre ?? '', comision: h.comision ?? 0,
+    formaPago: '',
+    coberturas: h.coberturas ?? [], prima_total: prima,
+    fecha_inicio: h.fecha_inicio ?? '', fecha_vencimiento: h.fecha_vencimiento ?? '',
+    periodicidad: h.periodicidad ?? '', num_poliza: h.num_poliza ?? '', compania: h.compania ?? '',
+    total_vehiculos: h.total_vehiculos ?? 0, categoria_flota: h.categoria_flota ?? '',
+    notas: h.notas ?? '', raw_historica: h,
   };
 }
 
@@ -118,11 +123,41 @@ const labelStyle: React.CSSProperties = {
   textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 5, display: 'block',
 };
 const ESTADO_CFG: Record<EstadoFlota, { bg: string; border: string; color: string }> = {
-  CONTRATADA: { bg: 'rgba(16,185,129,0.15)',  border: 'rgba(16,185,129,0.35)',  color: '#10b981' },
-  RECHAZADA:  { bg: 'rgba(239,68,68,0.12)',   border: 'rgba(239,68,68,0.3)',    color: '#ef4444' },
-  'EN ESTUDIO':{ bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.3)',   color: '#f59e0b' },
-  COTIZADA:   { bg: 'rgba(139,92,246,0.12)',  border: 'rgba(139,92,246,0.3)',   color: '#8b5cf6' },
+  CONTRATADA:   { bg: 'rgba(16,185,129,0.15)',  border: 'rgba(16,185,129,0.35)',  color: '#10b981' },
+  RECHAZADA:    { bg: 'rgba(239,68,68,0.12)',   border: 'rgba(239,68,68,0.3)',    color: '#ef4444' },
+  'EN ESTUDIO': { bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.3)',   color: '#f59e0b' },
+  OFERTADA:     { bg: 'rgba(139,92,246,0.12)',  border: 'rgba(139,92,246,0.3)',   color: '#8b5cf6' },
 };
+
+function parseFechaVcto(s?: string): number | null {
+  if (!s) return null;
+  let d: Date;
+  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(s)) {
+    const [day, m, y] = s.split('/').map(Number);
+    d = new Date(y, m - 1, day);
+  } else {
+    d = new Date(s.includes('T') ? s : s + 'T12:00:00');
+  }
+  if (isNaN(d.getTime())) return null;
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  return Math.ceil((d.getTime() - today.getTime()) / 86400000);
+}
+
+function fmtVcto(s?: string): string {
+  if (!s) return '—';
+  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(s)) return s;
+  const d = new Date(s.includes('T') ? s : s + 'T12:00:00');
+  if (isNaN(d.getTime())) return s;
+  return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+function vctoColor(dias: number | null): string {
+  if (dias === null) return 'rgba(178,198,245,0.55)';
+  if (dias < 0)  return '#f87171';
+  if (dias < 30) return '#fb923c';
+  if (dias < 90) return '#fbbf24';
+  return '#34d399';
+}
 const fmtE = (n: number) =>
   n.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
 const fmtD = (d: string) => d ? new Date(d + (d.includes('T') ? '' : 'T12:00:00')).toLocaleDateString('es-ES') : '—';
@@ -163,7 +198,10 @@ function usePortfolio() {
     const fromCarpetas = carpetas
       .map(c => normalizarCarpeta(c, corredoresMap))
       .filter((f): f is FlotaView => f !== null);
-    const fromHistoricas = historicas.map(normalizarHistorica);
+    const carpetaNombres = new Set(fromCarpetas.map(f => f.nombre.toUpperCase().trim()));
+    const fromHistoricas = historicas
+      .filter(h => h.estado !== 'EN ESTUDIO' && !carpetaNombres.has((h.nombre ?? '').toUpperCase().trim()))
+      .map(normalizarHistorica);
     return [...fromCarpetas, ...fromHistoricas].sort((a, b) => a.nombre.localeCompare(b.nombre));
   }, [carpetas, historicas, corredoresMap]);
 
@@ -228,9 +266,8 @@ function FlotaForm({ initial, onSave, onCancel, saving }: {
         <div>
           <label style={labelStyle}>Estado</label>
           <select style={{ ...inputStyle, width: 160, cursor: 'pointer' }} value={form.estado} onChange={e => set('estado', e.target.value as EstadoFlota)}>
-            <option value="EN ESTUDIO">En estudio</option>
-            <option value="COTIZADA">Cotizada</option>
             <option value="CONTRATADA">Contratada</option>
+            <option value="OFERTADA">Ofertada</option>
             <option value="RECHAZADA">Rechazada</option>
           </select>
         </div>
@@ -477,11 +514,10 @@ export default function FlotasPage() {
     : null;
 
   const filtered = searchResults ?? flotas.filter(f => f.estado === tab);
-  const counts: Record<EstadoFlota, number> = {
-    CONTRATADA:   flotas.filter(f => f.estado === 'CONTRATADA').length,
-    RECHAZADA:    flotas.filter(f => f.estado === 'RECHAZADA').length,
-    'EN ESTUDIO': flotas.filter(f => f.estado === 'EN ESTUDIO').length,
-    COTIZADA:     flotas.filter(f => f.estado === 'COTIZADA').length,
+  const counts = {
+    CONTRATADA: flotas.filter(f => f.estado === 'CONTRATADA').length,
+    OFERTADA:   flotas.filter(f => f.estado === 'OFERTADA').length,
+    RECHAZADA:  flotas.filter(f => f.estado === 'RECHAZADA').length,
   };
 
   const handleCreate = async (data: typeof EMPTY_FORM) => {
@@ -545,10 +581,10 @@ export default function FlotasPage() {
 
           {/* Tabs */}
           <div style={{ display: 'flex', gap: 4, marginTop: 12, borderTop: '1px solid rgba(61,112,255,0.12)', paddingTop: 14, flexWrap: 'wrap' }}>
-            {(['CONTRATADA', 'EN ESTUDIO', 'COTIZADA', 'RECHAZADA'] as EstadoFlota[]).map(t => {
+            {(['CONTRATADA', 'OFERTADA', 'RECHAZADA'] as const).map(t => {
               const active = tab === t;
               const cfg    = ESTADO_CFG[t];
-              const label  = t === 'EN ESTUDIO' ? 'En estudio' : t.charAt(0) + t.slice(1).toLowerCase();
+              const label  = t.charAt(0) + t.slice(1).toLowerCase();
               return (
                 <button key={t} onClick={() => setTab(t)} style={{ fontSize: 12, fontWeight: 700, padding: '8px 18px', borderRadius: 10, cursor: 'pointer', border: 'none', background: active ? cfg.bg : 'transparent', color: active ? cfg.color : 'rgba(178,198,245,0.55)', boxShadow: active ? `0 0 0 1px ${cfg.border} inset` : 'none', transition: 'all 180ms', display: 'flex', alignItems: 'center', gap: 6 }}>
                   {label}
@@ -577,59 +613,83 @@ export default function FlotasPage() {
           </div>
         )}
 
-        {/* Lista */}
+        {/* Tabla */}
         {loading ? (
           <div style={{ ...glass, padding: '60px 40px', textAlign: 'center' }}>
             <p style={{ color: 'rgba(178,198,245,0.5)', fontSize: 13, margin: 0 }}>Cargando portfolio...</p>
           </div>
-        ) : filtered.length === 0 ? (
-          <div style={{ ...glass, padding: '60px 40px', textAlign: 'center' }}>
-            <p style={{ fontSize: 14, fontWeight: 700, color: '#BDD4FF', margin: '0 0 8px 0' }}>
-              {searchResults ? `Sin resultados para "${search}"` : 'No hay flotas en este estado'}
-            </p>
-            {!searchResults && (
-              <p style={{ fontSize: 12, color: 'rgba(178,198,245,0.45)', margin: 0 }}>
-                Las flotas Orion aparecen aquí al cambiar su estado en <strong style={{ color: '#818cf8' }}>Estudio</strong>.
-                Las históricas se crean con el botón de arriba.
-              </p>
-            )}
-          </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {filtered.map(f => {
-              const cfg  = ESTADO_CFG[f.estado] ?? ESTADO_CFG.CONTRATADA;
-              const esOrion = f.origen === 'orion';
+          <div style={{ background: 'rgba(12,28,82,0.42)', border: '1px solid rgba(61,112,255,0.16)', borderRadius: 16, overflowX: 'auto' }}>
+            <div style={{ minWidth: 920 }}>
+              {/* Cabecera */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1.8fr 1fr 120px 90px 100px 110px 70px 110px', padding: '10px 18px', borderBottom: '1px solid rgba(51,102,255,0.15)', background: 'rgba(6,14,50,0.4)' }}>
+                {['Nombre / CIF', 'Corredor', 'Forma Pago', 'Periodicidad', 'F. Inicio', 'F. Vencimiento', 'Comis.', 'Estado'].map(h => (
+                  <span key={h} style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.10em', color: 'rgba(80,130,255,0.75)' }}>{h}</span>
+                ))}
+              </div>
 
-              return (
-                <button key={f.id} onClick={() => setFicha(f)} style={{ ...glass, padding: '16px 22px', cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'border-color 0.15s' }}
-                  onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(70,120,255,0.5)')}
-                  onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.22)')}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4, flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: 14, fontWeight: 800, color: '#FFFFFF' }}>{f.nombre}</span>
-                        <span style={{ fontSize: 8, fontWeight: 800, padding: '2px 7px', borderRadius: 5, background: cfg.bg, border: `1px solid ${cfg.border}`, color: cfg.color, textTransform: 'uppercase', letterSpacing: '0.07em', flexShrink: 0 }}>{f.estado}</span>
-                        <span style={{ fontSize: 8, fontWeight: 800, padding: '2px 7px', borderRadius: 5, background: esOrion ? 'rgba(99,102,241,0.12)' : 'rgba(51,102,255,0.1)', border: esOrion ? '1px solid rgba(99,102,241,0.3)' : '1px solid rgba(51,102,255,0.2)', color: esOrion ? '#818cf8' : '#3366FF', textTransform: 'uppercase', letterSpacing: '0.07em', flexShrink: 0 }}>
-                          {esOrion ? 'Orion' : 'Histórica'}
+              {filtered.length === 0 ? (
+                <p style={{ color: 'rgba(178,198,245,0.4)', fontSize: 12, textAlign: 'center', padding: '48px 0', margin: 0 }}>
+                  {searchResults ? `Sin resultados para "${search}"` : 'No hay flotas en este estado.'}
+                </p>
+              ) : filtered.map(f => {
+                const cfg  = ESTADO_CFG[f.estado] ?? ESTADO_CFG.CONTRATADA;
+                const dias = parseFechaVcto(f.fecha_vencimiento);
+                const col  = vctoColor(dias);
+                return (
+                  <div key={f.id} onClick={() => setFicha(f)} style={{ display: 'grid', gridTemplateColumns: '1.8fr 1fr 120px 90px 100px 110px 70px 110px', alignItems: 'center', padding: '11px 18px', borderBottom: '1px solid rgba(61,112,255,0.07)', cursor: 'pointer', transition: 'background 180ms' }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'rgba(51,102,255,0.04)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = '')}>
+
+                    {/* Nombre / CIF */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <span style={{ fontSize: 13, color: '#FFFFFF', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.nombre || '(sin nombre)'}</span>
+                      {(f.cif || f.tomador) && (
+                        <span style={{ fontSize: 10, color: 'rgba(178,198,245,0.5)' }}>
+                          {f.cif && <span style={{ fontFamily: 'monospace', letterSpacing: '0.04em' }}>{f.cif}</span>}
+                          {f.cif && f.tomador && <span style={{ margin: '0 4px', opacity: 0.4 }}>·</span>}
+                          {f.tomador && <span>{f.tomador}</span>}
                         </span>
-                      </div>
-                      <div style={{ fontSize: 12, color: 'rgba(178,198,245,0.55)', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                        {f.tomador && <span>{f.tomador}{f.cif && <> · <span style={{ fontFamily: 'monospace', color: '#8BA3D9' }}>{f.cif}</span></>}</span>}
-                        {f.corredor_nombre && <span>Corredor: <span style={{ color: '#BDD4FF' }}>{f.corredor_nombre}</span></span>}
-                        {f.compania && <span>{f.compania}</span>}
-                        {f.fecha_vencimiento && <span>Vcto: <span style={{ color: '#BDD4FF' }}>{fmtD(f.fecha_vencimiento)}</span></span>}
-                      </div>
+                      )}
                     </div>
-                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                      {f.prima_total > 0 && <div style={{ fontSize: 16, fontWeight: 900, color: '#10b981', fontFamily: 'monospace' }}>{fmtE(f.prima_total)}</div>}
-                      {f.prima_cliente && f.prima_cliente > 0 && <div style={{ fontSize: 10, color: 'rgba(245,158,11,0.7)', fontFamily: 'monospace', marginTop: 1 }}>Cliente: {fmtE(f.prima_cliente)}</div>}
-                      {f.coberturas.length > 0 && <div style={{ fontSize: 10, color: 'rgba(178,198,245,0.4)', marginTop: 1 }}>{f.coberturas.length} cob.</div>}
-                      {f.total_vehiculos > 0 && <div style={{ fontSize: 10, color: 'rgba(178,198,245,0.4)', marginTop: 1 }}>{esOrion ? '' : '≈'}{f.total_vehiculos.toLocaleString('es-ES')} veh.</div>}
+
+                    {/* Corredor */}
+                    <span style={{ fontSize: 12, color: '#BDD4FF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {f.corredor_nombre || <span style={{ color: 'rgba(178,198,245,0.3)' }}>—</span>}
+                    </span>
+
+                    {/* Forma pago */}
+                    <span style={{ fontSize: 12, color: 'rgba(178,198,245,0.7)' }}>{f.formaPago || '—'}</span>
+
+                    {/* Periodicidad */}
+                    <span style={{ fontSize: 12, color: 'rgba(178,198,245,0.7)', textTransform: 'capitalize' }}>{f.periodicidad || '—'}</span>
+
+                    {/* F. Inicio */}
+                    <span style={{ fontSize: 12, color: 'rgba(178,198,245,0.6)' }}>{fmtVcto(f.fecha_inicio) !== '—' ? fmtVcto(f.fecha_inicio) : (f.fecha_inicio || '—')}</span>
+
+                    {/* F. Vencimiento */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <span style={{ fontSize: 12, color: col, fontWeight: dias !== null && dias < 90 ? 700 : 400 }}>{fmtVcto(f.fecha_vencimiento)}</span>
+                      {dias !== null && (
+                        <span style={{ fontSize: 9, fontWeight: 700, color: col }}>
+                          {dias < 0 ? `Vencida ${Math.abs(dias)}d` : `${dias}d`}
+                        </span>
+                      )}
                     </div>
+
+                    {/* Comisión */}
+                    <span style={{ fontSize: 12, color: 'rgba(178,198,245,0.7)' }}>
+                      {f.comision ? `${f.comision}%` : '—'}
+                    </span>
+
+                    {/* Estado */}
+                    <span style={{ fontSize: 9, fontWeight: 800, padding: '3px 8px', borderRadius: 6, background: cfg.bg, border: `1px solid ${cfg.border}`, color: cfg.color, textTransform: 'uppercase', letterSpacing: '0.07em', whiteSpace: 'nowrap' }}>
+                      {f.estado}
+                    </span>
                   </div>
-                </button>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         )}
       </div>
