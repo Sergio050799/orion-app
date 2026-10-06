@@ -96,6 +96,7 @@ function buildPdfHtml(data: {
   corredorLabel?: string;
   cobAnexo: { titulo: string; tipologias?: string[]; garantias: string[] }[];
   sincoPorTipo?: { tipologia: string; resumen: ResumenSinco }[];
+  fechaVctoDisplay?: string | null;
 }): string {
   const { header, pivot, totalVehiculos, ambitoLabel, numTomadores, adrActivo, sinco, danosPropiosPdf, primasSol, mmtRows, corredorLabel, cobAnexo, sincoPorTipo } = data;
   const totalSol = primasSol.reduce((a, r) => a + r.total, 0);
@@ -319,7 +320,7 @@ function buildPdfHtml(data: {
 <div class="client-card">
   ${header?.tomador  ? `<div><span class="cf-label">Nombre de la flota</span><span class="cf-val">${header.tomador}</span></div>` : ''}
   ${header?.cif      ? `<div><span class="cf-label">CIF / NIF</span><span class="cf-val">${header.cif}</span></div>` : ''}
-  ${header?.fechaVencimiento ? `<div><span class="cf-label">Vencimiento</span><span class="cf-val">${fmtDateField(header.fechaVencimiento)}</span></div>` : ''}
+  ${data.fechaVctoDisplay ? `<div><span class="cf-label">Vencimiento</span><span class="cf-val">${data.fechaVctoDisplay}</span></div>` : ''}
   ${ambitoLabel      ? `<div><span class="cf-label">Ámbito</span><span class="cf-val"><span class="ambito-badge">${ambitoLabel}</span></span></div>` : ''}
   ${numTomadores > 1 ? `<div><span class="cf-label">Composición</span><span class="cf-val">Flota compuesta por ${numTomadores} tomadores</span></div>` : ''}
 </div>
@@ -441,6 +442,14 @@ export default function HojaInforme({
   }, [trabajoRows, coberturas]);
 
   const totalVehiculos = trabajoRows.filter(r => r['matricula']?.trim()).length;
+
+  // ── Fecha vencimiento — header o fallback a primera fila con valor ───────────
+  const fechaVctoDisplay = useMemo(() => {
+    const raw = header?.fechaVencimiento?.trim()
+      || trabajoRows.find(r => r['matricula']?.trim() && r['fecha_vencimiento']?.trim())?.[  'fecha_vencimiento']?.trim()
+      || null;
+    return raw ? fmtDateField(raw) : null;
+  }, [header, trabajoRows]);
 
   // ── Ámbito ──────────────────────────────────────────────────────────────────
   const ambito = useMemo(() => {
@@ -731,13 +740,14 @@ export default function HojaInforme({
       corredorLabel,
       cobAnexo,
       sincoPorTipo,
+      fechaVctoDisplay,
     });
 
     const w = window.open('', '_blank', 'width=860,height=700');
     if (!w) return;
     w.document.write(html);
     w.document.close();
-  }, [header, pivot, totalVehiculos, ambito, adrActivo, primasSol, mmtRows, resumenAuto, resumenManual, sincoGlobal, danosPropios, cobAnexo, sincoPorTipo]);
+  }, [header, pivot, totalVehiculos, ambito, adrActivo, primasSol, mmtRows, resumenAuto, resumenManual, sincoGlobal, danosPropios, cobAnexo, sincoPorTipo, fechaVctoDisplay]);
 
   // ── Render ────────────────────────────────────────────────────────────────────
   return (
@@ -830,10 +840,10 @@ export default function HojaInforme({
                 }}>{ambito.label ?? 'Nacional'}</span>
               </div>
             )}
-            {header?.fechaVencimiento && (
+            {fechaVctoDisplay && (
               <div style={{ borderRadius: 10, border: '1px solid #e5e7eb', background: '#ffffff', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px' }}>
                 <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: '#6b7280', letterSpacing: '0.1em' }}>Vencimiento</span>
-                <span style={{ fontSize: 12, fontWeight: 800, color: '#111827' }}>{header.fechaVencimiento}</span>
+                <span style={{ fontSize: 12, fontWeight: 800, color: '#111827' }}>{fechaVctoDisplay}</span>
               </div>
             )}
             {hasSincoData && (() => {
