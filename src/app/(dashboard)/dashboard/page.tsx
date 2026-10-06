@@ -308,9 +308,8 @@ export default function DashboardPage() {
   }, 0);
   const totalCorredores = corredores.length;
   const contratadas = carpetas.filter(c => c.estado === 'CONTRATADA').length;
-  const rechazadas = carpetas.filter(c => c.estado === 'RECHAZADA').length;
-  const tasaContratacion = (contratadas + rechazadas) > 0
-    ? Math.round((contratadas / (contratadas + rechazadas)) * 100) : null;
+  const tasaContratacion = carpetas.length > 0
+    ? Math.round((contratadas / carpetas.length) * 100) : null;
   const tasaColor = tasaContratacion === null ? '#fff' : tasaContratacion >= 50 ? '#34d399' : '#f87171';
 
   const flotasPorEstado = useMemo(() => {

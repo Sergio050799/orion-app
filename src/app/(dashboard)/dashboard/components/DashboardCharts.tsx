@@ -44,7 +44,7 @@ export default function DashboardCharts({ flotasPorEstado, vehiculosPorTipo, has
   const total = flotasPorEstado.reduce((s, d) => s + d.value, 0);
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: 16 }}>
       {/* Flotas por estado */}
       <div style={glass}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 22 }}>
