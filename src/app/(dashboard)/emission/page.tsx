@@ -8,8 +8,10 @@ import type { FlotaCarpeta } from '@/core/flotas';
 
 interface Cobertura { nombre: string; prima: number; }
 
+type EstadoFlota = 'CONTRATADA' | 'RECHAZADA' | 'EN ESTUDIO' | 'COTIZADA';
+
 interface FlotaHistorica {
-  id: string; nombre: string; estado: 'CONTRATADA' | 'RECHAZADA';
+  id: string; nombre: string; estado: EstadoFlota;
   tomador: string; cif: string; actividad: string;
   corredor_nombre: string; comision: number; coberturas: Cobertura[];
   prima_total: number; fecha_inicio: string; fecha_vencimiento: string;
@@ -24,7 +26,7 @@ interface FlotaView {
   id: string;
   origen: 'orion' | 'historica';
   nombre: string;
-  estado: 'CONTRATADA' | 'RECHAZADA';
+  estado: EstadoFlota;
   tomador: string; cif: string; actividad: string;
   corredor_nombre: string; comision: number;
   coberturas: Cobertura[];
@@ -39,7 +41,7 @@ interface FlotaView {
 }
 
 const EMPTY_FORM: Omit<FlotaHistorica, 'id' | 'created_at' | 'created_by'> = {
-  nombre: '', estado: 'CONTRATADA', tomador: '', cif: '', actividad: '',
+  nombre: '', estado: 'EN ESTUDIO', tomador: '', cif: '', actividad: '',
   corredor_nombre: '', comision: 0, coberturas: [], prima_total: 0,
   fecha_inicio: '', fecha_vencimiento: '', periodicidad: 'anual',
   num_poliza: '', compania: '', total_vehiculos: 0, categoria_flota: '', notas: '',
@@ -115,9 +117,11 @@ const labelStyle: React.CSSProperties = {
   fontSize: 11, fontWeight: 700, color: 'rgba(178,198,245,0.6)',
   textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 5, display: 'block',
 };
-const ESTADO_CFG = {
-  CONTRATADA: { bg: 'rgba(16,185,129,0.15)', border: 'rgba(16,185,129,0.35)', color: '#10b981' },
-  RECHAZADA:  { bg: 'rgba(239,68,68,0.12)',  border: 'rgba(239,68,68,0.3)',   color: '#ef4444' },
+const ESTADO_CFG: Record<EstadoFlota, { bg: string; border: string; color: string }> = {
+  CONTRATADA: { bg: 'rgba(16,185,129,0.15)',  border: 'rgba(16,185,129,0.35)',  color: '#10b981' },
+  RECHAZADA:  { bg: 'rgba(239,68,68,0.12)',   border: 'rgba(239,68,68,0.3)',    color: '#ef4444' },
+  'EN ESTUDIO':{ bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.3)',   color: '#f59e0b' },
+  COTIZADA:   { bg: 'rgba(139,92,246,0.12)',  border: 'rgba(139,92,246,0.3)',   color: '#8b5cf6' },
 };
 const fmtE = (n: number) =>
   n.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
@@ -223,7 +227,9 @@ function FlotaForm({ initial, onSave, onCancel, saving }: {
         </div>
         <div>
           <label style={labelStyle}>Estado</label>
-          <select style={{ ...inputStyle, width: 160, cursor: 'pointer' }} value={form.estado} onChange={e => set('estado', e.target.value)}>
+          <select style={{ ...inputStyle, width: 160, cursor: 'pointer' }} value={form.estado} onChange={e => set('estado', e.target.value as EstadoFlota)}>
+            <option value="EN ESTUDIO">En estudio</option>
+            <option value="COTIZADA">Cotizada</option>
             <option value="CONTRATADA">Contratada</option>
             <option value="RECHAZADA">Rechazada</option>
           </select>
@@ -450,7 +456,7 @@ export default function FlotasPage() {
   const { user } = useAuth();
   const { flotas, loading, createHistorica, updateHistorica, removeHistorica } = usePortfolio();
 
-  const [tab,      setTab]      = useState<'CONTRATADA' | 'RECHAZADA'>('CONTRATADA');
+  const [tab,      setTab]      = useState<EstadoFlota>('CONTRATADA');
   const [modal,    setModal]    = useState<'create' | 'edit' | null>(null);
   const [selected, setSelected] = useState<FlotaView | null>(null);
   const [ficha,    setFicha]    = useState<FlotaView | null>(null);
@@ -460,7 +466,12 @@ export default function FlotasPage() {
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 2200); };
 
   const filtered = flotas.filter(f => f.estado === tab);
-  const counts   = { CONTRATADA: flotas.filter(f => f.estado === 'CONTRATADA').length, RECHAZADA: flotas.filter(f => f.estado === 'RECHAZADA').length };
+  const counts: Record<EstadoFlota, number> = {
+    CONTRATADA:   flotas.filter(f => f.estado === 'CONTRATADA').length,
+    RECHAZADA:    flotas.filter(f => f.estado === 'RECHAZADA').length,
+    'EN ESTUDIO': flotas.filter(f => f.estado === 'EN ESTUDIO').length,
+    COTIZADA:     flotas.filter(f => f.estado === 'COTIZADA').length,
+  };
 
   const handleCreate = async (data: typeof EMPTY_FORM) => {
     setSaving(true);
@@ -507,13 +518,14 @@ export default function FlotasPage() {
           </div>
 
           {/* Tabs */}
-          <div style={{ display: 'flex', gap: 4, marginTop: 16, borderTop: '1px solid rgba(61,112,255,0.12)', paddingTop: 14 }}>
-            {(['CONTRATADA', 'RECHAZADA'] as const).map(t => {
+          <div style={{ display: 'flex', gap: 4, marginTop: 16, borderTop: '1px solid rgba(61,112,255,0.12)', paddingTop: 14, flexWrap: 'wrap' }}>
+            {(['CONTRATADA', 'EN ESTUDIO', 'COTIZADA', 'RECHAZADA'] as EstadoFlota[]).map(t => {
               const active = tab === t;
               const cfg    = ESTADO_CFG[t];
+              const label  = t === 'EN ESTUDIO' ? 'En estudio' : t.charAt(0) + t.slice(1).toLowerCase();
               return (
                 <button key={t} onClick={() => setTab(t)} style={{ fontSize: 12, fontWeight: 700, padding: '8px 18px', borderRadius: 10, cursor: 'pointer', border: 'none', background: active ? cfg.bg : 'transparent', color: active ? cfg.color : 'rgba(178,198,245,0.55)', boxShadow: active ? `0 0 0 1px ${cfg.border} inset` : 'none', transition: 'all 180ms', display: 'flex', alignItems: 'center', gap: 6 }}>
-                  {t.charAt(0) + t.slice(1).toLowerCase()}
+                  {label}
                   <span style={{ fontSize: 10, fontWeight: 800, padding: '1px 7px', borderRadius: 999, background: active ? cfg.border : 'rgba(51,102,255,0.1)', color: active ? cfg.color : 'rgba(178,198,245,0.5)' }}>{counts[t]}</span>
                 </button>
               );
@@ -547,7 +559,7 @@ export default function FlotasPage() {
         ) : filtered.length === 0 ? (
           <div style={{ ...glass, padding: '60px 40px', textAlign: 'center' }}>
             <p style={{ fontSize: 14, fontWeight: 700, color: '#BDD4FF', margin: '0 0 8px 0' }}>
-              No hay flotas {tab === 'CONTRATADA' ? 'contratadas' : 'rechazadas'}
+              No hay flotas en este estado
             </p>
             <p style={{ fontSize: 12, color: 'rgba(178,198,245,0.45)', margin: 0 }}>
               Las flotas Orion aparecen aquí al cambiar su estado en <strong style={{ color: '#818cf8' }}>Estudio</strong>.
