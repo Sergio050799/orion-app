@@ -1,645 +1,733 @@
 "use client";
 
-import React, { useState, useMemo, useCallback, lazy, Suspense } from 'react';
-import { listarCarpetas, normalizeTipoVehiculo, type FlotaCarpeta, type TarifaEntry } from '@/core/flotas';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '@/context/AuthContext';
 
-const CalibradorPrecios = lazy(() => import('./CalibradorPrecios'));
+// ─── Tipos ───────────────────────────────────────────────────────────────────
 
-type EmisionTab = 'flotas' | 'calibrador';
+interface Cobertura {
+  nombre: string;
+  prima: number;
+}
+
+interface FlotaHistorica {
+  id: string;
+  nombre: string;
+  estado: 'CONTRATADA' | 'RECHAZADA';
+  tomador: string;
+  cif: string;
+  actividad: string;
+  corredor_nombre: string;
+  comision: number;
+  coberturas: Cobertura[];
+  prima_total: number;
+  fecha_inicio: string;
+  fecha_vencimiento: string;
+  periodicidad: string;
+  num_poliza: string;
+  compania: string;
+  total_vehiculos: number;
+  categoria_flota: string;
+  notas: string;
+  created_by: string;
+  created_at: string;
+}
+
+const EMPTY_FORM: Omit<FlotaHistorica, 'id' | 'created_at' | 'created_by'> = {
+  nombre: '', estado: 'CONTRATADA', tomador: '', cif: '', actividad: '',
+  corredor_nombre: '', comision: 0, coberturas: [], prima_total: 0,
+  fecha_inicio: '', fecha_vencimiento: '', periodicidad: 'anual',
+  num_poliza: '', compania: '', total_vehiculos: 0, categoria_flota: '', notas: '',
+};
 
 // ─── Estilos ─────────────────────────────────────────────────────────────────
 
-const glassCard: React.CSSProperties = {
+const glass: React.CSSProperties = {
   background: 'rgba(12, 28, 82, 0.75)',
   border: '1px solid rgba(61, 112, 255, 0.22)',
   borderRadius: 22,
   boxShadow: '0 30px 80px -20px rgba(0,0,0,0.6), 0 1px 0 rgba(255,255,255,0.06) inset',
 };
 
-const ESTADO_CFG: Record<string, { bg: string; border: string; color: string }> = {
-  'OFERTADA': { bg: 'rgba(245,158,11,0.15)', border: 'rgba(245,158,11,0.35)', color: '#f59e0b' },
-  'CONTRATADA': { bg: 'rgba(16,185,129,0.15)', border: 'rgba(16,185,129,0.35)', color: '#10b981' },
-};
-
-const thStyle: React.CSSProperties = {
-  padding: '10px 10px', fontSize: 10, fontWeight: 800,
-  color: 'rgba(70,120,255,0.6)', textTransform: 'uppercase',
-  letterSpacing: '0.1em', textAlign: 'left',
-  borderBottom: '1px solid rgba(51,102,255,0.1)',
-  background: 'rgba(6,14,50,0.4)',
-  position: 'sticky', top: 0, zIndex: 2,
-  whiteSpace: 'nowrap',
-};
-
-const cellInput: React.CSSProperties = {
-  fontSize: 12, fontWeight: 500, padding: '4px 8px', borderRadius: 6,
-  background: 'rgba(6,14,50,0.55)', border: '1px solid rgba(51,102,255,0.12)',
+const inputStyle: React.CSSProperties = {
+  fontSize: 13, padding: '9px 12px', borderRadius: 10,
+  background: 'rgba(6,14,50,0.6)', border: '1px solid rgba(51,102,255,0.2)',
   color: '#FFFFFF', outline: 'none', width: '100%',
-  transition: 'border-color 0.15s',
 };
 
-// ─── Tipos fila emisión ─────────────────────────────────────────────────────
+const labelStyle: React.CSSProperties = {
+  fontSize: 11, fontWeight: 700, color: 'rgba(178,198,245,0.6)',
+  textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 5, display: 'block',
+};
 
-interface FilaEmision {
-  idx: number;
-  matricula: string;
-  id_catalogo: string;
-  marca: string;
-  modelo: string;
-  tipo: string;
-  uso: string;
-  precio_objetivo: string;
-  precio_reutilizado: boolean; // true si el precio vino de un vehículo previo
-  id_reutilizado: boolean;     // true si el id_catalogo vino de un match previo
-}
+const ESTADO_CFG = {
+  CONTRATADA: { bg: 'rgba(16,185,129,0.15)', border: 'rgba(16,185,129,0.35)', color: '#10b981' },
+  RECHAZADA:  { bg: 'rgba(239,68,68,0.12)',  border: 'rgba(239,68,68,0.3)',   color: '#ef4444' },
+};
 
-// ─── Auto-asignación de USO según tipo de vehículo ──────────────────────────
+const fmtE = (n: number) =>
+  n.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
 
-function normalizeTipo(raw: string): string {
-  return normalizeTipoVehiculo(raw);
-}
+// ─── Hook de datos ───────────────────────────────────────────────────────────
 
-const USO_PARTICULAR = new Set(['Turismo', 'Derivado de turismo', 'Motocicleta', 'Ciclomotor']);
-const USO_TRANSPORTES = new Set(['Furgoneta', 'Camión rígido', 'Cabeza tractora', 'Semirremolque', 'Industrial matriculado', 'Industrial no matriculado']);
+function useFlotasHistoricas() {
+  const [flotas, setFlotas]   = useState<FlotaHistorica[]>([]);
+  const [loading, setLoading] = useState(true);
 
-function autoUso(tipo: string): string {
-  if (USO_PARTICULAR.has(tipo)) return 'Particular';
-  if (USO_TRANSPORTES.has(tipo)) return 'Transportes propios';
-  return '';
-}
-
-// ─── Buscar vehículo reutilizable en todas las carpetas ─────────────────────
-
-interface VehiculoPrevio {
-  id_catalogo: string;
-  precio: string;
-}
-
-function buildHistorico(allCarpetas: FlotaCarpeta[]): Map<string, VehiculoPrevio> {
-  // Clave: "MARCA|MODELO|KW|COMBUSTIBLE" normalizado → { id_catalogo, precio }
-  const map = new Map<string, VehiculoPrevio>();
-
-  for (const c of allCarpetas) {
-    const catSel = c.catalogoSeleccion ?? {};
-    const precioMap = new Map<string, string>();
-    (c.oferta ?? []).forEach(o => {
-      const mat = o['matricula']?.trim()?.toUpperCase();
-      const prima = o['oferta_prima_mmt']?.trim();
-      if (mat && prima) precioMap.set(mat, prima);
-    });
-
-    const rows = c.trabajo?.length > 0 ? c.trabajo : c.original;
-    (rows ?? []).forEach(r => {
-      const mat = r['matricula']?.trim()?.toUpperCase() ?? '';
-      const idCat = catSel[r['matricula']?.trim() ?? ''] ?? '';
-      if (!idCat) return; // solo interesa si tiene id de catálogo
-
-      const marca = (r['marca'] ?? '').trim().toUpperCase();
-      const modelo = (r['modelo'] ?? '').trim().toUpperCase();
-      const kw = (r['kw'] ?? '').trim();
-      const combustible = (r['combustible'] ?? '').trim().toUpperCase();
-
-      if (!marca || !modelo) return;
-      const key = `${marca}|${modelo}|${kw}|${combustible}`;
-      // Guardar el más reciente (iteramos de viejo a nuevo, el último gana)
-      map.set(key, { id_catalogo: idCat, precio: precioMap.get(mat) ?? '' });
-    });
-  }
-  return map;
-}
-
-// ─── Construir filas de emisión ─────────────────────────────────────────────
-
-function buildFilas(flota: FlotaCarpeta, historico: Map<string, VehiculoPrevio>): FilaEmision[] {
-  const rows = flota.trabajo?.length > 0 ? flota.trabajo : flota.original;
-  if (!rows || rows.length === 0) return [];
-
-  const catSel = flota.catalogoSeleccion ?? {};
-  const tarifa = flota.tarifaFlota ?? [];
-
-  // Mapa precios oferta
-  const precioOferta = new Map<string, string>();
-  (flota.oferta ?? []).forEach(o => {
-    const mat = o['matricula']?.trim();
-    const prima = o['oferta_prima_mmt']?.trim();
-    if (mat && prima) precioOferta.set(mat.toUpperCase(), prima);
-  });
-
-  // Mapa cobertura por matrícula (de la oferta)
-  const coberturaMap = new Map<string, string>();
-  (flota.oferta ?? []).forEach(o => {
-    const mat = o['matricula']?.trim();
-    const cob = o['coberturas']?.trim();
-    if (mat && cob) coberturaMap.set(mat.toUpperCase(), cob);
-  });
-
-  return rows.map((r, i) => {
-    const mat = r['matricula']?.trim() ?? '';
-    const matUp = mat.toUpperCase();
-    const tipo = normalizeTipo(r['tipo_vehiculo']?.trim() ?? '');
-    const uso = autoUso(tipo);
-
-    // ID catálogo: primero de la selección, luego del histórico
-    let idCat = catSel[mat] ?? '';
-    let idReutilizado = false;
-    let precioObj = precioOferta.get(matUp) ?? '';
-    let precioReutilizado = false;
-
-    // Si no tiene id, buscar en histórico por match de campos clave
-    if (!idCat) {
-      const marca = (r['marca'] ?? '').trim().toUpperCase();
-      const modelo = (r['modelo'] ?? '').trim().toUpperCase();
-      const kw = (r['kw'] ?? '').trim();
-      const combustible = (r['combustible'] ?? '').trim().toUpperCase();
-      if (marca && modelo) {
-        const key = `${marca}|${modelo}|${kw}|${combustible}`;
-        const prev = historico.get(key);
-        if (prev) {
-          idCat = prev.id_catalogo;
-          idReutilizado = true;
-          if (!precioObj && prev.precio) {
-            precioObj = prev.precio;
-            precioReutilizado = true;
-          }
-        }
-      }
-    }
-
-    // Si aún no tiene precio, buscar en tarifa de la flota
-    if (!precioObj && tipo && tarifa.length > 0) {
-      const cobertura = coberturaMap.get(matUp) ?? '';
-      const tarifaMatch = tarifa.find(t =>
-        t.tipo.toLowerCase() === tipo.toLowerCase() &&
-        (!cobertura || t.cobertura.toLowerCase() === cobertura.toLowerCase())
-      );
-      // Si no hay match con cobertura específica, buscar solo por tipo
-      const tarifaTipo = tarifaMatch ?? tarifa.find(t => t.tipo.toLowerCase() === tipo.toLowerCase());
-      if (tarifaTipo && tarifaTipo.precio > 0) {
-        precioObj = String(tarifaTipo.precio);
-      }
-    }
-
-    return {
-      idx: i,
-      matricula: mat,
-      id_catalogo: idCat,
-      marca: r['marca']?.trim() ?? '',
-      modelo: r['modelo']?.trim() ?? '',
-      tipo,
-      uso,
-      precio_objetivo: precioObj,
-      precio_reutilizado: precioReutilizado,
-      id_reutilizado: idReutilizado,
-    };
-  });
-}
-
-// ─── Componente ──────────────────────────────────────────────────────────────
-
-export default function EmisionPage() {
-  const [emisionTab, setEmisionTab] = useState<EmisionTab>('flotas');
-  const [selectedFlotaId, setSelectedFlotaId] = useState<string | null>(null);
-  const [editedFilas, setEditedFilas] = useState<FilaEmision[] | null>(null);
-  const [copyToast, setCopyToast] = useState('');
-
-  const carpetas = useMemo(() => listarCarpetas(), []);
-
-  const flotasEmision = useMemo(() =>
-    carpetas.filter(c => c.estado === 'OFERTADA' || c.estado === 'CONTRATADA')
-      .sort((a, b) => {
-        if (a.estado !== b.estado) return a.estado === 'OFERTADA' ? -1 : 1;
-        return a.nombre.localeCompare(b.nombre);
-      }),
-    [carpetas]
-  );
-
-  const selectedFlota = useMemo(() =>
-    flotasEmision.find(f => f.id === selectedFlotaId) ?? null,
-    [flotasEmision, selectedFlotaId]
-  );
-
-  // Histórico de vehículos de TODAS las carpetas (para reusar IDs)
-  const historico = useMemo(() => buildHistorico(carpetas), [carpetas]);
-
-  // Filas de emisión
-  const filas = useMemo(() => {
-    if (editedFilas) return editedFilas;
-    if (!selectedFlota) return [];
-    return buildFilas(selectedFlota, historico);
-  }, [selectedFlota, editedFilas, historico]);
-
-  const handleSelectFlota = useCallback((id: string) => {
-    if (selectedFlotaId === id) {
-      setSelectedFlotaId(null);
-      setEditedFilas(null);
-    } else {
-      setSelectedFlotaId(id);
-      setEditedFilas(null);
-    }
-  }, [selectedFlotaId]);
-
-  const handleCellChange = useCallback((idx: number, field: keyof FilaEmision, value: string) => {
-    setEditedFilas(prev => {
-      const base = prev ?? filas;
-      const updated = [...base];
-      const fila = { ...updated[idx], [field]: value };
-      // Si cambian el tipo, auto-recalcular uso
-      if (field === 'tipo') {
-        const tipoNorm = normalizeTipo(value);
-        fila.tipo = tipoNorm;
-        fila.uso = autoUso(tipoNorm);
-      }
-      updated[idx] = fila;
-      return updated;
-    });
-  }, [filas]);
-
-  // Copiar columna
-  const copyColumn = useCallback((label: string, getter: (f: FilaEmision) => string) => {
-    const values = filas.map(getter);
-    navigator.clipboard.writeText(values.join('\n'));
-    setCopyToast(`${label} copiado (${filas.length})`);
-    setTimeout(() => setCopyToast(''), 1800);
-  }, [filas]);
-
-  // Copiar todo
-  const copyAll = useCallback(() => {
-    const headers = ['MATRÍCULA', 'ID_CATÁLOGO', 'MARCA', 'MODELO', 'TIPO', 'USO', 'PRECIO_OBJETIVO'];
-    const rows = filas.map(f =>
-      [f.matricula, f.id_catalogo, f.marca, f.modelo, f.tipo, f.uso, f.precio_objetivo].join('\t')
-    );
-    navigator.clipboard.writeText([headers.join('\t'), ...rows].join('\n'));
-    setCopyToast(`Todo copiado (${filas.length} filas)`);
-    setTimeout(() => setCopyToast(''), 1800);
-  }, [filas]);
-
-  // Datos para el calibrador
-  const calibradorData = useMemo(() =>
-    filas.filter(f => f.matricula).map(f => ({
-      matricula: f.matricula,
-      precio_objetivo: f.precio_objetivo,
-    })),
-    [filas]
-  );
-
-  const handleGoCalibrador = useCallback(() => {
-    setEmisionTab('calibrador');
+  const load = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res  = await fetch('/api/flotas/historicas');
+      const data = await res.json();
+      setFlotas(Array.isArray(data) ? data : []);
+    } catch { setFlotas([]); }
+    finally   { setLoading(false); }
   }, []);
 
-  // Columnas mínimas
-  const COLS: { key: keyof FilaEmision; label: string; width: number; editable: boolean; mono?: boolean }[] = [
-    { key: 'matricula',       label: 'Matrícula',    width: 105, editable: false, mono: true },
-    { key: 'id_catalogo',     label: 'ID Catálogo',  width: 95,  editable: true, mono: true },
-    { key: 'marca',           label: 'Marca',        width: 110, editable: true },
-    { key: 'modelo',          label: 'Modelo',       width: 130, editable: true },
-    { key: 'tipo',            label: 'Tipo',         width: 130, editable: true },
-    { key: 'uso',             label: 'Uso',          width: 130, editable: true },
-    { key: 'precio_objetivo', label: 'Precio Obj.',  width: 105, editable: true, mono: true },
-  ];
+  useEffect(() => { load(); }, [load]);
 
-  // Stats
-  const conId = filas.filter(f => f.id_catalogo).length;
-  const conPrecio = filas.filter(f => f.precio_objetivo).length;
-  const reutilizados = filas.filter(f => f.id_reutilizado).length;
+  const create = async (body: typeof EMPTY_FORM & { created_by: string }) => {
+    const res = await fetch('/api/flotas/historicas', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error('Error al crear');
+    await load();
+  };
+
+  const update = async (id: string, body: typeof EMPTY_FORM) => {
+    const res = await fetch(`/api/flotas/historicas/${id}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error('Error al actualizar');
+    await load();
+  };
+
+  const remove = async (id: string) => {
+    const res = await fetch(`/api/flotas/historicas/${id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error('Error al eliminar');
+    await load();
+  };
+
+  return { flotas, loading, load, create, update, remove };
+}
+
+// ─── Formulario ──────────────────────────────────────────────────────────────
+
+function FlotaForm({
+  initial, onSave, onCancel, saving,
+}: {
+  initial?: FlotaHistorica;
+  onSave: (data: typeof EMPTY_FORM) => void;
+  onCancel: () => void;
+  saving: boolean;
+}) {
+  const [form, setForm] = useState<typeof EMPTY_FORM>(
+    initial ? {
+      nombre: initial.nombre, estado: initial.estado, tomador: initial.tomador,
+      cif: initial.cif, actividad: initial.actividad, corredor_nombre: initial.corredor_nombre,
+      comision: initial.comision, coberturas: [...initial.coberturas],
+      prima_total: initial.prima_total, fecha_inicio: initial.fecha_inicio,
+      fecha_vencimiento: initial.fecha_vencimiento, periodicidad: initial.periodicidad,
+      num_poliza: initial.num_poliza, compania: initial.compania,
+      total_vehiculos: initial.total_vehiculos, categoria_flota: initial.categoria_flota,
+      notas: initial.notas,
+    } : { ...EMPTY_FORM, coberturas: [] }
+  );
+
+  const set = (k: keyof typeof EMPTY_FORM, v: unknown) =>
+    setForm(f => ({ ...f, [k]: v }));
+
+  const addCob = () =>
+    setForm(f => ({ ...f, coberturas: [...f.coberturas, { nombre: '', prima: 0 }] }));
+
+  const setCob = (i: number, k: keyof Cobertura, v: string | number) =>
+    setForm(f => {
+      const cobs = [...f.coberturas];
+      cobs[i] = { ...cobs[i], [k]: v };
+      return { ...f, coberturas: cobs };
+    });
+
+  const removeCob = (i: number) =>
+    setForm(f => ({ ...f, coberturas: f.coberturas.filter((_, idx) => idx !== i) }));
+
+  const primaAuto = form.coberturas.reduce((s, c) => s + (Number(c.prima) || 0), 0);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+      {/* Fila 1: nombre + estado */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 12 }}>
+        <div>
+          <label style={labelStyle}>Nombre de la flota *</label>
+          <input style={inputStyle} value={form.nombre}
+            onChange={e => set('nombre', e.target.value)} placeholder="Ej: Flota Transporte García 2022" />
+        </div>
+        <div>
+          <label style={labelStyle}>Estado</label>
+          <select style={{ ...inputStyle, cursor: 'pointer', width: 160 }}
+            value={form.estado}
+            onChange={e => set('estado', e.target.value as 'CONTRATADA' | 'RECHAZADA')}>
+            <option value="CONTRATADA">Contratada</option>
+            <option value="RECHAZADA">Rechazada</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Fila 2: tomador + CIF + actividad */}
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 12 }}>
+        <div>
+          <label style={labelStyle}>Tomador *</label>
+          <input style={inputStyle} value={form.tomador}
+            onChange={e => set('tomador', e.target.value)} placeholder="Nombre del tomador" />
+        </div>
+        <div>
+          <label style={labelStyle}>CIF / NIF</label>
+          <input style={inputStyle} value={form.cif}
+            onChange={e => set('cif', e.target.value.toUpperCase())} placeholder="B12345678" />
+        </div>
+        <div>
+          <label style={labelStyle}>Actividad</label>
+          <input style={inputStyle} value={form.actividad}
+            onChange={e => set('actividad', e.target.value)} placeholder="Ej: Transporte de mercancías" />
+        </div>
+      </div>
+
+      {/* Fila 3: corredor + comisión */}
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 12 }}>
+        <div>
+          <label style={labelStyle}>Corredor</label>
+          <input style={inputStyle} value={form.corredor_nombre}
+            onChange={e => set('corredor_nombre', e.target.value)} placeholder="Nombre del corredor" />
+        </div>
+        <div>
+          <label style={labelStyle}>Comisión (%)</label>
+          <input style={{ ...inputStyle, fontFamily: 'monospace' }} type="number" step="0.1"
+            value={form.comision || ''} onChange={e => set('comision', parseFloat(e.target.value) || 0)}
+            placeholder="0.0" />
+        </div>
+      </div>
+
+      {/* Fila 4: compañía + nº póliza + periodicidad */}
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 12 }}>
+        <div>
+          <label style={labelStyle}>Compañía aseguradora</label>
+          <input style={inputStyle} value={form.compania}
+            onChange={e => set('compania', e.target.value)} placeholder="Ej: Mapfre Empresas" />
+        </div>
+        <div>
+          <label style={labelStyle}>Nº póliza</label>
+          <input style={{ ...inputStyle, fontFamily: 'monospace' }} value={form.num_poliza}
+            onChange={e => set('num_poliza', e.target.value)} placeholder="0000000000" />
+        </div>
+        <div>
+          <label style={labelStyle}>Periodicidad</label>
+          <select style={{ ...inputStyle, cursor: 'pointer' }} value={form.periodicidad}
+            onChange={e => set('periodicidad', e.target.value)}>
+            <option value="mensual">Mensual</option>
+            <option value="trimestral">Trimestral</option>
+            <option value="semestral">Semestral</option>
+            <option value="anual">Anual</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Fila 5: fechas */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div>
+          <label style={labelStyle}>Fecha inicio</label>
+          <input style={inputStyle} type="date" value={form.fecha_inicio}
+            onChange={e => set('fecha_inicio', e.target.value)} />
+        </div>
+        <div>
+          <label style={labelStyle}>Fecha vencimiento</label>
+          <input style={inputStyle} type="date" value={form.fecha_vencimiento}
+            onChange={e => set('fecha_vencimiento', e.target.value)} />
+        </div>
+      </div>
+
+      {/* Fila 6: vehículos + categoría */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div>
+          <label style={labelStyle}>Total vehículos (aprox.)</label>
+          <input style={{ ...inputStyle, fontFamily: 'monospace' }} type="number" min="0"
+            value={form.total_vehiculos || ''} onChange={e => set('total_vehiculos', parseInt(e.target.value) || 0)}
+            placeholder="0" />
+        </div>
+        <div>
+          <label style={labelStyle}>Categoría flota</label>
+          <select style={{ ...inputStyle, cursor: 'pointer' }} value={form.categoria_flota}
+            onChange={e => set('categoria_flota', e.target.value)}>
+            <option value="">Sin especificar</option>
+            <option value="1ª Categoría">1ª Categoría (turismos, furgonetas)</option>
+            <option value="2ª Categoría">2ª Categoría (camiones, tractoras)</option>
+            <option value="3ª Categoría">3ª Categoría (motos, ciclomotores)</option>
+            <option value="Mixta">Mixta</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Coberturas */}
+      <div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+          <label style={{ ...labelStyle, margin: 0 }}>Coberturas y primas</label>
+          <button onClick={addCob} style={{
+            fontSize: 11, fontWeight: 700, padding: '5px 12px', borderRadius: 8,
+            background: 'rgba(51,102,255,0.15)', color: '#3366FF',
+            border: '1px solid rgba(51,102,255,0.3)', cursor: 'pointer',
+          }}>+ Añadir cobertura</button>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {form.coberturas.length === 0 && (
+            <div style={{ fontSize: 12, color: 'rgba(178,198,245,0.4)', padding: '12px 0' }}>
+              Sin coberturas. Añade al menos una.
+            </div>
+          )}
+          {form.coberturas.map((cob, i) => (
+            <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 140px 32px', gap: 8, alignItems: 'center' }}>
+              <input style={inputStyle} value={cob.nombre}
+                onChange={e => setCob(i, 'nombre', e.target.value)} placeholder="Ej: Terceros ampliado" />
+              <input style={{ ...inputStyle, fontFamily: 'monospace', textAlign: 'right' }} type="number" step="0.01"
+                value={cob.prima || ''} onChange={e => setCob(i, 'prima', parseFloat(e.target.value) || 0)}
+                placeholder="Prima €" />
+              <button onClick={() => removeCob(i)} style={{
+                width: 32, height: 36, borderRadius: 8, border: '1px solid rgba(239,68,68,0.3)',
+                background: 'rgba(239,68,68,0.08)', color: '#ef4444', cursor: 'pointer', fontSize: 14,
+              }}>×</button>
+            </div>
+          ))}
+          {form.coberturas.length > 0 && (
+            <div style={{ textAlign: 'right', fontSize: 12, fontWeight: 800, color: '#10b981', marginTop: 2 }}>
+              Prima total auto: {fmtE(primaAuto)}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Prima total (override) */}
+      <div>
+        <label style={labelStyle}>Prima total anual (€)</label>
+        <input style={{ ...inputStyle, fontFamily: 'monospace' }} type="number" step="0.01"
+          value={form.prima_total || ''} onChange={e => set('prima_total', parseFloat(e.target.value) || 0)}
+          placeholder={primaAuto > 0 ? String(primaAuto) : '0.00'} />
+        {primaAuto > 0 && form.prima_total === 0 && (
+          <span style={{ fontSize: 11, color: 'rgba(178,198,245,0.5)', marginTop: 4, display: 'block' }}>
+            Si lo dejas en 0 se usará la suma de coberturas ({fmtE(primaAuto)})
+          </span>
+        )}
+      </div>
+
+      {/* Notas */}
+      <div>
+        <label style={labelStyle}>Notas / observaciones</label>
+        <textarea style={{ ...inputStyle, minHeight: 72, resize: 'vertical' } as React.CSSProperties}
+          value={form.notas} onChange={e => set('notas', e.target.value)}
+          placeholder="Observaciones adicionales..." />
+      </div>
+
+      {/* Botones */}
+      <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', paddingTop: 4 }}>
+        <button onClick={onCancel} disabled={saving} style={{
+          fontSize: 13, fontWeight: 700, padding: '10px 22px', borderRadius: 12,
+          background: 'transparent', color: 'rgba(178,198,245,0.7)',
+          border: '1px solid rgba(61,112,255,0.2)', cursor: 'pointer',
+        }}>Cancelar</button>
+        <button onClick={() => onSave({ ...form, prima_total: form.prima_total || primaAuto })}
+          disabled={saving || !form.nombre.trim() || !form.tomador.trim()} style={{
+            fontSize: 13, fontWeight: 800, padding: '10px 28px', borderRadius: 12,
+            background: 'linear-gradient(135deg, #1240CC, #3366FF)',
+            color: '#fff', border: 'none', cursor: 'pointer',
+            opacity: (!form.nombre.trim() || !form.tomador.trim()) ? 0.5 : 1,
+            boxShadow: '0 8px 24px -8px rgba(18,64,204,0.5)',
+          }}>
+          {saving ? 'Guardando...' : (initial ? 'Guardar cambios' : 'Crear flota')}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Modal ficha de póliza ────────────────────────────────────────────────────
+
+function FichaPoliza({ flota, onClose, onEdit, onDelete }: {
+  flota: FlotaHistorica;
+  onClose: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [onClose]);
+
+  const cfg  = ESTADO_CFG[flota.estado] ?? ESTADO_CFG.CONTRATADA;
+  const fmt  = (d: string) => d ? new Date(d + 'T12:00:00').toLocaleDateString('es-ES') : '—';
+  const prima = flota.prima_total ||
+    flota.coberturas.reduce((s, c) => s + (Number(c.prima) || 0), 0);
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 1000,
+      background: 'rgba(0,0,8,0.7)', backdropFilter: 'blur(6px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24,
+    }} onClick={onClose}>
+      <div style={{
+        ...glass, width: '100%', maxWidth: 720, maxHeight: '90vh',
+        overflow: 'hidden', display: 'flex', flexDirection: 'column',
+      }} onClick={e => e.stopPropagation()}>
+
+        {/* Header */}
+        <div style={{
+          padding: '22px 28px', borderBottom: '1px solid rgba(61,112,255,0.15)',
+          display: 'flex', alignItems: 'flex-start', gap: 16,
+        }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+              <h2 style={{ fontSize: 17, fontWeight: 900, color: '#FFFFFF', margin: 0, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                {flota.nombre}
+              </h2>
+              <span style={{
+                fontSize: 9, fontWeight: 800, padding: '3px 10px', borderRadius: 6,
+                background: cfg.bg, border: `1px solid ${cfg.border}`, color: cfg.color,
+                textTransform: 'uppercase', letterSpacing: '0.07em',
+              }}>{flota.estado}</span>
+            </div>
+            <div style={{ fontSize: 12, color: 'rgba(178,198,245,0.6)' }}>
+              {flota.tomador}{flota.cif && <> · <span style={{ fontFamily: 'monospace', color: '#BDD4FF' }}>{flota.cif}</span></>}
+              {flota.actividad && <> · {flota.actividad}</>}
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={onEdit} style={{
+              fontSize: 11, fontWeight: 700, padding: '7px 14px', borderRadius: 10,
+              background: 'rgba(51,102,255,0.15)', color: '#3366FF',
+              border: '1px solid rgba(51,102,255,0.3)', cursor: 'pointer',
+            }}>Editar</button>
+            <button onClick={onClose} style={{
+              width: 32, height: 32, borderRadius: 10, border: '1px solid rgba(61,112,255,0.2)',
+              background: 'rgba(6,14,50,0.5)', color: '#BDD4FF', cursor: 'pointer', fontSize: 16,
+            }}>×</button>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '20px 28px', display: 'flex', flexDirection: 'column', gap: 20 }} className="custom-scrollbar">
+
+          {/* Grid info principal */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+            {[
+              { label: 'Corredor',     value: flota.corredor_nombre || '—' },
+              { label: 'Comisión',     value: flota.comision ? `${flota.comision}%` : '—' },
+              { label: 'Compañía',     value: flota.compania || '—' },
+              { label: 'Nº póliza',    value: flota.num_poliza || '—', mono: true },
+              { label: 'Periodicidad', value: flota.periodicidad || '—' },
+              { label: 'Categoría',    value: flota.categoria_flota || '—' },
+              { label: 'Fecha inicio', value: fmt(flota.fecha_inicio) },
+              { label: 'Vencimiento',  value: fmt(flota.fecha_vencimiento) },
+              { label: 'Vehículos',    value: flota.total_vehiculos ? `≈ ${flota.total_vehiculos.toLocaleString('es-ES')}` : '—' },
+            ].map(({ label, value, mono }) => (
+              <div key={label} style={{
+                padding: '12px 16px', borderRadius: 12,
+                background: 'rgba(6,14,50,0.5)', border: '1px solid rgba(51,102,255,0.1)',
+              }}>
+                <div style={labelStyle}>{label}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#FFFFFF', fontFamily: mono ? 'monospace' : 'inherit' }}>
+                  {value}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Coberturas */}
+          {flota.coberturas.length > 0 && (
+            <div>
+              <div style={{ ...labelStyle, marginBottom: 10 }}>Coberturas contratadas</div>
+              <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid rgba(51,102,255,0.12)' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ background: 'rgba(6,14,50,0.6)' }}>
+                      <th style={{ ...labelStyle, padding: '10px 16px', margin: 0, borderBottom: '1px solid rgba(51,102,255,0.12)' }}>
+                        Cobertura
+                      </th>
+                      <th style={{ ...labelStyle, padding: '10px 16px', margin: 0, textAlign: 'right', borderBottom: '1px solid rgba(51,102,255,0.12)' }}>
+                        Prima anual
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {flota.coberturas.map((cob, i) => (
+                      <tr key={i} style={{ borderBottom: '1px solid rgba(51,102,255,0.07)' }}>
+                        <td style={{ padding: '10px 16px', fontSize: 13, color: '#BDD4FF' }}>{cob.nombre}</td>
+                        <td style={{ padding: '10px 16px', fontSize: 13, fontWeight: 700, color: '#FFFFFF', textAlign: 'right', fontFamily: 'monospace' }}>
+                          {fmtE(Number(cob.prima) || 0)}
+                        </td>
+                      </tr>
+                    ))}
+                    <tr style={{ background: 'rgba(16,185,129,0.06)' }}>
+                      <td style={{ padding: '10px 16px', fontSize: 12, fontWeight: 800, color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                        Prima total
+                      </td>
+                      <td style={{ padding: '10px 16px', fontSize: 15, fontWeight: 900, color: '#10b981', textAlign: 'right', fontFamily: 'monospace' }}>
+                        {fmtE(prima)}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {flota.coberturas.length === 0 && prima > 0 && (
+            <div style={{ padding: '14px 18px', borderRadius: 12, background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)' }}>
+              <span style={{ fontSize: 11, color: 'rgba(178,198,245,0.6)', textTransform: 'uppercase', letterSpacing: '0.07em', fontWeight: 700 }}>Prima total · </span>
+              <span style={{ fontSize: 16, fontWeight: 900, color: '#10b981', fontFamily: 'monospace' }}>{fmtE(prima)}</span>
+            </div>
+          )}
+
+          {/* Notas */}
+          {flota.notas && (
+            <div style={{ padding: '14px 18px', borderRadius: 12, background: 'rgba(6,14,50,0.4)', border: '1px solid rgba(51,102,255,0.1)' }}>
+              <div style={{ ...labelStyle, marginBottom: 6 }}>Notas</div>
+              <p style={{ fontSize: 13, color: 'rgba(178,198,245,0.8)', margin: 0, lineHeight: 1.6 }}>{flota.notas}</p>
+            </div>
+          )}
+
+          {/* Zona peligro */}
+          <div style={{ paddingTop: 4, borderTop: '1px solid rgba(239,68,68,0.1)' }}>
+            <button onClick={onDelete} style={{
+              fontSize: 11, fontWeight: 700, padding: '8px 16px', borderRadius: 10,
+              background: 'rgba(239,68,68,0.08)', color: '#ef4444',
+              border: '1px solid rgba(239,68,68,0.2)', cursor: 'pointer',
+            }}>Eliminar flota</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Página principal ─────────────────────────────────────────────────────────
+
+export default function FlotasPage() {
+  const { user } = useAuth();
+  const { flotas, loading, create, update, remove } = useFlotasHistoricas();
+
+  const [tab, setTab]           = useState<'CONTRATADA' | 'RECHAZADA'>('CONTRATADA');
+  const [modal, setModal]       = useState<'create' | 'edit' | null>(null);
+  const [selected, setSelected] = useState<FlotaHistorica | null>(null);
+  const [ficha, setFicha]       = useState<FlotaHistorica | null>(null);
+  const [saving, setSaving]     = useState(false);
+  const [toast, setToast]       = useState('');
+
+  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 2200); };
+
+  const filtered = flotas.filter(f => f.estado === tab);
+
+  const handleCreate = async (data: typeof EMPTY_FORM) => {
+    setSaving(true);
+    try {
+      await create({ ...data, created_by: user ?? '' });
+      setModal(null);
+      showToast('Flota creada correctamente');
+    } catch { showToast('Error al crear la flota'); }
+    finally { setSaving(false); }
+  };
+
+  const handleUpdate = async (data: typeof EMPTY_FORM) => {
+    if (!selected) return;
+    setSaving(true);
+    try {
+      await update(selected.id, data);
+      setModal(null);
+      setFicha(null);
+      setSelected(null);
+      showToast('Flota actualizada');
+    } catch { showToast('Error al actualizar'); }
+    finally { setSaving(false); }
+  };
+
+  const handleDelete = async () => {
+    if (!ficha) return;
+    if (!confirm(`¿Eliminar "${ficha.nombre}"? Esta acción no se puede deshacer.`)) return;
+    try {
+      await remove(ficha.id);
+      setFicha(null);
+      showToast('Flota eliminada');
+    } catch { showToast('Error al eliminar'); }
+  };
 
   return (
     <div className="h-full overflow-y-auto custom-scrollbar animate-in fade-in duration-500">
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 16px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 16px', display: 'flex', flexDirection: 'column', gap: 20 }}>
 
-        {/* Zone Header */}
-        <div style={{ ...glassCard, padding: '20px 28px' }}>
+        {/* Header */}
+        <div style={{ ...glass, padding: '20px 28px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
               <div style={{ width: 4, height: 36, borderRadius: 2, background: 'linear-gradient(180deg, #3366FF 0%, #1240CC 100%)' }} />
               <div>
                 <h1 style={{ fontSize: 15, fontWeight: 900, color: '#FFFFFF', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>
-                  Centro de Emisión
+                  Flotas
                 </h1>
                 <p style={{ fontSize: 11, fontWeight: 600, color: 'rgba(178,198,245,0.6)', margin: '4px 0 0 0' }}>
-                  {emisionTab === 'calibrador'
-                    ? (selectedFlota
-                        ? (<>Calibrador — <span style={{ color: '#BDD4FF' }}>{selectedFlota.nombre}</span> · {calibradorData.length} vehículos con precio</>)
-                        : 'Calibrador de precios — ajusta el precio de entrada para obtener el objetivo')
-                    : selectedFlota
-                      ? (<>
-                          <span style={{ color: '#BDD4FF' }}>{selectedFlota.nombre}</span>
-                          <span style={{ margin: '0 6px', opacity: 0.3 }}>|</span>
-                          <span>{filas.length} vehículos</span>
-                          {conId > 0 && <>
-                            <span style={{ margin: '0 6px', opacity: 0.3 }}>|</span>
-                            <span style={{ color: '#10b981' }}>{conId} con ID</span>
-                          </>}
-                          {reutilizados > 0 && <>
-                            <span style={{ margin: '0 6px', opacity: 0.3 }}>|</span>
-                            <span style={{ color: '#a78bfa' }}>{reutilizados} reutilizados</span>
-                          </>}
-                          {conPrecio > 0 && <>
-                            <span style={{ margin: '0 6px', opacity: 0.3 }}>|</span>
-                            <span style={{ color: '#f59e0b' }}>{conPrecio} con precio</span>
-                          </>}
-                        </>)
-                      : 'Selecciona una flota ofertada o contratada para emitir'
-                  }
+                  Portfolio histórico · {flotas.length} {flotas.length === 1 ? 'flota' : 'flotas'} registradas
                 </p>
               </div>
             </div>
-
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              {emisionTab === 'flotas' && selectedFlota && filas.length > 0 && (
-                <>
-                  <button onClick={copyAll} style={{
-                    fontSize: 11, fontWeight: 700, padding: '8px 14px', borderRadius: 10,
-                    background: 'rgba(61,112,255,0.12)', color: '#3366FF',
-                    border: '1px solid rgba(51,102,255,0.25)', cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', gap: 6,
-                  }}>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
-                    </svg>
-                    Copiar todo
-                  </button>
-                  <button onClick={handleGoCalibrador} style={{
-                    fontSize: 11, fontWeight: 800, padding: '8px 18px', borderRadius: 10,
-                    background: 'linear-gradient(135deg, #1240CC, #3366FF)',
-                    color: '#fff', border: 'none', cursor: 'pointer',
-                    boxShadow: '0 8px 24px -8px rgba(18,64,204,0.4)',
-                    display: 'flex', alignItems: 'center', gap: 6,
-                  }}>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <polyline points="23 4 23 10 17 10" />
-                      <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
-                    </svg>
-                    Calibrar precios
-                  </button>
-                </>
-              )}
-            </div>
+            <button onClick={() => { setSelected(null); setModal('create'); }} style={{
+              fontSize: 12, fontWeight: 800, padding: '10px 20px', borderRadius: 12,
+              background: 'linear-gradient(135deg, #1240CC, #3366FF)',
+              color: '#fff', border: 'none', cursor: 'pointer',
+              boxShadow: '0 8px 24px -8px rgba(18,64,204,0.4)',
+              display: 'flex', alignItems: 'center', gap: 6,
+            }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              Nueva flota
+            </button>
           </div>
 
           {/* Tabs */}
           <div style={{ display: 'flex', gap: 4, marginTop: 16, borderTop: '1px solid rgba(61,112,255,0.12)', paddingTop: 14 }}>
-            {([
-              { key: 'flotas' as EmisionTab, label: 'Hoja de Emisión' },
-              { key: 'calibrador' as EmisionTab, label: 'Calibrador de Precios' },
-            ]).map(t => {
-              const active = emisionTab === t.key;
+            {(['CONTRATADA', 'RECHAZADA'] as const).map(t => {
+              const count  = flotas.filter(f => f.estado === t).length;
+              const active = tab === t;
+              const cfg    = ESTADO_CFG[t];
               return (
-                <button key={t.key} onClick={() => setEmisionTab(t.key)} style={{
+                <button key={t} onClick={() => setTab(t)} style={{
                   fontSize: 12, fontWeight: 700, padding: '8px 18px', borderRadius: 10,
                   cursor: 'pointer', border: 'none',
-                  background: active ? 'rgba(18,64,204,0.35)' : 'transparent',
-                  color: active ? '#FFFFFF' : 'rgba(178,198,245,0.55)',
-                  boxShadow: active ? '0 0 0 1px rgba(70,120,255,0.5) inset' : 'none',
+                  background: active ? cfg.bg : 'transparent',
+                  color: active ? cfg.color : 'rgba(178,198,245,0.55)',
+                  boxShadow: active ? `0 0 0 1px ${cfg.border} inset` : 'none',
                   transition: 'all 180ms',
-                }}
-                  onMouseEnter={e => { if (!active) e.currentTarget.style.color = '#BDD4FF'; }}
-                  onMouseLeave={e => { if (!active) e.currentTarget.style.color = 'rgba(178,198,245,0.55)'; }}
-                >{t.label}</button>
+                  display: 'flex', alignItems: 'center', gap: 6,
+                }}>
+                  {t.charAt(0) + t.slice(1).toLowerCase()}
+                  <span style={{
+                    fontSize: 10, fontWeight: 800, padding: '1px 7px', borderRadius: 999,
+                    background: active ? cfg.border : 'rgba(51,102,255,0.1)',
+                    color: active ? cfg.color : 'rgba(178,198,245,0.5)',
+                  }}>{count}</span>
+                </button>
               );
             })}
           </div>
         </div>
 
-        {/* ── Calibrador de Precios ── */}
-        {emisionTab === 'calibrador' && (
-          <Suspense fallback={<div style={{ padding: 40, textAlign: 'center', color: 'rgba(178,198,245,0.4)' }}>Cargando calibrador...</div>}>
-            <CalibradorPrecios initialData={calibradorData.length > 0 ? calibradorData : undefined} />
-          </Suspense>
+        {/* Formulario de creación/edición */}
+        {modal && (
+          <div style={{ ...glass, padding: '24px 28px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+              <div style={{ width: 3, height: 24, borderRadius: 2, background: '#3366FF' }} />
+              <h2 style={{ fontSize: 14, fontWeight: 800, color: '#FFFFFF', margin: 0, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+                {modal === 'create' ? 'Nueva flota histórica' : `Editar — ${selected?.nombre}`}
+              </h2>
+            </div>
+            <FlotaForm
+              initial={modal === 'edit' ? selected ?? undefined : undefined}
+              onSave={modal === 'create' ? handleCreate : handleUpdate}
+              onCancel={() => { setModal(null); setSelected(null); }}
+              saving={saving}
+            />
+          </div>
         )}
 
-        {/* ── Hoja de Emisión ── */}
-        {emisionTab === 'flotas' && (
-          <>
-            {/* Fleet selector */}
-            {flotasEmision.length === 0 ? (
-              <div style={{ ...glassCard, padding: '60px 40px', textAlign: 'center' }}>
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="rgba(178,198,245,0.25)" strokeWidth="1.5" style={{ margin: '0 auto 16px' }}>
-                  <path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z" />
-                  <polyline points="13 2 13 9 20 9" />
-                </svg>
-                <p style={{ fontSize: 14, fontWeight: 700, color: '#BDD4FF', margin: '0 0 8px 0' }}>
-                  No hay flotas listas para emisión
-                </p>
-                <p style={{ fontSize: 12, color: 'rgba(178,198,245,0.5)', margin: 0 }}>
-                  Las flotas aparecerán aquí cuando su estado sea <strong style={{ color: '#f59e0b' }}>OFERTADA</strong> o <strong style={{ color: '#10b981' }}>CONTRATADA</strong>.
-                </p>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 4 }} className="custom-scrollbar">
-                {flotasEmision.map(flota => {
-                  const rows = flota.trabajo?.length > 0 ? flota.trabajo : flota.original;
-                  const nVeh = rows?.length ?? 0;
-                  const cfg = ESTADO_CFG[flota.estado] ?? ESTADO_CFG['OFERTADA'];
-                  const isSelected = selectedFlotaId === flota.id;
-
-                  return (
-                    <button
-                      key={flota.id}
-                      onClick={() => handleSelectFlota(flota.id)}
-                      style={{
-                        flex: '0 0 auto', minWidth: 220,
-                        padding: '16px 20px', borderRadius: 16, cursor: 'pointer', textAlign: 'left',
-                        background: isSelected ? cfg.bg : 'rgba(12, 28, 82, 0.75)',
-                        border: isSelected ? `1px solid ${cfg.border}` : '1px solid rgba(61,112,255,0.22)',
-                        transition: 'all 0.2s',
-                      }}
-                      onMouseEnter={e => { if (!isSelected) e.currentTarget.style.borderColor = 'rgba(70,120,255,0.5)'; }}
-                      onMouseLeave={e => { if (!isSelected) e.currentTarget.style.borderColor = isSelected ? cfg.border : 'rgba(61,112,255,0.22)'; }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 6 }}>
-                        <span style={{ fontSize: 13, fontWeight: 800, color: '#FFFFFF' }}>{flota.nombre}</span>
-                        <span style={{
-                          fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 6,
-                          background: cfg.bg, border: `1px solid ${cfg.border}`, color: cfg.color,
-                          textTransform: 'uppercase', letterSpacing: '0.06em',
-                        }}>
-                          {flota.estado}
-                        </span>
-                      </div>
-                      <div style={{ fontSize: 11, color: 'rgba(178,198,245,0.6)' }}>
-                        <strong style={{ color: '#BDD4FF' }}>{nVeh}</strong> vehículos
-                        {flota.tarifaFlota && flota.tarifaFlota.length > 0 && (
-                          <span> · <span style={{ color: '#10b981' }}>{flota.tarifaFlota.length} tarifas</span></span>
-                        )}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* ── Resumen presupuesto comparativo ── */}
-            {selectedFlota && (() => {
-              const primaMMT = (selectedFlota.oferta ?? []).reduce((s, r) => s + (parseFloat(r['oferta_prima_mmt'] ?? '') || 0), 0);
-              const primaCliente = selectedFlota.primaClienteTotal ?? 0;
-              const descuento = selectedFlota.descuentoOferta ?? 0;
-              const primaNeta = primaMMT > 0 && descuento > 0 ? primaMMT * (1 - descuento / 100) : primaMMT;
-              const fmtE = (n: number) => n.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
-              const nVeh = filas.length || 1;
-
-              if (primaMMT === 0 && primaCliente === 0) return null;
-
-              const items = [
-                ...(primaCliente > 0 ? [{
-                  label: 'Prima cliente actual', value: fmtE(primaCliente),
-                  sub: `${fmtE(primaCliente / nVeh)} / veh.`,
-                  color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.25)',
-                }] : []),
-                ...(primaMMT > 0 ? [{
-                  label: 'Prima ofertada MMT', value: fmtE(primaMMT),
-                  sub: `${fmtE(primaMMT / nVeh)} / veh.`,
-                  color: '#3366FF', bg: 'rgba(51,102,255,0.1)', border: 'rgba(51,102,255,0.25)',
-                }] : []),
-                ...(descuento > 0 && primaMMT > 0 ? [{
-                  label: `Prima neta (−${descuento}%)`, value: fmtE(primaNeta),
-                  sub: `${fmtE(primaNeta / nVeh)} / veh.`,
-                  color: '#10b981', bg: 'rgba(16,185,129,0.1)', border: 'rgba(16,185,129,0.25)',
-                }] : []),
-                ...(primaCliente > 0 && primaMMT > 0 ? (() => {
-                  const base = primaCliente;
-                  const compare = primaNeta > 0 ? primaNeta : primaMMT;
-                  const diff = compare - base;
-                  const pct = ((diff / base) * 100).toFixed(1);
-                  return [{
-                    label: 'Diferencia', value: `${diff <= 0 ? '' : '+'}${fmtE(diff)}`,
-                    sub: `${pct}%`,
-                    color: diff <= 0 ? '#10b981' : '#ef4444',
-                    bg: diff <= 0 ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)',
-                    border: diff <= 0 ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)',
-                  }];
-                })() : []),
-              ];
+        {/* Lista de flotas */}
+        {loading ? (
+          <div style={{ ...glass, padding: '60px 40px', textAlign: 'center' }}>
+            <p style={{ color: 'rgba(178,198,245,0.5)', fontSize: 13, margin: 0 }}>Cargando...</p>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div style={{ ...glass, padding: '60px 40px', textAlign: 'center' }}>
+            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="rgba(178,198,245,0.2)" strokeWidth="1.5" style={{ margin: '0 auto 16px' }}>
+              <rect x="2" y="3" width="20" height="14" rx="2" /><line x1="8" y1="21" x2="16" y2="21" /><line x1="12" y1="17" x2="12" y2="21" />
+            </svg>
+            <p style={{ fontSize: 14, fontWeight: 700, color: '#BDD4FF', margin: '0 0 8px 0' }}>
+              No hay flotas {tab === 'CONTRATADA' ? 'contratadas' : 'rechazadas'}
+            </p>
+            <p style={{ fontSize: 12, color: 'rgba(178,198,245,0.45)', margin: 0 }}>
+              Usa el botón <strong style={{ color: '#3366FF' }}>Nueva flota</strong> para añadir tu portfolio histórico.
+            </p>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {filtered.map(f => {
+              const cfg   = ESTADO_CFG[f.estado] ?? ESTADO_CFG.CONTRATADA;
+              const prima = f.prima_total || f.coberturas.reduce((s, c) => s + (Number(c.prima) || 0), 0);
+              const fmt   = (d: string) => d ? new Date(d + 'T12:00:00').toLocaleDateString('es-ES') : null;
 
               return (
-                <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(items.length, 4)}, 1fr)`, gap: 12 }}>
-                  {items.map((item, i) => (
-                    <div key={i} style={{
-                      padding: '16px 20px', borderRadius: 14,
-                      background: item.bg, border: `1px solid ${item.border}`,
-                    }}>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(178,198,245,0.6)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>
-                        {item.label}
+                <button key={f.id} onClick={() => setFicha(f)} style={{
+                  ...glass, padding: '16px 22px', cursor: 'pointer', textAlign: 'left', width: '100%',
+                  transition: 'border-color 0.15s',
+                }}
+                  onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(70,120,255,0.5)')}
+                  onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.22)')}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                        <span style={{ fontSize: 14, fontWeight: 800, color: '#FFFFFF' }}>{f.nombre}</span>
+                        <span style={{
+                          fontSize: 8, fontWeight: 800, padding: '2px 8px', borderRadius: 5,
+                          background: cfg.bg, border: `1px solid ${cfg.border}`, color: cfg.color,
+                          textTransform: 'uppercase', letterSpacing: '0.07em', flexShrink: 0,
+                        }}>{f.estado}</span>
                       </div>
-                      <div style={{ fontSize: 20, fontWeight: 900, color: item.color, fontFamily: 'monospace' }}>
-                        {item.value}
-                      </div>
-                      <div style={{ fontSize: 10, color: 'rgba(178,198,245,0.5)', fontFamily: 'monospace', marginTop: 3 }}>
-                        {item.sub}
+                      <div style={{ fontSize: 12, color: 'rgba(178,198,245,0.55)', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                        {f.tomador && <span>{f.tomador}{f.cif && <> · <span style={{ fontFamily: 'monospace', color: '#8BA3D9' }}>{f.cif}</span></>}</span>}
+                        {f.corredor_nombre && <span>Corredor: <span style={{ color: '#BDD4FF' }}>{f.corredor_nombre}</span></span>}
+                        {f.compania && <span>{f.compania}</span>}
+                        {fmt(f.fecha_vencimiento) && <span>Vcto: <span style={{ color: '#BDD4FF' }}>{fmt(f.fecha_vencimiento)}</span></span>}
                       </div>
                     </div>
-                  ))}
-                </div>
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                      {prima > 0 && (
+                        <div style={{ fontSize: 16, fontWeight: 900, color: '#10b981', fontFamily: 'monospace' }}>
+                          {fmtE(prima)}
+                        </div>
+                      )}
+                      {f.coberturas.length > 0 && (
+                        <div style={{ fontSize: 10, color: 'rgba(178,198,245,0.45)', marginTop: 2 }}>
+                          {f.coberturas.length} cobertura{f.coberturas.length > 1 ? 's' : ''}
+                        </div>
+                      )}
+                      {f.total_vehiculos > 0 && (
+                        <div style={{ fontSize: 10, color: 'rgba(178,198,245,0.45)', marginTop: 1 }}>
+                          ≈{f.total_vehiculos.toLocaleString('es-ES')} veh.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </button>
               );
-            })()}
-
-            {/* Data table */}
-            {selectedFlota && filas.length > 0 && (
-              <div style={{ ...glassCard, padding: 0, overflow: 'hidden' }}>
-                <div style={{ overflowX: 'auto', maxHeight: 'calc(100vh - 340px)' }} className="custom-scrollbar">
-                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead>
-                      <tr>
-                        <th style={{ ...thStyle, textAlign: 'center', width: 40 }}>#</th>
-                        {COLS.map(col => (
-                          <th key={col.key}
-                            onClick={() => copyColumn(col.label, f => String(f[col.key] ?? ''))}
-                            style={{ ...thStyle, width: col.width, cursor: 'pointer', userSelect: 'none' }}
-                            title={`Click para copiar columna ${col.label}`}
-                          >
-                            {col.label}
-                            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
-                              style={{ display: 'inline-block', marginLeft: 4, verticalAlign: 'middle', opacity: 0.4 }}>
-                              <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
-                            </svg>
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filas.map((fila, i) => (
-                        <tr key={i}
-                          style={{ borderBottom: '1px solid rgba(61,112,255,0.08)', transition: 'background 0.15s' }}
-                          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(51,102,255,0.04)')}
-                          onMouseLeave={e => (e.currentTarget.style.background = '')}
-                        >
-                          <td style={{ padding: '6px 10px', fontSize: 11, color: 'rgba(178,198,245,0.4)', textAlign: 'center', fontWeight: 700 }}>
-                            {i + 1}
-                          </td>
-                          {COLS.map(col => {
-                            const value = String(fila[col.key] ?? '');
-                            // Indicadores visuales para datos reutilizados/auto
-                            let indicator: React.ReactNode = null;
-                            if (col.key === 'id_catalogo' && fila.id_reutilizado) {
-                              indicator = <span title="ID reutilizado de vehículo previo" style={{ fontSize: 8, color: '#a78bfa', marginLeft: 4 }}>R</span>;
-                            }
-                            if (col.key === 'precio_objetivo' && fila.precio_reutilizado) {
-                              indicator = <span title="Precio de emisión anterior" style={{ fontSize: 8, color: '#a78bfa', marginLeft: 4 }}>R</span>;
-                            }
-
-                            return (
-                              <td key={col.key} style={{ padding: '4px 4px' }}>
-                                {col.editable ? (
-                                  <div style={{ display: 'flex', alignItems: 'center' }}>
-                                    <input
-                                      style={{
-                                        ...cellInput,
-                                        fontFamily: col.mono ? 'monospace' : 'inherit',
-                                        fontWeight: col.key === 'precio_objetivo' ? 700 : 500,
-                                        color: col.key === 'precio_objetivo' && value
-                                          ? (fila.precio_reutilizado ? '#a78bfa' : '#f59e0b')
-                                          : col.key === 'id_catalogo' && fila.id_reutilizado
-                                            ? '#a78bfa'
-                                            : '#FFFFFF',
-                                      }}
-                                      value={value}
-                                      onChange={e => handleCellChange(i, col.key, e.target.value)}
-                                      onFocus={e => (e.currentTarget.style.borderColor = '#3366FF')}
-                                      onBlur={e => (e.currentTarget.style.borderColor = 'rgba(51,102,255,0.12)')}
-                                    />
-                                    {indicator}
-                                  </div>
-                                ) : (
-                                  <span style={{
-                                    fontSize: 12, fontWeight: 700, color: '#FFFFFF',
-                                    fontFamily: col.mono ? 'monospace' : 'inherit',
-                                    padding: '4px 8px', display: 'block',
-                                  }}>
-                                    {value || '—'}
-                                  </span>
-                                )}
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-
-            {selectedFlota && filas.length === 0 && (
-              <div style={{ ...glassCard, padding: '40px', textAlign: 'center' }}>
-                <p style={{ fontSize: 13, color: 'rgba(178,198,245,0.5)', margin: 0 }}>
-                  Esta flota no tiene vehículos cargados.
-                </p>
-              </div>
-            )}
-          </>
-        )}
-
-        {/* Toast */}
-        {copyToast && (
-          <div style={{
-            position: 'fixed', bottom: 32, left: '50%', transform: 'translateX(-50%)',
-            background: 'rgba(16,185,129,0.95)', color: '#fff', padding: '10px 24px',
-            borderRadius: 10, fontSize: 13, fontWeight: 700, zIndex: 9999,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
-          }}>
-            {copyToast}
+            })}
           </div>
         )}
       </div>
+
+      {/* Modal ficha */}
+      {ficha && (
+        <FichaPoliza
+          flota={ficha}
+          onClose={() => setFicha(null)}
+          onEdit={() => { setSelected(ficha); setFicha(null); setModal('edit'); }}
+          onDelete={handleDelete}
+        />
+      )}
+
+      {/* Toast */}
+      {toast && (
+        <div style={{
+          position: 'fixed', bottom: 32, left: '50%', transform: 'translateX(-50%)',
+          background: 'rgba(16,185,129,0.95)', color: '#fff', padding: '10px 24px',
+          borderRadius: 10, fontSize: 13, fontWeight: 700, zIndex: 9999,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+        }}>{toast}</div>
+      )}
     </div>
   );
 }

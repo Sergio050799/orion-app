@@ -11,8 +11,8 @@ import AdminPanel from "@/components/saas/admin/AdminPanel";
 const navItems = [
     { href: "/dashboard",           label: "Dashboard" },
     { href: "/corredores",          label: "Corredores" },
-    { href: "/flotas",              label: "Estudio Flotas" },
-    { href: "/emission",            label: "Centro Emisión" },
+    { href: "/flotas",              label: "Estudio" },
+    { href: "/emission",            label: "Flotas" },
     { href: "/gestion-documental",  label: "Documental" },
     { href: "/analysis/vehiculos",  label: "Vehículos" },
     { href: "/analysis/ocr",        label: "Escáner OCR" },
