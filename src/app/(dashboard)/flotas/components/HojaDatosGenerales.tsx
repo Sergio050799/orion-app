@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { listarCorredores, guardarCarpeta, normalizeTipoVehiculo, type FlotaCarpeta, type Corredor, type TarifaEntry, TIPO_VEHICULO_OPTS, COBERTURA_OPTS } from '@/core/flotas';
+import { listarCorredores, cargarCorredoresDelServidor, guardarCarpeta, normalizeTipoVehiculo, type FlotaCarpeta, type Corredor, type TarifaEntry, TIPO_VEHICULO_OPTS, COBERTURA_OPTS } from '@/core/flotas';
 import type { FlotaHeader } from './types';
 
 // ─── Hook historial previo ─────────────────────────────────────────────────────
@@ -126,6 +126,9 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
 
   useEffect(() => {
     setCorredores(listarCorredores());
+    cargarCorredoresDelServidor()
+      .then(data => setCorredores(data))
+      .catch(() => {});
   }, []);
 
   // ─── Importar tarifa desde Excel ─────────────────────────────────────────
