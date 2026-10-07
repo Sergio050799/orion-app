@@ -57,6 +57,8 @@ export interface FlotaCarpeta {
     cifTomador?: string;
     fechaEmision?: string;
     periodicidad?: Periodicidad;
+    categoria?: string;
+    rangoVehiculos?: string;
   };
 
   observaciones?: string;
