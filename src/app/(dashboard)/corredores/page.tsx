@@ -568,7 +568,7 @@ function DetalleView({
               );
             })}
           </ul>
-        )}
+        ) : null}
       </div>
     </div>
   );
