@@ -63,7 +63,10 @@ function RenovBadge({ dias, fecha }: { dias: number; fecha: Date }) {
   if (dias < 0) {
     return <span style={{ ...s, background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.28)', color: '#fcd34d' }}>−{Math.abs(dias)} Días</span>;
   }
-  return <span style={{ ...s, background: 'rgba(239,68,68,0.14)', border: '1px solid rgba(239,68,68,0.30)', color: '#fca5a5' }}>{dias} Días</span>;
+  if (dias <= 30) {
+    return <span style={{ ...s, background: 'rgba(239,68,68,0.14)', border: '1px solid rgba(239,68,68,0.30)', color: '#fca5a5' }}>{dias} Días</span>;
+  }
+  return <span style={{ ...s, background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.28)', color: '#fcd34d' }}>{dias} Días</span>;
 }
 
 function SugerenciasSection({ user }: { user: string | null }) {
@@ -255,7 +258,7 @@ export default function DashboardPage() {
         return [{ carpeta: c, corredor, fecha, dias }];
       })
       .sort((a, b) => a.dias - b.dias)
-      .filter(r => r.dias <= 30);
+      .filter(r => r.dias <= 90);
   }, [carpetas, corredorMap]);
 
   const vencidasUrgentes = renovaciones.filter(
