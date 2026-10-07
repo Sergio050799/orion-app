@@ -47,14 +47,14 @@ interface SilverdatVehicle {
 }
 
 const GLASS_CARD: React.CSSProperties = {
-    background: 'rgba(12, 28, 82, 0.75)',
+    background: '#0D0F12',
     border: '1px solid rgba(61, 112, 255, 0.22)',
     borderRadius: 22,
-    boxShadow: '0 30px 80px -20px rgba(0,0,0,0.6), 0 1px 0 rgba(255,255,255,0.06) inset, 0 0 0 1px rgba(61,112,255,0.14) inset',
+    boxShadow: '0 30px 80px -20px rgba(0,0,0,0.6), 0 1px 0 rgba(255,255,255,0.06) inset, 0 0 0 1px rgba(255,255,255,0.06) inset',
 };
 
 const BUTTON_PRIMARY: React.CSSProperties = {
-    background: 'linear-gradient(135deg, #1240CC, #3366FF)',
+    background: '#4387FF',
     color: '#FFFFFF',
     border: 'none',
     cursor: 'pointer',
@@ -100,7 +100,7 @@ function SilverdatModal({ onClose, onSuccess }: { onClose: () => void; onSuccess
         }} onClick={onClose}>
             <div onClick={e => e.stopPropagation()} style={{
                 width: 360, padding: 28, borderRadius: 18,
-                background: 'rgba(8,22,72,0.97)', border: '1px solid rgba(245,158,11,0.25)',
+                background: '#090A0C', border: '1px solid rgba(245,158,11,0.25)',
                 boxShadow: '0 30px 80px rgba(0,0,0,0.7)',
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
@@ -121,7 +121,7 @@ function SilverdatModal({ onClose, onSuccess }: { onClose: () => void; onSuccess
                     <button onClick={handleLogin} disabled={loading || !datId.trim() || !user.trim() || !pass.trim()} style={{ flex: 1, fontSize: 12, fontWeight: 700, padding: '10px 0', borderRadius: 10, background: loading ? 'rgba(245,158,11,0.3)' : 'linear-gradient(135deg, #d97706, #f59e0b)', color: '#fff', border: 'none', cursor: loading ? 'not-allowed' : 'pointer' }}>
                         {loading ? 'Conectando...' : 'Iniciar sesión'}
                     </button>
-                    <button onClick={onClose} style={{ fontSize: 12, padding: '10px 16px', borderRadius: 10, background: 'rgba(6,14,50,0.5)', color: '#BDD4FF', border: '1px solid rgba(61,112,255,0.22)', cursor: 'pointer' }}>Cancelar</button>
+                    <button onClick={onClose} style={{ fontSize: 12, padding: '10px 16px', borderRadius: 10, background: '#0D0F12', color: '#A1A1A6', border: '1px solid rgba(67,135,255,0.25)', cursor: 'pointer' }}>Cancelar</button>
                 </div>
             </div>
         </div>
@@ -388,9 +388,9 @@ export default function PlatesAnalysisPage() {
 
             {/* Zone Header */}
             <div style={{ marginBottom: 24, display: 'flex', alignItems: 'flex-start', gap: 16 }}>
-                <div style={{ width: 4, height: 48, borderRadius: 2, background: 'linear-gradient(180deg, #1240CC, #3366FF)', marginTop: 2, flexShrink: 0 }} />
+                <div style={{ width: 4, height: 48, borderRadius: 2, background: '#4387FF', marginTop: 2, flexShrink: 0 }} />
                 <div>
-                    <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#3366FF', marginBottom: 4 }}>
+                    <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#4387FF', marginBottom: 4 }}>
                         DGT &middot; Tráfico
                     </p>
                     <h1 style={{ fontSize: 28, fontWeight: 800, color: '#FFFFFF', margin: 0, lineHeight: 1.2 }}>
@@ -404,7 +404,7 @@ export default function PlatesAnalysisPage() {
 
                 {/* LEFT — Input */}
                 <div style={{ ...GLASS_CARD, padding: 24, flex: '0 0 340px', position: 'sticky', top: 16 }}>
-                    <label style={{ fontSize: 10, fontWeight: 800, color: 'rgba(51,102,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8, display: 'block' }}>
+                    <label style={{ fontSize: 10, fontWeight: 800, color: 'rgba(67,135,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8, display: 'block' }}>
                         Matrículas
                     </label>
                     <textarea
@@ -416,17 +416,17 @@ export default function PlatesAnalysisPage() {
                         spellCheck={false}
                         style={{
                             width: '100%', minHeight: 200,
-                            background: 'rgba(6,14,50,0.55)',
-                            border: '1px solid rgba(51,102,255,0.15)',
+                            background: '#0D0F12',
+                            border: '1px solid rgba(67,135,255,0.10)',
                             borderRadius: 12, color: '#FFFFFF',
                             fontFamily: '"JetBrains Mono", "Fira Code", "SF Mono", Consolas, monospace',
                             fontSize: 14, fontWeight: 600, letterSpacing: '0.05em',
                             padding: '14px 16px', outline: 'none', resize: 'vertical', lineHeight: 1.8,
-                            caretColor: '#3366FF',
+                            caretColor: '#4387FF',
                         }}
                     />
 
-                    <p style={{ fontSize: 10, color: 'rgba(178,198,245,0.5)', marginTop: 8, marginBottom: 12, lineHeight: 1.5 }}>
+                    <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginTop: 8, marginBottom: 12, lineHeight: 1.5 }}>
                         Separadas por espacios, comas, o saltos de línea.
                     </p>
 
@@ -453,7 +453,7 @@ export default function PlatesAnalysisPage() {
                                 style={{
                                     background: sdHasData ? 'rgba(16,185,129,0.12)' : 'rgba(51, 102, 255, 0.1)',
                                     border: `1px solid ${sdHasData ? 'rgba(16,185,129,0.3)' : 'rgba(51, 102, 255, 0.25)'}`,
-                                    borderRadius: 10, color: sdHasData ? '#10b981' : '#3366FF',
+                                    borderRadius: 10, color: sdHasData ? '#10b981' : '#4387FF',
                                     padding: '12px 14px', fontSize: 11, fontWeight: 700,
                                     letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer',
                                 }}
@@ -527,12 +527,12 @@ export default function PlatesAnalysisPage() {
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                                 margin: '0 auto 16px',
                             }}>
-                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#3366FF" strokeWidth="1.5">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4387FF" strokeWidth="1.5">
                                     <rect x="2" y="5" width="20" height="14" rx="2" />
                                     <line x1="2" y1="10" x2="22" y2="10" />
                                 </svg>
                             </div>
-                            <p style={{ color: '#BDD4FF', fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                            <p style={{ color: '#A1A1A6', fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                                 Introduce matrículas a la izquierda
                             </p>
                         </div>
@@ -617,9 +617,9 @@ export default function PlatesAnalysisPage() {
                                             )}
                                             <span style={{
                                                 fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em',
-                                                color: res.type === 'Semirremolque' ? '#a78bfa' : 'rgba(178,198,245,0.5)',
-                                                background: res.type === 'Semirremolque' ? 'rgba(167,139,250,0.1)' : 'rgba(61,112,255,0.10)',
-                                                border: `1px solid ${res.type === 'Semirremolque' ? 'rgba(167,139,250,0.25)' : 'rgba(61,112,255,0.16)'}`,
+                                                color: res.type === 'Semirremolque' ? '#a78bfa' : 'rgba(255,255,255,0.4)',
+                                                background: res.type === 'Semirremolque' ? 'rgba(167,139,250,0.1)' : 'rgba(255,255,255,0.06)',
+                                                border: `1px solid ${res.type === 'Semirremolque' ? 'rgba(167,139,250,0.25)' : 'rgba(67,135,255,0.10)'}`,
                                                 borderRadius: 5, padding: '3px 8px',
                                             }}>{getTipoLabel(res.type)}</span>
                                             {res.confidence > 0 && res.confidence < 1 && (

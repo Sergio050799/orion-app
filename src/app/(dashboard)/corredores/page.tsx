@@ -1,28 +1,23 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import {
-  listarCorredores, crearCorredor, guardarCorredor, eliminarCorredor, cargarCorredoresDelServidor, borrarTodosLosCorredores,
+  listarCorredores, crearCorredor, guardarCorredor, eliminarCorredor,
+  cargarCorredoresDelServidor, borrarTodosLosCorredores,
   type Corredor, type Periodicidad, type Sucursal,
 } from '@/core/flotas';
-import { listarCarpetas, crearCarpeta, guardarCarpeta, eliminarCarpeta, borrarTodasLasCarpetas, cargarCarpetasDelServidor, type FlotaCarpeta } from '@/core/flotas';
+import {
+  listarCarpetas, crearCarpeta, guardarCarpeta, eliminarCarpeta,
+  borrarTodasLasCarpetas, cargarCarpetasDelServidor, type FlotaCarpeta,
+} from '@/core/flotas';
 
-// ─── Design tokens ──────────────────────────────────────────────────────────
-
-const glass: React.CSSProperties = {
-  background: 'rgba(12, 28, 82, 0.75)',
-  border: '1px solid rgba(61, 112, 255, 0.22)',
-  borderRadius: 22,
-  boxShadow: '0 30px 80px -20px rgba(0,0,0,0.6), 0 1px 0 rgba(255,255,255,0.06) inset, 0 0 0 1px rgba(61,112,255,0.14) inset',
-};
+// ─── Constantes ──────────────────────────────────────────────────────────────
 
 const SUCURSALES: Sucursal[] = ['TITAN', 'MEDIACION'];
 
-// ─── Tipos ──────────────────────────────────────────────────────────────────
-
-type Vista = 'lista' | 'detalle';
+type Vista    = 'lista' | 'detalle';
 type FormData = Omit<Corredor, 'id' | 'creadoEn' | 'actualizadoEn'>;
 
 const FORM_VACIO: FormData = {
@@ -32,46 +27,33 @@ const FORM_VACIO: FormData = {
   sucursal: undefined, comercial: '',
 };
 
-// ─── Icons ──────────────────────────────────────────────────────────────────
-
-function MailIcon() {
-  return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>;
-}
-function PhoneIcon() {
-  return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M22 16.9v3a2 2 0 01-2.2 2 19.8 19.8 0 01-8.6-3.1 19.5 19.5 0 01-6-6A19.8 19.8 0 012.1 4.2 2 2 0 014.1 2h3a2 2 0 012 1.7c.1.9.3 1.8.6 2.6a2 2 0 01-.5 2.1L8 9.6a16 16 0 006 6l1.2-1.2a2 2 0 012-.5c.9.3 1.7.5 2.6.6a2 2 0 011.7 2z"/></svg>;
-}
-function UserIcon() {
-  return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/></svg>;
-}
-function CashIcon() {
-  return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/></svg>;
-}
-function SearchIcon() {
-  return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>;
-}
-
-// ─── Helpers ────────────────────────────────────────────────────────────────
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function estadoColor(estado: string) {
-  if (estado === 'OFERTADA') return '#f59e0b';
-  if (estado === 'CONTRATADA') return '#10b981';
-  if (estado === 'RECHAZADA') return '#ef4444';
-  return '#3366FF';
+  if (estado === 'OFERTADA')   return '#7C5CFC';
+  if (estado === 'CONTRATADA') return '#20C982';
+  if (estado === 'RECHAZADA')  return '#EF4D5A';
+  return '#4387FF';
 }
+
+function MailIcon()  { return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>; }
+function PhoneIcon() { return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M22 16.9v3a2 2 0 01-2.2 2 19.8 19.8 0 01-8.6-3.1 19.5 19.5 0 01-6-6A19.8 19.8 0 012.1 4.2 2 2 0 014.1 2h3a2 2 0 012 1.7c.1.9.3 1.8.6 2.6a2 2 0 01-.5 2.1L8 9.6a16 16 0 006 6l1.2-1.2a2 2 0 012-.5c.9.3 1.7.5 2.6.6a2 2 0 011.7 2z"/></svg>; }
+function UserIcon()  { return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/></svg>; }
+function CashIcon()  { return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/></svg>; }
 
 function FormField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label style={{ display: 'block' }}>
       <span style={{
         display: 'block', fontSize: 10, fontWeight: 700, letterSpacing: '0.08em',
-        textTransform: 'uppercase', color: 'rgba(70,120,255,0.8)', marginBottom: 6,
+        textTransform: 'uppercase', color: '#70747B', marginBottom: 6,
       }}>{label}</span>
       {children}
     </label>
   );
 }
 
-// ─── Panel lateral (crear / editar) ─────────────────────────────────────────
+// ─── Panel lateral (crear / editar) ──────────────────────────────────────────
 
 function PanelCorredor({
   corredor, onClose, onSave,
@@ -111,31 +93,23 @@ function PanelCorredor({
 
   return (
     <>
-      <div onClick={onClose} style={{
-        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
-        backdropFilter: 'blur(4px)', zIndex: 40,
-      }} />
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 40 }} />
       <aside style={{
-        position: 'fixed', top: 100, right: 0, bottom: 0, width: 440, zIndex: 50,
-        background: 'linear-gradient(180deg, rgba(8,22,72,0.95) 0%, rgba(0,7,45,0.98) 100%)',
-        borderLeft: '1px solid rgba(61,112,255,0.22)',
-        borderTopLeftRadius: 22,
+        position: 'fixed', top: 0, right: 0, bottom: 0, width: 440, zIndex: 50,
+        background: '#0D0F12', borderLeft: '1px solid rgba(255,255,255,0.08)',
         display: 'flex', flexDirection: 'column',
       }}>
         <header style={{
           padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          borderBottom: '1px solid rgba(61,112,255,0.16)',
+          borderBottom: '1px solid rgba(255,255,255,0.08)',
         }}>
-          <h2 style={{
-            margin: 0, fontSize: 16, color: '#FFFFFF',
-            fontFamily: 'var(--font-display), Inter, sans-serif', fontWeight: 600,
-          }}>
+          <h2 style={{ margin: 0, fontSize: 16, color: '#F4F4F5', fontWeight: 600 }}>
             {corredor ? 'Editar corredor' : 'Nuevo corredor'}
           </h2>
           <button onClick={onClose} style={{
             background: 'none', border: 'none', cursor: 'pointer',
-            color: 'rgba(178,198,245,0.5)', fontSize: 22, lineHeight: 1, padding: 4,
-          }}>x</button>
+            color: '#70747B', fontSize: 20, lineHeight: 1, padding: 4,
+          }}>×</button>
         </header>
 
         <form onSubmit={handleSubmit} style={{ flex: 1, overflowY: 'auto', padding: '20px 24px' }}>
@@ -145,7 +119,7 @@ function PanelCorredor({
               <FormField label="Nombre *">
                 <input className="orion-input" value={form.nombre} onChange={e => set('nombre', e.target.value)} required />
               </FormField>
-              <FormField label="Codigo corredor">
+              <FormField label="Código corredor">
                 <input className="orion-input" value={form.codigo} onChange={e => set('codigo', e.target.value)} placeholder="COR-001" />
               </FormField>
             </div>
@@ -168,7 +142,7 @@ function PanelCorredor({
               <FormField label="CIF">
                 <input className="orion-input" value={form.cif} onChange={e => set('cif', e.target.value)} />
               </FormField>
-              <FormField label="% Comision">
+              <FormField label="% Comisión">
                 <input className="orion-input" inputMode="decimal"
                   value={form.porcentajeComision}
                   onChange={e => { const v = e.target.value; if (v === '' || /^\d*\.?\d*$/.test(v)) set('porcentajeComision', v === '' ? 0 : parseFloat(v) || 0); }} />
@@ -209,7 +183,7 @@ function PanelCorredor({
               <FormField label="Email">
                 <input className="orion-input" type="email" value={form.email} onChange={e => set('email', e.target.value)} />
               </FormField>
-              <FormField label="Telefono">
+              <FormField label="Teléfono">
                 <input className="orion-input" value={form.telefono} onChange={e => set('telefono', e.target.value)} />
               </FormField>
             </div>
@@ -221,17 +195,10 @@ function PanelCorredor({
           </div>
 
           <footer style={{ marginTop: 24, display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-            <button type="button" onClick={onClose} style={{
-              background: 'rgba(6,14,50,0.5)', border: '1px solid rgba(61,112,255,0.22)',
-              borderRadius: 10, padding: '9px 18px', color: '#BDD4FF', fontSize: 13,
-              cursor: 'pointer', fontWeight: 500,
-            }}>Cancelar</button>
-            <button type="submit" style={{
-              background: 'linear-gradient(135deg, #1240CC, #3366FF)',
-              border: 'none', borderRadius: 10, padding: '9px 22px',
-              color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer',
-              boxShadow: '0 0 20px rgba(18,64,204,0.4)',
-            }}>
+            <button type="button" onClick={onClose} className="btn-ghost" style={{ height: 36, padding: '0 16px' }}>
+              Cancelar
+            </button>
+            <button type="submit" className="btn-primary" style={{ height: 36, padding: '0 20px' }}>
               {corredor ? 'Guardar' : 'Crear corredor'}
             </button>
           </footer>
@@ -241,7 +208,7 @@ function PanelCorredor({
   );
 }
 
-// ─── Vista detalle ─────────────────────────────────────────────────────────
+// ─── Vista detalle ────────────────────────────────────────────────────────────
 
 function DetalleView({
   corredor, flotas, todasLasCarpetas, onVolver, onEditar, onEliminar, onNuevaFlota, onDesvincularFlota, onVincularExistente,
@@ -270,183 +237,179 @@ function DetalleView({
     );
   });
 
+  const SURFACE: React.CSSProperties = {
+    background: '#090A0C', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14,
+  };
+
   return (
-    <div className="animate-in fade-in duration-500" style={{ maxWidth: 900, margin: '0 auto' }}>
+    <div style={{ maxWidth: 900, margin: '0 auto' }}>
       <button onClick={onVolver} style={{
         background: 'none', border: 'none', cursor: 'pointer',
-        color: '#3366FF', fontSize: 13, padding: 0, marginBottom: 20,
+        color: '#4387FF', fontSize: 13, padding: 0, marginBottom: 20,
         display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500,
       }}>
-        Volver a corredores
+        ← Volver a corredores
       </button>
 
-      <div style={{ ...glass, padding: '28px 32px', marginBottom: 20 }}>
+      {/* Tarjeta datos corredor */}
+      <div style={{ ...SURFACE, padding: '28px 32px', marginBottom: 16 }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
           <div>
-            <h1 style={{
-              margin: 0, fontSize: 22, color: '#FFFFFF',
-              fontFamily: 'var(--font-display), Inter, sans-serif', fontWeight: 700,
-            }}>
+            <h1 style={{ margin: 0, fontSize: 22, color: '#F4F4F5', fontWeight: 700 }}>
               {corredor.nombre}
             </h1>
-            <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-              {corredor.cif && <span style={{ fontSize: 12, color: '#BDD4FF', fontFamily: 'monospace' }}>{corredor.cif}</span>}
+            <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              {corredor.cif && (
+                <span style={{ fontSize: 12, color: '#A1A1A6', fontFamily: 'monospace' }}>{corredor.cif}</span>
+              )}
               {corredor.sucursal && (
                 <span style={{
-                  fontSize: 11, fontWeight: 700,
-                  color: corredor.sucursal === 'TITAN' ? '#60a5fa' : '#a78bfa',
-                  background: corredor.sucursal === 'TITAN' ? 'rgba(96,165,250,0.12)' : 'rgba(167,139,250,0.12)',
-                  border: `1px solid ${corredor.sucursal === 'TITAN' ? 'rgba(96,165,250,0.3)' : 'rgba(167,139,250,0.3)'}`,
+                  fontSize: 11, fontWeight: 600,
+                  color: corredor.sucursal === 'TITAN' ? '#4387FF' : '#A1A1A6',
+                  background: corredor.sucursal === 'TITAN' ? 'rgba(67,135,255,0.08)' : 'rgba(255,255,255,0.05)',
+                  border: `1px solid ${corredor.sucursal === 'TITAN' ? 'rgba(67,135,255,0.2)' : 'rgba(255,255,255,0.08)'}`,
                   borderRadius: 999, padding: '3px 10px',
                 }}>{corredor.sucursal}</span>
               )}
               {corredor.comercial && (
                 <span style={{
-                  fontSize: 11, color: '#BDD4FF',
-                  background: 'rgba(6,14,50,0.5)',
-                  border: '1px solid rgba(61,112,255,0.16)',
+                  fontSize: 11, color: '#A1A1A6',
+                  background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)',
                   borderRadius: 999, padding: '3px 10px',
                 }}>{corredor.comercial}</span>
               )}
               <span style={{
-                fontSize: 12, fontWeight: 700, color: '#3366FF',
-                background: 'rgba(61,112,255,0.16)', border: '1px solid rgba(51,102,255,0.25)',
+                fontSize: 11, fontWeight: 600, color: '#20C982',
+                background: 'rgba(32,201,130,0.08)', border: '1px solid rgba(32,201,130,0.2)',
                 borderRadius: 999, padding: '3px 10px',
-              }}>{corredor.porcentajeComision}% comision</span>
+              }}>{corredor.porcentajeComision}% comisión</span>
               <span style={{
-                fontSize: 11, color: '#BDD4FF', background: 'rgba(6,14,50,0.5)',
-                border: '1px solid rgba(61,112,255,0.16)', borderRadius: 999, padding: '3px 10px',
-                textTransform: 'capitalize',
+                fontSize: 11, color: '#A1A1A6',
+                background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)',
+                borderRadius: 999, padding: '3px 10px', textTransform: 'capitalize',
               }}>{corredor.periodicidad}</span>
             </div>
             <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
               {corredor.email && (
-                <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#BDD4FF' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#A1A1A6' }}>
                   <MailIcon /> {corredor.email}
                 </span>
               )}
               {corredor.telefono && (
-                <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#BDD4FF' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#A1A1A6' }}>
                   <PhoneIcon /> {corredor.telefono}
                 </span>
               )}
               {corredor.contacto && (
-                <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#BDD4FF' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#A1A1A6' }}>
                   <UserIcon /> {corredor.contacto}
                 </span>
               )}
               {corredor.formaPago && (
-                <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#BDD4FF' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#A1A1A6' }}>
                   <CashIcon /> {corredor.formaPago}
                 </span>
               )}
             </div>
           </div>
+
+          {/* Acciones */}
           <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
             {!confirmEdit ? (
-              <button onClick={() => setConfirmEdit(true)} style={{
-                background: 'rgba(6,14,50,0.5)', border: '1px solid rgba(61,112,255,0.22)',
-                borderRadius: 10, padding: '8px 16px', color: '#BDD4FF', fontSize: 12,
-                cursor: 'pointer', fontWeight: 500,
-              }}>Editar</button>
+              <button onClick={() => setConfirmEdit(true)} className="btn-ghost" style={{ height: 34, padding: '0 14px', fontSize: 13 }}>
+                Editar
+              </button>
             ) : (
               <div style={{
-                display: 'flex', alignItems: 'center', gap: 6,
-                background: 'rgba(51,102,255,0.1)', border: '1px solid rgba(51,102,255,0.3)',
-                borderRadius: 10, padding: '4px 10px', fontSize: 12,
+                display: 'flex', alignItems: 'center', gap: 8,
+                background: 'rgba(67,135,255,0.06)', border: '1px solid rgba(67,135,255,0.2)',
+                borderRadius: 10, padding: '4px 12px',
               }}>
-                <span style={{ color: 'rgba(178,198,245,0.8)', fontSize: 11 }}>¿Editar datos?</span>
+                <span style={{ color: '#A1A1A6', fontSize: 12 }}>¿Editar datos?</span>
                 <button onClick={() => { setConfirmEdit(false); onEditar(); }} style={{
-                  background: 'linear-gradient(135deg, #1240CC, #3366FF)', border: 'none',
-                  borderRadius: 6, padding: '3px 10px', color: '#fff', fontSize: 11, cursor: 'pointer', fontWeight: 600,
+                  background: '#4387FF', border: 'none', borderRadius: 6,
+                  padding: '3px 10px', color: '#fff', fontSize: 11, cursor: 'pointer', fontWeight: 600,
                 }}>Sí</button>
                 <button onClick={() => setConfirmEdit(false)} style={{
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  color: 'rgba(178,198,245,0.5)', fontSize: 11, padding: '3px 4px',
+                  background: 'none', border: 'none', cursor: 'pointer', color: '#70747B', fontSize: 11,
                 }}>No</button>
               </div>
             )}
+
             {!confirmElim ? (
-              <button onClick={() => setConfirmElim(true)} style={{
-                background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)',
-                borderRadius: 10, padding: '8px 16px', color: '#f87171', fontSize: 12,
-                cursor: 'pointer', fontWeight: 500,
-              }}>Eliminar</button>
+              <button onClick={() => setConfirmElim(true)} className="btn-danger" style={{ height: 34, padding: '0 14px', fontSize: 13 }}>
+                Eliminar
+              </button>
             ) : flotas.length > 0 ? (
               <div style={{
                 display: 'flex', flexDirection: 'column', gap: 8,
-                background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)',
-                borderRadius: 10, padding: '10px 14px', fontSize: 12,
+                background: 'rgba(239,77,90,0.06)', border: '1px solid rgba(239,77,90,0.2)',
+                borderRadius: 10, padding: '10px 14px',
               }}>
-                <span style={{ color: '#f87171', fontWeight: 600 }}>
+                <span style={{ color: '#EF4D5A', fontWeight: 600, fontSize: 12 }}>
                   Tiene {flotas.length} flota{flotas.length > 1 ? 's' : ''}:
                 </span>
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: 6 }}>
                   <button onClick={() => onEliminar('desvincular')} style={{
-                    background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.4)',
-                    borderRadius: 6, padding: '4px 10px', color: '#fbbf24', fontSize: 11, cursor: 'pointer', fontWeight: 600,
+                    background: 'rgba(240,185,77,0.08)', border: '1px solid rgba(240,185,77,0.25)',
+                    borderRadius: 6, padding: '4px 10px', color: '#F0B94D', fontSize: 11, cursor: 'pointer', fontWeight: 600,
                   }}>Desvincular todas</button>
                   <button onClick={() => onEliminar('borrar_flotas')} style={{
-                    background: '#ef4444', border: 'none', borderRadius: 6,
+                    background: '#EF4D5A', border: 'none', borderRadius: 6,
                     padding: '4px 10px', color: '#fff', fontSize: 11, cursor: 'pointer', fontWeight: 600,
                   }}>Borrar todo</button>
                   <button onClick={() => setConfirmElim(false)} style={{
-                    background: 'none', border: 'none', cursor: 'pointer',
-                    color: 'rgba(178,198,245,0.5)', fontSize: 11, padding: '4px 6px',
+                    background: 'none', border: 'none', cursor: 'pointer', color: '#70747B', fontSize: 11,
                   }}>Cancelar</button>
                 </div>
               </div>
             ) : (
               <div style={{
-                display: 'flex', alignItems: 'center', gap: 6,
-                background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)',
-                borderRadius: 10, padding: '4px 10px', fontSize: 12,
+                display: 'flex', alignItems: 'center', gap: 8,
+                background: 'rgba(239,77,90,0.06)', border: '1px solid rgba(239,77,90,0.2)',
+                borderRadius: 10, padding: '4px 12px',
               }}>
-                <span style={{ color: 'rgba(178,198,245,0.7)' }}>Seguro?</span>
+                <span style={{ color: '#A1A1A6', fontSize: 12 }}>¿Eliminar?</span>
                 <button onClick={() => onEliminar('desvincular')} style={{
-                  background: '#ef4444', border: 'none', borderRadius: 6,
+                  background: '#EF4D5A', border: 'none', borderRadius: 6,
                   padding: '3px 10px', color: '#fff', fontSize: 11, cursor: 'pointer', fontWeight: 600,
-                }}>Si</button>
+                }}>Sí</button>
                 <button onClick={() => setConfirmElim(false)} style={{
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  color: 'rgba(178,198,245,0.5)', fontSize: 11, padding: '3px 4px',
+                  background: 'none', border: 'none', cursor: 'pointer', color: '#70747B', fontSize: 11,
                 }}>No</button>
               </div>
             )}
           </div>
         </div>
+
         {corredor.observaciones && (
           <div style={{
             marginTop: 18, padding: '12px 16px',
-            background: 'rgba(61,112,255,0.10)', border: '1px solid rgba(51,102,255,0.15)',
-            borderRadius: 10, fontSize: 12, color: '#BDD4FF',
+            background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: 10, fontSize: 12, color: '#A1A1A6',
           }}>
-            <b style={{ color: '#3366FF', fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', display: 'block', marginBottom: 4 }}>Observaciones</b>
+            <b style={{ color: '#70747B', fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', display: 'block', marginBottom: 4 }}>Observaciones</b>
             {corredor.observaciones}
           </div>
         )}
       </div>
 
-      <div style={{ ...glass, padding: '24px 28px' }}>
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18,
-        }}>
-          <h3 style={{
-            margin: 0, fontSize: 14, color: '#FFFFFF',
-            fontFamily: 'var(--font-display), Inter, sans-serif', fontWeight: 500,
-          }}>
+      {/* Tarjeta flotas */}
+      <div style={{ ...SURFACE, padding: '22px 28px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+          <h3 style={{ margin: 0, fontSize: 14, color: '#F4F4F5', fontWeight: 600 }}>
             Flotas asociadas · {flotas.length}
           </h3>
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={() => { setShowVincular(v => !v); setVincularSearch(''); }} style={{
-              background: showVincular ? 'rgba(51,102,255,0.15)' : 'none',
-              border: '1px solid rgba(61,112,255,0.3)', borderRadius: 8,
-              cursor: 'pointer', color: '#3366FF', fontSize: 12, fontWeight: 600,
+              background: showVincular ? 'rgba(67,135,255,0.08)' : 'none',
+              border: '1px solid rgba(67,135,255,0.2)', borderRadius: 8,
+              cursor: 'pointer', color: '#4387FF', fontSize: 12, fontWeight: 600,
               padding: '4px 12px',
             }}>Vincular existentes</button>
             <button onClick={onNuevaFlota} style={{
               background: 'none', border: 'none', cursor: 'pointer',
-              color: '#3366FF', fontSize: 12, fontWeight: 600,
+              color: '#4387FF', fontSize: 12, fontWeight: 600,
             }}>+ Nueva flota</button>
           </div>
         </div>
@@ -454,25 +417,21 @@ function DetalleView({
         {showVincular && (
           <div style={{
             marginBottom: 16, padding: '14px 16px',
-            background: 'rgba(51,102,255,0.06)', border: '1px solid rgba(61,112,255,0.2)',
-            borderRadius: 12,
+            background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: 10,
           }}>
-            <p style={{ margin: '0 0 10px', fontSize: 11, color: 'rgba(178,198,245,0.6)', fontWeight: 600 }}>
+            <p style={{ margin: '0 0 10px', fontSize: 11, color: '#70747B', fontWeight: 600 }}>
               Selecciona carpetas para vincular a {corredor.nombre}:
             </p>
             <input
               placeholder="Buscar por nombre, tomador, CIF..."
               value={vincularSearch}
               onChange={e => setVincularSearch(e.target.value)}
-              style={{
-                width: '100%', marginBottom: 10, padding: '7px 12px',
-                background: 'rgba(6,14,50,0.6)', border: '1px solid rgba(61,112,255,0.22)',
-                borderRadius: 8, color: '#fff', fontSize: 12, outline: 'none',
-                boxSizing: 'border-box',
-              }}
+              className="orion-input"
+              style={{ marginBottom: 10, fontSize: 12 }}
             />
             {disponibles.length === 0 ? (
-              <p style={{ color: 'rgba(178,198,245,0.4)', fontSize: 12, textAlign: 'center', padding: '10px 0', margin: 0 }}>
+              <p style={{ color: '#70747B', fontSize: 12, textAlign: 'center', padding: '10px 0', margin: 0 }}>
                 {vincularSearch ? 'Sin resultados.' : 'Todas las carpetas ya están vinculadas a este corredor.'}
               </p>
             ) : (
@@ -480,15 +439,16 @@ function DetalleView({
                 {disponibles.map(c => (
                   <li key={c.id} style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    padding: '9px 12px', borderRadius: 8,
+                    padding: '9px 12px', borderRadius: 8, cursor: 'pointer',
+                    transition: 'background 150ms',
                   }}
-                    onMouseEnter={e => (e.currentTarget.style.background = 'rgba(51,102,255,0.06)')}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.03)')}
                     onMouseLeave={e => (e.currentTarget.style.background = '')}
                   >
-                    <span style={{ fontSize: 13, color: '#FFFFFF', fontWeight: 500 }}>
+                    <span style={{ fontSize: 13, color: '#F4F4F5', fontWeight: 500 }}>
                       {c.nombre || '(sin nombre)'}
                       {c.header?.tomador && (
-                        <span style={{ color: 'rgba(178,198,245,0.5)', fontSize: 11, fontWeight: 400, marginLeft: 8 }}>
+                        <span style={{ color: '#70747B', fontSize: 11, fontWeight: 400, marginLeft: 8 }}>
                           {c.header.tomador}
                         </span>
                       )}
@@ -497,13 +457,12 @@ function DetalleView({
                       <span style={{
                         fontSize: 10, padding: '2px 8px', borderRadius: 999, fontWeight: 600,
                         color: estadoColor(c.estado ?? 'EN ESTUDIO'),
-                        background: `${estadoColor(c.estado ?? 'EN ESTUDIO')}18`,
-                        border: `1px solid ${estadoColor(c.estado ?? 'EN ESTUDIO')}40`,
+                        background: `${estadoColor(c.estado ?? 'EN ESTUDIO')}14`,
+                        border: `1px solid ${estadoColor(c.estado ?? 'EN ESTUDIO')}38`,
                       }}>{c.estado ?? 'EN ESTUDIO'}</span>
-                      <button onClick={() => { onVincularExistente(c.id); }} style={{
-                        background: 'linear-gradient(135deg, #1240CC, #3366FF)',
-                        border: 'none', borderRadius: 6, padding: '4px 12px',
-                        color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer',
+                      <button onClick={() => onVincularExistente(c.id)} style={{
+                        background: '#4387FF', border: 'none', borderRadius: 6,
+                        padding: '4px 12px', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer',
                       }}>Vincular</button>
                     </div>
                   </li>
@@ -514,8 +473,8 @@ function DetalleView({
         )}
 
         {flotas.length === 0 && !showVincular ? (
-          <p style={{ color: 'rgba(178,198,245,0.4)', fontSize: 12, textAlign: 'center', padding: '30px 0', margin: 0 }}>
-            Sin flotas vinculadas. Usa "Vincular existentes" para asociar carpetas.
+          <p style={{ color: '#70747B', fontSize: 12, textAlign: 'center', padding: '30px 0', margin: 0 }}>
+            Sin flotas vinculadas. Usa &ldquo;Vincular existentes&rdquo; para asociar carpetas.
           </p>
         ) : flotas.length > 0 ? (
           <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -526,40 +485,38 @@ function DetalleView({
               return (
                 <li key={f.id} style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  padding: '12px 16px', borderRadius: 10,
-                  transition: 'background 180ms',
-                  background: isConfirming ? 'rgba(245,158,11,0.06)' : undefined,
+                  padding: '12px 16px', borderRadius: 10, transition: 'background 150ms',
+                  background: isConfirming ? 'rgba(240,185,77,0.04)' : undefined,
                 }}
-                  onMouseEnter={e => { if (!isConfirming) e.currentTarget.style.background = 'rgba(51,102,255,0.04)'; }}
+                  onMouseEnter={e => { if (!isConfirming) e.currentTarget.style.background = 'rgba(255,255,255,0.025)'; }}
                   onMouseLeave={e => { if (!isConfirming) e.currentTarget.style.background = ''; }}
                 >
-                  <span style={{ color: '#FFFFFF', fontSize: 13, fontWeight: 500 }}>
+                  <span style={{ color: '#F4F4F5', fontSize: 13, fontWeight: 500 }}>
                     {f.nombre || '(sin nombre)'}
-                    <span style={{ color: 'rgba(178,198,245,0.6)', fontWeight: 400, fontSize: 11, marginLeft: 8 }}>· {numVeh} veh.</span>
+                    <span style={{ color: '#70747B', fontWeight: 400, fontSize: 11, marginLeft: 8 }}>· {numVeh} veh.</span>
                   </span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <span style={{
                       fontSize: 11, padding: '3px 10px', borderRadius: 999, fontWeight: 500,
                       color: estadoColor(f.estado ?? 'EN ESTUDIO'),
-                      background: `${estadoColor(f.estado ?? 'EN ESTUDIO')}18`,
-                      border: `1px solid ${estadoColor(f.estado ?? 'EN ESTUDIO')}40`,
+                      background: `${estadoColor(f.estado ?? 'EN ESTUDIO')}14`,
+                      border: `1px solid ${estadoColor(f.estado ?? 'EN ESTUDIO')}38`,
                     }}>{f.estado ?? 'EN ESTUDIO'}</span>
                     {!isConfirming ? (
                       <button onClick={() => setConfirmDesvincular(f.id)} style={{
-                        background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)',
-                        borderRadius: 6, padding: '3px 10px', color: '#fbbf24', fontSize: 11,
+                        background: 'rgba(240,185,77,0.08)', border: '1px solid rgba(240,185,77,0.2)',
+                        borderRadius: 6, padding: '3px 10px', color: '#F0B94D', fontSize: 11,
                         cursor: 'pointer', fontWeight: 500,
                       }}>Desvincular</button>
                     ) : (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span style={{ fontSize: 11, color: 'rgba(178,198,245,0.7)' }}>Seguro?</span>
+                        <span style={{ fontSize: 11, color: '#A1A1A6' }}>¿Seguro?</span>
                         <button onClick={() => { onDesvincularFlota(f.id); setConfirmDesvincular(null); }} style={{
-                          background: '#f59e0b', border: 'none', borderRadius: 6,
+                          background: '#F0B94D', border: 'none', borderRadius: 6,
                           padding: '3px 10px', color: '#000', fontSize: 11, cursor: 'pointer', fontWeight: 700,
-                        }}>Si</button>
+                        }}>Sí</button>
                         <button onClick={() => setConfirmDesvincular(null)} style={{
-                          background: 'none', border: 'none', cursor: 'pointer',
-                          color: 'rgba(178,198,245,0.5)', fontSize: 11,
+                          background: 'none', border: 'none', cursor: 'pointer', color: '#70747B', fontSize: 11,
                         }}>No</button>
                       </div>
                     )}
@@ -574,7 +531,29 @@ function DetalleView({
   );
 }
 
-// ─── Tabla de corredores (lista unica) ─────────────────────────────────────
+// ─── Tabla de corredores ──────────────────────────────────────────────────────
+
+type SortColCorredor = 'nombre' | 'sucursal' | 'comercial' | 'comision' | 'periodicidad' | 'flotas';
+
+function SortIcon({ active, dir }: { active: boolean; dir: 'asc' | 'desc' }) {
+  return (
+    <span style={{ marginLeft: 4, color: active ? '#A1A1A6' : 'rgba(161,161,166,0.35)', fontSize: 9, lineHeight: 1 }}>
+      {active ? (dir === 'asc' ? '↑' : '↓') : '⇅'}
+    </span>
+  );
+}
+
+const TH: React.CSSProperties = {
+  textAlign: 'left', color: '#70747B', fontSize: 12, fontWeight: 600,
+  letterSpacing: '0.06em', padding: '0 8px 12px',
+  borderBottom: '1px solid rgba(255,255,255,0.06)',
+  whiteSpace: 'nowrap', userSelect: 'none',
+};
+const TD: React.CSSProperties = {
+  height: 52, padding: '0 8px',
+  borderBottom: '1px solid rgba(255,255,255,0.06)',
+  fontSize: 15, verticalAlign: 'middle',
+};
 
 function CorredoresTable({
   corredores, carpetas, onVer,
@@ -583,78 +562,107 @@ function CorredoresTable({
   carpetas: FlotaCarpeta[];
   onVer: (c: Corredor) => void;
 }) {
-  const numFlotasDe = (id: string) => carpetas.filter(c => c.corredor_id === id).length;
+  const [sortCol, setSortCol] = useState<SortColCorredor | null>(null);
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+
+  function toggleSort(col: SortColCorredor) {
+    if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    else { setSortCol(col); setSortDir('asc'); }
+  }
+
+  const numFlotasDe = useCallback((id: string) => carpetas.filter(c => c.corredor_id === id).length, [carpetas]);
+
+  const sorted = useMemo(() => {
+    if (!sortCol) return corredores;
+    return [...corredores].sort((a, b) => {
+      let cmp = 0;
+      if (sortCol === 'nombre')        cmp = a.nombre.localeCompare(b.nombre);
+      else if (sortCol === 'sucursal')  cmp = (a.sucursal ?? '').localeCompare(b.sucursal ?? '');
+      else if (sortCol === 'comercial') cmp = (a.comercial ?? '').localeCompare(b.comercial ?? '');
+      else if (sortCol === 'comision')  cmp = (a.porcentajeComision ?? 0) - (b.porcentajeComision ?? 0);
+      else if (sortCol === 'periodicidad') cmp = a.periodicidad.localeCompare(b.periodicidad);
+      else if (sortCol === 'flotas')    cmp = numFlotasDe(a.id) - numFlotasDe(b.id);
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
+  }, [corredores, sortCol, sortDir, numFlotasDe]);
+
+  const HEADERS: { key: SortColCorredor | null; label: string }[] = [
+    { key: 'nombre',       label: 'NOMBRE' },
+    { key: 'sucursal',     label: 'SUCURSAL' },
+    { key: 'comercial',    label: 'COMERCIAL' },
+    { key: null,           label: 'CIF' },
+    { key: 'comision',     label: 'COMISIÓN %' },
+    { key: 'periodicidad', label: 'PERIODICIDAD' },
+    { key: 'flotas',       label: 'FLOTAS' },
+    { key: null,           label: '' },
+  ];
 
   return (
-    <div style={{
-      background: 'rgba(12,28,82,0.42)',
-      border: '1px solid rgba(61,112,255,0.16)',
-      borderRadius: 16, overflow: 'hidden',
-    }}>
-      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-        <thead>
-          <tr>
-            {['Nombre', 'Sucursal', 'Comercial', 'CIF', 'Comision %', 'Periodicidad', 'Flotas', ''].map(h => (
-              <th key={h} style={{
-                textAlign: 'left', padding: '14px 16px', fontSize: 10, fontWeight: 700,
-                textTransform: 'uppercase', letterSpacing: '0.12em', color: '#3366FF',
-                borderBottom: '1px solid rgba(51,102,255,0.15)',
-                whiteSpace: 'nowrap',
-              }}>{h}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {corredores.map(c => (
-            <tr key={c.id} style={{ transition: 'background 180ms', cursor: 'pointer' }}
-              onClick={() => onVer(c)}
-              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(51,102,255,0.04)')}
-              onMouseLeave={e => (e.currentTarget.style.background = '')}
-            >
-              <td style={{ padding: '12px 16px', color: '#FFFFFF', fontSize: 13, fontWeight: 500, borderBottom: '1px solid rgba(61,112,255,0.10)' }}>
-                {c.nombre}
-              </td>
-              <td style={{ padding: '12px 16px', borderBottom: '1px solid rgba(61,112,255,0.10)' }}>
-                {c.sucursal ? (
-                  <span style={{
-                    fontSize: 10, fontWeight: 700,
-                    color: c.sucursal === 'TITAN' ? '#60a5fa' : '#a78bfa',
-                    background: c.sucursal === 'TITAN' ? 'rgba(96,165,250,0.12)' : 'rgba(167,139,250,0.12)',
-                    border: `1px solid ${c.sucursal === 'TITAN' ? 'rgba(96,165,250,0.3)' : 'rgba(167,139,250,0.3)'}`,
-                    borderRadius: 999, padding: '2px 8px',
-                  }}>{c.sucursal}</span>
-                ) : <span style={{ color: 'rgba(178,198,245,0.3)', fontSize: 12 }}>—</span>}
-              </td>
-              <td style={{ padding: '12px 16px', color: '#BDD4FF', fontSize: 12, borderBottom: '1px solid rgba(61,112,255,0.10)' }}>
-                {c.comercial || <span style={{ color: 'rgba(178,198,245,0.3)' }}>—</span>}
-              </td>
-              <td style={{ padding: '12px 16px', color: '#BDD4FF', fontSize: 12, fontFamily: 'monospace', borderBottom: '1px solid rgba(61,112,255,0.10)' }}>
-                {c.cif || '—'}
-              </td>
-              <td style={{ padding: '12px 16px', color: '#BDD4FF', fontSize: 12, borderBottom: '1px solid rgba(61,112,255,0.10)' }}>
-                {(c.porcentajeComision ?? 0).toLocaleString('es-ES', { minimumFractionDigits: 1 })}%
-              </td>
-              <td style={{ padding: '12px 16px', color: '#BDD4FF', fontSize: 12, borderBottom: '1px solid rgba(61,112,255,0.10)', textTransform: 'capitalize' }}>
-                {c.periodicidad}
-              </td>
-              <td style={{ padding: '12px 16px', borderBottom: '1px solid rgba(61,112,255,0.10)' }}>
-                <span style={{
-                  fontSize: 11, fontWeight: 700, color: '#3366FF',
-                  background: 'rgba(51,102,255,0.1)', borderRadius: 999, padding: '2px 8px',
-                }}>{numFlotasDe(c.id)}</span>
-              </td>
-              <td style={{ padding: '12px 16px', borderBottom: '1px solid rgba(61,112,255,0.10)', textAlign: 'right' }}>
-                <span style={{ color: '#3366FF', fontSize: 12, fontWeight: 600 }}>Ver</span>
-              </td>
-            </tr>
+    <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 28 }}>
+      <thead>
+        <tr>
+          {HEADERS.map(({ key, label }) => (
+            <th key={label} onClick={key ? () => toggleSort(key) : undefined}
+              style={{ ...TH, cursor: key ? 'pointer' : 'default' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+                {label}
+                {key && <SortIcon active={sortCol === key} dir={sortDir} />}
+              </span>
+            </th>
           ))}
-        </tbody>
-      </table>
-    </div>
+        </tr>
+      </thead>
+      <tbody>
+        {sorted.map(c => (
+          <tr key={c.id} style={{ cursor: 'pointer', transition: 'background 150ms' }}
+            onClick={() => onVer(c)}
+            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.025)')}
+            onMouseLeave={e => (e.currentTarget.style.background = '')}
+          >
+            <td style={{ ...TD, fontWeight: 650, color: '#F4F4F5', maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {c.nombre}
+            </td>
+            <td style={TD}>
+              {c.sucursal ? (
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', height: 22, padding: '0 8px',
+                  borderRadius: 6, border: '1px solid rgba(255,255,255,0.08)',
+                  background: 'rgba(255,255,255,0.05)', color: '#b7bcc4', fontSize: 11, letterSpacing: '0.04em',
+                }}>{c.sucursal}</span>
+              ) : <span style={{ color: '#8b9098', fontSize: 15 }}>—</span>}
+            </td>
+            <td style={{ ...TD, color: '#A1A1A6', maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {c.comercial || <span style={{ color: '#8b9098' }}>—</span>}
+            </td>
+            <td style={{ ...TD, color: '#A1A1A6', fontSize: 12, fontFamily: 'monospace', letterSpacing: '0.03em' }}>
+              {c.cif || <span style={{ color: '#8b9098', fontFamily: 'inherit' }}>—</span>}
+            </td>
+            <td style={TD}>
+              <span style={{
+                fontSize: 15, fontWeight: 650,
+                color: (c.porcentajeComision ?? 0) > 0 ? '#20C982' : '#8b9098',
+              }}>
+                {(c.porcentajeComision ?? 0).toLocaleString('es-ES', { minimumFractionDigits: 1 })}%
+              </span>
+            </td>
+            <td style={{ ...TD, color: '#A1A1A6', textTransform: 'capitalize', whiteSpace: 'nowrap' }}>
+              {c.periodicidad}
+            </td>
+            <td style={TD}>
+              <span style={{
+                fontSize: 15, fontWeight: 600,
+                color: numFlotasDe(c.id) > 0 ? '#F4F4F5' : '#8b9098',
+              }}>{numFlotasDe(c.id)}</span>
+            </td>
+            <td style={{ ...TD, textAlign: 'right', color: '#70747B', fontSize: 14 }}>→</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }
 
-// ─── Pagina principal ───────────────────────────────────────────────────────
+// ─── Página principal ─────────────────────────────────────────────────────────
 
 export default function CorredoresPage() {
   const router = useRouter();
@@ -668,9 +676,8 @@ export default function CorredoresPage() {
   const [corredorDetalle, setCorredorDetalle] = useState<Corredor | null>(null);
   const [panelAbierto, setPanelAbierto] = useState(false);
   const [corredorEditar, setCorredorEditar] = useState<Corredor | null>(null);
-  const [importToast, setImportToast] = useState('');
+  const [toast, setToast] = useState('');
   const [confirmBorrarTodo, setConfirmBorrarTodo] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
 
   const handleBorrarTodo = useCallback(() => {
     borrarTodosLosCorredores();
@@ -680,141 +687,8 @@ export default function CorredoresPage() {
     setVista('lista');
     setCorredorDetalle(null);
     setConfirmBorrarTodo(false);
-    setImportToast('Todos los datos eliminados');
-    setTimeout(() => setImportToast(''), 3000);
-  }, []);
-
-  const handleDescargarPlantilla = useCallback(async () => {
-    const ExcelJS = (await import('exceljs')).default;
-    const wb = new ExcelJS.Workbook();
-    const ws = wb.addWorksheet('Corredores');
-    const cols = [
-      { header: 'NOMBRE',        width: 30 },
-      { header: 'CODIGO',        width: 14 },
-      { header: 'CIF',           width: 14 },
-      { header: 'DOMICILIO',     width: 36 },
-      { header: 'COMISION',      width: 12 },
-      { header: 'PERIODICIDAD',  width: 14 },
-      { header: 'FORMA PAGO',    width: 16 },
-      { header: 'CONTACTO',      width: 22 },
-      { header: 'EMAIL',         width: 28 },
-      { header: 'TELEFONO',      width: 16 },
-      { header: 'SUCURSAL',      width: 14 },
-      { header: 'COMERCIAL',     width: 18 },
-      { header: 'OBSERVACIONES', width: 36 },
-    ];
-    ws.columns = cols.map(c => ({ header: c.header, key: c.header, width: c.width }));
-    const headerRow = ws.getRow(1);
-    headerRow.eachCell(cell => {
-      cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1240CC' } };
-      cell.alignment = { vertical: 'middle' };
-    });
-    headerRow.height = 20;
-    // Fila de ejemplo
-    ws.addRow({
-      nombre: 'Corredor Ejemplo S.L.', codigo: 'COR-001', cif: 'B12345678',
-      domicilio: 'Calle Mayor 1, Madrid', comision: 15, periodicidad: 'mensual',
-      'forma pago': 'Transferencia', contacto: 'Juan García',
-      email: 'juan@corredor.com', telefono: '600123456',
-      sucursal: 'TITAN', comercial: 'Roberto', observaciones: '',
-    });
-    const buf = await wb.xlsx.writeBuffer();
-    const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = 'plantilla_corredores.xlsx'; a.click();
-    URL.revokeObjectURL(url);
-  }, []);
-
-  const handleImportExcel = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      const XLSX = await import('xlsx');
-      const buf = await file.arrayBuffer();
-      const wb = XLSX.read(buf, { type: 'array' });
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const rows: Record<string, string>[] = XLSX.utils.sheet_to_json(ws, { defval: '' });
-      if (rows.length === 0) { setImportToast('Excel vacío'); setTimeout(() => setImportToast(''), 2000); return; }
-
-      const now = new Date().toISOString();
-      const actuales = listarCorredores();
-      const lote: Corredor[] = [];
-
-      for (const r of rows) {
-        const get = (...keys: string[]) => {
-          for (const k of keys) {
-            for (const rk of Object.keys(r)) {
-              if (rk.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim() === k.toLowerCase())
-                return String(r[rk] ?? '').trim();
-            }
-          }
-          return '';
-        };
-        const nombre = get('nombre', 'name', 'corredor', 'razon social', 'razon_social');
-        if (!nombre) continue;
-        const periodicidadRaw = get('periodicidad', 'frecuencia', 'periodo').toLowerCase();
-        let periodicidad: Periodicidad = 'mensual';
-        if (periodicidadRaw.includes('trimestral')) periodicidad = 'trimestral';
-        else if (periodicidadRaw.includes('semestral')) periodicidad = 'semestral';
-        else if (periodicidadRaw.includes('anual')) periodicidad = 'anual';
-        const comision = parseFloat(get('comision', 'comision %', 'porcentaje').replace(',', '.').replace('%', '')) || 0;
-        const sucursalRaw = get('sucursal').toUpperCase();
-        const sucursal: Sucursal | undefined = (sucursalRaw === 'TITAN' || sucursalRaw === 'MEDIACION') ? sucursalRaw : undefined;
-        const cifNuevo = get('cif', 'nif');
-        const existente = actuales.find(c => c.cif && c.cif === cifNuevo);
-        const campos = {
-          nombre, codigo: get('codigo', 'code', 'cod'), cif: cifNuevo,
-          domicilio: get('domicilio', 'direccion', 'address'),
-          porcentajeComision: comision, periodicidad,
-          formaPago: get('forma pago', 'forma_pago', 'pago'),
-          contacto: get('contacto', 'contact'),
-          email: get('email', 'correo', 'mail'),
-          telefono: get('telefono', 'phone', 'tel'),
-          observaciones: get('observaciones', 'notas', 'notes'),
-          sucursal, comercial: get('comercial'),
-        };
-        if (existente) {
-          lote.push({ ...existente, ...campos, actualizadoEn: now });
-        } else {
-          lote.push({
-            ...campos,
-            id: `corredor_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-            codigo: campos.codigo || `COR-${String(actuales.length + lote.length + 1).padStart(3, '0')}`,
-            creadoEn: now,
-            actualizadoEn: now,
-          });
-        }
-      }
-
-      if (lote.length === 0) {
-        setImportToast('Sin filas válidas en el archivo');
-        setTimeout(() => setImportToast(''), 3000);
-        return;
-      }
-
-      const res = await fetch('/api/flotas/corredores', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'upsertBatch', corredores: lote }),
-      });
-
-      if (!res.ok) {
-        setImportToast('Error al guardar en el servidor');
-        setTimeout(() => setImportToast(''), 3000);
-        return;
-      }
-
-      const data = await cargarCorredoresDelServidor();
-      setCorredores([...data].sort((a, b) => a.nombre.localeCompare(b.nombre)));
-      setImportToast(`${lote.length} corredor${lote.length !== 1 ? 'es' : ''} importado${lote.length !== 1 ? 's' : ''}`);
-      setTimeout(() => setImportToast(''), 3000);
-    } catch {
-      setImportToast('Error al leer el archivo');
-      setTimeout(() => setImportToast(''), 3000);
-    }
-    if (fileRef.current) fileRef.current.value = '';
+    setToast('Todos los datos eliminados');
+    setTimeout(() => setToast(''), 3000);
   }, []);
 
   const cargar = useCallback(() => {
@@ -836,10 +710,18 @@ export default function CorredoresPage() {
   const flotasDe = useCallback((id: string) => carpetas.filter(c => c.corredor_id === id), [carpetas]);
   const totalFlotas = useMemo(() => corredores.reduce((sum, c) => sum + carpetas.filter(ca => ca.corredor_id === c.id).length, 0), [corredores, carpetas]);
 
-  // Comerciales unicos para el filtro
   const comercialesUnicos = useMemo(() => {
     const set = new Set(corredores.map(c => c.comercial).filter(Boolean) as string[]);
     return Array.from(set).sort();
+  }, [corredores]);
+
+  const kpis = useMemo(() => {
+    const titan     = corredores.filter(c => c.sucursal === 'TITAN').length;
+    const mediacion = corredores.filter(c => c.sucursal === 'MEDIACION').length;
+    const conCom    = corredores.filter(c => (c.porcentajeComision ?? 0) > 0);
+    const mediaCom  = conCom.length > 0
+      ? conCom.reduce((s, c) => s + (c.porcentajeComision ?? 0), 0) / conCom.length : 0;
+    return { titan, mediacion, conCom: conCom.length, mediaCom };
   }, [corredores]);
 
   function abrirPanel(corredor: Corredor | null) { setCorredorEditar(corredor); setPanelAbierto(true); }
@@ -877,135 +759,117 @@ export default function CorredoresPage() {
     router.push('/flotas');
   }
 
-  const filteredCorredores = useMemo(() => {
-    return corredores.filter(c => {
-      const q = search.toLowerCase();
-      const matchSearch = !search.trim() ||
-        c.nombre.toLowerCase().includes(q) ||
-        c.cif.toLowerCase().includes(q) ||
-        (c.email || '').toLowerCase().includes(q) ||
-        (c.contacto || '').toLowerCase().includes(q) ||
-        (c.comercial || '').toLowerCase().includes(q);
-      const matchSucursal = !filterSucursal || c.sucursal === filterSucursal;
-      const matchComercial = !filterComercial || (c.comercial || '').toLowerCase().includes(filterComercial.toLowerCase());
-      return matchSearch && matchSucursal && matchComercial;
-    });
-  }, [corredores, search, filterSucursal, filterComercial]);
+  const filteredCorredores = useMemo(() => corredores.filter(c => {
+    const q = search.toLowerCase();
+    const matchSearch = !search.trim() ||
+      c.nombre.toLowerCase().includes(q) ||
+      c.cif.toLowerCase().includes(q) ||
+      (c.email || '').toLowerCase().includes(q) ||
+      (c.contacto || '').toLowerCase().includes(q) ||
+      (c.comercial || '').toLowerCase().includes(q);
+    const matchSucursal  = !filterSucursal || c.sucursal === filterSucursal;
+    const matchComercial = !filterComercial || (c.comercial || '').toLowerCase().includes(filterComercial.toLowerCase());
+    return matchSearch && matchSucursal && matchComercial;
+  }), [corredores, search, filterSucursal, filterComercial]);
+
+  const SELECT_STYLE: React.CSSProperties = {
+    height: 40, padding: '0 12px', borderRadius: 10,
+    border: '1px solid rgba(255,255,255,0.08)', background: 'transparent',
+    color: '#A1A1A6', fontSize: 14, cursor: 'pointer', outline: 'none',
+  };
 
   return (
-    <div className="animate-in fade-in duration-500" style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
       {vista === 'lista' ? (
         <>
-          {/* Header */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
-              <div style={{
-                width: 4, height: 40, borderRadius: 2, marginTop: 2,
-                background: 'linear-gradient(180deg, #1240CC, #3366FF)',
-                boxShadow: '0 0 12px rgba(70,120,255,0.5)',
-              }} />
-              <div>
-                <h1 style={{
-                  margin: 0, fontSize: 22, color: '#FFFFFF',
-                  fontFamily: 'var(--font-display), Inter, sans-serif',
-                  fontWeight: 700, letterSpacing: '-0.01em',
-                }}>Corredores</h1>
-                <p style={{ margin: '4px 0 0', fontSize: 12, color: 'rgba(178,198,245,0.6)', letterSpacing: '0.04em' }}>
-                  {corredores.length} corredores · {totalFlotas} flotas asociadas
-                </p>
-              </div>
+          {/* Page head */}
+          <div style={{ marginTop: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <h1 style={{ fontSize: 32, fontWeight: 650, letterSpacing: '-0.03em', color: '#F4F4F5', margin: 0 }}>
+                Corredores
+              </h1>
+              <p style={{ marginTop: 6, color: '#A1A1A6', fontSize: 15, margin: '6px 0 0' }}>
+                {corredores.length} corredores · {totalFlotas} flotas asociadas
+              </p>
             </div>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
               {role === 'admin' && (confirmBorrarTodo ? (
                 <div style={{
-                  display: 'flex', alignItems: 'center', gap: 8,
-                  background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.35)',
-                  borderRadius: 10, padding: '6px 14px', fontSize: 12,
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  background: 'rgba(239,77,90,0.06)', border: '1px solid rgba(239,77,90,0.2)',
+                  borderRadius: 10, padding: '6px 14px',
                 }}>
-                  <span style={{ color: '#f87171', fontWeight: 600 }}>¿Borrar TODO? Esto elimina corredores y flotas.</span>
+                  <span style={{ color: '#EF4D5A', fontWeight: 600, fontSize: 13 }}>¿Borrar TODO? Elimina corredores y flotas.</span>
                   <button onClick={handleBorrarTodo} style={{
-                    background: '#ef4444', border: 'none', borderRadius: 6,
+                    background: '#EF4D5A', border: 'none', borderRadius: 6,
                     padding: '4px 12px', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer',
                   }}>Sí, borrar todo</button>
                   <button onClick={() => setConfirmBorrarTodo(false)} style={{
-                    background: 'none', border: 'none', cursor: 'pointer',
-                    color: 'rgba(178,198,245,0.5)', fontSize: 12, padding: '4px 6px',
+                    background: 'none', border: 'none', cursor: 'pointer', color: '#70747B', fontSize: 12,
                   }}>Cancelar</button>
                 </div>
               ) : (
-                <button onClick={() => setConfirmBorrarTodo(true)} style={{
-                  background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)',
-                  borderRadius: 10, padding: '9px 16px',
-                  color: '#f87171', fontSize: 13, fontWeight: 500, cursor: 'pointer',
-                }}>Borrar todo</button>
+                <button onClick={() => setConfirmBorrarTodo(true)} className="btn-danger"
+                  style={{ height: 36, padding: '0 14px', fontSize: 13 }}>
+                  Borrar todo
+                </button>
               ))}
-              <button onClick={handleDescargarPlantilla} style={{
-                background: 'rgba(6,14,50,0.5)', border: '1px solid rgba(61,112,255,0.22)',
-                borderRadius: 10, padding: '9px 16px',
-                color: 'rgba(178,198,245,0.8)', fontSize: 13, fontWeight: 500, cursor: 'pointer',
-              }}>Descargar plantilla</button>
-              <button onClick={() => fileRef.current?.click()} style={{
-                background: 'rgba(6,14,50,0.5)', border: '1px solid rgba(61,112,255,0.22)',
-                borderRadius: 10, padding: '9px 16px',
-                color: 'rgba(178,198,245,0.8)', fontSize: 13, fontWeight: 500, cursor: 'pointer',
-              }}>Importar Excel</button>
-              <button onClick={() => abrirPanel(null)} style={{
-                background: 'linear-gradient(135deg, #1240CC, #3366FF)',
-                border: 'none', borderRadius: 10, padding: '9px 20px',
-                color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                boxShadow: '0 0 20px rgba(18,64,204,0.4)',
-              }}>+ Nuevo corredor</button>
+              <button onClick={() => abrirPanel(null)} className="btn-primary"
+                style={{ height: 36, padding: '0 16px', fontSize: 14 }}>
+                + Nuevo corredor
+              </button>
             </div>
           </div>
 
-          {/* Filtros */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 8,
-              background: 'rgba(6,14,50,0.5)', border: '1px solid rgba(61,112,255,0.22)',
-              borderRadius: 10, padding: '0 14px', flex: 1, maxWidth: 300,
-            }}>
-              <span style={{ color: 'rgba(70,120,255,0.5)' }}><SearchIcon /></span>
-              <input
-                placeholder="Buscar corredor, CIF, comercial..."
-                value={search} onChange={e => setSearch(e.target.value)}
-                style={{
-                  background: 'none', border: 'none', outline: 'none',
-                  color: '#FFFFFF', fontSize: 12, padding: '9px 0', width: '100%',
-                }}
-              />
+          {/* KPIs */}
+          <div style={{ marginTop: 28, display: 'grid', gridTemplateColumns: '1fr 1.2fr 1fr', alignItems: 'end' }}>
+            <div>
+              <b style={{ fontSize: 52, fontWeight: 600, letterSpacing: '-0.04em', lineHeight: 1, color: '#F4F4F5' }}>
+                {filteredCorredores.length}
+              </b>
+              <span style={{ marginLeft: 8, color: '#A1A1A6', fontSize: 14, letterSpacing: '0.06em' }}>CORREDORES</span>
             </div>
+            <div style={{ textAlign: 'center' }}>
+              <b style={{ fontSize: 52, fontWeight: 600, letterSpacing: '-0.04em', lineHeight: 1, color: '#F4F4F5' }}>
+                {totalFlotas}
+              </b>
+              <span style={{ marginLeft: 8, color: '#A1A1A6', fontSize: 14, letterSpacing: '0.06em' }}>FLOTAS ASOCIADAS</span>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <b style={{ fontSize: 52, fontWeight: 600, letterSpacing: '-0.04em', lineHeight: 1, color: '#20C982' }}>
+                {kpis.mediaCom.toFixed(1)}%
+              </b>
+              <span style={{ marginLeft: 8, color: '#20C982', fontSize: 14, letterSpacing: '0.06em' }}>COMISIÓN MEDIA</span>
+            </div>
+          </div>
+          <p style={{ marginTop: 14, color: '#A1A1A6', fontSize: 14, margin: '14px 0 0' }}>
+            {kpis.titan} Titan · {kpis.mediacion} Mediación · {kpis.conCom} con comisión
+          </p>
 
-            {/* Filtro Sucursal */}
-            <select
-              value={filterSucursal}
-              onChange={e => setFilterSucursal(e.target.value as Sucursal | '')}
+          {/* Filtros */}
+          <div style={{ marginTop: 22, display: 'flex', gap: 12, alignItems: 'center' }}>
+            <input
+              placeholder="Buscar corredor, CIF, comercial..."
+              value={search} onChange={e => setSearch(e.target.value)}
               style={{
-                background: 'rgba(6,14,50,0.5)', border: '1px solid rgba(61,112,255,0.22)',
-                borderRadius: 10, padding: '9px 14px', color: filterSucursal ? '#FFFFFF' : 'rgba(178,198,245,0.5)',
-                fontSize: 12, cursor: 'pointer', outline: 'none',
+                width: 280, height: 40, padding: '0 14px',
+                border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10,
+                background: 'transparent', color: '#A1A1A6',
+                fontSize: 14, outline: 'none',
               }}
-            >
+            />
+            <select value={filterSucursal} onChange={e => setFilterSucursal(e.target.value as Sucursal | '')}
+              style={SELECT_STYLE}>
               <option value="">Todas las sucursales</option>
               {SUCURSALES.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
-
-            {/* Filtro Comercial */}
-            <select
-              value={filterComercial}
-              onChange={e => setFilterComercial(e.target.value)}
-              style={{
-                background: 'rgba(6,14,50,0.5)', border: '1px solid rgba(61,112,255,0.22)',
-                borderRadius: 10, padding: '9px 14px', color: filterComercial ? '#FFFFFF' : 'rgba(178,198,245,0.5)',
-                fontSize: 12, cursor: 'pointer', outline: 'none',
-              }}
-            >
+            <select value={filterComercial} onChange={e => setFilterComercial(e.target.value)}
+              style={SELECT_STYLE}>
               <option value="">Todos los comerciales</option>
               {comercialesUnicos.map(com => <option key={com} value={com}>{com}</option>)}
             </select>
-
             <span style={{ flex: 1 }} />
-            <span style={{ fontSize: 11, color: 'rgba(178,198,245,0.5)' }}>
+            <span style={{ fontSize: 12, color: '#70747B' }}>
               {filteredCorredores.length} {filteredCorredores.length === 1 ? 'resultado' : 'resultados'}
             </span>
           </div>
@@ -1013,9 +877,10 @@ export default function CorredoresPage() {
           {/* Tabla */}
           {filteredCorredores.length === 0 ? (
             <div style={{
-              ...glass, padding: '60px 40px', textAlign: 'center', borderStyle: 'dashed',
+              marginTop: 28, padding: '60px 40px', textAlign: 'center',
+              border: '1px dashed rgba(255,255,255,0.08)', borderRadius: 14,
             }}>
-              <p style={{ margin: 0, color: 'rgba(178,198,245,0.4)', fontSize: 13 }}>
+              <p style={{ margin: 0, color: '#70747B', fontSize: 13 }}>
                 {corredores.length === 0 ? 'Sin corredores. Crea el primero.' : 'Sin resultados.'}
               </p>
             </div>
@@ -1047,15 +912,14 @@ export default function CorredoresPage() {
         <PanelCorredor corredor={corredorEditar} onClose={cerrarPanel} onSave={handleSave} />
       )}
 
-      <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" hidden onChange={handleImportExcel} />
-
-      {importToast && (
+      {toast && (
         <div style={{
           position: 'fixed', bottom: 32, left: '50%', transform: 'translateX(-50%)',
-          background: importToast.startsWith('Error') ? 'rgba(220,38,38,0.9)' : 'rgba(16,185,129,0.9)',
-          color: '#fff', padding: '10px 24px', borderRadius: 12, fontSize: 13, fontWeight: 600,
+          background: toast.startsWith('Error') ? 'rgba(239,77,90,0.9)' : '#090A0C',
+          border: `1px solid ${toast.startsWith('Error') ? 'rgba(239,77,90,0.4)' : 'rgba(255,255,255,0.12)'}`,
+          color: '#F4F4F5', padding: '10px 24px', borderRadius: 10, fontSize: 13, fontWeight: 600,
           zIndex: 999, boxShadow: '0 8px 30px rgba(0,0,0,0.4)',
-        }}>{importToast}</div>
+        }}>{toast}</div>
       )}
     </div>
   );

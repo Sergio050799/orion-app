@@ -38,7 +38,7 @@ const sectionTitle: React.CSSProperties = {
 
 const kpiBox: React.CSSProperties = {
   borderRadius: 8, padding: '10px 14px',
-  background: 'rgba(6,14,50,0.4)', border: '1px solid rgba(61,112,255,0.16)',
+  background: '#0D0F12', border: '1px solid rgba(255,255,255,0.08)',
 };
 
 const thS: React.CSSProperties = {
@@ -203,8 +203,8 @@ function AutomaticoContent({ header, trabajoRows, sincoResultRows, onSincoResult
         <div
           style={{
             padding: '16px 20px', borderRadius: 10,
-            border: dragCounter > 0 ? '2px dashed #3366FF' : '2px dashed transparent',
-            background: dragCounter > 0 ? 'rgba(61,112,255,0.10)' : 'transparent',
+            border: dragCounter > 0 ? '2px dashed #4387FF' : '2px dashed transparent',
+            background: dragCounter > 0 ? 'rgba(67,135,255,0.08)' : 'transparent',
             transition: 'border 0.15s, background 0.15s',
           }}
           onDragEnter={e => { e.preventDefault(); e.stopPropagation(); if (e.dataTransfer.types.includes('Files')) setDragCounter(c => c + 1); }}
@@ -242,7 +242,7 @@ function AutomaticoContent({ header, trabajoRows, sincoResultRows, onSincoResult
 
           <div style={{ marginBottom: 16, display: 'flex', gap: 10 }}>
             <button onClick={handleMerge}
-              style={{ ...pillBase, background: 'rgba(18,64,204,0.15)', color: '#3366FF', border: '1px solid rgba(18,64,204,0.3)', fontSize: 11, padding: '8px 16px' }}>
+              style={{ ...pillBase, background: 'rgba(67,135,255,0.10)', color: '#4387FF', border: '1px solid rgba(67,135,255,0.25)', fontSize: 11, padding: '8px 16px' }}>
               Volcar a TRABAJO
             </button>
           </div>
@@ -254,7 +254,7 @@ function AutomaticoContent({ header, trabajoRows, sincoResultRows, onSincoResult
                   <tr style={{ background: '#f3f4f6', position: 'sticky', top: 0, zIndex: 1 }}>
                     <th style={{ ...thS, width: 44, color: '#9ca3af' }}>#</th>
                     {SINCO_COL_NAMES.map((name, i) => (
-                      <th key={name} style={{ ...thS, background: i < 5 ? '#eff0ff' : '#f3f4f6', color: i < 5 ? '#4338ca' : '#374151' }}>{name}</th>
+                      <th key={name} style={{ ...thS, background: i < 5 ? 'rgba(67,135,255,0.08)' : '#f3f4f6', color: i < 5 ? '#4387FF' : '#374151' }}>{name}</th>
                     ))}
                   </tr>
                 </thead>
@@ -323,11 +323,11 @@ function DanosPropiosSection({ carpetaActiva, trabajoRows, sincoResultRows, onCa
             type="checkbox"
             checked={mostrarEnInforme}
             onChange={e => save({ mostrarEnInforme: e.target.checked })}
-            style={{ width: 14, height: 14, accentColor: '#3366FF', cursor: 'pointer' }}
+            style={{ width: 14, height: 14, accentColor: '#4387FF', cursor: 'pointer' }}
           />
           <span style={{
             fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em',
-            color: mostrarEnInforme ? '#3366FF' : 'rgba(178,198,245,0.45)',
+            color: mostrarEnInforme ? '#4387FF' : 'rgba(255,255,255,0.25)',
           }}>Mostrar en el informe</span>
         </label>
       </div>
@@ -346,12 +346,12 @@ function DanosPropiosSection({ carpetaActiva, trabajoRows, sincoResultRows, onCa
           }}
           style={{
             width: 120, fontSize: 18, fontWeight: 900, padding: '10px 14px', borderRadius: 10,
-            background: 'rgba(6,14,50,0.55)', border: '1px solid rgba(61,112,255,0.3)',
+            background: '#0D0F12', border: '1px solid rgba(255,255,255,0.08)',
             color: numSiniestros > 0 ? '#f87171' : '#FFFFFF', outline: 'none',
             fontFamily: 'monospace', textAlign: 'center',
           }}
-          onFocus={e => (e.currentTarget.style.borderColor = 'rgba(18,64,204,0.7)')}
-          onBlur={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.3)')}
+          onFocus={e => (e.currentTarget.style.borderColor = 'rgba(67,135,255,0.5)')}
+          onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)')}
         />
       </div>
 
@@ -402,7 +402,7 @@ export default function HojaSincoUnificado({
             onTrabajoChange={onTrabajoChange}
           />
 
-          <div style={{ height: 1, background: 'rgba(61,112,255,0.16)', margin: '32px 0' }} />
+          <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', margin: '32px 0' }} />
 
           <DanosPropiosSection
             carpetaActiva={carpetaActiva}

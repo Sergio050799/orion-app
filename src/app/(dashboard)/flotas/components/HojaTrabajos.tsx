@@ -109,7 +109,7 @@ function SilverdatLoginModal({ onClose, onSuccess }: { onClose: () => void; onSu
     }} onClick={onClose}>
       <div onClick={e => e.stopPropagation()} style={{
         width: 380, padding: 28, borderRadius: 18,
-        background: 'rgba(8,22,72,0.97)', border: '1px solid rgba(51,102,255,0.25)',
+        background: '#090A0C', border: '1px solid rgba(255,255,255,0.08)',
         boxShadow: '0 30px 80px rgba(0,0,0,0.7)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
@@ -159,15 +159,15 @@ function SilverdatLoginModal({ onClose, onSuccess }: { onClose: () => void; onSu
         <div style={{ display: 'flex', gap: 8 }}>
           <button onClick={handleLogin} disabled={loading || !datId.trim() || !user.trim() || !pass.trim()} style={{
             flex: 1, fontSize: 12, fontWeight: 700, padding: '10px 0', borderRadius: 10,
-            background: loading ? 'rgba(18,64,204,0.3)' : 'linear-gradient(135deg, #d97706, #f59e0b)',
+            background: loading ? 'rgba(67,135,255,0.15)' : 'linear-gradient(135deg, #d97706, #f59e0b)',
             color: '#fff', border: 'none', cursor: loading ? 'not-allowed' : 'pointer',
           }}>
             {loading ? 'Conectando...' : 'Iniciar sesión'}
           </button>
           <button onClick={onClose} style={{
             fontSize: 12, padding: '10px 16px', borderRadius: 10,
-            background: 'rgba(6,14,50,0.5)', color: '#BDD4FF',
-            border: '1px solid rgba(61,112,255,0.22)', cursor: 'pointer',
+            background: 'transparent', color: '#A1A1A6',
+            border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer',
           }}>Cancelar</button>
         </div>
       </div>
@@ -250,7 +250,7 @@ function SilverdatReport({ mismatches, enriched, noData, total, vehicles, onClos
     }} onClick={onClose}>
       <div onClick={e => e.stopPropagation()} style={{
         width: 600, maxHeight: '85vh', overflow: 'auto', padding: 28, borderRadius: 18,
-        background: 'rgba(8,22,72,0.97)', border: '1px solid rgba(51,102,255,0.25)',
+        background: '#090A0C', border: '1px solid rgba(255,255,255,0.08)',
         boxShadow: '0 30px 80px rgba(0,0,0,0.7)',
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
@@ -277,8 +277,8 @@ function SilverdatReport({ mismatches, enriched, noData, total, vehicles, onClos
 
         {/* All vehicles data */}
         {vehicles.map((sv) => (
-          <div key={sv.matricula} style={{ marginBottom: 14, padding: '10px 12px', borderRadius: 10, background: 'rgba(61,112,255,0.10)', border: '1px solid rgba(51,102,255,0.15)' }}>
-            <p style={{ fontSize: 10, fontWeight: 700, color: '#3366FF', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 6px' }}>
+          <div key={sv.matricula} style={{ marginBottom: 14, padding: '10px 12px', borderRadius: 10, background: 'rgba(67,135,255,0.06)', border: '1px solid rgba(67,135,255,0.15)' }}>
+            <p style={{ fontSize: 10, fontWeight: 700, color: '#4387FF', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 6px' }}>
               {sv.matricula} — {sv.marca} {sv.modelo}
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2px 12px', fontSize: 11 }}>
@@ -288,7 +288,7 @@ function SilverdatReport({ mismatches, enriched, noData, total, vehicles, onClos
                 return (
                   <div key={k}>
                     <span style={{ color: 'rgba(178,198,245,0.6)' }}>{k}: </span>
-                    <span style={{ color: '#BDD4FF', fontWeight: 600 }}>{String(val)}</span>
+                    <span style={{ color: '#F4F4F5', fontWeight: 600 }}>{String(val)}</span>
                   </div>
                 );
               })}
@@ -316,7 +316,7 @@ function SilverdatReport({ mismatches, enriched, noData, total, vehicles, onClos
                   background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)',
                   fontSize: 11, color: '#fbbf24',
                 }}>
-                  <b>{m.matricula}</b> — {m.campo}: Excel=<span style={{ color: '#BDD4FF' }}>{m.excel}</span> vs Silverdat=<span style={{ color: '#f59e0b' }}>{m.silverdat}</span>
+                  <b>{m.matricula}</b> — {m.campo}: Excel=<span style={{ color: '#F4F4F5' }}>{m.excel}</span> vs Silverdat=<span style={{ color: '#F0B94D' }}>{m.silverdat}</span>
                 </div>
               ))}
             </div>
@@ -336,7 +336,7 @@ function SilverdatReport({ mismatches, enriched, noData, total, vehicles, onClos
 
         <button onClick={onClose} style={{
           width: '100%', fontSize: 12, fontWeight: 600, padding: '10px 0', borderRadius: 10,
-          background: 'linear-gradient(135deg, #1240CC, #3366FF)',
+          background: '#4387FF',
           color: '#fff', border: 'none', cursor: 'pointer', marginTop: 8,
         }}>Cerrar</button>
       </div>
@@ -645,7 +645,7 @@ if (key !== prevClaveKeyRef.current) {
       {/* Toolbar de hoja */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '6px 16px', borderBottom: '1px solid #e5e7eb', background: '#f9fafb', flexShrink: 0 }}>
         <span className="text-[12px] font-black uppercase tracking-widest px-2 py-1 rounded-md"
-          style={{ background: 'rgba(18,64,204,0.1)', color: '#1240CC', border: '1px solid rgba(18,64,204,0.2)' }}>
+          style={{ background: 'rgba(67,135,255,0.08)', color: '#4387FF', border: '1px solid rgba(67,135,255,0.2)' }}>
           Vehículos: {vehicleCount}
         </span>
 

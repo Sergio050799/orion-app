@@ -111,7 +111,7 @@ async function exportExcel(vehicles: VehiculoExport[]) {
 // ─── SilverdatModal ───────────────────────────────────────────────────────────
 
 const FIELD: React.CSSProperties = {
-  background: 'rgba(6,14,50,0.6)', border: '1px solid rgba(61,112,255,0.2)',
+  background: '#0D0F12', border: '1px solid rgba(255,255,255,0.08)',
   borderRadius: 8, color: '#FFFFFF', fontSize: 13, padding: '9px 12px',
   outline: 'none', width: '100%', fontFamily: 'inherit',
 };
@@ -159,7 +159,7 @@ function SilverdatModal({ onClose, onSuccess }: { onClose: () => void; onSuccess
             style={{ flex: 1, padding: '10px 0', borderRadius: 9, background: loading ? 'rgba(245,158,11,0.3)' : 'linear-gradient(135deg,#d97706,#f59e0b)', color: '#fff', border: 'none', fontWeight: 700, fontSize: 12, cursor: loading ? 'not-allowed' : 'pointer' }}>
             {loading ? 'Conectando...' : 'Iniciar sesión'}
           </button>
-          <button onClick={onClose} style={{ padding: '10px 14px', borderRadius: 9, background: 'rgba(6,14,50,0.5)', color: '#BDD4FF', border: '1px solid rgba(61,112,255,0.22)', fontSize: 12, cursor: 'pointer' }}>Cancelar</button>
+          <button onClick={onClose} style={{ padding: '10px 14px', borderRadius: 9, background: '#0D0F12', color: '#A1A1A6', border: '1px solid rgba(255,255,255,0.08)', fontSize: 12, cursor: 'pointer' }}>Cancelar</button>
         </div>
       </div>
     </div>
@@ -366,7 +366,7 @@ export default function IdentificacionMasiva() {
                 Introducir credenciales
               </button>
               <button onClick={() => { setSdPending(false); setRawRows([]); }}
-                style={{ padding: '9px 16px', borderRadius: 9, background: 'rgba(6,14,50,0.5)', color: 'rgba(178,198,245,0.6)', border: '1px solid rgba(61,112,255,0.2)', fontSize: 12, cursor: 'pointer' }}>
+                style={{ padding: '9px 16px', borderRadius: 9, background: '#0D0F12', color: '#A1A1A6', border: '1px solid rgba(255,255,255,0.08)', fontSize: 12, cursor: 'pointer' }}>
                 Cancelar
               </button>
             </div>
@@ -395,7 +395,7 @@ export default function IdentificacionMasiva() {
               </button>
               <button
                 onClick={() => setDupWarning(null)}
-                style={{ padding: '10px 16px', borderRadius: 9, background: 'rgba(6,14,50,0.5)', color: 'rgba(178,198,245,0.6)', border: '1px solid rgba(61,112,255,0.2)', fontSize: 12, cursor: 'pointer' }}
+                style={{ padding: '10px 16px', borderRadius: 9, background: '#0D0F12', color: '#A1A1A6', border: '1px solid rgba(255,255,255,0.08)', fontSize: 12, cursor: 'pointer' }}
               >
                 Cancelar
               </button>
@@ -407,17 +407,17 @@ export default function IdentificacionMasiva() {
           <>
             <div style={{ textAlign: 'center', maxWidth: 480 }}>
               <h2 style={{ margin: '0 0 8px', fontSize: 20, color: '#FFFFFF', fontWeight: 700 }}>Identificación masiva</h2>
-              <p style={{ margin: 0, fontSize: 13, color: 'rgba(178,198,245,0.6)', lineHeight: 1.6 }}>
+              <p style={{ margin: 0, fontSize: 13, color: '#A1A1A6', lineHeight: 1.6 }}>
                 Con solo la matrícula Silverdat obtiene la marca, modelo y datos del vehículo. Después el catálogo asigna el ID automáticamente.
               </p>
             </div>
 
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
-              <button onClick={handleDescargarPlantilla} style={{ background: 'rgba(6,14,50,0.5)', border: '1px solid rgba(61,112,255,0.3)', borderRadius: 12, padding: '12px 24px', color: '#BDD4FF', fontSize: 13, cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <button onClick={handleDescargarPlantilla} style={{ background: '#0D0F12', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '12px 24px', color: '#A1A1A6', fontSize: 13, cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
                 Descargar plantilla
               </button>
-              <label style={{ background: 'linear-gradient(135deg, #1240CC, #3366FF)', border: 'none', borderRadius: 12, padding: '12px 24px', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, boxShadow: '0 0 24px rgba(18,64,204,0.4)' }}>
+              <label style={{ background: '#4387FF', border: 'none', borderRadius: 12, padding: '12px 24px', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, boxShadow: '0 0 24px rgba(67,135,255,0.3)' }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
                 Subir Excel
                 <input ref={fileRef} type="file" accept=".xlsx,.xls" style={{ display: 'none' }} onChange={handleFileUpload} />
@@ -430,8 +430,8 @@ export default function IdentificacionMasiva() {
               </p>
             )}
 
-            <div style={{ fontSize: 11, color: 'rgba(178,198,245,0.35)', textAlign: 'center', maxWidth: 360 }}>
-              Columna requerida: <span style={{ color: 'rgba(178,198,245,0.6)' }}>matricula</span><br />
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)', textAlign: 'center', maxWidth: 360 }}>
+              Columna requerida: <span style={{ color: '#A1A1A6' }}>matricula</span><br />
               Opcionales (mejoran precisión): marca, modelo, tipo_vehiculo, kw, cv, tn, anyo_fabricacion
             </div>
           </>
@@ -457,7 +457,7 @@ export default function IdentificacionMasiva() {
             <h2 style={{ fontSize: 20, fontWeight: 800, color: '#FFFFFF', margin: '0 0 6px' }}>
               {progress.current} / {progress.total} vehículos
             </h2>
-            <p style={{ fontSize: 12, color: 'rgba(178,198,245,0.5)', margin: 0 }}>
+            <p style={{ fontSize: 12, color: '#70747B', margin: 0 }}>
               3 consultas en paralelo · aprox. {Math.max(0, Math.ceil((progress.total - progress.current) / 3 * 0.8))}s restantes
             </p>
           </div>
@@ -476,14 +476,14 @@ export default function IdentificacionMasiva() {
                 </span>
                 <span style={{ fontSize: 11, fontFamily: 'monospace', fontWeight: 700, color: '#FFFFFF', width: 90, flexShrink: 0 }}>{entry.matricula}</span>
                 {entry.ok && (
-                  <span style={{ fontSize: 11, color: 'rgba(178,198,245,0.6)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <span style={{ fontSize: 11, color: '#A1A1A6', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {entry.marca} {entry.modelo}
                   </span>
                 )}
               </div>
             ))}
             {progress.current < progress.total && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', color: 'rgba(178,198,245,0.35)', fontSize: 11 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', color: 'rgba(255,255,255,0.2)', fontSize: 11 }}>
                 <svg style={{ animation: 'sdSpin 1s linear infinite', flexShrink: 0 }} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <circle cx="12" cy="12" r="10" opacity="0.2"/><path d="M12 2a10 10 0 0110 10"/>
                 </svg>
@@ -510,7 +510,7 @@ export default function IdentificacionMasiva() {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 16px', borderBottom: '1px solid #e5e7eb', background: '#f9fafb', flexShrink: 0, flexWrap: 'wrap' }}>
         <button onClick={() => { setPhase('upload'); setRawRows([]); setVehicles([]); setEnrichedRows([]); }}
-          style={{ fontSize: 11, fontWeight: 700, padding: '5px 12px', borderRadius: 7, background: 'rgba(6,14,50,0.08)', border: '1px solid rgba(61,112,255,0.2)', color: '#1240CC', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
+          style={{ fontSize: 11, fontWeight: 700, padding: '5px 12px', borderRadius: 7, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', color: '#4387FF', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>
           Nueva búsqueda
         </button>
@@ -521,7 +521,7 @@ export default function IdentificacionMasiva() {
         <span style={{ flex: 1 }} />
         {listos > 0 && (
           <button onClick={() => exportExcel(vehicles)}
-            style={{ fontSize: 11, fontWeight: 700, padding: '6px 16px', borderRadius: 8, background: 'linear-gradient(135deg, #1240CC, #3366FF)', color: '#fff', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+            style={{ fontSize: 11, fontWeight: 700, padding: '6px 16px', borderRadius: 8, background: '#4387FF', color: '#fff', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
             Exportar Excel ({listos})
           </button>

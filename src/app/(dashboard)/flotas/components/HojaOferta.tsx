@@ -284,8 +284,8 @@ function CheckboxCell({ row, columnKey, enabled, onToggle }: {
       onClick={() => onToggle(row, columnKey)}>
       <div style={{
         width: 16, height: 16, borderRadius: 4,
-        border: checked ? '2px solid #1240CC' : '2px solid #d1d5db',
-        background: checked ? '#1240CC' : '#fff',
+        border: checked ? '2px solid #4387FF' : '2px solid #d1d5db',
+        background: checked ? '#4387FF' : '#fff',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         transition: 'all 0.1s',
       }}>

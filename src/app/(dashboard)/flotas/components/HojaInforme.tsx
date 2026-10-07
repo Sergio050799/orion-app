@@ -212,7 +212,7 @@ function buildPdfHtml(data: {
 
   /* ── Header ── */
   .report-header {
-    background: linear-gradient(135deg, #0a1560 0%, #1240CC 55%, #2563eb 100%);
+    background: #050607;
     color: #fff; border-radius: 8px; padding: 14px 18px; margin-bottom: 10px;
     display: flex; justify-content: space-between; align-items: flex-start;
   }
@@ -236,7 +236,7 @@ function buildPdfHtml(data: {
 
   /* ── Client card ── */
   .client-card {
-    border: 1px solid #d4dff5; border-radius: 7px; padding: 9px 14px;
+    border: 1px solid rgba(255,255,255,0.08); border-radius: 7px; padding: 9px 14px;
     margin-bottom: 9px; background: #f4f7ff;
     display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px;
   }
@@ -247,14 +247,14 @@ function buildPdfHtml(data: {
   .section { margin-bottom: 9px; }
   .section-title {
     font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.12em;
-    color: #1240CC; border-bottom: 2px solid #1240CC;
+    color: #4387FF; border-bottom: 2px solid #4387FF;
     padding-bottom: 3px; margin-bottom: 7px;
     font-family: 'Arial Black', Arial, sans-serif;
   }
 
   /* ── Tables ── */
   table { width: 100%; border-collapse: collapse; font-size: 12px; }
-  th { background: #1240CC; color: #fff; font-weight: 800; font-size: 11px; padding: 6px 8px; text-align: left; }
+  th { background: #4387FF; color: #fff; font-weight: 800; font-size: 11px; padding: 6px 8px; text-align: left; }
   td { padding: 5px 8px; border-bottom: 1px solid #eaeffb; color: #1e2a4a; }
   tr:last-child td { border-bottom: none; }
   tr:nth-child(even) td { background: #f5f8ff; }
@@ -268,12 +268,12 @@ function buildPdfHtml(data: {
   .red    { color: #dc2626; font-weight: 800; }
 
   /* ── SINCO ── */
-  .sinco-wrap { border: 1px solid #d4dff5; border-radius: 7px; overflow: hidden; margin-bottom: 9px; }
-  .sinco-head { padding: 5px 13px; background: #ecf0ff; border-bottom: 1px solid #d4dff5; font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.12em; color: #1240CC; font-family: 'Arial Black', Arial, sans-serif; }
-  .sinco-grid { display: flex; gap: 1px; background: #d4dff5; }
+  .sinco-wrap { border: 1px solid rgba(255,255,255,0.08); border-radius: 7px; overflow: hidden; margin-bottom: 9px; }
+  .sinco-head { padding: 5px 13px; background: #090A0C; border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.12em; color: #4387FF; font-family: 'Arial Black', Arial, sans-serif; }
+  .sinco-grid { display: flex; gap: 1px; background: rgba(255,255,255,0.08); }
   .sinco-item { background: #fff; padding: 8px 10px; flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center; }
   .sinco-label { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: #6b85b5; margin-bottom: 3px; }
-  .sinco-val { font-size: 20px; font-weight: 900; color: #1240CC; font-family: 'Arial Black', 'Arial Bold', Arial, sans-serif; line-height: 1; }
+  .sinco-val { font-size: 20px; font-weight: 900; color: #4387FF; font-family: 'Arial Black', 'Arial Bold', Arial, sans-serif; line-height: 1; }
 
   /* ── Ámbito ── */
   .ambito-badge { display: inline-block; border-radius: 4px; padding: 2px 9px; font-size: 12px; font-weight: 800; background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
@@ -282,23 +282,23 @@ function buildPdfHtml(data: {
   .summary-bar { background: #eef2ff; border: 1px solid #c0cffa; border-radius: 7px; padding: 9px 14px; margin-top: 8px; display: flex; justify-content: space-between; align-items: center; }
   .s-item { text-align: center; }
   .s-label { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: #6b85b5; display: block; margin-bottom: 2px; }
-  .s-val { font-size: 16px; font-weight: 900; color: #1240CC; font-family: 'Arial Black', Arial, sans-serif; line-height: 1; }
+  .s-val { font-size: 16px; font-weight: 900; color: #4387FF; font-family: 'Arial Black', Arial, sans-serif; line-height: 1; }
   .s-val.green { color: #15803d; }
   .s-val.red   { color: #dc2626; }
   .divider { width: 1px; height: 32px; background: #c0cffa; }
 
   /* ── Footer ── */
-  .report-footer { margin-top: 8px; padding-top: 6px; border-top: 1px solid #d4dff5; display: flex; justify-content: space-between; font-size: 10px; color: #8ea3c8; }
+  .report-footer { margin-top: 8px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; font-size: 10px; color: #8ea3c8; }
 
   /* ── Anexo coberturas ── */
   .anexo-page { page-break-before: always; padding-top: 14px; }
   .anexo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
-  .anexo-box { border: 1px solid #d4dff5; border-radius: 7px; overflow: hidden; }
-  .anexo-box-head { background: #1240CC; color: #fff; padding: 7px 13px; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.10em; font-family: 'Arial Black', Arial, sans-serif; }
+  .anexo-box { border: 1px solid rgba(255,255,255,0.08); border-radius: 7px; overflow: hidden; }
+  .anexo-box-head { background: #4387FF; color: #fff; padding: 7px 13px; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.10em; font-family: 'Arial Black', Arial, sans-serif; }
   .anexo-box-body { padding: 8px 13px; }
   .garantia-row { display: flex; align-items: center; gap: 7px; padding: 4px 0; border-bottom: 1px solid #eaeffb; font-size: 11px; color: #1e2a4a; }
   .garantia-row:last-child { border-bottom: none; }
-  .garantia-dot { width: 5px; height: 5px; border-radius: 50%; background: #1240CC; flex-shrink: 0; display: inline-block; }
+  .garantia-dot { width: 5px; height: 5px; border-radius: 50%; background: #4387FF; flex-shrink: 0; display: inline-block; }
 </style>
 </head>
 <body>
@@ -754,9 +754,9 @@ export default function HojaInforme({
     <div className="flex flex-col h-full min-h-0" style={{ background: 'rgba(0,5,30,0.7)', width: '100%', minWidth: 0, overflow: 'hidden' }}>
 
       {/* Toolbar */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px', borderBottom: '1px solid rgba(61,112,255,0.15)', background: 'rgba(6,14,50,0.6)', flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px', borderBottom: '1px solid rgba(255,255,255,0.08)', background: '#090A0C', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(178,198,245,0.5)' }}>
+          <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#70747B' }}>
             Informe · {totalVehiculos} vehículos
           </span>
           <span style={{
@@ -792,13 +792,13 @@ export default function HojaInforme({
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <button onClick={handleRecalcPrimas} style={{
             display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 8,
-            background: 'rgba(18,64,204,0.1)', border: '1px solid rgba(18,64,204,0.3)',
-            color: '#1240CC', fontSize: 11, fontWeight: 700, cursor: 'pointer',
+            background: 'rgba(67,135,255,0.08)', border: '1px solid rgba(67,135,255,0.2)',
+            color: '#4387FF', fontSize: 11, fontWeight: 700, cursor: 'pointer',
             textTransform: 'uppercase', letterSpacing: '0.08em',
           }}
             title="Recalcula las primas MMT desde los valores de la Oferta y la tarifa"
-            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(18,64,204,0.2)')}
-            onMouseLeave={e => (e.currentTarget.style.background = 'rgba(18,64,204,0.1)')}>
+            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(67,135,255,0.10)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'rgba(67,135,255,0.06)')}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/>
               <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
@@ -1027,8 +1027,8 @@ export default function HojaInforme({
                                 background: 'rgba(178,198,245,0.15)', border: '1px solid rgba(178,198,245,0.4)',
                                 outline: 'none', padding: '4px 8px', borderRadius: 6, color: '#111827',
                               }}
-                              onFocus={e => { e.currentTarget.style.borderColor = '#1240CC'; e.currentTarget.style.boxShadow = '0 0 0 2px rgba(18,64,204,0.2)'; }}
-                              onBlur={e => { e.currentTarget.style.borderColor = 'rgba(178,198,245,0.4)'; e.currentTarget.style.boxShadow = 'none'; }}
+                              onFocus={e => { e.currentTarget.style.borderColor = '#4387FF'; e.currentTarget.style.boxShadow = '0 0 0 2px rgba(67,135,255,0.15)'; }}
+                              onBlur={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'; e.currentTarget.style.boxShadow = 'none'; }}
                             />
                           </td>
                           <td style={{ ...tdS, textAlign: 'right', fontFamily: 'monospace', fontWeight: 700 }}>
@@ -1059,7 +1059,7 @@ export default function HojaInforme({
           }}>
             {[
               { label: 'Prima sol. total', value: fmtEur(totalSol), color: '#374151', bg: '#f9fafb', border: '#e5e7eb' },
-              { label: 'Prima MMT total', value: fmtEur(totalMmt), color: '#1240CC', bg: '#eff6ff', border: '#bfdbfe' },
+              { label: 'Prima MMT total', value: fmtEur(totalMmt), color: '#4387FF', bg: 'rgba(67,135,255,0.06)', border: 'rgba(67,135,255,0.2)' },
               { label: 'Diferencia (€)', value: (dif >= 0 ? '+' : '') + fmtEur(dif), color: difColor(dif), bg: difBg(dif), border: dif < 0 ? 'rgba(220,38,38,0.2)' : dif > 0 ? 'rgba(22,163,74,0.2)' : '#e5e7eb' },
               { label: 'Variación (%)', value: (pctDif >= 0 ? '+' : '') + pctDif.toFixed(1) + '%', color: difColor(dif), bg: difBg(dif), border: dif < 0 ? 'rgba(220,38,38,0.2)' : dif > 0 ? 'rgba(22,163,74,0.2)' : '#e5e7eb' },
             ].map(({ label, value, color, bg, border }) => (

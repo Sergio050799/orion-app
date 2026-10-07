@@ -28,7 +28,7 @@ const PERIODICIDAD_OPTS: { value: Periodicidad; label: string }[] = [
 const selectStyle: React.CSSProperties = {
   background: 'transparent',
   border: 'none',
-  borderBottom: '1px solid rgba(51,102,255,0.3)',
+  borderBottom: '1px solid rgba(255,255,255,0.12)',
   color: '#FFFFFF',
   fontSize: 13,
   fontFamily: 'monospace',
@@ -46,7 +46,7 @@ const HeaderBlock = React.memo(function HeaderBlock({ header, onChange }: Props)
   return (
     <div
       className="flex items-center gap-3 px-4 py-2 shrink-0 flex-wrap"
-      style={{ background: 'rgba(18,64,204,0.08)', borderBottom: '1px solid rgba(18,64,204,0.2)' }}
+      style={{ background: 'rgba(67,135,255,0.05)', borderBottom: '1px solid rgba(67,135,255,0.10)' }}
     >
       {TEXT_FIELDS.map(f => (
         <div key={f.key} className="flex flex-col gap-0.5 min-w-[120px]">
@@ -59,9 +59,9 @@ const HeaderBlock = React.memo(function HeaderBlock({ header, onChange }: Props)
             onChange={e => set(f.key, e.target.value)}
             placeholder={f.placeholder}
             className="text-[13px] font-mono font-bold outline-none bg-transparent border-b"
-            style={{ color: '#FFFFFF', borderColor: 'rgba(51,102,255,0.3)', width: '100%', padding: '1px 0' }}
-            onFocus={e => (e.currentTarget.style.borderColor = '#3366FF')}
-            onBlur={e => (e.currentTarget.style.borderColor = 'rgba(51,102,255,0.3)')}
+            style={{ color: '#FFFFFF', borderColor: 'rgba(255,255,255,0.12)', width: '100%', padding: '1px 0' }}
+            onFocus={e => (e.currentTarget.style.borderColor = '#4387FF')}
+            onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)')}
           />
         </div>
       ))}

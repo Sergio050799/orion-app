@@ -5,26 +5,26 @@ import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveCo
 import VehiculosCategorias, { type CatStats } from './VehiculosCategorias';
 
 const ESTADO_COLORS: Record<string, string> = {
-  'EN ESTUDIO': '#3366FF',
+  'EN ESTUDIO': '#4387FF',
   'OFERTADA': '#f59e0b',
   'CONTRATADA': '#10b981',
   'RECHAZADA': '#ef4444',
 };
 
 const glass: React.CSSProperties = {
-  background: 'rgba(12, 28, 82, 0.75)',
+  background: '#090A0C',
   border: '1px solid rgba(61, 112, 255, 0.22)',
   borderRadius: 22,
   padding: '24px 26px',
-  boxShadow: '0 30px 80px -20px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.08) inset, 0 0 0 1px rgba(61,112,255,0.12) inset',
+  boxShadow: '0 30px 80px -20px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.08) inset, 0 0 0 1px rgba(255,255,255,0.06) inset',
 };
 
 function ChartTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
     <div style={{
-      background: 'rgba(3,10,42,0.95)',
-      border: '1px solid rgba(51,102,255,0.2)',
+      background: '#090A0C',
+      border: '1px solid rgba(255,255,255,0.08)',
       borderRadius: 8,
       padding: '6px 10px',
       fontSize: 11,

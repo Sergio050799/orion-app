@@ -93,7 +93,7 @@ function CellDropdown({ value, options, disabled, onChange }: {
         }} className="custom-scrollbar">
           {options.map(opt => (
             <button key={opt||'__empty__'} type="button"
-              style={{ display:'block', width:'100%', textAlign:'left', padding:'6px 10px', fontSize:12, background: value===opt?'#eff0ff':'transparent', color: value===opt?'#4338ca':'#374151', cursor:'pointer' }}
+              style={{ display:'block', width:'100%', textAlign:'left', padding:'6px 10px', fontSize:12, background: value===opt?'rgba(67,135,255,0.08)':'transparent', color: value===opt?'#4387FF':'#374151', cursor:'pointer' }}
               onMouseEnter={e=>{if(value!==opt)(e.currentTarget as HTMLElement).style.background='#f9fafb';}}
               onMouseLeave={e=>{if(value!==opt)(e.currentTarget as HTMLElement).style.background='transparent';}}
               onClick={()=>{ onChange(opt); setOpen(false); }}>
@@ -207,7 +207,7 @@ const HojaCoberturas = forwardRef<HojaCoberturasHandle, Props>(
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-black" style={{ color:'#374151' }}>Total prima MMT:</span>
             <span className="text-[13px] font-black px-2 py-1 rounded-md"
-              style={{ background:'rgba(18,64,204,0.1)', color:'#4338ca', border:'1px solid rgba(18,64,204,0.2)' }}>
+              style={{ background:'rgba(67,135,255,0.06)', color:'#4387FF', border:'1px solid rgba(67,135,255,0.10)' }}>
               {totalPrima > 0 ? `${totalPrima.toLocaleString('es-ES')} €` : '—'}
             </span>
           </div>
@@ -292,12 +292,12 @@ const HojaCoberturas = forwardRef<HojaCoberturasHandle, Props>(
                     <td style={{...tdS,textAlign:'center'}} onClick={e=>e.stopPropagation()}>
                       <input type="checkbox" checked={row.animales}
                         onChange={e=>setRow(i,{animales:e.target.checked})}
-                        style={{accentColor:'#1240CC',cursor:'pointer',width:14,height:14}} />
+                        style={{accentColor:'#4387FF',cursor:'pointer',width:14,height:14}} />
                     </td>
                     <td style={{...tdS,textAlign:'center'}} onClick={e=>e.stopPropagation()}>
                       <input type="checkbox" checked={row.perdidaTotal}
                         onChange={e=>setRow(i,{perdidaTotal:e.target.checked})}
-                        style={{accentColor:'#1240CC',cursor:'pointer',width:14,height:14}} />
+                        style={{accentColor:'#4387FF',cursor:'pointer',width:14,height:14}} />
                     </td>
                     <td style={{...tdS,fontFamily:'monospace',fontWeight:700,textAlign:'right',
                       color: !validation.valido?'#ef4444':(prima!==null?'#374151':'#9ca3af')}}>

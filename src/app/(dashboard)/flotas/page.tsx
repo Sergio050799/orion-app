@@ -379,7 +379,7 @@ export default function FlotasPage() {
           --rdg-background-color: #ffffff;
           --rdg-header-background-color: #f3f4f6;
           --rdg-row-hover-background-color: #f9fafb;
-          --rdg-selection-color: #1240CC;
+          --rdg-selection-color: #4387FF;
           --rdg-font-size: 13px;
           --rdg-border-color: #e5e7eb;
           color: #111827;
@@ -405,16 +405,15 @@ export default function FlotasPage() {
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             flexWrap: 'wrap', gap: 12,
-            padding: '14px 22px', marginBottom: 18, borderRadius: 18,
-            background: 'rgba(12, 28, 82, 0.75)',
-            border: '1px solid rgba(61, 112, 255, 0.22)',
+            padding: '14px 22px', marginBottom: 18, borderRadius: 14,
+            background: '#090A0C',
+            border: '1px solid rgba(255,255,255,0.08)',
             position: 'relative', zIndex: 20,
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
               <div style={{
                 width: 4, height: 32, borderRadius: 2,
-                background: 'linear-gradient(180deg, #1240CC, #3366FF)',
-                boxShadow: '0 0 12px rgba(70,120,255,0.5)',
+                background: '#4387FF',
               }} />
               <div>
                 <h1 style={{
@@ -422,15 +421,15 @@ export default function FlotasPage() {
                   fontFamily: 'var(--font-display), Inter, sans-serif', fontWeight: 700,
                 }}>Estudio de Flotas</h1>
                 {fichaMode ? (
-                  <p style={{ margin: '2px 0 0', fontSize: 12, color: 'rgba(16,185,129,0.65)' }}>Ficha de datos contratados</p>
+                  <p style={{ margin: '2px 0 0', fontSize: 12, color: 'rgba(32,201,130,0.65)' }}>Ficha de datos contratados</p>
                 ) : (
-                  <p style={{ margin: '2px 0 0', fontSize: 12, color: 'rgba(178,198,245,0.6)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <p style={{ margin: '2px 0 0', fontSize: 12, color: '#A1A1A6', display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span>Paso {activeTabIndex + 1}/{TABS.length} — {activeTab}</span>
                     <span style={{
                       fontSize: 10, fontWeight: 700,
-                      color: completedCount === TABS.length ? '#10b981' : '#3366FF',
-                      background: completedCount === TABS.length ? 'rgba(16,185,129,0.12)' : 'rgba(51,102,255,0.12)',
-                      border: `1px solid ${completedCount === TABS.length ? 'rgba(16,185,129,0.3)' : 'rgba(51,102,255,0.25)'}`,
+                      color: completedCount === TABS.length ? '#20C982' : '#4387FF',
+                      background: completedCount === TABS.length ? 'rgba(32,201,130,0.10)' : 'rgba(67,135,255,0.10)',
+                      border: `1px solid ${completedCount === TABS.length ? 'rgba(32,201,130,0.25)' : 'rgba(67,135,255,0.25)'}`,
                       borderRadius: 999, padding: '1px 7px',
                     }}>{completedCount}/{TABS.length} completos</span>
                   </p>
@@ -444,12 +443,12 @@ export default function FlotasPage() {
               <div style={{
                 display: 'flex', alignItems: 'center', gap: 8,
                 padding: '6px 14px', borderRadius: 999,
-                background: 'rgba(61,112,255,0.12)', border: '1px solid rgba(51,102,255,0.2)',
+                background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)',
               }}>
                 <span style={{ fontSize: 13, fontWeight: 600, color: '#FFFFFF', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {carpetaActiva.nombre}
                 </span>
-                <span style={{ fontSize: 12, color: 'rgba(178,198,245,0.6)', fontStyle: 'italic' }}>
+                <span style={{ fontSize: 12, color: '#70747B', fontStyle: 'italic' }}>
                   {numVeh} veh.
                 </span>
               </div>
@@ -461,24 +460,24 @@ export default function FlotasPage() {
                   const val = e.target.value as EstadoFlota;
                   if (val && val !== carpetaActiva.estado) setEstadoPopover({ estado: val, motivo: '' });
                 }} style={{
-                  fontSize: 13, background: 'rgba(3,10,42,0.8)', border: '1px solid rgba(61,112,255,0.22)',
-                  color: '#BDD4FF', cursor: 'pointer', outline: 'none', padding: '4px 8px',
+                  fontSize: 13, background: '#0D0F12', border: '1px solid rgba(255,255,255,0.08)',
+                  color: '#A1A1A6', cursor: 'pointer', outline: 'none', padding: '4px 8px',
                   borderRadius: 6, appearance: 'auto',
                 }}>
-                  <option value="" style={{ background: '#020B1A', color: '#BDD4FF' }}>Cambiar estado</option>
+                  <option value="" style={{ background: '#090A0C', color: '#F4F4F5' }}>Cambiar estado</option>
                   {(['EN ESTUDIO', 'OFERTADA', 'CONTRATADA', 'RECHAZADA'] as EstadoFlota[])
                     .filter(e => e !== carpetaActiva.estado)
-                    .map(e => <option key={e} value={e} style={{ background: '#020B1A', color: '#BDD4FF' }}>{e}</option>)}
+                    .map(e => <option key={e} value={e} style={{ background: '#090A0C', color: '#F4F4F5' }}>{e}</option>)}
                 </select>
 
                 {estadoPopover && (
                   <div style={{
                     position: 'absolute', top: '100%', right: 0, marginTop: 8, zIndex: 100,
                     padding: 14, borderRadius: 14,
-                    background: 'rgba(0,7,45,0.97)', border: '1px solid rgba(61,112,255,0.22)',
+                    background: '#090A0C', border: '1px solid rgba(255,255,255,0.08)',
                     boxShadow: '0 20px 60px rgba(0,0,0,0.6)', minWidth: 220,
                   }}>
-                    <p style={{ fontSize: 10, fontWeight: 700, color: 'rgba(178,198,245,0.6)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>
+                    <p style={{ fontSize: 10, fontWeight: 700, color: '#70747B', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>
                       Cambiar a <EstadoBadge estado={estadoPopover.estado} small />
                     </p>
                     <input autoFocus placeholder="Motivo (opcional)"
@@ -489,11 +488,11 @@ export default function FlotasPage() {
                     <div style={{ display: 'flex', gap: 6 }}>
                       <button onClick={handleConfirmarEstado} style={{
                         flex: 1, fontSize: 11, fontWeight: 600, padding: '6px 0', borderRadius: 8,
-                        background: 'linear-gradient(135deg, #1240CC, #3366FF)', color: '#fff', border: 'none', cursor: 'pointer',
+                        background: '#4387FF', color: '#fff', border: 'none', cursor: 'pointer',
                       }}>Confirmar</button>
                       <button onClick={() => setEstadoPopover(null)} style={{
                         fontSize: 11, padding: '6px 12px', borderRadius: 8,
-                        background: 'rgba(6,14,50,0.5)', color: '#BDD4FF', border: '1px solid rgba(61,112,255,0.22)', cursor: 'pointer',
+                        background: 'transparent', color: '#A1A1A6', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer',
                       }}>Cancelar</button>
                     </div>
                   </div>
@@ -502,15 +501,15 @@ export default function FlotasPage() {
 
               {/* Cambiar */}
               <button onClick={() => setShowCarpetaScreen(true)} style={{
-                background: 'rgba(6,14,50,0.5)', border: '1px solid rgba(61,112,255,0.22)',
-                borderRadius: 8, padding: '5px 12px', color: '#BDD4FF', fontSize: 13, cursor: 'pointer', fontWeight: 500,
+                background: 'transparent', border: '1px solid rgba(255,255,255,0.08)',
+                borderRadius: 8, padding: '5px 12px', color: '#A1A1A6', fontSize: 13, cursor: 'pointer', fontWeight: 500,
               }}>Cambiar</button>
 
               {/* Actualizar estudio */}
               <button onClick={handleRefresh} disabled={isRefreshing} title="Recargar datos del servidor" style={{
-                background: 'rgba(6,14,50,0.5)', border: '1px solid rgba(61,112,255,0.22)',
+                background: 'transparent', border: '1px solid rgba(255,255,255,0.08)',
                 borderRadius: 8, padding: '6px 12px',
-                color: isRefreshing ? 'rgba(178,198,245,0.4)' : '#BDD4FF',
+                color: isRefreshing ? 'rgba(244,244,245,0.3)' : '#A1A1A6',
                 fontSize: 13, fontWeight: 500, cursor: isRefreshing ? 'not-allowed' : 'pointer',
                 display: 'flex', alignItems: 'center', gap: 5,
                 opacity: isRefreshing ? 0.6 : 1,
@@ -525,10 +524,10 @@ export default function FlotasPage() {
 
               {/* Guardar */}
               <button onClick={handleSave} style={{
-                background: saveFlash ? 'rgba(34,197,94,0.2)' : 'rgba(6,14,50,0.5)',
-                border: `1px solid ${saveFlash ? 'rgba(34,197,94,0.4)' : 'rgba(61,112,255,0.22)'}`,
+                background: saveFlash ? 'rgba(32,201,130,0.12)' : 'transparent',
+                border: `1px solid ${saveFlash ? 'rgba(32,201,130,0.35)' : 'rgba(255,255,255,0.08)'}`,
                 borderRadius: 8, padding: '6px 14px',
-                color: saveFlash ? '#4ade80' : '#BDD4FF', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                color: saveFlash ? '#20C982' : '#A1A1A6', fontSize: 13, fontWeight: 600, cursor: 'pointer',
                 display: 'flex', alignItems: 'center', gap: 5,
                 transition: 'all 300ms',
               }}>
@@ -553,7 +552,7 @@ export default function FlotasPage() {
 
               {/* Download */}
               <button onClick={handleDownload} disabled={isDownloading} style={{
-                background: 'linear-gradient(135deg, #1240CC, #3366FF)',
+                background: '#4387FF',
                 border: 'none', borderRadius: 8, padding: '6px 14px',
                 color: '#fff', fontSize: 13, fontWeight: 600, cursor: isDownloading ? 'not-allowed' : 'pointer',
                 opacity: isDownloading ? 0.5 : 1, display: 'flex', alignItems: 'center', gap: 5,
@@ -572,16 +571,16 @@ export default function FlotasPage() {
           <div style={{
             flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6,
             padding: '5px 22px', marginBottom: 6,
-            background: 'rgba(0,7,45,0.5)',
-            borderRadius: 12, border: '1px solid rgba(51,102,255,0.1)',
+            background: 'transparent',
+            borderRadius: 12, border: '1px solid rgba(255,255,255,0.06)',
           }}>
-            <span style={{ fontSize: 9, fontWeight: 700, color: 'rgba(178,198,245,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em', marginRight: 4 }}>Abiertas</span>
+            <span style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.2)', textTransform: 'uppercase', letterSpacing: '0.08em', marginRight: 4 }}>Abiertas</span>
             {openFlotas.map(f => (
               <button key={f.id} onClick={() => handleSwitchFlota(f)} style={{
                 padding: '3px 12px', fontSize: 11, fontWeight: 600, borderRadius: 6,
-                background: carpetaActiva?.id === f.id ? 'rgba(18,64,204,0.3)' : 'rgba(6,14,50,0.5)',
-                border: `1px solid ${carpetaActiva?.id === f.id ? 'rgba(51,102,255,0.45)' : 'rgba(61,112,255,0.15)'}`,
-                color: carpetaActiva?.id === f.id ? '#3D7BFF' : 'rgba(178,198,245,0.7)',
+                background: carpetaActiva?.id === f.id ? 'rgba(67,135,255,0.12)' : 'transparent',
+                border: `1px solid ${carpetaActiva?.id === f.id ? 'rgba(67,135,255,0.35)' : 'rgba(255,255,255,0.08)'}`,
+                color: carpetaActiva?.id === f.id ? '#4387FF' : 'rgba(244,244,245,0.5)',
                 cursor: carpetaActiva?.id === f.id ? 'default' : 'pointer',
                 maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                 transition: 'all 150ms',
@@ -595,7 +594,7 @@ export default function FlotasPage() {
 
         {/* Main container */}
         <div className="flex-1 flex flex-col min-h-0 rounded-2xl overflow-hidden"
-          style={{ background: 'rgba(0,7,45,0.85)', border: '1px solid rgba(51,102,255,0.1)' }}>
+          style={{ background: '#090A0C', border: '1px solid rgba(255,255,255,0.08)' }}>
 
           {showCarpetaScreen && <CarpetaScreen onSelect={handleSelectCarpeta} />}
 
@@ -691,7 +690,7 @@ export default function FlotasPage() {
           {!showCarpetaScreen && !fichaMode && (
             <div style={{
               display: 'flex', alignItems: 'stretch', gap: 0, padding: '0 8px',
-              borderTop: '1px solid rgba(61,112,255,0.16)', background: 'rgba(0,7,45,0.6)',
+              borderTop: '1px solid rgba(255,255,255,0.08)', background: '#090A0C',
               flexShrink: 0,
             }}>
               {/* Prev */}
@@ -701,12 +700,12 @@ export default function FlotasPage() {
                 style={{
                   padding: '0 10px', fontSize: 11, fontWeight: 600, border: 'none',
                   background: 'transparent', cursor: activeTabIndex === 0 ? 'default' : 'pointer',
-                  color: activeTabIndex === 0 ? 'rgba(178,198,245,0.15)' : 'rgba(178,198,245,0.5)',
+                  color: activeTabIndex === 0 ? 'rgba(244,244,245,0.15)' : 'rgba(244,244,245,0.4)',
                   display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0,
                   transition: 'color 150ms',
                 }}
-                onMouseEnter={e => { if (activeTabIndex > 0) e.currentTarget.style.color = '#BDD4FF'; }}
-                onMouseLeave={e => { if (activeTabIndex > 0) e.currentTarget.style.color = 'rgba(178,198,245,0.5)'; }}
+                onMouseEnter={e => { if (activeTabIndex > 0) e.currentTarget.style.color = '#F4F4F5'; }}
+                onMouseLeave={e => { if (activeTabIndex > 0) e.currentTarget.style.color = 'rgba(244,244,245,0.4)'; }}
                 title="Paso anterior"
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>
@@ -722,26 +721,26 @@ export default function FlotasPage() {
                     textTransform: 'uppercase', letterSpacing: '0.06em',
                     whiteSpace: 'nowrap', border: 'none', cursor: 'pointer',
                     borderTopLeftRadius: 8, borderTopRightRadius: 8,
-                    borderTop: isActive ? '2px solid #1240CC' : '2px solid transparent',
-                    background: isActive ? 'rgba(18,64,204,0.15)' : 'transparent',
-                    color: isActive ? '#3366FF' : done ? 'rgba(178,198,245,0.55)' : 'rgba(178,198,245,0.35)',
+                    borderTop: isActive ? '2px solid #4387FF' : '2px solid transparent',
+                    background: isActive ? 'rgba(67,135,255,0.08)' : 'transparent',
+                    color: isActive ? '#4387FF' : done ? 'rgba(244,244,245,0.55)' : 'rgba(244,244,245,0.3)',
                     transition: 'all 180ms',
                     marginBottom: -1,
                     display: 'flex', alignItems: 'center', gap: 5,
                   }}
-                    onMouseEnter={e => { if (!isActive) e.currentTarget.style.color = '#BDD4FF'; }}
-                    onMouseLeave={e => { if (!isActive) e.currentTarget.style.color = done ? 'rgba(178,198,245,0.55)' : 'rgba(178,198,245,0.35)'; }}
+                    onMouseEnter={e => { if (!isActive) e.currentTarget.style.color = '#F4F4F5'; }}
+                    onMouseLeave={e => { if (!isActive) e.currentTarget.style.color = done ? 'rgba(244,244,245,0.55)' : 'rgba(244,244,245,0.3)'; }}
                   >
                     <span style={{
                       fontSize: 8, fontWeight: 800, lineHeight: 1,
-                      color: isActive ? '#3366FF' : done ? 'rgba(16,185,129,0.7)' : 'rgba(178,198,245,0.25)',
+                      color: isActive ? '#4387FF' : done ? 'rgba(32,201,130,0.7)' : 'rgba(244,244,245,0.2)',
                     }}>{String(idx + 1).padStart(2, '0')}</span>
                     {tab}
                     {done && (
                       <span style={{
                         width: 5, height: 5, borderRadius: '50%', flexShrink: 0,
-                        background: isActive ? '#3366FF' : '#10b981',
-                        boxShadow: `0 0 5px ${isActive ? 'rgba(51,102,255,0.5)' : 'rgba(16,185,129,0.5)'}`,
+                        background: isActive ? '#4387FF' : '#20C982',
+                        boxShadow: `0 0 5px ${isActive ? 'rgba(67,135,255,0.5)' : 'rgba(32,201,130,0.5)'}`,
                       }} />
                     )}
                   </button>
@@ -756,16 +755,16 @@ export default function FlotasPage() {
                 disabled={activeTabIndex === TABS.length - 1}
                 style={{
                   padding: '0 12px', fontSize: 11, fontWeight: 600,
-                  border: activeTabIndex < TABS.length - 1 ? '1px solid rgba(61,112,255,0.22)' : 'none',
+                  border: activeTabIndex < TABS.length - 1 ? '1px solid rgba(255,255,255,0.08)' : 'none',
                   borderRadius: 7, margin: '6px 4px',
-                  background: activeTabIndex < TABS.length - 1 ? 'rgba(18,64,204,0.14)' : 'transparent',
+                  background: 'transparent',
                   cursor: activeTabIndex === TABS.length - 1 ? 'default' : 'pointer',
-                  color: activeTabIndex === TABS.length - 1 ? 'rgba(178,198,245,0.15)' : '#BDD4FF',
+                  color: activeTabIndex === TABS.length - 1 ? 'rgba(244,244,245,0.15)' : 'rgba(244,244,245,0.6)',
                   display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0,
                   transition: 'all 150ms',
                 }}
-                onMouseEnter={e => { if (activeTabIndex < TABS.length - 1) { e.currentTarget.style.color = '#FFFFFF'; e.currentTarget.style.background = 'rgba(18,64,204,0.28)'; } }}
-                onMouseLeave={e => { if (activeTabIndex < TABS.length - 1) { e.currentTarget.style.color = '#BDD4FF'; e.currentTarget.style.background = 'rgba(18,64,204,0.14)'; } }}
+                onMouseEnter={e => { if (activeTabIndex < TABS.length - 1) { e.currentTarget.style.color = '#F4F4F5'; } }}
+                onMouseLeave={e => { if (activeTabIndex < TABS.length - 1) { e.currentTarget.style.color = 'rgba(244,244,245,0.6)'; } }}
                 title="Paso siguiente"
               >
                 Siguiente

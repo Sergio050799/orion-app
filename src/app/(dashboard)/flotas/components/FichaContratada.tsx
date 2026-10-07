@@ -52,8 +52,8 @@ export default function FichaContratada({ carpeta, corredor, onAbrirEstudio }: P
           </div>
           <button onClick={onAbrirEstudio} style={{
             fontSize: 11, fontWeight: 600, padding: '8px 16px', borderRadius: 8,
-            background: 'rgba(18,64,204,0.18)', color: '#3D7BFF',
-            border: '1px solid rgba(51,102,255,0.3)', cursor: 'pointer',
+            background: 'rgba(67,135,255,0.08)', color: '#4387FF',
+            border: '1px solid rgba(67,135,255,0.2)', cursor: 'pointer',
             display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0,
           }}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -141,11 +141,11 @@ export default function FichaContratada({ carpeta, corredor, onAbrirEstudio }: P
                 <div key={i} style={{
                   display: 'grid', gridTemplateColumns: '1fr 1fr 110px', gap: 12, alignItems: 'center',
                   padding: '10px 14px', borderRadius: 10,
-                  background: 'rgba(6,14,50,0.4)', border: '1px solid rgba(61,112,255,0.1)',
+                  background: '#0D0F12', border: '1px solid rgba(255,255,255,0.06)',
                 }}>
-                  <span style={{ fontSize: 12, color: '#FFFFFF' }}>{t.tipo || '—'}</span>
-                  <span style={{ fontSize: 12, color: 'rgba(178,198,245,0.65)' }}>{t.cobertura || '—'}</span>
-                  <span style={{ fontSize: 13, fontWeight: 700, fontFamily: 'monospace', color: '#10b981', textAlign: 'right' }}>
+                  <span style={{ fontSize: 12, color: '#F4F4F5' }}>{t.tipo || '—'}</span>
+                  <span style={{ fontSize: 12, color: '#A1A1A6' }}>{t.cobertura || '—'}</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, fontFamily: 'monospace', color: '#20C982', textAlign: 'right' }}>
                     {t.precio ? `${t.precio.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €` : '—'}
                   </span>
                 </div>

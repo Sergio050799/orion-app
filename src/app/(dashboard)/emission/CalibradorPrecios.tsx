@@ -14,7 +14,7 @@ interface FilaCalibracion {
 // ─── Estilos ─────────────────────────────────────────────────────────────────
 
 const glassCard: React.CSSProperties = {
-  background: 'rgba(12, 28, 82, 0.75)',
+  background: '#090A0C',
   border: '1px solid rgba(61, 112, 255, 0.22)',
   borderRadius: 22,
   boxShadow: '0 30px 80px -20px rgba(0,0,0,0.6), 0 1px 0 rgba(255,255,255,0.06) inset',
@@ -23,7 +23,7 @@ const glassCard: React.CSSProperties = {
 const cellInput: React.CSSProperties = {
   fontSize: 14, fontWeight: 700, fontFamily: 'monospace',
   padding: '8px 12px', borderRadius: 8, width: '100%',
-  background: 'rgba(6,14,50,0.55)', border: '1px solid rgba(51,102,255,0.15)',
+  background: '#0D0F12', border: '1px solid rgba(67,135,255,0.12)',
   color: '#FFFFFF', outline: 'none', textAlign: 'right',
   transition: 'border-color 0.15s',
 };
@@ -238,16 +238,16 @@ export default function CalibradorPrecios({ initialData }: Props) {
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '12px 20px', borderRadius: 14,
-        background: 'rgba(6,14,50,0.5)', border: '1px solid rgba(61,112,255,0.16)',
+        background: '#0D0F12', border: '1px solid rgba(255,255,255,0.08)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontSize: 12, color: 'rgba(178,198,245,0.6)' }}>
+          <span style={{ fontSize: 12, color: '#A1A1A6' }}>
             {filas.length} vehiculo{filas.length !== 1 ? 's' : ''}
           </span>
           {iteracion > 1 && (
             <span style={{
               fontSize: 10, fontWeight: 800, padding: '2px 8px', borderRadius: 6,
-              background: 'rgba(61,112,255,0.16)', color: '#3366FF',
+              background: 'rgba(255,255,255,0.08)', color: '#4387FF',
               textTransform: 'uppercase', letterSpacing: '0.06em',
             }}>
               Iteracion {iteracion}
@@ -257,15 +257,15 @@ export default function CalibradorPrecios({ initialData }: Props) {
         <div style={{ display: 'flex', gap: 8 }}>
           <button onClick={addFila} style={{
             fontSize: 12, fontWeight: 700, padding: '6px 14px', borderRadius: 8,
-            background: 'rgba(18,64,204,0.15)', color: '#3366FF',
-            border: '1px solid rgba(18,64,204,0.3)', cursor: 'pointer',
+            background: 'rgba(67,135,255,0.10)', color: '#4387FF',
+            border: '1px solid rgba(67,135,255,0.25)', cursor: 'pointer',
           }}>
             + Fila
           </button>
           <button onClick={() => addMultiple(5)} style={{
             fontSize: 12, fontWeight: 700, padding: '6px 14px', borderRadius: 8,
-            background: 'rgba(18,64,204,0.08)', color: '#3366FF',
-            border: '1px solid rgba(18,64,204,0.2)', cursor: 'pointer',
+            background: 'rgba(67,135,255,0.05)', color: '#4387FF',
+            border: '1px solid rgba(67,135,255,0.12)', cursor: 'pointer',
           }}>
             + 5 Filas
           </button>
@@ -282,12 +282,12 @@ export default function CalibradorPrecios({ initialData }: Props) {
       {/* Instrucciones rápidas */}
       <div style={{
         padding: '10px 20px', borderRadius: 10,
-        background: 'rgba(51,102,255,0.05)', border: '1px solid rgba(61,112,255,0.12)',
-        fontSize: 11, color: 'rgba(178,198,245,0.5)', lineHeight: 1.5,
+        background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)',
+        fontSize: 11, color: '#70747B', lineHeight: 1.5,
       }}>
-        <strong style={{ color: 'rgba(178,198,245,0.7)' }}>Instrucciones:</strong>{' '}
-        Escribe el precio que quieres en <strong style={{ color: '#BDD4FF' }}>OBJETIVO</strong>,
-        emite en el sistema, y pega el resultado en <strong style={{ color: '#BDD4FF' }}>REAL</strong>.
+        <strong style={{ color: '#A1A1A6' }}>Instrucciones:</strong>{' '}
+        Escribe el precio que quieres en <strong style={{ color: '#A1A1A6' }}>OBJETIVO</strong>,
+        emite en el sistema, y pega el resultado en <strong style={{ color: '#A1A1A6' }}>REAL</strong>.
         Orion calcula el precio que debes ingresar. Puedes pegar columnas enteras desde Excel.
       </div>
 
@@ -326,13 +326,13 @@ export default function CalibradorPrecios({ initialData }: Props) {
               const c = computed[i];
               return (
                 <tr key={f.id}
-                  style={{ borderBottom: '1px solid rgba(61,112,255,0.10)' }}
-                  onMouseEnter={e => (e.currentTarget.style.background = 'rgba(51,102,255,0.03)')}
+                  style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.01)')}
                   onMouseLeave={e => (e.currentTarget.style.background = '')}
                 >
                   {/* # */}
                   <td style={{ ...tdStyle, textAlign: 'center', width: 40 }}>
-                    <span style={{ fontSize: 11, color: 'rgba(178,198,245,0.4)', fontWeight: 700 }}>{i + 1}</span>
+                    <span style={{ fontSize: 11, color: '#70747B', fontWeight: 700 }}>{i + 1}</span>
                   </td>
 
                   {/* Matricula */}
@@ -349,26 +349,26 @@ export default function CalibradorPrecios({ initialData }: Props) {
                   {/* Precio Objetivo */}
                   <td style={tdStyle}>
                     <input
-                      style={{ ...cellInput, borderColor: f.objetivo ? 'rgba(51,102,255,0.3)' : 'rgba(51,102,255,0.15)' }}
+                      style={{ ...cellInput, borderColor: f.objetivo ? 'rgba(67,135,255,0.25)' : 'rgba(67,135,255,0.12)' }}
                       value={f.objetivo}
                       placeholder="0,00"
                       onChange={e => updateFila(f.id, 'objetivo', e.target.value)}
                       onPaste={e => handlePaste(e, f.id, 'objetivo')}
-                      onFocus={e => (e.currentTarget.style.borderColor = '#3366FF')}
-                      onBlur={e => (e.currentTarget.style.borderColor = f.objetivo ? 'rgba(51,102,255,0.3)' : 'rgba(51,102,255,0.15)')}
+                      onFocus={e => (e.currentTarget.style.borderColor = '#4387FF')}
+                      onBlur={e => (e.currentTarget.style.borderColor = f.objetivo ? 'rgba(67,135,255,0.25)' : 'rgba(67,135,255,0.12)')}
                     />
                   </td>
 
                   {/* Precio Real */}
                   <td style={tdStyle}>
                     <input
-                      style={{ ...cellInput, borderColor: f.real ? 'rgba(245,158,11,0.3)' : 'rgba(51,102,255,0.15)' }}
+                      style={{ ...cellInput, borderColor: f.real ? 'rgba(245,158,11,0.3)' : 'rgba(67,135,255,0.12)' }}
                       value={f.real}
                       placeholder="0,00"
                       onChange={e => updateFila(f.id, 'real', e.target.value)}
                       onPaste={e => handlePaste(e, f.id, 'real')}
                       onFocus={e => (e.currentTarget.style.borderColor = '#f59e0b')}
-                      onBlur={e => (e.currentTarget.style.borderColor = f.real ? 'rgba(245,158,11,0.3)' : 'rgba(51,102,255,0.15)')}
+                      onBlur={e => (e.currentTarget.style.borderColor = f.real ? 'rgba(245,158,11,0.3)' : 'rgba(67,135,255,0.12)')}
                     />
                   </td>
 
@@ -417,15 +417,15 @@ export default function CalibradorPrecios({ initialData }: Props) {
 
           {/* Totales */}
           <tfoot>
-            <tr style={{ borderTop: '2px solid rgba(51,102,255,0.15)' }}>
+            <tr style={{ borderTop: '2px solid rgba(67,135,255,0.12)' }}>
               <td style={{ ...tdStyle, textAlign: 'center' }}>
-                <span style={{ fontSize: 10, fontWeight: 900, color: 'rgba(178,198,245,0.5)', textTransform: 'uppercase' }}>Total</span>
+                <span style={{ fontSize: 10, fontWeight: 900, color: '#70747B', textTransform: 'uppercase' }}>Total</span>
               </td>
               <td style={tdStyle}></td>
 
               {/* Total Objetivo */}
               <td style={tdStyle}>
-                <div style={{ fontSize: 14, fontWeight: 900, fontFamily: 'monospace', textAlign: 'right', padding: '8px 12px', color: '#BDD4FF' }}>
+                <div style={{ fontSize: 14, fontWeight: 900, fontFamily: 'monospace', textAlign: 'right', padding: '8px 12px', color: '#A1A1A6' }}>
                   {totals.totalObj > 0 ? fmt(totals.totalObj) : ''}
                 </div>
               </td>
@@ -467,35 +467,35 @@ export default function CalibradorPrecios({ initialData }: Props) {
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           padding: '16px 22px', borderRadius: 16,
-          background: 'rgba(12, 28, 82, 0.6)',
-          border: '1px solid rgba(61,112,255,0.22)',
+          background: '#090A0C',
+          border: '1px solid rgba(255,255,255,0.08)',
         }}>
           {/* Resumen */}
           <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
             <div>
-              <div style={{ fontSize: 9, fontWeight: 800, color: 'rgba(178,198,245,0.5)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              <div style={{ fontSize: 9, fontWeight: 800, color: '#70747B', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 Diferencia sistema
               </div>
               <div style={{ fontSize: 18, fontWeight: 900, fontFamily: 'monospace', color: totalDiffColor(totals.diffTotal) }}>
                 {fmtDiff(totals.diffTotal)} EUR
               </div>
             </div>
-            <div style={{ width: 1, height: 36, background: 'rgba(61,112,255,0.16)' }} />
+            <div style={{ width: 1, height: 36, background: 'rgba(255,255,255,0.08)' }} />
             <div>
-              <div style={{ fontSize: 9, fontWeight: 800, color: 'rgba(178,198,245,0.5)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              <div style={{ fontSize: 9, fontWeight: 800, color: '#70747B', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 Con calibracion
               </div>
               <div style={{ fontSize: 18, fontWeight: 900, fontFamily: 'monospace', color: '#10b981' }}>
                 ~{fmtDiff(totals.totalObj - totals.totalCalibrado)} EUR
               </div>
-              <div style={{ fontSize: 9, color: 'rgba(178,198,245,0.4)' }}>estimado tras aplicar</div>
+              <div style={{ fontSize: 9, color: '#70747B' }}>estimado tras aplicar</div>
             </div>
-            <div style={{ width: 1, height: 36, background: 'rgba(61,112,255,0.16)' }} />
+            <div style={{ width: 1, height: 36, background: 'rgba(255,255,255,0.08)' }} />
             <div>
-              <div style={{ fontSize: 9, fontWeight: 800, color: 'rgba(178,198,245,0.5)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              <div style={{ fontSize: 9, fontWeight: 800, color: '#70747B', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 Filas calculadas
               </div>
-              <div style={{ fontSize: 18, fontWeight: 900, fontFamily: 'monospace', color: '#BDD4FF' }}>
+              <div style={{ fontSize: 18, fontWeight: 900, fontFamily: 'monospace', color: '#A1A1A6' }}>
                 {totals.filasConDatos} / {filas.length}
               </div>
             </div>
@@ -504,9 +504,9 @@ export default function CalibradorPrecios({ initialData }: Props) {
           {/* Botón iterar */}
           <button onClick={aplicarCalibracion} style={{
             fontSize: 13, fontWeight: 800, padding: '12px 24px', borderRadius: 12,
-            background: 'linear-gradient(135deg, #1240CC, #3366FF)',
+            background: '#4387FF',
             color: '#fff', border: 'none', cursor: 'pointer',
-            boxShadow: '0 8px 24px -8px rgba(18,64,204,0.4)',
+            boxShadow: '0 8px 24px -8px rgba(67,135,255,0.3)',
             display: 'flex', alignItems: 'center', gap: 8,
           }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -560,8 +560,8 @@ const thStyle: React.CSSProperties = {
   padding: '12px 10px', fontSize: 10, fontWeight: 800,
   color: 'rgba(70,120,255,0.6)', textTransform: 'uppercase',
   letterSpacing: '0.1em', textAlign: 'center',
-  borderBottom: '1px solid rgba(51,102,255,0.1)',
-  background: 'rgba(6,14,50,0.4)',
+  borderBottom: '1px solid rgba(67,135,255,0.08)',
+  background: '#0D0F12',
 };
 
 const thCopyable: React.CSSProperties = {

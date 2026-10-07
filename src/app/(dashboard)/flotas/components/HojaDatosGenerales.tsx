@@ -103,8 +103,8 @@ const inputStyle: React.CSSProperties = {
   fontSize: 12,
   padding: '7px 10px',
   borderRadius: 8,
-  background: 'rgba(6,14,50,0.55)',
-  border: '1px solid rgba(61,112,255,0.22)',
+  background: '#0D0F12',
+  border: '1px solid rgba(255,255,255,0.08)',
   color: '#FFFFFF',
   outline: 'none',
   fontFamily: 'inherit',
@@ -357,13 +357,13 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
         {/* ── Identificación ── */}
         <section>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-            <p style={{ fontSize: 10, fontWeight: 900, color: 'rgba(178,198,245,0.5)', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>
+            <p style={{ fontSize: 10, fontWeight: 900, color: '#70747B', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>
               Identificación
             </p>
             <button onClick={() => datosFileRef.current?.click()} style={{
               fontSize: 10, fontWeight: 600, padding: '4px 12px', borderRadius: 6,
-              background: 'rgba(6,14,50,0.5)', color: 'rgba(178,198,245,0.7)',
-              border: '1px solid rgba(61,112,255,0.22)', cursor: 'pointer',
+              background: '#0D0F12', color: 'rgba(178,198,245,0.7)',
+              border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer',
               display: 'flex', alignItems: 'center', gap: 5,
             }}>
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -390,33 +390,33 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
                 onCarpetaChange(updated);
               }}
               placeholder="Nombre de la flota"
-              onFocus={e => (e.currentTarget.style.borderColor = 'rgba(18,64,204,0.5)')}
-              onBlur={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.22)')} />
+              onFocus={e => (e.currentTarget.style.borderColor = 'rgba(67,135,255,0.35)')}
+              onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)')} />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}>
             <div>
               <label style={labelStyle}>CIF Empresa</label>
               <input style={inputStyle} value={header.cif} onChange={e => set('cif', e.target.value)} placeholder="A12345678"
-                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(18,64,204,0.5)')}
-                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.22)')} />
+                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(67,135,255,0.35)')}
+                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)')} />
             </div>
             <div>
               <label style={labelStyle}>Tomador</label>
               <input style={inputStyle} value={header.tomador} onChange={e => set('tomador', e.target.value)} placeholder="Empresa S.L."
-                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(18,64,204,0.5)')}
-                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.22)')} />
+                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(67,135,255,0.35)')}
+                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)')} />
             </div>
             <div>
               <label style={labelStyle}>CIF Tomador</label>
               <input style={inputStyle} value={header.cifTomador ?? ''} onChange={e => set('cifTomador', e.target.value)} placeholder="B12345678"
-                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(18,64,204,0.5)')}
-                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.22)')} />
+                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(67,135,255,0.35)')}
+                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)')} />
             </div>
             <div style={{ gridColumn: '1 / 4' }}>
               <label style={labelStyle}>Actividad</label>
               <input style={inputStyle} value={header.actividad} onChange={e => set('actividad', e.target.value)} placeholder="Transporte de mercancías"
-                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(18,64,204,0.5)')}
-                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.22)')} />
+                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(67,135,255,0.35)')}
+                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)')} />
             </div>
           </div>
         </section>
@@ -435,19 +435,19 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
                     <div key={h.id} style={{
                       display: 'flex', alignItems: 'center', gap: 12,
                       padding: '10px 14px', borderRadius: 10,
-                      background: 'rgba(6,14,50,0.5)', border: `1px solid ${cfg.border}`,
+                      background: '#0D0F12', border: `1px solid ${cfg.border}`,
                     }}>
                       <span style={{ fontSize: 9, fontWeight: 900, padding: '2px 8px', borderRadius: 5, background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}`, textTransform: 'uppercase', letterSpacing: '0.07em', flexShrink: 0 }}>
                         {h.estado}
                       </span>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 12, fontWeight: 700, color: '#FFFFFF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{h.nombre}</div>
-                        <div style={{ fontSize: 11, color: 'rgba(178,198,245,0.5)', marginTop: 1, display: 'flex', gap: 8 }}>
+                        <div style={{ fontSize: 11, color: '#70747B', marginTop: 1, display: 'flex', gap: 8 }}>
                           {h.cif && <span style={{ fontFamily: 'monospace' }}>{h.cif}</span>}
                           {h.corredor_nombre && <span>Corredor: {h.corredor_nombre}</span>}
                         </div>
                       </div>
-                      <a href="/emission" target="_blank" style={{ fontSize: 10, fontWeight: 700, padding: '5px 10px', borderRadius: 7, background: 'rgba(51,102,255,0.1)', color: '#3366FF', border: '1px solid rgba(51,102,255,0.25)', textDecoration: 'none', flexShrink: 0 }}>
+                      <a href="/emission" target="_blank" style={{ fontSize: 10, fontWeight: 700, padding: '5px 10px', borderRadius: 7, background: 'rgba(67,135,255,0.06)', color: '#4387FF', border: '1px solid rgba(67,135,255,0.2)', textDecoration: 'none', flexShrink: 0 }}>
                         Ver ficha
                       </a>
                     </div>
@@ -460,7 +460,7 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
 
         {/* ── Corredor ── */}
         <section>
-          <p style={{ fontSize: 10, fontWeight: 900, color: 'rgba(178,198,245,0.5)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>
+          <p style={{ fontSize: 10, fontWeight: 900, color: '#70747B', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>
             Corredor vinculado
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px', gap: 14 }}>
@@ -469,7 +469,7 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
               <select
                 value={carpetaActiva.corredor_id ?? ''}
                 onChange={e => handleCorredorChange(e.target.value)}
-                style={{ ...inputStyle, cursor: 'pointer', color: carpetaActiva.corredor_id ? '#FFFFFF' : 'rgba(178,198,245,0.6)' }}>
+                style={{ ...inputStyle, cursor: 'pointer', color: carpetaActiva.corredor_id ? '#FFFFFF' : '#A1A1A6' }}>
                 <option value="">Sin corredor</option>
                 {corredores.map(c => (
                   <option key={c.id} value={c.id}>
@@ -497,15 +497,15 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
                   const c = corredores.find(x => x.id === carpetaActiva.corredor_id);
                   return c ? `${c.porcentajeComision}% (corredor)` : '0';
                 })()}
-                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(18,64,204,0.5)')}
-                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.22)')} />
+                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(67,135,255,0.35)')}
+                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)')} />
             </div>
           </div>
           {carpetaActiva.corredor_id && (() => {
             const c = corredores.find(x => x.id === carpetaActiva.corredor_id);
             if (!c) return null;
             return (
-              <p style={{ marginTop: 6, fontSize: 11, color: 'rgba(178,198,245,0.6)' }}>
+              <p style={{ marginTop: 6, fontSize: 11, color: '#A1A1A6' }}>
                 {c.email && <span>{c.email}</span>}
                 {c.email && c.telefono && <span> · </span>}
                 {c.telefono && <span>{c.telefono}</span>}
@@ -516,36 +516,36 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
 
         {/* ── Póliza actual ── */}
         <section>
-          <p style={{ fontSize: 10, fontWeight: 900, color: 'rgba(178,198,245,0.5)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>
+          <p style={{ fontSize: 10, fontWeight: 900, color: '#70747B', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>
             Póliza vigente
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
             <div>
               <label style={labelStyle}>Póliza actual</label>
               <input style={inputStyle} value={header.polizaActual ?? ''} onChange={e => set('polizaActual', e.target.value)} placeholder="Referencia de la póliza"
-                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(18,64,204,0.5)')}
-                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.22)')} />
+                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(67,135,255,0.35)')}
+                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)')} />
             </div>
             <div>
               <label style={labelStyle}>Compañía actual</label>
               <input style={inputStyle} value={header.ciaActual ?? ''} onChange={e => set('ciaActual', e.target.value)} placeholder="Nombre de la compañía"
-                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(18,64,204,0.5)')}
-                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.22)')} />
+                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(67,135,255,0.35)')}
+                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)')} />
             </div>
           </div>
         </section>
 
         {/* ── Vigencia ── */}
         <section>
-          <p style={{ fontSize: 10, fontWeight: 900, color: 'rgba(178,198,245,0.5)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>
+          <p style={{ fontSize: 10, fontWeight: 900, color: '#70747B', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>
             Vigencia
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}>
             <div>
               <label style={labelStyle}>Periodicidad</label>
               <select style={{ ...inputStyle, cursor: 'pointer' }} value={header.periodicidad ?? ''} onChange={e => set('periodicidad', e.target.value)}
-                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(18,64,204,0.5)')}
-                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.22)')}>
+                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(67,135,255,0.35)')}
+                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)')}>
                 <option value="">Sin definir</option>
                 <option value="mensual">Mensual</option>
                 <option value="bimestral">Bimestral</option>
@@ -567,7 +567,7 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
                 )}
               </label>
               <input
-                style={{ ...inputStyle, borderColor: venceProximo ? 'rgba(234,179,8,0.4)' : 'rgba(61,112,255,0.22)' }}
+                style={{ ...inputStyle, borderColor: venceProximo ? 'rgba(234,179,8,0.4)' : 'rgba(255,255,255,0.08)' }}
                 value={header.fechaVencimiento ?? ''}
                 placeholder="dd/mm"
                 onChange={e => set('fechaVencimiento', e.target.value)}
@@ -575,7 +575,7 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
                   const v = autoCompletarAno(e.target.value.trim());
                   if (v !== e.target.value) set('fechaVencimiento', v);
                 }}
-                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(18,64,204,0.5)')}
+                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(67,135,255,0.35)')}
               />
             </div>
           </div>
@@ -587,21 +587,21 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
             <div>
               <label style={labelStyle}>Efecto</label>
               <input style={inputStyle} value={header.efecto} onChange={e => set('efecto', e.target.value)} placeholder="DD/MM/YYYY"
-                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(18,64,204,0.5)')}
-                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.22)')} />
+                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(67,135,255,0.35)')}
+                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)')} />
             </div>
             <div>
               <label style={labelStyle}>Fecha de emisi&oacute;n</label>
               <input type="date" style={inputStyle} value={header.fechaEmision ?? ''} onChange={e => set('fechaEmision', e.target.value)}
-                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(18,64,204,0.5)')}
-                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.22)')} />
+                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(67,135,255,0.35)')}
+                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)')} />
             </div>
           </div>
         </section>
 
         {/* ── Observaciones ── */}
         <section>
-          <p style={{ fontSize: 10, fontWeight: 900, color: 'rgba(178,198,245,0.5)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>
+          <p style={{ fontSize: 10, fontWeight: 900, color: '#70747B', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>
             Observaciones
           </p>
           <textarea
@@ -613,14 +613,14 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
               onCarpetaChange(updated);
             }}
             placeholder="Notas sobre la flota, condiciones especiales, acuerdos..."
-            onFocus={e => (e.currentTarget.style.borderColor = 'rgba(18,64,204,0.5)')}
-            onBlur={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.22)')}
+            onFocus={e => (e.currentTarget.style.borderColor = 'rgba(67,135,255,0.35)')}
+            onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)')}
           />
         </section>
 
         {/* ── Tarifa de la Flota ── */}
         <section>
-          <p style={{ fontSize: 10, fontWeight: 900, color: 'rgba(178,198,245,0.5)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>
+          <p style={{ fontSize: 10, fontWeight: 900, color: '#70747B', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>
             Tarifa acordada
           </p>
           <p style={{ fontSize: 11, color: 'rgba(178,198,245,0.45)', marginBottom: 14 }}>
@@ -633,7 +633,7 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
                 <div key={i} style={{
                   display: 'grid', gridTemplateColumns: '1fr 1fr 100px 32px', gap: 8, alignItems: 'center',
                   padding: '8px 12px', borderRadius: 10,
-                  background: 'rgba(6,14,50,0.4)', border: '1px solid rgba(61,112,255,0.12)',
+                  background: '#0D0F12', border: '1px solid rgba(255,255,255,0.06)',
                 }}>
                   <select style={{ ...inputStyle, fontSize: 11 }} value={t.tipo}
                     onChange={e => {
@@ -668,8 +668,8 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
                       guardarCarpeta(updated);
                       onCarpetaChange(updated);
                     }}
-                    onFocus={e => (e.currentTarget.style.borderColor = 'rgba(18,64,204,0.5)')}
-                    onBlur={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.22)')} />
+                    onFocus={e => (e.currentTarget.style.borderColor = 'rgba(67,135,255,0.35)')}
+                    onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)')} />
                   <button onClick={() => {
                     const tarifa = (carpetaActiva.tarifaFlota ?? []).filter((_, j) => j !== i);
                     const updated = { ...carpetaActiva, tarifaFlota: tarifa };
@@ -696,15 +696,15 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
               onCarpetaChange(updated);
             }} style={{
               fontSize: 11, fontWeight: 700, padding: '8px 16px', borderRadius: 8,
-              background: 'rgba(18,64,204,0.15)', color: '#3366FF',
-              border: '1px solid rgba(18,64,204,0.3)', cursor: 'pointer',
+              background: 'rgba(67,135,255,0.10)', color: '#4387FF',
+              border: '1px solid rgba(67,135,255,0.25)', cursor: 'pointer',
             }}>
               + Añadir tarifa
             </button>
             <button onClick={() => tarifaFileRef.current?.click()} style={{
               fontSize: 11, fontWeight: 600, padding: '8px 16px', borderRadius: 8,
-              background: 'rgba(6,14,50,0.5)', color: 'rgba(178,198,245,0.8)',
-              border: '1px solid rgba(61,112,255,0.22)', cursor: 'pointer',
+              background: '#0D0F12', color: 'rgba(178,198,245,0.8)',
+              border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer',
               display: 'flex', alignItems: 'center', gap: 6,
             }}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">

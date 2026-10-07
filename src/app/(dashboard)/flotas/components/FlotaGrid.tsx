@@ -86,7 +86,7 @@ const TableRow = memo(function TableRow({
   onCellMouseDown, onCellMouseEnter, onFillMouseDown, onDelete,
 }: RowProps) {
   const rowBg = rowChecked
-    ? 'rgba(18,64,204,0.05)'
+    ? 'rgba(67,135,255,0.04)'
     : rowIdx % 2 === 0 ? '#ffffff' : '#f8faff';
 
   return (
@@ -94,7 +94,7 @@ const TableRow = memo(function TableRow({
       {/* Checkbox */}
       <td style={{ width: 36, textAlign: 'center', padding: '0 4px', position: 'sticky', left: 0, background: rowBg, zIndex: 1 }}>
         <input type="checkbox" checked={rowChecked} onChange={() => onToggleCheck(row._id)}
-          style={{ cursor: 'pointer', accentColor: '#1240CC' }} />
+          style={{ cursor: 'pointer', accentColor: '#4387FF' }} />
       </td>
       {/* Nº */}
       <td style={{ width: 36, textAlign: 'center', fontSize: 11, color: '#9ca3af', padding: '0 4px', userSelect: 'none', position: 'sticky', left: 36, background: rowBg, zIndex: 1, borderRight: '1px solid #e5e7eb' }}>
@@ -119,7 +119,7 @@ const TableRow = memo(function TableRow({
           const rec      = rowToRecord(row);
           const computed = col.computeFn ? col.computeFn(rec) : value;
           return (
-            <td key={col.id} style={{ minWidth: col.width, maxWidth: col.width, padding: '0 6px', textAlign: 'center', color: '#1240CC', fontWeight: 700, fontSize: 12, background: 'rgba(18,64,204,0.04)', borderRight: '1px solid #f0f0f0' }}>
+            <td key={col.id} style={{ minWidth: col.width, maxWidth: col.width, padding: '0 6px', textAlign: 'center', color: '#4387FF', fontWeight: 700, fontSize: 12, background: 'rgba(67,135,255,0.03)', borderRight: '1px solid #f0f0f0' }}>
               {computed}
             </td>
           );
@@ -133,9 +133,9 @@ const TableRow = memo(function TableRow({
         const disabled = isFrqDisabled || isLunasDisabled;
 
         const tdBg = inFill
-          ? 'rgba(18,64,204,0.12)'
+          ? 'rgba(67,135,255,0.08)'
           : inSel
-          ? 'rgba(18,64,204,0.07)'
+          ? 'rgba(67,135,255,0.06)'
           : 'transparent';
 
         const tdStyle: React.CSSProperties = {
@@ -144,9 +144,9 @@ const TableRow = memo(function TableRow({
           background: tdBg,
           borderRight: '1px solid #f0f0f0',
           outline: isAnchor
-            ? '2px solid #1240CC'
+            ? '2px solid #4387FF'
             : inSel
-            ? '0.5px solid rgba(18,64,204,0.35)'
+            ? '0.5px solid rgba(67,135,255,0.15)'
             : 'none',
           outlineOffset: isAnchor ? -2 : -1,
           boxSizing: 'border-box',
@@ -194,7 +194,7 @@ const TableRow = memo(function TableRow({
                 style={{
                   position: 'absolute', bottom: -4, right: -4,
                   width: 7, height: 7,
-                  background: '#1240CC', border: '1.5px solid #fff',
+                  background: '#4387FF', border: '1.5px solid #fff',
                   borderRadius: 1, cursor: 'crosshair', zIndex: 10,
                 }}
               />
@@ -508,7 +508,7 @@ const FlotaGrid = forwardRef<FlotaGridHandle, FlotaGridProps>(function FlotaGrid
     const hr = ws.getRow(1);
     hr.height = 22;
     hr.eachCell(cell => {
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1240CC' } };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4387FF' } };
       cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, name: 'Calibri', size: 10 };
       cell.alignment = { horizontal: 'center', vertical: 'middle' };
     });
@@ -556,7 +556,7 @@ const FlotaGrid = forwardRef<FlotaGridHandle, FlotaGridProps>(function FlotaGrid
       {/* ── Toolbar ── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 14px', borderBottom: '1px solid #e5e7eb', background: '#f9fafb', flexShrink: 0, gap: 8 }}>
         <span style={{ fontSize: 11, fontWeight: 700, color: '#6b7280' }}>
-          <span style={{ color: '#1240CC' }}>{filledCount}</span> vehículos
+          <span style={{ color: '#4387FF' }}>{filledCount}</span> vehículos
           {normRange && (normRange.r2 > normRange.r1 || normRange.c2 > normRange.c1) && (
             <span style={{ marginLeft: 8, color: '#9ca3af' }}>
               · {normRange.r2 - normRange.r1 + 1} filas × {normRange.c2 - normRange.c1 + 1} cols seleccionadas
@@ -565,19 +565,19 @@ const FlotaGrid = forwardRef<FlotaGridHandle, FlotaGridProps>(function FlotaGrid
         </span>
         <div style={{ display: 'flex', gap: 6 }}>
           <button onClick={() => fileInputRef.current?.click()}
-            style={{ fontSize: 11, fontWeight: 700, padding: '5px 11px', borderRadius: 7, background: 'rgba(18,64,204,0.07)', color: '#1240CC', border: '1px solid rgba(18,64,204,0.2)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            style={{ fontSize: 11, fontWeight: 700, padding: '5px 11px', borderRadius: 7, background: 'rgba(67,135,255,0.06)', color: '#4387FF', border: '1px solid rgba(67,135,255,0.15)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
             Importar
           </button>
           <button onClick={handleDownloadExcel}
-            style={{ fontSize: 11, fontWeight: 700, padding: '5px 11px', borderRadius: 7, background: 'rgba(18,64,204,0.07)', color: '#1240CC', border: '1px solid rgba(18,64,204,0.2)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            style={{ fontSize: 11, fontWeight: 700, padding: '5px 11px', borderRadius: 7, background: 'rgba(67,135,255,0.06)', color: '#4387FF', border: '1px solid rgba(67,135,255,0.15)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             Descargar
           </button>
           <button onClick={() => addRows(10)}
-            style={{ fontSize: 11, fontWeight: 700, padding: '5px 10px', borderRadius: 7, background: 'rgba(18,64,204,0.07)', color: '#1240CC', border: '1px solid rgba(18,64,204,0.2)', cursor: 'pointer' }}>+ 10</button>
+            style={{ fontSize: 11, fontWeight: 700, padding: '5px 10px', borderRadius: 7, background: 'rgba(67,135,255,0.06)', color: '#4387FF', border: '1px solid rgba(67,135,255,0.15)', cursor: 'pointer' }}>+ 10</button>
           <button onClick={() => addRows(50)}
-            style={{ fontSize: 11, fontWeight: 700, padding: '5px 10px', borderRadius: 7, background: 'rgba(18,64,204,0.07)', color: '#1240CC', border: '1px solid rgba(18,64,204,0.2)', cursor: 'pointer' }}>+ 50</button>
+            style={{ fontSize: 11, fontWeight: 700, padding: '5px 10px', borderRadius: 7, background: 'rgba(67,135,255,0.06)', color: '#4387FF', border: '1px solid rgba(67,135,255,0.15)', cursor: 'pointer' }}>+ 50</button>
           <input ref={fileInputRef} type="file" accept=".xlsx,.csv" style={{ display: 'none' }}
             onChange={e => { const f = e.target.files?.[0]; if (f) handleImportFile(f); e.target.value = ''; }} />
         </div>
@@ -593,18 +593,18 @@ const FlotaGrid = forwardRef<FlotaGridHandle, FlotaGridProps>(function FlotaGrid
         onDrop={handleDrop}
       >
         {isDragOver && (
-          <div style={{ position: 'absolute', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(18,64,204,0.08)', border: '2px dashed #1240CC', borderRadius: 8, pointerEvents: 'none' }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: '#1240CC' }}>Soltar .xlsx o .csv para importar</span>
+          <div style={{ position: 'absolute', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(67,135,255,0.06)', border: '2px dashed #4387FF', borderRadius: 8, pointerEvents: 'none' }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: '#4387FF' }}>Soltar .xlsx o .csv para importar</span>
           </div>
         )}
 
         <table style={{ borderCollapse: 'collapse', minWidth: '100%', fontSize: 13 }}>
           <thead>
-            <tr style={{ background: '#1240CC', position: 'sticky', top: 0, zIndex: 5 }}>
-              <th style={{ width: 36, padding: '0 4px', position: 'sticky', left: 0, background: '#1240CC', zIndex: 6 }}>
+            <tr style={{ background: '#4387FF', position: 'sticky', top: 0, zIndex: 5 }}>
+              <th style={{ width: 36, padding: '0 4px', position: 'sticky', left: 0, background: '#4387FF', zIndex: 6 }}>
                 <input type="checkbox" checked={allChecked} onChange={toggleAllCheck} style={{ cursor: 'pointer', accentColor: '#fff' }} />
               </th>
-              <th style={{ width: 36, position: 'sticky', left: 36, background: '#1240CC', zIndex: 6, borderRight: '1px solid rgba(255,255,255,0.15)', color: '#fff', fontSize: 10, fontWeight: 700 }}>#</th>
+              <th style={{ width: 36, position: 'sticky', left: 36, background: '#4387FF', zIndex: 6, borderRight: '1px solid rgba(255,255,255,0.15)', color: '#fff', fontSize: 10, fontWeight: 700 }}>#</th>
               {colDefs.map(col => {
                 const isActive = sortConfig?.col === col.id;
                 return (
@@ -618,7 +618,7 @@ const FlotaGrid = forwardRef<FlotaGridHandle, FlotaGridProps>(function FlotaGrid
                   </th>
                 );
               })}
-              <th style={{ width: 32, background: '#1240CC' }} />
+              <th style={{ width: 32, background: '#4387FF' }} />
             </tr>
           </thead>
           <tbody>
@@ -649,7 +649,7 @@ const FlotaGrid = forwardRef<FlotaGridHandle, FlotaGridProps>(function FlotaGrid
 
       {/* ── Bulk assign ── */}
       {selectedRows.size >= 2 && (
-        <div style={{ position: 'sticky', bottom: 0, display: 'flex', alignItems: 'center', gap: 10, padding: '8px 16px', background: 'rgba(5,12,40,0.97)', borderTop: '1px solid rgba(18,64,204,0.4)', flexShrink: 0 }}>
+        <div style={{ position: 'sticky', bottom: 0, display: 'flex', alignItems: 'center', gap: 10, padding: '8px 16px', background: 'rgba(5,12,40,0.97)', borderTop: '1px solid rgba(67,135,255,0.25)', flexShrink: 0 }}>
           <span style={{ fontSize: 11, fontWeight: 800, color: 'rgba(178,198,245,0.8)', whiteSpace: 'nowrap' }}>{selectedRows.size} filas</span>
           <select value={bulkCol} onChange={e => { setBulkCol(e.target.value); setBulkValue(''); }}
             style={{ fontSize: 11, padding: '4px 8px', borderRadius: 6, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: bulkCol ? '#fff' : 'rgba(178,198,245,0.5)', outline: 'none', cursor: 'pointer' }}>
@@ -664,7 +664,7 @@ const FlotaGrid = forwardRef<FlotaGridHandle, FlotaGridProps>(function FlotaGrid
             </select>
           )}
           <button onClick={handleBulkApply} disabled={!bulkCol || !bulkValue}
-            style={{ fontSize: 11, fontWeight: 700, padding: '5px 14px', borderRadius: 6, background: bulkCol && bulkValue ? '#1240CC' : 'rgba(18,64,204,0.3)', color: '#fff', border: 'none', cursor: bulkCol && bulkValue ? 'pointer' : 'not-allowed' }}>
+            style={{ fontSize: 11, fontWeight: 700, padding: '5px 14px', borderRadius: 6, background: bulkCol && bulkValue ? '#4387FF' : 'rgba(67,135,255,0.25)', color: '#fff', border: 'none', cursor: bulkCol && bulkValue ? 'pointer' : 'not-allowed' }}>
             Aplicar
           </button>
           <button onClick={() => { setSelectedRows(new Set()); setBulkCol(''); setBulkValue(''); }}
@@ -675,7 +675,7 @@ const FlotaGrid = forwardRef<FlotaGridHandle, FlotaGridProps>(function FlotaGrid
       {/* ── Añadir filas ── */}
       <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0', flexShrink: 0, borderTop: '1px solid #e5e7eb', background: '#f9fafb' }}>
         <button onClick={() => addRows(10)}
-          style={{ fontSize: 11, fontWeight: 700, padding: '5px 14px', borderRadius: 7, background: 'rgba(18,64,204,0.07)', color: '#1240CC', border: '1px solid rgba(18,64,204,0.2)', cursor: 'pointer' }}>
+          style={{ fontSize: 11, fontWeight: 700, padding: '5px 14px', borderRadius: 7, background: 'rgba(67,135,255,0.06)', color: '#4387FF', border: '1px solid rgba(67,135,255,0.15)', cursor: 'pointer' }}>
           + Añadir 10 filas
         </button>
       </div>

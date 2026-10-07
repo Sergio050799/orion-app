@@ -198,7 +198,7 @@ function ManualSearchPanel({ vehicle, yearHint, onSelect, onClose }: {
             style={{ ...inS, width: 70 }} />
         </Fld>
         <button onClick={doSearch} disabled={loading}
-          style={{ padding: '5px 14px', borderRadius: 6, background: '#1240CC', color: '#fff', border: 'none', fontSize: 11, fontWeight: 700, cursor: loading ? 'wait' : 'pointer', opacity: loading ? 0.7 : 1, alignSelf: 'flex-end', height: 28 }}>
+          style={{ padding: '5px 14px', borderRadius: 6, background: '#4387FF', color: '#fff', border: 'none', fontSize: 11, fontWeight: 700, cursor: loading ? 'wait' : 'pointer', opacity: loading ? 0.7 : 1, alignSelf: 'flex-end', height: 28 }}>
           {loading ? '...' : 'Buscar'}
         </button>
         <button onClick={onClose}
@@ -313,7 +313,7 @@ function SimilarModal({ source, similar, selected, onApply, onClose }: {
           </button>
           <button type="button" onClick={() => onApply(Array.from(checked))}
             disabled={checked.size === 0}
-            style={{ fontSize: 11, fontWeight: 700, padding: '8px 16px', borderRadius: 8, cursor: checked.size > 0 ? 'pointer' : 'not-allowed', background: checked.size > 0 ? '#1240CC' : '#d1d5db', color: '#fff', border: 'none' }}>
+            style={{ fontSize: 11, fontWeight: 700, padding: '8px 16px', borderRadius: 8, cursor: checked.size > 0 ? 'pointer' : 'not-allowed', background: checked.size > 0 ? '#4387FF' : '#d1d5db', color: '#fff', border: 'none' }}>
             Aplicar a {checked.size} vehículo{checked.size !== 1 ? 's' : ''}
           </button>
         </div>
@@ -795,7 +795,7 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
       {/* ── Toolbar ─────────────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px', borderBottom: '1px solid #e5e7eb', background: '#f9fafb', flexShrink: 0, gap: 10 }}>
         <span style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#6b7280' }}>
-          Listos: <span style={{ color: '#1240CC' }}>{listos}</span> / {vehicles.length}
+          Listos: <span style={{ color: '#4387FF' }}>{listos}</span> / {vehicles.length}
         </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, justifyContent: 'flex-end' }}>
           {listos > 0 && (
@@ -819,9 +819,9 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
             </button>
           )}
           <div style={{ height: 6, width: 120, background: '#e5e7eb', borderRadius: 3, overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: `${pct}%`, background: pct === 100 ? '#059669' : '#1240CC', borderRadius: 3, transition: 'width 0.3s' }} />
+            <div style={{ height: '100%', width: `${pct}%`, background: pct === 100 ? '#059669' : '#4387FF', borderRadius: 3, transition: 'width 0.3s' }} />
           </div>
-          <span style={{ fontSize: 11, fontWeight: 700, color: pct === 100 ? '#059669' : '#1240CC' }}>{pct}%</span>
+          <span style={{ fontSize: 11, fontWeight: 700, color: pct === 100 ? '#059669' : '#4387FF' }}>{pct}%</span>
         </div>
       </div>
 
@@ -831,7 +831,7 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
         const candidatos = firstIdx >= 0 ? vehicles[firstIdx].candidatos : [];
         return (
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 16px', borderBottom: '1px solid #c8d8f5', background: '#eef3ff', flexShrink: 0, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 11, fontWeight: 800, color: '#1240CC' }}>
+            <span style={{ fontSize: 11, fontWeight: 800, color: '#4387FF' }}>
               {checkedRows.size} seleccionado{checkedRows.size > 1 ? 's' : ''}
             </span>
             {candidatos.length > 0 && (
@@ -986,7 +986,7 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
                               style={{
                                 width: 48, border: 'none', borderBottom: '1px dashed #d1d5db', background: 'transparent',
                                 fontSize: 11, fontWeight: 700, fontFamily: 'monospace', outline: 'none', cursor: 'text', padding: '2px 0',
-                                color: fromFab ? '#f97316' : fromPlate ? '#1240CC' : '#6b7280',
+                                color: fromFab ? '#f97316' : fromPlate ? '#4387FF' : '#6b7280',
                               }}
                             />
                           );
@@ -1031,7 +1031,7 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
                             <button type="button"
                               onClick={() => setOpenSearchRow(openSearchRow === origIdx ? null : origIdx)}
                               title="Buscar manualmente en el catálogo"
-                              style={{ fontSize: 10, padding: '4px 8px', borderRadius: 6, background: openSearchRow === origIdx ? 'rgba(18,64,204,0.15)' : 'rgba(18,64,204,0.06)', border: '1px solid rgba(18,64,204,0.25)', color: '#1240CC', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                              style={{ fontSize: 10, padding: '4px 8px', borderRadius: 6, background: openSearchRow === origIdx ? 'rgba(67,135,255,0.08)' : 'rgba(67,135,255,0.04)', border: '1px solid rgba(67,135,255,0.12)', color: '#4387FF', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0 }}>
                               Buscar
                             </button>
                           </div>
@@ -1039,9 +1039,9 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
                           <button type="button"
                             onClick={() => setOpenSearchRow(openSearchRow === origIdx ? null : origIdx)}
                             style={{ fontSize: 11, fontWeight: 700, padding: '5px 12px', borderRadius: 6,
-                              background: v.status === 'sin_catalogo' ? 'rgba(220,38,38,0.06)' : 'rgba(18,64,204,0.07)',
-                              border: `1px solid ${v.status === 'sin_catalogo' ? 'rgba(220,38,38,0.25)' : 'rgba(18,64,204,0.2)'}`,
-                              color: v.status === 'sin_catalogo' ? '#dc2626' : '#1240CC', cursor: 'pointer' }}>
+                              background: v.status === 'sin_catalogo' ? 'rgba(220,38,38,0.06)' : 'rgba(67,135,255,0.05)',
+                              border: `1px solid ${v.status === 'sin_catalogo' ? 'rgba(220,38,38,0.25)' : 'rgba(67,135,255,0.10)'}`,
+                              color: v.status === 'sin_catalogo' ? '#dc2626' : '#4387FF', cursor: 'pointer' }}>
                             {v.status === 'sin_catalogo' ? 'Sin coincidencias · Buscar' : 'Buscar en catálogo'}
                           </button>
                         )}
@@ -1106,7 +1106,7 @@ function DirectIdCell({ onSubmit }: { onSubmit: (id: string) => void }) {
     return (
       <button type="button" onClick={() => setEditing(true)}
         title="Asignar por ID de catálogo"
-        style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 5, background: 'rgba(18,64,204,0.05)', border: '1px solid rgba(18,64,204,0.15)', color: '#1240CC', cursor: 'pointer' }}>
+        style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 5, background: 'rgba(67,135,255,0.04)', border: '1px solid rgba(67,135,255,0.08)', color: '#4387FF', cursor: 'pointer' }}>
         + ID
       </button>
     );
@@ -1116,9 +1116,9 @@ function DirectIdCell({ onSubmit }: { onSubmit: (id: string) => void }) {
       <input autoFocus value={val} onChange={e => setVal(e.target.value)}
         placeholder="241210258"
         onKeyDown={e => { if (e.key === 'Enter' && val.trim()) { onSubmit(val.trim()); setEditing(false); setVal(''); } if (e.key === 'Escape') { setEditing(false); setVal(''); } }}
-        style={{ width: 90, fontSize: 11, padding: '3px 6px', borderRadius: 5, border: '1px solid #1240CC', outline: 'none', fontFamily: 'monospace' }} />
+        style={{ width: 90, fontSize: 11, padding: '3px 6px', borderRadius: 5, border: '1px solid #4387FF', outline: 'none', fontFamily: 'monospace' }} />
       <button type="button" onClick={() => { if (val.trim()) { onSubmit(val.trim()); setEditing(false); setVal(''); } }}
-        style={{ fontSize: 10, fontWeight: 700, padding: '3px 7px', borderRadius: 5, background: '#1240CC', color: '#fff', border: 'none', cursor: 'pointer' }}>
+        style={{ fontSize: 10, fontWeight: 700, padding: '3px 7px', borderRadius: 5, background: '#4387FF', color: '#fff', border: 'none', cursor: 'pointer' }}>
         ✓
       </button>
     </div>
@@ -1150,7 +1150,7 @@ function BulkIdInput({ onSubmit }: { onSubmit: (id: string) => void }) {
         style={{ width: 100, fontSize: 11, padding: '3px 6px', borderRadius: 5, border: '1px solid #a5b8e8', outline: 'none', fontFamily: 'monospace' }}
       />
       <button onClick={submit} disabled={!val.trim() || loading}
-        style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 5, background: val.trim() && !loading ? '#1240CC' : '#d1d5db', color: '#fff', border: 'none', cursor: val.trim() && !loading ? 'pointer' : 'not-allowed' }}>
+        style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 5, background: val.trim() && !loading ? '#4387FF' : '#d1d5db', color: '#fff', border: 'none', cursor: val.trim() && !loading ? 'pointer' : 'not-allowed' }}>
         {loading ? '...' : 'Aplicar'}
       </button>
     </div>

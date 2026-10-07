@@ -422,40 +422,40 @@ export default function GestionDocumentalPage() {
 
   // ─── Design Tokens ────────────────────────────────────────────────────────────
   const glassCard: React.CSSProperties = {
-    background: 'rgba(12, 28, 82, 0.75)',
+    background: '#090A0C',
     border: '1px solid rgba(61, 112, 255, 0.22)',
     borderRadius: 22,
-    boxShadow: '0 30px 80px -20px rgba(0,0,0,0.6), 0 1px 0 rgba(255,255,255,0.06) inset, 0 0 0 1px rgba(61,112,255,0.14) inset',
+    boxShadow: '0 30px 80px -20px rgba(0,0,0,0.6), 0 1px 0 rgba(255,255,255,0.06) inset, 0 0 0 1px rgba(255,255,255,0.06) inset',
   };
 
   const labelSt: React.CSSProperties = {
     display: "block", fontSize: 10, fontWeight: 800,
-    color: "rgba(51,102,255,0.8)", textTransform: "uppercase",
+    color: "#70747B", textTransform: "uppercase",
     letterSpacing: "0.08em", marginBottom: 6,
   };
 
   const inputSt: React.CSSProperties = {
     width: "100%", fontSize: 13, padding: "9px 12px", borderRadius: 10,
-    background: "rgba(6,14,50,0.5)", border: "1px solid rgba(61,112,255,0.22)",
+    background: "#0D0F12", border: "1px solid rgba(255,255,255,0.08)",
     color: "#FFFFFF", outline: "none", fontFamily: "inherit",
   };
 
   const selectSt: React.CSSProperties = {
     ...inputSt, cursor: "pointer", appearance: "none" as const,
-    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='rgba(51,102,255,0.6)'/%3E%3C/svg%3E")`,
+    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='rgba(255,255,255,0.25)'/%3E%3C/svg%3E")`,
     backgroundRepeat: "no-repeat", backgroundPosition: "right 12px center",
     paddingRight: 32,
   };
 
   const accentBar: React.CSSProperties = {
     width: 4, height: 28, borderRadius: 2,
-    background: "linear-gradient(180deg, #3366FF 0%, #1240CC 100%)",
+    background: "#4387FF",
     marginRight: 14, flexShrink: 0,
   };
 
   const pillContainer: React.CSSProperties = {
     display: "inline-flex", gap: 0, borderRadius: 10, overflow: "hidden",
-    background: "rgba(6,14,50,0.5)", border: "1px solid rgba(61,112,255,0.22)",
+    background: "#0D0F12", border: "1px solid rgba(255,255,255,0.08)",
     padding: 3,
   };
 
@@ -465,7 +465,7 @@ export default function GestionDocumentalPage() {
     borderRadius: 8, transition: "all 0.15s",
   };
 
-  const calcBg: React.CSSProperties = { background: "rgba(18,64,204,0.08)" };
+  const calcBg: React.CSSProperties = { background: "rgba(67,135,255,0.05)" };
 
   // ─── KPI Panel sub-component ────────────────────────────────────────────────
   const KpiPanel = ({ res, pct }: { res: Resumen; pct: number }) => (
@@ -481,10 +481,10 @@ export default function GestionDocumentalPage() {
         <div key={i} style={{
           ...glassCard,
           borderRadius: 14, padding: "14px 12px", textAlign: "center",
-          ...(highlight ? { borderColor: 'rgba(51,102,255,0.3)', background: 'rgba(18,64,204,0.20)' } : {}),
+          ...(highlight ? { borderColor: 'rgba(67,135,255,0.25)', background: 'rgba(67,135,255,0.10)' } : {}),
         }}>
           <p style={{ margin: 0, fontSize: 10, fontWeight: 800, color: "rgba(70,120,255,0.6)", textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</p>
-          <p style={{ margin: "6px 0 0", fontSize: 20, fontWeight: 700, fontFamily: "inherit", color: highlight ? "#3366FF" : "#FFFFFF" }}>{val}</p>
+          <p style={{ margin: "6px 0 0", fontSize: 20, fontWeight: 700, fontFamily: "inherit", color: highlight ? "#4387FF" : "#FFFFFF" }}>{val}</p>
         </div>
       ))}
     </div>
@@ -501,7 +501,7 @@ export default function GestionDocumentalPage() {
             <div style={accentBar} />
             <div>
               <h1 style={{ margin: 0, fontSize: 24, fontWeight: 700, color: "#FFFFFF" }}>Gesti&oacute;n Documental</h1>
-              <p style={{ margin: "4px 0 0", fontSize: 13, color: "#BDD4FF" }}>Recibos, comisiones y facturaci&oacute;n de flotas</p>
+              <p style={{ margin: "4px 0 0", fontSize: 13, color: "#A1A1A6" }}>Recibos, comisiones y facturaci&oacute;n de flotas</p>
             </div>
           </div>
 
@@ -510,7 +510,7 @@ export default function GestionDocumentalPage() {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 40, alignItems: "start" }}>
               {/* LEFT: Configuration */}
               <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-                <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#BDD4FF", textTransform: "uppercase", letterSpacing: "0.06em" }}>Configuraci&oacute;n</h3>
+                <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#A1A1A6", textTransform: "uppercase", letterSpacing: "0.06em" }}>Configuraci&oacute;n</h3>
                 <div>
                   <label style={labelSt}>Corredor</label>
                   <select style={selectSt} value={corredorId} onChange={e => { setCorredorId(e.target.value); setFlotaId(""); }}>
@@ -531,7 +531,7 @@ export default function GestionDocumentalPage() {
                     {(["emision", "regularizacion"] as TipoOperacion[]).map(t => (
                       <button key={t} onClick={() => setTipoOp(t)} style={{
                         ...pillBase,
-                        background: tipoOp === t ? "rgba(18,64,204,0.35)" : "transparent",
+                        background: tipoOp === t ? "rgba(67,135,255,0.15)" : "transparent",
                         color: tipoOp === t ? "#FFFFFF" : "rgba(178,198,245,0.6)",
                       }}>{t === "emision" ? "Emisi\u00F3n" : "Regularizaci\u00F3n"}</button>
                     ))}
@@ -552,13 +552,13 @@ export default function GestionDocumentalPage() {
                   if (file && (file.name.endsWith('.xlsx') || file.name.endsWith('.xls'))) handleUpload(file);
                 }}
               >
-                <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#BDD4FF", textTransform: "uppercase", letterSpacing: "0.06em" }}>Subir recibos</h3>
+                <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#A1A1A6", textTransform: "uppercase", letterSpacing: "0.06em" }}>Subir recibos</h3>
                 <input ref={fileRef} type="file" accept=".xls,.xlsx" hidden onChange={e => { const f = e.target.files?.[0]; if (f) handleUpload(f); e.target.value = ""; }} />
                 <button onClick={() => fileRef.current?.click()} disabled={!corredorId || !flotaId || uploading} style={{
                   flex: 1, minHeight: 180, padding: "28px 20px", borderRadius: 16,
-                  border: dragCounter > 0 ? "2px dashed #3366FF" : "2px dashed rgba(51,102,255,0.3)",
-                  background: dragCounter > 0 ? "rgba(61,112,255,0.12)" : "rgba(8,22,72,0.3)",
-                  color: "#3366FF", fontSize: 14, fontWeight: 700,
+                  border: dragCounter > 0 ? "2px dashed #4387FF" : "2px dashed rgba(67,135,255,0.25)",
+                  background: dragCounter > 0 ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.04)",
+                  color: "#4387FF", fontSize: 14, fontWeight: 700,
                   cursor: !corredorId || !flotaId || uploading ? "not-allowed" : "pointer",
                   opacity: !corredorId || !flotaId ? 0.4 : 1,
                   display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
@@ -599,8 +599,8 @@ export default function GestionDocumentalPage() {
                   <button key={tab} onClick={() => handleTabChange(tab)} style={{
                     padding: "8px 18px", borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: "pointer",
                     border: "1px solid",
-                    borderColor: activeTab === tab ? "rgba(70,120,255,0.5)" : "rgba(61,112,255,0.16)",
-                    background: activeTab === tab ? "rgba(18,64,204,0.25)" : "rgba(8,22,72,0.3)",
+                    borderColor: activeTab === tab ? "rgba(70,120,255,0.5)" : "rgba(255,255,255,0.08)",
+                    background: activeTab === tab ? "rgba(67,135,255,0.12)" : "rgba(255,255,255,0.04)",
                     color: activeTab === tab ? "#FFFFFF" : "rgba(178,198,245,0.6)",
                     transition: "all 0.15s",
                   }}>
@@ -623,9 +623,9 @@ export default function GestionDocumentalPage() {
             {/* Glass table card */}
             <div style={{ ...glassCard, padding: 0, overflow: "hidden", marginBottom: 20 }}>
               {/* Toolbar */}
-              <div style={{ padding: "16px 28px", borderBottom: "1px solid rgba(61,112,255,0.16)", display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+              <div style={{ padding: "16px 28px", borderBottom: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <label style={{ fontSize: 11, fontWeight: 700, color: "rgba(51,102,255,0.8)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                  <label style={{ fontSize: 11, fontWeight: 700, color: "#70747B", textTransform: "uppercase", letterSpacing: "0.06em" }}>
                     % Comisi&oacute;n{mostrarTabs && activeTab !== "TODOS" ? ` (${activeTab})` : mostrarTabs ? " (global)" : ""}:
                   </label>
                   <input inputMode="decimal" value={pctVisible}
@@ -634,14 +634,14 @@ export default function GestionDocumentalPage() {
                 </div>
                 <button onClick={() => setShowAllColumns(v => !v)} style={{
                   fontSize: 11, fontWeight: 700, padding: '6px 14px', borderRadius: 8,
-                  background: showAllColumns ? 'rgba(18,64,204,0.25)' : 'rgba(6,14,50,0.5)',
-                  color: '#3366FF', border: '1px solid rgba(61,112,255,0.22)',
+                  background: showAllColumns ? 'rgba(67,135,255,0.12)' : '#0D0F12',
+                  color: '#4387FF', border: '1px solid rgba(255,255,255,0.08)',
                   cursor: 'pointer', transition: 'all 0.15s',
                 }}>{showAllColumns ? "Menos columnas" : "M\u00E1s columnas"}</button>
                 <button onClick={addRow} style={{
                   fontSize: 11, fontWeight: 700, padding: '6px 14px', borderRadius: 8,
-                  background: 'rgba(18,64,204,0.15)', color: '#3366FF',
-                  border: '1px solid rgba(61,112,255,0.22)', cursor: 'pointer',
+                  background: 'rgba(67,135,255,0.10)', color: '#4387FF',
+                  border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer',
                   marginLeft: "auto",
                 }}>+ A&ntilde;adir fila</button>
               </div>
@@ -650,7 +650,7 @@ export default function GestionDocumentalPage() {
               <div style={{ overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                   <thead>
-                    <tr style={{ borderBottom: "1px solid rgba(61,112,255,0.16)" }}>
+                    <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
                       {[
                         { label: "P\u00F3liza", always: true },
                         { label: "N\u00BA Recibo", always: true },
@@ -670,7 +670,7 @@ export default function GestionDocumentalPage() {
                       ].filter(col => col.always || showAllColumns).map((col, i) => (
                         <th key={i} style={{
                           padding: "12px 8px", textAlign: "left", fontSize: 10, fontWeight: 800,
-                          color: col.highlight ? "#3366FF" : "rgba(178,198,245,0.6)",
+                          color: col.highlight ? "#4387FF" : "rgba(178,198,245,0.6)",
                           textTransform: "uppercase", letterSpacing: "0.08em",
                           whiteSpace: "nowrap", ...(col.highlight ? calcBg : {}),
                         }}>{col.label}</th>
@@ -679,7 +679,7 @@ export default function GestionDocumentalPage() {
                   </thead>
                   <tbody>
                     {filasVisibles.map(row => (
-                      <tr key={row.id} style={{ borderBottom: "1px solid rgba(61,112,255,0.10)" }}>
+                      <tr key={row.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
                         {(["poliza", "numRecibo", "riesgo", "fecha", "tipo"] as (keyof ReciboRow)[]).map(f => (
                           <td key={f} style={{ padding: "4px 4px" }}>
                             <input style={{ ...inputSt, padding: "6px 8px", fontSize: 11, borderRadius: 8 }} value={String(row[f])}
@@ -693,8 +693,8 @@ export default function GestionDocumentalPage() {
                               onChange={e => { const v = e.target.value; if (v === '' || /^-?\d*\.?\d*$/.test(v)) updateRow(row.id, f, round2(parseFloat(v) || 0)); }} />
                           </td>
                         ))}
-                        <td style={{ padding: "4px 8px", textAlign: "right", fontWeight: 700, color: "#3366FF", ...calcBg, fontSize: 12 }}>{fmtEur(row.comision)}</td>
-                        <td style={{ padding: "4px 8px", textAlign: "right", fontWeight: 700, color: "#3366FF", ...calcBg, fontSize: 12 }}>{fmtEur(row.liquido)}</td>
+                        <td style={{ padding: "4px 8px", textAlign: "right", fontWeight: 700, color: "#4387FF", ...calcBg, fontSize: 12 }}>{fmtEur(row.comision)}</td>
+                        <td style={{ padding: "4px 8px", textAlign: "right", fontWeight: 700, color: "#4387FF", ...calcBg, fontSize: 12 }}>{fmtEur(row.liquido)}</td>
                         {showAllColumns && (["periodicidad", "fechaInicioPoliza", "fechaVencimiento", "tomador"] as (keyof ReciboRow)[]).map(f => (
                           <td key={f} style={{ padding: "4px 4px" }}>
                             <input style={{ ...inputSt, padding: "6px 8px", fontSize: 11, borderRadius: 8 }} value={String(row[f])}
@@ -718,7 +718,7 @@ export default function GestionDocumentalPage() {
             {/* ─── Factura card ─── */}
             {factura && (
               <div style={{ ...glassCard, padding: "28px 32px", marginBottom: 20 }}>
-                <h3 style={{ margin: "0 0 20px", fontSize: 16, fontWeight: 700, color: "#BDD4FF" }}>
+                <h3 style={{ margin: "0 0 20px", fontSize: 16, fontWeight: 700, color: "#A1A1A6" }}>
                   Factura del corredor{mostrarTabs ? ` (${activeTab === "TODOS" ? grupos[0]?.tomador ?? "" : activeTab})` : ""}
                 </h3>
 
@@ -728,8 +728,8 @@ export default function GestionDocumentalPage() {
                       <button key={g.tomador} onClick={() => handleTabChange(g.tomador)} style={{
                         padding: "6px 14px", borderRadius: 8, border: "1px solid",
                         fontSize: 11, fontWeight: 700, cursor: "pointer",
-                        borderColor: (activeTab === g.tomador || (activeTab === "TODOS" && g === grupos[0])) ? "rgba(70,120,255,0.5)" : "rgba(61,112,255,0.16)",
-                        background: (activeTab === g.tomador || (activeTab === "TODOS" && g === grupos[0])) ? "rgba(18,64,204,0.2)" : "transparent",
+                        borderColor: (activeTab === g.tomador || (activeTab === "TODOS" && g === grupos[0])) ? "rgba(70,120,255,0.5)" : "rgba(255,255,255,0.08)",
+                        background: (activeTab === g.tomador || (activeTab === "TODOS" && g === grupos[0])) ? "rgba(67,135,255,0.12)" : "transparent",
                         color: (activeTab === g.tomador || (activeTab === "TODOS" && g === grupos[0])) ? "#FFFFFF" : "rgba(178,198,245,0.6)",
                       }}>{g.tomador}</button>
                     ))}
@@ -752,14 +752,14 @@ export default function GestionDocumentalPage() {
                   <label style={labelSt}>Descripci&oacute;n del per&iacute;odo</label>
                   <input style={inputSt} value={factura.descripcionPeriodo} onChange={e => setFact("descripcionPeriodo", e.target.value)} />
                 </div>
-                <div style={{ borderTop: "1px solid rgba(61,112,255,0.16)", paddingTop: 18, display: "flex", flexDirection: "column", gap: 10 }}>
+                <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 18, display: "flex", flexDirection: "column", gap: 10 }}>
                   {([["Prima Neta", "primaNeta"], ["Impuestos", "impuestos"], ["Prima Total", "primaTotal"]] as [string, keyof FacturaData][]).map(([label, field]) => (
                     <div key={field} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                       <span style={{ fontSize: 13, fontWeight: 600, color: "rgba(178,198,245,0.6)" }}>{label}:</span>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <input inputMode="decimal" style={{
                           ...inputSt, width: 150, textAlign: "right", fontWeight: 700, fontSize: 15,
-                          color: field === "primaTotal" ? "#3366FF" : "#FFFFFF",
+                          color: field === "primaTotal" ? "#4387FF" : "#FFFFFF",
                         }}
                           value={round2(factura[field] as number)} onChange={e => { const v = e.target.value; if (v === '' || /^-?\d*\.?\d*$/.test(v)) setFact(field, round2(parseFloat(v) || 0)); }} />
                         <span style={{ fontSize: 14, color: "rgba(178,198,245,0.5)" }}>&euro;</span>
@@ -776,26 +776,26 @@ export default function GestionDocumentalPage() {
                 <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 18 }}>
                   <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
                     <input type="checkbox" checked={revisado} onChange={e => setRevisado(e.target.checked)}
-                      style={{ accentColor: "#1240CC", width: 16, height: 16 }} />
-                    <span style={{ fontSize: 13, fontWeight: 600, color: "#BDD4FF" }}>He revisado todos los datos</span>
+                      style={{ accentColor: "#4387FF", width: 16, height: 16 }} />
+                    <span style={{ fontSize: 13, fontWeight: 600, color: "#A1A1A6" }}>He revisado todos los datos</span>
                   </label>
                 </div>
                 <div style={{ display: "flex", gap: 14 }}>
                   <button onClick={handleDownloadExcel} disabled={!revisado} style={{
                     flex: 1, padding: "14px 0", borderRadius: 12, border: "none",
-                    background: revisado ? "linear-gradient(135deg, #1240CC 0%, #3366FF 100%)" : "rgba(8,22,72,0.5)",
+                    background: revisado ? "#4387FF" : "#0D0F12",
                     color: revisado ? "#FFFFFF" : "rgba(178,198,245,0.4)",
                     fontSize: 13, fontWeight: 700, cursor: revisado ? "pointer" : "not-allowed",
                     textTransform: "uppercase", letterSpacing: "0.05em",
-                    boxShadow: revisado ? "0 8px 32px -8px rgba(18,64,204,0.5)" : "none",
+                    boxShadow: revisado ? "0 8px 32px -8px rgba(67,135,255,0.35)" : "none",
                     transition: "all 0.2s",
                   }}>Descargar Excel</button>
                   {mostrarTabs ? (
                     <button onClick={handleDownloadFacturasBatch} disabled={!revisado} style={{
                       flex: 1, padding: "14px 0", borderRadius: 12,
-                      border: "1px solid rgba(51,102,255,0.25)",
-                      background: revisado ? "rgba(18,64,204,0.15)" : "rgba(8,22,72,0.3)",
-                      color: revisado ? "#3366FF" : "rgba(178,198,245,0.4)",
+                      border: "1px solid rgba(67,135,255,0.2)",
+                      background: revisado ? "rgba(67,135,255,0.10)" : "rgba(255,255,255,0.04)",
+                      color: revisado ? "#4387FF" : "rgba(178,198,245,0.4)",
                       fontSize: 13, fontWeight: 700, cursor: revisado ? "pointer" : "not-allowed",
                       textTransform: "uppercase", letterSpacing: "0.05em",
                       transition: "all 0.2s",
@@ -804,18 +804,18 @@ export default function GestionDocumentalPage() {
                     <>
                       <button onClick={handleDownloadFacturaPdf} disabled={!revisado} style={{
                         flex: 1, padding: "14px 0", borderRadius: 12,
-                        border: "1px solid rgba(51,102,255,0.25)",
-                        background: revisado ? "rgba(18,64,204,0.15)" : "rgba(8,22,72,0.3)",
-                        color: revisado ? "#3366FF" : "rgba(178,198,245,0.4)",
+                        border: "1px solid rgba(67,135,255,0.2)",
+                        background: revisado ? "rgba(67,135,255,0.10)" : "rgba(255,255,255,0.04)",
+                        color: revisado ? "#4387FF" : "rgba(178,198,245,0.4)",
                         fontSize: 13, fontWeight: 700, cursor: revisado ? "pointer" : "not-allowed",
                         textTransform: "uppercase", letterSpacing: "0.05em",
                         transition: "all 0.2s",
                       }}>Descargar factura PDF</button>
                       <button onClick={handleDownloadFactura} disabled={!revisado} style={{
                         flex: 1, padding: "14px 0", borderRadius: 12,
-                        border: "1px solid rgba(51,102,255,0.15)",
-                        background: revisado ? "rgba(12,28,82,0.45)" : "rgba(8,22,72,0.3)",
-                        color: revisado ? "rgba(178,198,245,0.7)" : "rgba(178,198,245,0.4)",
+                        border: "1px solid rgba(67,135,255,0.12)",
+                        background: revisado ? "#090A0C" : "rgba(255,255,255,0.04)",
+                        color: revisado ? "#A1A1A6" : "rgba(178,198,245,0.4)",
                         fontSize: 13, fontWeight: 700, cursor: revisado ? "pointer" : "not-allowed",
                         textTransform: "uppercase", letterSpacing: "0.05em",
                         transition: "all 0.2s",

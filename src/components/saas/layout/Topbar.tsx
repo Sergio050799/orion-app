@@ -15,19 +15,19 @@ const navItems = [
     { href: "/emission",            label: "Flotas" },
     { href: "/gestion-documental",  label: "Documental" },
     { href: "/analysis/vehiculos",  label: "Vehículos" },
-    { href: "/analysis/ocr",        label: "Escáner OCR" },
+    { href: "/analysis/ocr",        label: "Escáner" },
 ];
 
-function tipoIcon(tipo: string) {
-    if (tipo === 'vencimiento') return <span style={{ fontSize: 14 }}>&#9888;</span>;
-    if (tipo === 'estado') return <span style={{ fontSize: 14 }}>&#8635;</span>;
-    return <span style={{ fontSize: 14 }}>&#8505;</span>;
+function tipoColor(tipo: string) {
+    if (tipo === 'vencimiento') return '#F0B94D';
+    if (tipo === 'estado') return '#4387FF';
+    return '#8d9198';
 }
 
-function tipoColor(tipo: string) {
-    if (tipo === 'vencimiento') return '#F59E0B';
-    if (tipo === 'estado') return '#3366FF';
-    return 'rgba(178,198,245,0.6)';
+function tipoIcon(tipo: string) {
+    if (tipo === 'vencimiento') return <span style={{ fontSize: 13 }}>&#9888;</span>;
+    if (tipo === 'estado') return <span style={{ fontSize: 13 }}>&#8635;</span>;
+    return <span style={{ fontSize: 13 }}>&#8505;</span>;
 }
 
 export default function Topbar() {
@@ -47,7 +47,6 @@ export default function Topbar() {
         return pathname === href || pathname.startsWith(href);
     };
 
-    // Close dropdown on outside click
     useEffect(() => {
         function handleClick(e: MouseEvent) {
             if (bellRef.current && !bellRef.current.contains(e.target as Node)) {
@@ -58,80 +57,62 @@ export default function Topbar() {
         return () => document.removeEventListener('mousedown', handleClick);
     }, [bellOpen]);
 
-    // Refresh notifications when opening
     useEffect(() => {
         if (bellOpen) refresh();
     }, [bellOpen, refresh]);
 
     return (
         <>
-            {/* Floating glass topbar */}
             <header
-                className="shrink-0 relative z-20"
                 style={{
                     position: 'absolute',
-                    left: 24, right: 24, top: 24,
+                    top: 22, left: 36, right: 36,
                     zIndex: 50,
-                    height: 64,
-                    display: 'grid',
-                    gridTemplateColumns: '1fr auto 1fr',
+                    height: 44,
+                    display: 'flex',
                     alignItems: 'center',
-                    padding: '0 22px',
-                    borderRadius: 22,
-                    background: 'rgba(12, 28, 82, 0.6)',
-                    backdropFilter: 'blur(8px)',
-                    WebkitBackdropFilter: 'blur(8px)',
-                    border: '1px solid rgba(51, 102, 255, 0.32)',
-                    boxShadow: '0 30px 80px -20px rgba(0,0,0,0.6), 0 1px 0 rgba(255,255,255,0.06) inset, 0 0 0 1px rgba(61,112,255,0.14) inset',
+                    background: '#050607',
                 }}
             >
-                {/* Left — logo */}
-                <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <Link href="/dashboard" className="flex items-center gap-2.5 shrink-0">
-                        <div
-                            className="relative shrink-0"
-                            style={{ width: 30, height: 30, filter: 'drop-shadow(0 0 14px rgba(70,120,255,0.6))' }}
-                        >
-                            <Image src="/ORION_LOGO.png" alt="ORION" fill className="object-contain" priority />
+                {/* Brand — ancho fijo 168px como en la referencia */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: 168, flexShrink: 0 }}>
+                    <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
+                        <div style={{ position: 'relative', width: 26, height: 26, flexShrink: 0 }}>
+                            <Image src="/ORION_LOGO.png" alt="ORION" fill style={{ objectFit: 'contain' }} priority />
                         </div>
-                        <span
-                            className="text-white tracking-[0.18em] hidden sm:inline"
-
-                            style={{ fontFamily: 'var(--font-display), Inter, sans-serif', fontWeight: 600, fontSize: 15, textShadow: '0 0 20px rgba(51,102,255,0.25)' }}
-                        >
+                        <span style={{
+                            fontWeight: 650, fontSize: 15, letterSpacing: '0.08em',
+                            color: '#F4F4F5', fontFamily: 'inherit',
+                        }}>
                             ORION
                         </span>
                     </Link>
                 </div>
 
-                {/* Center — nav pills */}
-                <nav style={{ display: 'flex', gap: 4, justifyContent: 'center', overflowX: 'auto', scrollbarWidth: 'none' }}>
+                {/* Nav centrada */}
+                <nav style={{
+                    flex: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 28,
+                    fontSize: 14,
+                }}>
                     {navItems.map(({ href, label }) => {
                         const active = isActive(href);
                         return (
                             <Link
                                 key={href}
                                 href={href}
-                                style={active ? {
-                                    padding: '8px 16px',
-                                    borderRadius: 999,
-                                    fontSize: 13,
-                                    fontWeight: 500,
-                                    color: '#FFFFFF',
-                                    background: 'rgba(18,64,204,0.35)',
-                                    boxShadow: '0 0 0 1px rgba(70,120,255,0.5) inset, 0 0 16px rgba(18,64,204,0.3)',
-                                    transition: 'all 180ms cubic-bezier(.4,.0,.2,1)',
+                                style={{
+                                    color: active ? '#4387FF' : '#c8ccd2',
+                                    fontWeight: active ? 600 : 400,
+                                    textDecoration: 'none',
                                     whiteSpace: 'nowrap',
-                                } : {
-                                    padding: '8px 16px',
-                                    borderRadius: 999,
-                                    fontSize: 13,
-                                    color: '#BDD4FF',
-                                    transition: 'all 180ms cubic-bezier(.4,.0,.2,1)',
-                                    whiteSpace: 'nowrap',
+                                    transition: 'color 120ms',
                                 }}
-                                onMouseEnter={e => { if (!active) { (e.currentTarget as HTMLElement).style.color = '#FFFFFF'; (e.currentTarget as HTMLElement).style.background = 'rgba(61,112,255,0.14)'; } }}
-                                onMouseLeave={e => { if (!active) { (e.currentTarget as HTMLElement).style.color = '#BDD4FF'; (e.currentTarget as HTMLElement).style.background = ''; } }}
+                                onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.color = '#F4F4F5'; }}
+                                onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.color = '#c8ccd2'; }}
                             >
                                 {label}
                             </Link>
@@ -139,42 +120,35 @@ export default function Topbar() {
                     })}
                 </nav>
 
-                {/* Right — bell + user + logout */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'flex-end' }}>
+                {/* Account — ancho fijo 168px */}
+                <div style={{ width: 168, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 14, flexShrink: 0 }}>
 
-                    {/* Notification bell */}
+                    {/* Bell */}
                     <div ref={bellRef} style={{ position: 'relative' }}>
                         <button
                             onClick={() => setBellOpen(!bellOpen)}
                             style={{
-                                position: 'relative',
-                                width: 38, height: 38,
-                                borderRadius: 12,
-                                display: 'grid',
-                                placeItems: 'center',
-                                color: bellOpen ? '#FFFFFF' : '#BDD4FF',
-                                background: bellOpen ? 'rgba(18,64,204,0.25)' : 'rgba(6,14,50,0.5)',
-                                border: `1px solid ${bellOpen ? 'rgba(51,102,255,0.35)' : 'rgba(61,112,255,0.22)'}`,
-                                cursor: 'pointer',
-                                transition: 'all 180ms cubic-bezier(.4,.0,.2,1)',
+                                background: 'none', border: 'none', cursor: 'pointer',
+                                color: bellOpen ? '#F4F4F5' : '#c8ccd2',
+                                display: 'grid', placeItems: 'center',
+                                padding: 0, transition: 'color 120ms', position: 'relative',
+                                width: 18, height: 18,
                             }}
-                            onMouseEnter={e => { if (!bellOpen) { e.currentTarget.style.color = '#FFFFFF'; e.currentTarget.style.borderColor = 'rgba(51,102,255,0.35)'; } }}
-                            onMouseLeave={e => { if (!bellOpen) { e.currentTarget.style.color = '#BDD4FF'; e.currentTarget.style.borderColor = 'rgba(61,112,255,0.22)'; } }}
+                            onMouseEnter={e => { if (!bellOpen) e.currentTarget.style.color = '#F4F4F5'; }}
+                            onMouseLeave={e => { if (!bellOpen) e.currentTarget.style.color = '#c8ccd2'; }}
                             title="Notificaciones"
                         >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+                                <path d="M6 16.5h12l-1.2-2.1V10a4.8 4.8 0 0 0-9.6 0v4.4L6 16.5z" />
+                                <path d="M10 18.2a2 2 0 0 0 4 0" />
                             </svg>
                             {unreadCount > 0 && (
                                 <span style={{
-                                    position: 'absolute', top: 4, right: 4,
-                                    width: 16, height: 16, borderRadius: '50%',
-                                    background: '#ef4444',
-                                    color: '#fff', fontSize: 9, fontWeight: 800,
+                                    position: 'absolute', top: -2, right: -2,
+                                    width: 13, height: 13, borderRadius: '50%',
+                                    background: '#EF4D5A', color: '#fff',
+                                    fontSize: 7, fontWeight: 800,
                                     display: 'grid', placeItems: 'center',
-                                    boxShadow: '0 0 8px rgba(239,68,68,0.6)',
-                                    lineHeight: 1,
                                 }}>{unreadCount > 9 ? '9+' : unreadCount}</span>
                             )}
                         </button>
@@ -182,45 +156,41 @@ export default function Topbar() {
                         {/* Notification dropdown */}
                         {bellOpen && (
                             <div style={{
-                                position: 'absolute', top: 'calc(100% + 12px)', right: 0,
-                                width: 380, maxHeight: 440,
-                                background: 'rgba(3,10,42,0.98)',
-                                border: '1px solid rgba(51,102,255,0.25)',
-                                borderRadius: 16,
-                                boxShadow: '0 20px 60px -10px rgba(0,0,0,0.7), 0 0 0 1px rgba(61,112,255,0.12) inset',
-                                overflow: 'hidden',
-                                zIndex: 100,
+                                position: 'absolute', top: 'calc(100% + 14px)', right: 0,
+                                width: 360, maxHeight: 420,
+                                background: '#0D0F12',
+                                border: '1px solid rgba(255,255,255,0.08)',
+                                borderRadius: 12,
+                                boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+                                overflow: 'hidden', zIndex: 100,
                                 display: 'flex', flexDirection: 'column',
                             }}>
-                                {/* Header */}
                                 <div style={{
-                                    padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                    borderBottom: '1px solid rgba(61,112,255,0.16)',
+                                    padding: '13px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                    borderBottom: '1px solid rgba(255,255,255,0.07)',
                                 }}>
-                                    <span style={{ fontSize: 13, fontWeight: 700, color: '#FFFFFF' }}>
+                                    <span style={{ fontSize: 13, fontWeight: 600, color: '#F4F4F5' }}>
                                         Notificaciones
                                         {unreadCount > 0 && (
                                             <span style={{
                                                 marginLeft: 8, fontSize: 10, fontWeight: 700,
-                                                background: 'rgba(239,68,68,0.15)', color: '#f87171',
-                                                border: '1px solid rgba(239,68,68,0.3)',
-                                                borderRadius: 999, padding: '2px 8px',
+                                                background: 'rgba(239,77,90,0.12)', color: '#EF4D5A',
+                                                border: '1px solid rgba(239,77,90,0.25)',
+                                                borderRadius: 999, padding: '2px 7px',
                                             }}>{unreadCount} nueva{unreadCount > 1 ? 's' : ''}</span>
                                         )}
                                     </span>
                                     {unreadCount > 0 && (
                                         <button onClick={markAllAsRead} style={{
                                             background: 'none', border: 'none', cursor: 'pointer',
-                                            color: '#3366FF', fontSize: 11, fontWeight: 600,
+                                            color: '#4387FF', fontSize: 11, fontWeight: 600,
                                         }}>Marcar todas</button>
                                     )}
                                 </div>
-
-                                {/* List */}
-                                <div style={{ flex: 1, overflowY: 'auto', maxHeight: 380 }} className="custom-scrollbar">
+                                <div style={{ flex: 1, overflowY: 'auto', maxHeight: 360 }} className="custom-scrollbar">
                                     {notifications.length === 0 ? (
-                                        <div style={{ padding: '40px 20px', textAlign: 'center' }}>
-                                            <p style={{ color: 'rgba(178,198,245,0.4)', fontSize: 12, margin: 0 }}>Sin notificaciones</p>
+                                        <div style={{ padding: '36px 20px', textAlign: 'center' }}>
+                                            <p style={{ color: '#6d727a', fontSize: 12, margin: 0 }}>Sin notificaciones</p>
                                         </div>
                                     ) : (
                                         notifications.map(n => (
@@ -228,14 +198,14 @@ export default function Topbar() {
                                                 key={n.id}
                                                 onClick={() => markAsRead(n.id)}
                                                 style={{
-                                                    padding: '12px 18px',
-                                                    borderBottom: '1px solid rgba(61,112,255,0.10)',
+                                                    padding: '11px 16px',
+                                                    borderBottom: '1px solid rgba(255,255,255,0.06)',
                                                     cursor: 'pointer',
-                                                    background: n.leida ? 'transparent' : 'rgba(18,64,204,0.06)',
-                                                    transition: 'background 150ms',
+                                                    background: n.leida ? 'transparent' : 'rgba(67,135,255,0.04)',
+                                                    transition: 'background 120ms',
                                                 }}
-                                                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(61,112,255,0.12)')}
-                                                onMouseLeave={e => (e.currentTarget.style.background = n.leida ? 'transparent' : 'rgba(18,64,204,0.06)')}
+                                                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.03)')}
+                                                onMouseLeave={e => (e.currentTarget.style.background = n.leida ? 'transparent' : 'rgba(67,135,255,0.04)')}
                                             >
                                                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                                                     <span style={{ color: tipoColor(n.tipo), flexShrink: 0, marginTop: 2 }}>
@@ -244,22 +214,13 @@ export default function Topbar() {
                                                     <div style={{ flex: 1, minWidth: 0 }}>
                                                         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                                                             <span style={{
-                                                                fontSize: 12, fontWeight: n.leida ? 500 : 700,
-                                                                color: n.leida ? '#BDD4FF' : '#FFFFFF',
+                                                                fontSize: 12, fontWeight: n.leida ? 500 : 600,
+                                                                color: n.leida ? '#8d9198' : '#F4F4F5',
                                                                 overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                                                             }}>{n.titulo}</span>
-                                                            {!n.leida && (
-                                                                <span style={{
-                                                                    width: 6, height: 6, borderRadius: '50%',
-                                                                    background: '#3366FF', flexShrink: 0,
-                                                                    boxShadow: '0 0 6px rgba(70,120,255,0.6)',
-                                                                }} />
-                                                            )}
+                                                            {!n.leida && <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#4387FF', flexShrink: 0 }} />}
                                                         </div>
-                                                        <p style={{
-                                                            margin: '3px 0 0', fontSize: 11,
-                                                            color: 'rgba(178,198,245,0.6)', lineHeight: 1.4,
-                                                        }}>{n.mensaje}</p>
+                                                        <p style={{ margin: '3px 0 0', fontSize: 11, color: '#6d727a', lineHeight: 1.4 }}>{n.mensaje}</p>
                                                     </div>
                                                 </div>
                                             </div>
@@ -270,39 +231,27 @@ export default function Topbar() {
                         )}
                     </div>
 
+                    {/* Avatar */}
+                    <div style={{
+                        width: 28, height: 28, borderRadius: '50%',
+                        background: '#4387FF',
+                        display: 'grid', placeItems: 'center',
+                        fontSize: 11, fontWeight: 700, color: '#FFFFFF',
+                        flexShrink: 0, cursor: isAdmin ? 'pointer' : 'default',
+                    }}
+                        onClick={isAdmin ? () => setAdminOpen(true) : undefined}
+                        title={isAdmin ? 'Configuración' : undefined}
+                    >
+                        {mounted && user ? `${user.charAt(0).toUpperCase()}${user.charAt(1)?.toUpperCase() || ''}` : ''}
+                    </div>
+
+                    {/* Who */}
                     {mounted && user && (
-                        <div
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 10,
-                                padding: '4px 14px 4px 4px',
-                                borderRadius: 999,
-                                background: 'rgba(6,14,50,0.5)',
-                                border: '1px solid rgba(61,112,255,0.22)',
-                                cursor: isAdmin ? 'pointer' : 'default',
-                            }}
-                            onClick={isAdmin ? () => setAdminOpen(true) : undefined}
-                            title={isAdmin ? 'Configuración' : undefined}
-                        >
-                            <div
-                                style={{
-                                    width: 32, height: 32,
-                                    borderRadius: '50%',
-                                    background: 'linear-gradient(135deg, #1240CC, #3366FF)',
-                                    display: 'grid',
-                                    placeItems: 'center',
-                                    fontWeight: 600,
-                                    fontSize: 12,
-                                    color: '#FFFFFF',
-                                }}
-                            >
-                                {user.charAt(0).toUpperCase()}{user.charAt(1)?.toUpperCase() || ''}
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15 }}>
-                                <strong style={{ fontSize: 13, color: '#FFFFFF' }}>{user}</strong>
-                                <span style={{ fontSize: 11, color: 'rgba(178,198,245,0.7)' }}>Admin</span>
-                            </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15 }}>
+                            <strong style={{ fontSize: 12, fontWeight: 650, letterSpacing: '0.04em', color: '#F4F4F5' }}>
+                                {user.toUpperCase()}
+                            </strong>
+                            <span style={{ fontSize: 11, color: '#8d9198' }}>Admin</span>
                         </div>
                     )}
 
@@ -310,22 +259,15 @@ export default function Topbar() {
                     <button
                         onClick={logout}
                         style={{
-                            position: 'relative',
-                            width: 38, height: 38,
-                            borderRadius: 12,
-                            display: 'grid',
-                            placeItems: 'center',
-                            color: '#BDD4FF',
-                            background: 'rgba(6,14,50,0.5)',
-                            border: '1px solid rgba(61,112,255,0.22)',
-                            cursor: 'pointer',
-                            transition: 'all 180ms cubic-bezier(.4,.0,.2,1)',
+                            background: 'none', border: 'none', cursor: 'pointer',
+                            color: '#6d727a', display: 'grid', placeItems: 'center',
+                            padding: 0, transition: 'color 120ms',
                         }}
-                        onMouseEnter={e => { e.currentTarget.style.color = '#FFFFFF'; e.currentTarget.style.borderColor = '#ef4444'; }}
-                        onMouseLeave={e => { e.currentTarget.style.color = '#BDD4FF'; e.currentTarget.style.borderColor = 'rgba(61,112,255,0.22)'; }}
+                        onMouseEnter={e => (e.currentTarget.style.color = '#EF4D5A')}
+                        onMouseLeave={e => (e.currentTarget.style.color = '#6d727a')}
                         title="Cerrar sesión"
                     >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
                             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
                             <polyline points="16 17 21 12 16 7" />
                             <line x1="21" y1="12" x2="9" y2="12" />

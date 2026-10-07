@@ -78,7 +78,7 @@ export default function LoginPage() {
                     <div style={{ position: 'relative', width: 28, height: 28, filter: 'drop-shadow(0 0 14px rgba(70,120,255,0.6))' }}>
                         <Image src="/ORION_LOGO.png" alt="ORION" fill className="object-contain" priority />
                     </div>
-                    <span style={{ fontFamily: 'var(--font-display), Inter, sans-serif', fontWeight: 600, fontSize: 'calc(28px * 0.78)', letterSpacing: '0.18em', color: '#FFFFFF', textShadow: '0 0 20px rgba(51,102,255,0.25)' }}>
+                    <span style={{ fontFamily: 'var(--font-display), Inter, sans-serif', fontWeight: 600, fontSize: 'calc(28px * 0.78)', letterSpacing: '0.18em', color: '#FFFFFF', textShadow: '0 0 20px rgba(67,135,255,0.2)' }}>
                         ORION
                     </span>
                 </div>
@@ -102,7 +102,7 @@ export default function LoginPage() {
                     <div style={{
                         display: 'inline-flex', alignItems: 'center', gap: 14,
                         marginBottom: 28,
-                        color: 'rgba(178,198,245,0.7)',
+                        color: '#A1A1A6',
                         letterSpacing: '0.28em',
                         fontSize: 11,
                         textTransform: 'uppercase' as const,
@@ -112,10 +112,10 @@ export default function LoginPage() {
                             fontStyle: 'normal',
                             padding: '7px 16px',
                             borderRadius: 999,
-                            background: 'rgba(3,10,42,0.72)',
+                            background: '#090A0C',
                             backdropFilter: 'blur(20px)',
-                            border: '1px solid rgba(61,112,255,0.22)',
-                            color: '#BDD4FF',
+                            border: '1px solid rgba(255,255,255,0.08)',
+                            color: '#A1A1A6',
                         }}>
                             Acceso seguro
                         </em>
@@ -132,7 +132,7 @@ export default function LoginPage() {
                         color: '#FFFFFF',
                     }}>
                         Del Caos<br/>al <span style={{
-                            background: 'linear-gradient(135deg, #3366FF, #FFFFFF)',
+                            background: '#4387FF',
                             WebkitBackgroundClip: 'text',
                             backgroundClip: 'text',
                             color: 'transparent',
@@ -140,7 +140,7 @@ export default function LoginPage() {
                         }}>Orden</span>.
                     </h2>
 
-                    <p style={{ fontSize: 16, color: '#BDD4FF', lineHeight: 1.55, maxWidth: 460, margin: '0 0 32px' }}>
+                    <p style={{ fontSize: 16, color: '#A1A1A6', lineHeight: 1.55, maxWidth: 460, margin: '0 0 32px' }}>
                         La plataforma operativa para corredores y aseguradoras que gestionan flotas vehiculares a escala.
                     </p>
 
@@ -150,14 +150,14 @@ export default function LoginPage() {
                             'OCR de documentos en segundos',
                             '1 fuente de verdad para tu flota',
                         ].map(text => (
-                            <li key={text} style={{ display: 'flex', alignItems: 'center', gap: 10, color: '#BDD4FF', fontSize: 14 }}>
+                            <li key={text} style={{ display: 'flex', alignItems: 'center', gap: 10, color: '#A1A1A6', fontSize: 14 }}>
                                 <span style={{
-                                    flexShrink: 0, color: '#3366FF',
-                                    background: 'rgba(18,64,204,0.18)',
+                                    flexShrink: 0, color: '#4387FF',
+                                    background: 'rgba(67,135,255,0.12)',
                                     padding: 4, borderRadius: '50%',
                                     width: 20, height: 20,
                                     display: 'grid', placeItems: 'center',
-                                    border: '1px solid rgba(51,102,255,0.25)',
+                                    border: '1px solid rgba(67,135,255,0.2)',
                                 }}>
                                     <CheckIcon />
                                 </span>
@@ -170,9 +170,9 @@ export default function LoginPage() {
                         display: 'flex', alignItems: 'center', gap: 24,
                         padding: '18px 24px',
                         borderRadius: 14,
-                        background: 'rgba(3,10,42,0.72)',
+                        background: '#090A0C',
                         backdropFilter: 'blur(24px)',
-                        border: '1px solid rgba(61,112,255,0.22)',
+                        border: '1px solid rgba(255,255,255,0.08)',
                         maxWidth: 520,
                     }}>
                         {[
@@ -181,10 +181,10 @@ export default function LoginPage() {
                             { v: '99.98%', l: 'uptime' },
                         ].map((item, i) => (
                             <div key={item.l} style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
-                                {i > 0 && <div style={{ width: 1, height: 32, background: 'linear-gradient(180deg, transparent, rgba(51,102,255,0.3), transparent)' }} />}
+                                {i > 0 && <div style={{ width: 1, height: 32, background: 'linear-gradient(180deg, transparent, rgba(67,135,255,0.25), transparent)' }} />}
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                                     <strong style={{ fontFamily: 'var(--font-display), Inter, sans-serif', fontWeight: 500, fontSize: 22, color: '#FFFFFF' }}>{item.v}</strong>
-                                    <span style={{ fontSize: 11, color: 'rgba(178,198,245,0.7)', letterSpacing: '0.04em' }}>{item.l}</span>
+                                    <span style={{ fontSize: 11, color: '#A1A1A6', letterSpacing: '0.04em' }}>{item.l}</span>
                                 </div>
                             </div>
                         ))}
@@ -200,21 +200,21 @@ export default function LoginPage() {
                     marginLeft: 'auto',
                     position: 'relative',
                     overflow: 'hidden',
-                    background: 'rgba(12, 28, 82, 0.6)',
+                    background: '#090A0C',
                     backdropFilter: 'blur(36px) saturate(150%)',
                     WebkitBackdropFilter: 'blur(36px) saturate(150%)',
                     border: '1px solid rgba(51, 102, 255, 0.32)',
-                    boxShadow: '0 30px 80px -20px rgba(0,0,0,0.6), 0 1px 0 rgba(255,255,255,0.06) inset, 0 0 0 1px rgba(61,112,255,0.14) inset',
+                    boxShadow: '0 30px 80px -20px rgba(0,0,0,0.6), 0 1px 0 rgba(255,255,255,0.06) inset, 0 0 0 1px rgba(255,255,255,0.06) inset',
                 }}>
                     <div className="grain-subtle" />
                     {/* Eyebrow */}
                     <div style={{
                         display: 'inline-flex', alignItems: 'center', gap: 8,
-                        fontSize: 11, letterSpacing: '0.24em', color: '#BDD4FF',
+                        fontSize: 11, letterSpacing: '0.24em', color: '#A1A1A6',
                         textTransform: 'uppercase' as const,
                         padding: '6px 14px', borderRadius: 999,
-                        background: 'rgba(6,14,50,0.55)',
-                        border: '1px solid rgba(61,112,255,0.22)',
+                        background: '#0D0F12',
+                        border: '1px solid rgba(255,255,255,0.08)',
                         marginBottom: 18,
                     }}>
                         <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#4ADE80', boxShadow: '0 0 0 3px rgba(74,222,128,0.18), 0 0 10px rgba(74,222,128,0.6)' }} />
@@ -228,20 +228,20 @@ export default function LoginPage() {
                     }}>
                         Bienvenido
                     </h3>
-                    <p style={{ color: 'rgba(178,198,245,0.7)', margin: '0 0 28px', fontSize: 13 }}>
+                    <p style={{ color: '#A1A1A6', margin: '0 0 28px', fontSize: 13 }}>
                         Ingresa con tus credenciales corporativas.
                     </p>
 
                     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                         {/* Email field */}
                         <label style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                            <span style={{ fontSize: 12, color: '#BDD4FF', letterSpacing: '0.06em', fontWeight: 500 }}>Usuario</span>
+                            <span style={{ fontSize: 12, color: '#A1A1A6', letterSpacing: '0.06em', fontWeight: 500 }}>Usuario</span>
                             <div style={{
                                 display: 'flex', alignItems: 'center', gap: 10,
                                 padding: '0 14px', height: 48,
                                 borderRadius: 14,
                                 background: 'rgba(3, 10, 42, 0.7)',
-                                border: '1px solid rgba(61,112,255,0.22)',
+                                border: '1px solid rgba(255,255,255,0.08)',
                                 transition: 'all 180ms cubic-bezier(.4,.0,.2,1)',
                             }}>
                                 <MailIcon />
@@ -264,13 +264,13 @@ export default function LoginPage() {
 
                         {/* Password field */}
                         <label style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                            <span style={{ fontSize: 12, color: '#BDD4FF', letterSpacing: '0.06em', fontWeight: 500 }}>Contraseña</span>
+                            <span style={{ fontSize: 12, color: '#A1A1A6', letterSpacing: '0.06em', fontWeight: 500 }}>Contraseña</span>
                             <div style={{
                                 display: 'flex', alignItems: 'center', gap: 10,
                                 padding: '0 14px', height: 48,
                                 borderRadius: 14,
                                 background: 'rgba(3, 10, 42, 0.7)',
-                                border: '1px solid rgba(61,112,255,0.22)',
+                                border: '1px solid rgba(255,255,255,0.08)',
                                 transition: 'all 180ms cubic-bezier(.4,.0,.2,1)',
                             }}>
                                 <LockIcon />
@@ -304,18 +304,18 @@ export default function LoginPage() {
                                 borderRadius: 14,
                                 background: loading
                                     ? 'linear-gradient(180deg, #134d97, #0a2472)'
-                                    : 'linear-gradient(180deg, #1240CC, #134d97)',
-                                border: '1px solid rgba(51,102,255,0.45)',
+                                    : '#4387FF',
+                                border: '1px solid rgba(67,135,255,0.35)',
                                 color: '#FFFFFF',
                                 fontWeight: 500, fontSize: 14,
                                 letterSpacing: '0.04em',
                                 cursor: loading ? 'wait' : 'pointer',
-                                boxShadow: '0 14px 30px -8px rgba(18,64,204,0.55), 0 0 0 1px rgba(255,255,255,0.06) inset',
+                                boxShadow: '0 14px 30px -8px rgba(67,135,255,0.4), 0 0 0 1px rgba(255,255,255,0.06) inset',
                                 transition: 'all 180ms cubic-bezier(.4,.0,.2,1)',
                                 marginTop: 8,
                             }}
-                            onMouseEnter={e => { if (!loading) { (e.currentTarget as HTMLElement).style.background = 'linear-gradient(180deg, #3366FF, #1240CC)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'; } }}
-                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'linear-gradient(180deg, #1240CC, #134d97)'; (e.currentTarget as HTMLElement).style.transform = ''; }}
+                            onMouseEnter={e => { if (!loading) { (e.currentTarget as HTMLElement).style.background = '#4387FF'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'; } }}
+                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#4387FF'; (e.currentTarget as HTMLElement).style.transform = ''; }}
                         >
                             {loading ? (
                                 <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
@@ -330,7 +330,7 @@ export default function LoginPage() {
                         marginTop: 22,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         gap: 8, fontSize: 11,
-                        color: 'rgba(178,198,245,0.7)',
+                        color: '#A1A1A6',
                     }}>
                         <span>Protegido por cifrado AES-256</span>
                     </footer>
@@ -344,15 +344,15 @@ export default function LoginPage() {
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                 padding: '0 40px',
                 fontSize: 12,
-                color: 'rgba(178,198,245,0.7)',
+                color: '#A1A1A6',
             }}>
                 <span>© 2026 Orion Systems</span>
                 <span style={{
                     display: 'inline-flex', alignItems: 'center', gap: 8,
                     padding: '6px 14px', borderRadius: 999,
-                    background: 'rgba(3,10,42,0.72)',
-                    border: '1px solid rgba(61,112,255,0.22)',
-                    color: '#BDD4FF',
+                    background: '#090A0C',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    color: '#A1A1A6',
                 }}>
                     <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#4ADE80', boxShadow: '0 0 0 3px rgba(74,222,128,0.18), 0 0 10px rgba(74,222,128,0.6)' }} />
                     Todos los servicios operativos

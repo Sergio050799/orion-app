@@ -111,16 +111,16 @@ function normalizarHistorica(h: FlotaHistorica): FlotaView {
 // ─── Estilos ─────────────────────────────────────────────────────────────────
 
 const glass: React.CSSProperties = {
-  background: 'rgba(12, 28, 82, 0.75)', border: '1px solid rgba(61, 112, 255, 0.22)',
+  background: '#090A0C', border: '1px solid rgba(61, 112, 255, 0.22)',
   borderRadius: 22, boxShadow: '0 30px 80px -20px rgba(0,0,0,0.6), 0 1px 0 rgba(255,255,255,0.06) inset',
 };
 const inputStyle: React.CSSProperties = {
   fontSize: 13, padding: '9px 12px', borderRadius: 10,
-  background: 'rgba(6,14,50,0.6)', border: '1px solid rgba(51,102,255,0.2)',
+  background: '#0D0F12', border: '1px solid rgba(255,255,255,0.08)',
   color: '#FFFFFF', outline: 'none', width: '100%',
 };
 const labelStyle: React.CSSProperties = {
-  fontSize: 11, fontWeight: 700, color: 'rgba(178,198,245,0.6)',
+  fontSize: 11, fontWeight: 700, color: '#A1A1A6',
   textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 5, display: 'block',
 };
 const ESTADO_CFG: Record<EstadoFlota, { bg: string; border: string; color: string }> = {
@@ -300,9 +300,9 @@ function FlotaForm({ initial, onSave, onCancel, saving }: {
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
           <label style={{ ...labelStyle, margin: 0 }}>Coberturas</label>
-          <button onClick={addCob} style={{ fontSize: 11, fontWeight: 700, padding: '5px 12px', borderRadius: 8, background: 'rgba(51,102,255,0.15)', color: '#3366FF', border: '1px solid rgba(51,102,255,0.3)', cursor: 'pointer' }}>+ Añadir</button>
+          <button onClick={addCob} style={{ fontSize: 11, fontWeight: 700, padding: '5px 12px', borderRadius: 8, background: 'rgba(67,135,255,0.12)', color: '#4387FF', border: '1px solid rgba(67,135,255,0.25)', cursor: 'pointer' }}>+ Añadir</button>
         </div>
-        {form.coberturas.length === 0 && <p style={{ fontSize: 12, color: 'rgba(178,198,245,0.4)', margin: 0 }}>Sin coberturas.</p>}
+        {form.coberturas.length === 0 && <p style={{ fontSize: 12, color: '#70747B', margin: 0 }}>Sin coberturas.</p>}
         {form.coberturas.map((cob, i) => (
           <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 130px 32px', gap: 8, marginBottom: 6 }}>
             <input style={inputStyle} value={cob.nombre} onChange={e => setCob(i, 'nombre', e.target.value)} placeholder="Ej: Terceros ampliado" />
@@ -323,10 +323,10 @@ function FlotaForm({ initial, onSave, onCancel, saving }: {
       </div>
 
       <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', paddingTop: 4 }}>
-        <button onClick={onCancel} disabled={saving} style={{ fontSize: 13, fontWeight: 700, padding: '10px 22px', borderRadius: 12, background: 'transparent', color: 'rgba(178,198,245,0.7)', border: '1px solid rgba(61,112,255,0.2)', cursor: 'pointer' }}>Cancelar</button>
+        <button onClick={onCancel} disabled={saving} style={{ fontSize: 13, fontWeight: 700, padding: '10px 22px', borderRadius: 12, background: 'transparent', color: '#A1A1A6', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer' }}>Cancelar</button>
         <button onClick={() => onSave({ ...form, prima_total: form.prima_total || primaAuto })}
           disabled={saving || !form.nombre.trim() || !form.tomador.trim()}
-          style={{ fontSize: 13, fontWeight: 800, padding: '10px 28px', borderRadius: 12, background: 'linear-gradient(135deg, #1240CC, #3366FF)', color: '#fff', border: 'none', cursor: 'pointer', opacity: (!form.nombre.trim() || !form.tomador.trim()) ? 0.5 : 1, boxShadow: '0 8px 24px -8px rgba(18,64,204,0.5)' }}>
+          style={{ fontSize: 13, fontWeight: 800, padding: '10px 28px', borderRadius: 12, background: '#4387FF', color: '#fff', border: 'none', cursor: 'pointer', opacity: (!form.nombre.trim() || !form.tomador.trim()) ? 0.5 : 1, boxShadow: '0 8px 24px -8px rgba(67,135,255,0.35)' }}>
           {saving ? 'Guardando...' : (initial ? 'Guardar cambios' : 'Crear flota')}
         </button>
       </div>
@@ -419,8 +419,6 @@ function FichaPoliza({ flota, corredores, onClose, onEdit, onDelete, onSaved }: 
   const infoGrid = [
     { label: 'Corredor',     value: flota.corredor_nombre || '—' },
     { label: 'Comisión',     value: flota.comision ? `${flota.comision}%` : '—' },
-    { label: 'Compañía',     value: flota.compania || '—' },
-    { label: 'Nº póliza',    value: flota.num_poliza || '—', mono: true },
     { label: 'Periodicidad', value: flota.periodicidad || '—' },
     { label: 'Categoría',    value: flota.categoria_flota || '—' },
     { label: 'F. inicio',    value: fmtD(flota.fecha_inicio) },
@@ -433,17 +431,17 @@ function FichaPoliza({ flota, corredores, onClose, onEdit, onDelete, onSaved }: 
       <div style={{ ...glass, width: '100%', maxWidth: 740, maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
 
         {/* Header */}
-        <div style={{ padding: '20px 26px', borderBottom: '1px solid rgba(61,112,255,0.15)', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+        <div style={{ padding: '20px 26px', borderBottom: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
           <div style={{ flex: 1 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
               <h2 style={{ fontSize: 16, fontWeight: 900, color: '#FFFFFF', margin: 0, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{flota.nombre}</h2>
               <span style={{ fontSize: 9, fontWeight: 800, padding: '3px 9px', borderRadius: 6, background: cfg.bg, border: `1px solid ${cfg.border}`, color: cfg.color, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{flota.estado}</span>
-              <span style={{ fontSize: 9, fontWeight: 800, padding: '3px 9px', borderRadius: 6, background: esOrion ? 'rgba(99,102,241,0.15)' : 'rgba(51,102,255,0.12)', border: esOrion ? '1px solid rgba(99,102,241,0.35)' : '1px solid rgba(51,102,255,0.3)', color: esOrion ? '#818cf8' : '#3366FF', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+              <span style={{ fontSize: 9, fontWeight: 800, padding: '3px 9px', borderRadius: 6, background: esOrion ? 'rgba(99,102,241,0.15)' : 'rgba(255,255,255,0.06)', border: esOrion ? '1px solid rgba(99,102,241,0.35)' : '1px solid rgba(67,135,255,0.25)', color: esOrion ? '#818cf8' : '#4387FF', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
                 {esOrion ? 'Orion' : 'Histórica'}
               </span>
             </div>
-            <div style={{ fontSize: 12, color: 'rgba(178,198,245,0.6)' }}>
-              {flota.tomador}{flota.cif && <> · <span style={{ fontFamily: 'monospace', color: '#BDD4FF' }}>{flota.cif}</span></>}
+            <div style={{ fontSize: 12, color: '#A1A1A6' }}>
+              {flota.tomador}{flota.cif && <> · <span style={{ fontFamily: 'monospace', color: '#A1A1A6' }}>{flota.cif}</span></>}
               {flota.actividad && <> · {flota.actividad}</>}
             </div>
           </div>
@@ -454,7 +452,7 @@ function FichaPoliza({ flota, corredores, onClose, onEdit, onDelete, onSaved }: 
               </a>
             )}
             {canEdit && !editMode && (
-              <button onClick={() => setEditMode(true)} style={{ fontSize: 11, fontWeight: 700, padding: '7px 16px', borderRadius: 10, background: 'linear-gradient(135deg,#1240CC,#3366FF)', color: '#fff', border: 'none', cursor: 'pointer' }}>
+              <button onClick={() => setEditMode(true)} style={{ fontSize: 11, fontWeight: 700, padding: '7px 16px', borderRadius: 10, background: '#4387FF', color: '#fff', border: 'none', cursor: 'pointer' }}>
                 Editar datos
               </button>
             )}
@@ -464,7 +462,7 @@ function FichaPoliza({ flota, corredores, onClose, onEdit, onDelete, onSaved }: 
               </button>
             )}
             {!esOrion && onEdit && (
-              <button onClick={onEdit} style={{ fontSize: 11, fontWeight: 700, padding: '7px 14px', borderRadius: 10, background: 'rgba(51,102,255,0.15)', color: '#3366FF', border: '1px solid rgba(51,102,255,0.3)', cursor: 'pointer' }}>Editar</button>
+              <button onClick={onEdit} style={{ fontSize: 11, fontWeight: 700, padding: '7px 14px', borderRadius: 10, background: 'rgba(67,135,255,0.12)', color: '#4387FF', border: '1px solid rgba(67,135,255,0.25)', cursor: 'pointer' }}>Editar</button>
             )}
             <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 10, border: '1px solid rgba(80,95,120,0.3)', background: 'rgba(20,28,55,0.6)', color: 'rgba(180,195,225,0.8)', cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
           </div>
@@ -483,9 +481,9 @@ function FichaPoliza({ flota, corredores, onClose, onEdit, onDelete, onSaved }: 
                 </div>
               )}
               {flota.prima_mmt && flota.prima_mmt > 0 && (
-                <div style={{ padding: '14px 18px', borderRadius: 14, background: 'rgba(51,102,255,0.08)', border: '1px solid rgba(51,102,255,0.2)' }}>
+                <div style={{ padding: '14px 18px', borderRadius: 14, background: 'rgba(67,135,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}>
                   <div style={{ ...labelStyle, marginBottom: 4 }}>Prima MMT ofertada</div>
-                  <div style={{ fontSize: 20, fontWeight: 900, color: '#3366FF', fontFamily: 'monospace' }}>{fmtE(flota.prima_mmt)}</div>
+                  <div style={{ fontSize: 20, fontWeight: 900, color: '#4387FF', fontFamily: 'monospace' }}>{fmtE(flota.prima_mmt)}</div>
                 </div>
               )}
               {flota.prima_total > 0 && (
@@ -511,14 +509,6 @@ function FichaPoliza({ flota, corredores, onClose, onEdit, onDelete, onSaved }: 
                 <div>
                   <label style={labelStyle}>Comisión (%)</label>
                   <input style={{ ...inputStyle, fontFamily: 'monospace' }} type="number" step="0.1" min="0" max="100" value={form.comision} onChange={e => setF('comision', e.target.value)} />
-                </div>
-                <div>
-                  <label style={labelStyle}>Compañía</label>
-                  <input style={inputStyle} value={form.compania} onChange={e => setF('compania', e.target.value)} />
-                </div>
-                <div>
-                  <label style={labelStyle}>Nº póliza</label>
-                  <input style={{ ...inputStyle, fontFamily: 'monospace' }} value={form.poliza} onChange={e => setF('poliza', e.target.value)} />
                 </div>
                 <div>
                   <label style={labelStyle}>Periodicidad</label>
@@ -553,18 +543,18 @@ function FichaPoliza({ flota, corredores, onClose, onEdit, onDelete, onSaved }: 
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-                <button onClick={() => setEditMode(false)} disabled={saving} style={{ fontSize: 13, fontWeight: 600, padding: '10px 22px', borderRadius: 12, background: 'transparent', color: 'rgba(178,198,245,0.7)', border: '1px solid rgba(80,95,120,0.3)', cursor: 'pointer' }}>Cancelar</button>
-                <button onClick={handleSave} disabled={saving} style={{ fontSize: 13, fontWeight: 800, padding: '10px 28px', borderRadius: 12, background: saving ? 'rgba(18,64,204,0.5)' : 'linear-gradient(135deg, #1240CC, #3366FF)', color: '#fff', border: 'none', cursor: saving ? 'not-allowed' : 'pointer', boxShadow: '0 8px 24px -8px rgba(18,64,204,0.5)' }}>
+                <button onClick={() => setEditMode(false)} disabled={saving} style={{ fontSize: 13, fontWeight: 600, padding: '10px 22px', borderRadius: 12, background: 'transparent', color: '#A1A1A6', border: '1px solid rgba(80,95,120,0.3)', cursor: 'pointer' }}>Cancelar</button>
+                <button onClick={handleSave} disabled={saving} style={{ fontSize: 13, fontWeight: 800, padding: '10px 28px', borderRadius: 12, background: saving ? 'rgba(67,135,255,0.35)' : '#4387FF', color: '#fff', border: 'none', cursor: saving ? 'not-allowed' : 'pointer', boxShadow: '0 8px 24px -8px rgba(67,135,255,0.35)' }}>
                   {saving ? 'Guardando...' : 'Guardar cambios'}
                 </button>
               </div>
             </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
-              {infoGrid.map(({ label, value, mono }) => (
-                <div key={label} style={{ padding: '10px 14px', borderRadius: 12, background: 'rgba(6,14,50,0.5)', border: '1px solid rgba(51,102,255,0.1)' }}>
+              {infoGrid.map(({ label, value }) => (
+                <div key={label} style={{ padding: '10px 14px', borderRadius: 12, background: '#0D0F12', border: '1px solid rgba(67,135,255,0.08)' }}>
                   <div style={{ ...labelStyle, marginBottom: 3 }}>{label}</div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#FFFFFF', fontFamily: mono ? 'monospace' : 'inherit' }}>{value}</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#FFFFFF' }}>{value}</div>
                 </div>
               ))}
             </div>
@@ -574,18 +564,18 @@ function FichaPoliza({ flota, corredores, onClose, onEdit, onDelete, onSaved }: 
           {flota.coberturas.length > 0 && (
             <div>
               <div style={{ ...labelStyle, marginBottom: 8 }}>Coberturas</div>
-              <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid rgba(51,102,255,0.12)' }}>
+              <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.06)' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
-                    <tr style={{ background: 'rgba(6,14,50,0.6)' }}>
-                      <th style={{ ...labelStyle, padding: '9px 14px', margin: 0, textAlign: 'left', borderBottom: '1px solid rgba(51,102,255,0.12)' }}>Cobertura</th>
-                      <th style={{ ...labelStyle, padding: '9px 14px', margin: 0, textAlign: 'right', borderBottom: '1px solid rgba(51,102,255,0.12)' }}>Prima</th>
+                    <tr style={{ background: '#0D0F12' }}>
+                      <th style={{ ...labelStyle, padding: '9px 14px', margin: 0, textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>Cobertura</th>
+                      <th style={{ ...labelStyle, padding: '9px 14px', margin: 0, textAlign: 'right', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>Prima</th>
                     </tr>
                   </thead>
                   <tbody>
                     {flota.coberturas.map((cob, i) => (
-                      <tr key={i} style={{ borderBottom: '1px solid rgba(51,102,255,0.07)' }}>
-                        <td style={{ padding: '9px 14px', fontSize: 13, color: '#BDD4FF' }}>{cob.nombre}</td>
+                      <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                        <td style={{ padding: '9px 14px', fontSize: 13, color: '#A1A1A6' }}>{cob.nombre}</td>
                         <td style={{ padding: '9px 14px', fontSize: 13, fontWeight: 700, color: '#FFFFFF', textAlign: 'right', fontFamily: 'monospace' }}>{fmtE(Number(cob.prima) || 0)}</td>
                       </tr>
                     ))}
@@ -597,7 +587,7 @@ function FichaPoliza({ flota, corredores, onClose, onEdit, onDelete, onSaved }: 
 
           {/* Notas */}
           {flota.notas && (
-            <div style={{ padding: '12px 16px', borderRadius: 12, background: 'rgba(6,14,50,0.4)', border: '1px solid rgba(51,102,255,0.1)' }}>
+            <div style={{ padding: '12px 16px', borderRadius: 12, background: '#0D0F12', border: '1px solid rgba(67,135,255,0.08)' }}>
               <div style={{ ...labelStyle, marginBottom: 4 }}>Notas</div>
               <p style={{ fontSize: 13, color: 'rgba(178,198,245,0.8)', margin: 0, lineHeight: 1.6 }}>{flota.notas}</p>
             </div>
@@ -701,10 +691,10 @@ export default function FlotasPage() {
         {/* Header */}
         <div style={{ ...glass, padding: '20px 28px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
-            <div style={{ width: 4, height: 36, borderRadius: 2, background: 'linear-gradient(180deg, #3366FF 0%, #1240CC 100%)' }} />
+            <div style={{ width: 4, height: 36, borderRadius: 2, background: '#4387FF' }} />
             <div>
               <h1 style={{ fontSize: 15, fontWeight: 900, color: '#FFFFFF', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>Flotas</h1>
-              <p style={{ fontSize: 11, fontWeight: 600, color: 'rgba(178,198,245,0.6)', margin: '4px 0 0 0' }}>
+              <p style={{ fontSize: 11, fontWeight: 600, color: '#A1A1A6', margin: '4px 0 0 0' }}>
                 Portfolio · {filtered.length} resultado{filtered.length !== 1 ? 's' : ''} de {flotas.length}
               </p>
             </div>
@@ -715,7 +705,7 @@ export default function FlotasPage() {
             <div style={{ position: 'relative', flex: '1 1 200px', minWidth: 180 }}>
               <svg style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(178,198,245,0.5)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
               <input type="text" placeholder="Buscar nombre, CIF, corredor…" value={search} onChange={e => setSearch(e.target.value)} style={{ ...inputStyle, paddingLeft: 30, paddingRight: search ? 30 : 10 }} />
-              {search && <button onClick={() => setSearch('')} style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'rgba(178,198,245,0.5)', cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: 0 }}>×</button>}
+              {search && <button onClick={() => setSearch('')} style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#70747B', cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: 0 }}>×</button>}
             </div>
             <select value={estadoFilter} onChange={e => setEstadoFilter(e.target.value as EstadoFlota | 'TODAS')} style={{ ...inputStyle, width: 'auto', minWidth: 165, cursor: 'pointer' }}>
               <option value="TODAS">Todos los estados ({counts.TODAS})</option>
@@ -734,11 +724,11 @@ export default function FlotasPage() {
         </div>
 
         {/* KPIs Flotas */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 1, background: 'rgba(8,16,38,0.55)', border: '1px solid rgba(60,75,100,0.3)', borderRadius: 14, overflow: 'hidden' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 1, background: 'rgba(18,30,65,0.65)', border: '1px solid rgba(80,108,165,0.22)', borderRadius: 14, overflow: 'hidden' }}>
           {kpisFlotas.map((k, i) => (
             <div key={k.label} style={{
-              padding: '14px 20px', background: 'rgba(6,12,30,0.5)',
-              borderRight: i < kpisFlotas.length - 1 ? '1px solid rgba(60,75,100,0.22)' : undefined,
+              padding: '14px 20px', background: 'rgba(255,255,255,0.04)',
+              borderRight: i < kpisFlotas.length - 1 ? '1px solid rgba(80,108,165,0.18)' : undefined,
             }}>
               <div style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.09em', color: 'rgba(145,158,178,0.7)', marginBottom: 6 }}>{k.label}</div>
               <div style={{ fontSize: 26, fontWeight: 800, color: k.color, fontFamily: 'monospace', lineHeight: 1 }}>{k.value}</div>
@@ -749,10 +739,10 @@ export default function FlotasPage() {
         {/* Tabla */}
         {loading ? (
           <div style={{ ...glass, padding: '60px 40px', textAlign: 'center' }}>
-            <p style={{ color: 'rgba(178,198,245,0.5)', fontSize: 13, margin: 0 }}>Cargando portfolio...</p>
+            <p style={{ color: '#70747B', fontSize: 13, margin: 0 }}>Cargando portfolio...</p>
           </div>
         ) : (
-          <div style={{ background: 'rgba(12,28,82,0.42)', border: '1px solid rgba(61,112,255,0.16)', borderRadius: 16, overflowX: 'auto' }}>
+          <div style={{ background: '#090A0C', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, overflowX: 'auto' }}>
             <div style={{ minWidth: 820 }}>
               {/* Cabecera */}
               <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.1fr minmax(0,100px) minmax(0,130px) minmax(0,130px) minmax(0,72px) minmax(0,128px)', padding: '12px 18px', borderBottom: '1px solid rgba(60,75,100,0.35)', background: 'rgba(8,16,38,0.65)', gap: 8 }}>
@@ -778,7 +768,7 @@ export default function FlotasPage() {
               </div>
 
               {filtered.length === 0 ? (
-                <p style={{ color: 'rgba(178,198,245,0.4)', fontSize: 12, textAlign: 'center', padding: '48px 0', margin: 0 }}>
+                <p style={{ color: '#70747B', fontSize: 12, textAlign: 'center', padding: '48px 0', margin: 0 }}>
                   {search ? `Sin resultados para "${search}"` : 'No hay flotas con estos filtros.'}
                 </p>
               ) : sortedFiltered.map(f => {
@@ -787,8 +777,8 @@ export default function FlotasPage() {
                 const col  = vctoColor(dias);
                 const nombreDifTomador = f.tomador && f.tomador.trim().toLowerCase() !== f.nombre.trim().toLowerCase();
                 return (
-                  <div key={f.id} onClick={() => setFicha(f)} style={{ display: 'grid', gridTemplateColumns: '2fr 1.1fr minmax(0,100px) minmax(0,130px) minmax(0,130px) minmax(0,72px) minmax(0,128px)', gap: 8, alignItems: 'center', padding: '13px 18px', borderBottom: '1px solid rgba(61,112,255,0.07)', cursor: 'pointer', transition: 'background 180ms' }}
-                    onMouseEnter={e => (e.currentTarget.style.background = 'rgba(51,102,255,0.04)')}
+                  <div key={f.id} onClick={() => setFicha(f)} style={{ display: 'grid', gridTemplateColumns: '2fr 1.1fr minmax(0,100px) minmax(0,130px) minmax(0,130px) minmax(0,72px) minmax(0,128px)', gap: 8, alignItems: 'center', padding: '13px 18px', borderBottom: '1px solid rgba(255,255,255,0.05)', cursor: 'pointer', transition: 'background 180ms' }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.025)')}
                     onMouseLeave={e => (e.currentTarget.style.background = '')}>
 
                     {/* Nombre / CIF */}
@@ -804,15 +794,15 @@ export default function FlotasPage() {
                     </div>
 
                     {/* Corredor */}
-                    <span style={{ fontSize: 12, color: '#BDD4FF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {f.corredor_nombre || <span style={{ color: 'rgba(178,198,245,0.3)' }}>—</span>}
+                    <span style={{ fontSize: 12, color: '#A1A1A6', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {f.corredor_nombre || <span style={{ color: 'rgba(255,255,255,0.2)' }}>—</span>}
                     </span>
 
                     {/* Periodicidad */}
                     <span style={{ fontSize: 12, color: 'rgba(178,198,245,0.8)', textTransform: 'capitalize', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{f.periodicidad || '—'}</span>
 
                     {/* F. Inicio */}
-                    <span style={{ fontSize: 12, color: 'rgba(178,198,245,0.7)', whiteSpace: 'nowrap' }}>{fmtVcto(f.fecha_inicio)}</span>
+                    <span style={{ fontSize: 12, color: '#A1A1A6', whiteSpace: 'nowrap' }}>{fmtVcto(f.fecha_inicio)}</span>
 
                     {/* F. Vencimiento */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -825,7 +815,7 @@ export default function FlotasPage() {
                     </div>
 
                     {/* Comisión */}
-                    <span style={{ fontSize: 12, color: f.comision ? '#BDD4FF' : 'rgba(178,198,245,0.35)', whiteSpace: 'nowrap' }}>
+                    <span style={{ fontSize: 12, color: f.comision ? '#A1A1A6' : 'rgba(255,255,255,0.2)', whiteSpace: 'nowrap' }}>
                       {f.comision ? `${f.comision}%` : '—'}
                     </span>
 

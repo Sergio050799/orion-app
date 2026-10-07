@@ -89,15 +89,15 @@ interface PlateCard {
 // ─── Design ───────────────────────────────────────────────────────────────────
 
 const GLASS: React.CSSProperties = {
-    background: 'rgba(12, 28, 82, 0.75)',
+    background: '#090A0C',
     border: '1px solid rgba(61, 112, 255, 0.22)',
     borderRadius: 16,
     boxShadow: '0 20px 60px -15px rgba(0,0,0,0.5)',
 };
 
 const FIELD: React.CSSProperties = {
-    background: 'rgba(6,14,50,0.6)',
-    border: '1px solid rgba(61,112,255,0.2)',
+    background: '#0D0F12',
+    border: '1px solid rgba(255,255,255,0.08)',
     borderRadius: 8,
     color: '#FFFFFF',
     fontSize: 13,
@@ -153,7 +153,7 @@ function SilverdatModal({ onClose, onSuccess }: { onClose: () => void; onSuccess
                 {error && <p style={{ margin: '8px 0 0', fontSize: 11, color: '#ef4444', fontWeight: 600 }}>{error}</p>}
                 <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
                     <button onClick={go} disabled={loading || !datId || !user || !pass} style={{ flex: 1, padding: '10px 0', borderRadius: 9, background: loading ? 'rgba(245,158,11,0.3)' : 'linear-gradient(135deg,#d97706,#f59e0b)', color: '#fff', border: 'none', fontWeight: 700, fontSize: 12, cursor: loading ? 'not-allowed' : 'pointer' }}>{loading ? 'Conectando...' : 'Iniciar sesión'}</button>
-                    <button onClick={onClose} style={{ padding: '10px 14px', borderRadius: 9, background: 'rgba(6,14,50,0.5)', color: '#BDD4FF', border: '1px solid rgba(61,112,255,0.22)', fontSize: 12, cursor: 'pointer' }}>Cancelar</button>
+                    <button onClick={onClose} style={{ padding: '10px 14px', borderRadius: 9, background: '#0D0F12', color: '#A1A1A6', border: '1px solid rgba(255,255,255,0.08)', fontSize: 12, cursor: 'pointer' }}>Cancelar</button>
                 </div>
             </div>
         </div>
@@ -173,10 +173,10 @@ function CatalogResult({ matches, selected, onSelect }: {
     if (matches.length === 1 && matches[0].score >= 90) {
         const m = matches[0];
         return (
-            <div style={{ marginTop: 10, padding: '10px 14px', background: 'rgba(51,102,255,0.08)', border: '1px solid rgba(51,102,255,0.18)', borderRadius: 10 }}>
+            <div style={{ marginTop: 10, padding: '10px 14px', background: 'rgba(67,135,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10 }}>
                 <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: '#FFFFFF' }}>{m.marca} {m.modelo}</p>
-                <p style={{ margin: '2px 0 4px', fontSize: 11, color: 'rgba(178,198,245,0.6)' }}>{m.version}</p>
-                <p style={{ margin: 0, fontSize: 10, fontFamily: 'monospace', color: 'rgba(178,198,245,0.35)' }}>id: {m.id_veh}</p>
+                <p style={{ margin: '2px 0 4px', fontSize: 11, color: '#A1A1A6' }}>{m.version}</p>
+                <p style={{ margin: 0, fontSize: 10, fontFamily: 'monospace', color: 'rgba(255,255,255,0.2)' }}>id: {m.id_veh}</p>
             </div>
         );
     }
@@ -191,14 +191,14 @@ function CatalogResult({ matches, selected, onSelect }: {
                     return (
                         <button key={m.id_veh} onClick={() => onSelect(m)} style={{
                             padding: '8px 12px', borderRadius: 8, cursor: 'pointer', textAlign: 'left',
-                            background: isSelected ? 'rgba(51,102,255,0.18)' : 'rgba(18,40,100,0.4)',
-                            border: isSelected ? '1px solid rgba(51,102,255,0.45)' : '1px solid rgba(61,112,255,0.12)',
+                            background: isSelected ? 'rgba(255,255,255,0.08)' : '#0D0F12',
+                            border: isSelected ? '1px solid rgba(67,135,255,0.35)' : '1px solid rgba(255,255,255,0.06)',
                             transition: 'all 150ms', width: '100%',
                         }}>
                             <p style={{ margin: 0, fontSize: 12, fontWeight: isSelected ? 700 : 500, color: isSelected ? '#FFFFFF' : 'rgba(178,198,245,0.85)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                 {m.version || `${m.modelo} (sin versión)`}
                             </p>
-                            {isSelected && <p style={{ margin: '2px 0 0', fontSize: 10, fontFamily: 'monospace', color: 'rgba(178,198,245,0.35)' }}>id: {m.id_veh}</p>}
+                            {isSelected && <p style={{ margin: '2px 0 0', fontSize: 10, fontFamily: 'monospace', color: 'rgba(255,255,255,0.2)' }}>id: {m.id_veh}</p>}
                         </button>
                     );
                 })}
@@ -254,7 +254,7 @@ function ManualForm({ card, onUpdate }: {
     };
 
     return (
-        <div style={{ marginTop: 10, padding: '14px 16px', background: 'rgba(6,14,50,0.4)', border: '1px solid rgba(61,112,255,0.12)', borderRadius: 12 }}>
+        <div style={{ marginTop: 10, padding: '14px 16px', background: '#0D0F12', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12 }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 70px 70px', gap: 8 }}>
                 <input
                     placeholder="Marca"
@@ -285,7 +285,7 @@ function ManualForm({ card, onUpdate }: {
             </div>
 
             {card.manualCatStatus === 'loading' && (
-                <p style={{ margin: '8px 0 0', fontSize: 11, color: 'rgba(178,198,245,0.4)' }}>Buscando...</p>
+                <p style={{ margin: '8px 0 0', fontSize: 11, color: '#70747B' }}>Buscando...</p>
             )}
 
             {card.manualCatStatus === 'done' && card.manualMatches.length === 0 && (
@@ -649,9 +649,9 @@ export default function VehiculosPage() {
             {/* Header + tab toggle */}
             <div style={{ marginBottom: 18, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
-                    <div style={{ width: 4, height: 48, borderRadius: 2, background: 'linear-gradient(180deg,#1240CC,#3366FF)', marginTop: 2, flexShrink: 0 }} />
+                    <div style={{ width: 4, height: 48, borderRadius: 2, background: '#4387FF', marginTop: 2, flexShrink: 0 }} />
                     <div>
-                        <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#3366FF', marginBottom: 3 }}>Consulta</p>
+                        <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#4387FF', marginBottom: 3 }}>Consulta</p>
                         <h1 style={{ fontSize: 26, fontWeight: 800, color: '#FFFFFF', margin: 0, lineHeight: 1.2 }}>Vehículos</h1>
                     </div>
                 </div>
@@ -665,9 +665,9 @@ export default function VehiculosPage() {
                         <button key={t} onClick={() => setTab(t)} style={{
                             padding: '7px 20px', fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer',
                             borderRadius: t === 'identificar' ? '10px 0 0 10px' : '0 10px 10px 0',
-                            background: tab === t ? 'rgba(18,64,204,0.35)' : 'rgba(6,14,50,0.5)',
-                            color: tab === t ? '#3D7BFF' : 'rgba(178,198,245,0.5)',
-                            boxShadow: tab === t ? '0 0 0 1px rgba(51,102,255,0.4) inset' : '0 0 0 1px rgba(61,112,255,0.12) inset',
+                            background: tab === t ? 'rgba(67,135,255,0.15)' : '#0D0F12',
+                            color: tab === t ? '#4387FF' : '#70747B',
+                            boxShadow: tab === t ? '0 0 0 1px rgba(67,135,255,0.3) inset' : '0 0 0 1px rgba(255,255,255,0.06) inset',
                             transition: 'all 180ms', letterSpacing: '0.04em',
                         }}>{l}</button>
                     ))}
@@ -677,7 +677,7 @@ export default function VehiculosPage() {
 
             {/* Tab: Masivo */}
             {tab === 'masivo' && (
-                <div style={{ flex: 1, minHeight: 0, background: 'rgba(0,7,45,0.85)', border: '1px solid rgba(51,102,255,0.1)', borderRadius: 16, overflow: 'hidden' }}>
+                <div style={{ flex: 1, minHeight: 0, background: '#090A0C', border: '1px solid rgba(67,135,255,0.08)', borderRadius: 16, overflow: 'hidden' }}>
                     <IdentificacionMasiva />
                 </div>
             )}
@@ -687,7 +687,7 @@ export default function VehiculosPage() {
 
                 {/* ── LEFT PANEL ─────────────────────────────────────────── */}
                 <div style={{ ...GLASS, padding: 22, flex: '0 0 320px', position: 'sticky', top: 16 }}>
-                    <label style={{ fontSize: 10, fontWeight: 800, color: 'rgba(51,102,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8, display: 'block' }}>
+                    <label style={{ fontSize: 10, fontWeight: 800, color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8, display: 'block' }}>
                         Matrículas
                     </label>
                     <textarea
@@ -699,15 +699,15 @@ export default function VehiculosPage() {
                         spellCheck={false}
                         style={{
                             width: '100%', minHeight: 160,
-                            background: 'rgba(6,14,50,0.55)', border: '1px solid rgba(51,102,255,0.15)',
+                            background: '#0D0F12', border: '1px solid rgba(67,135,255,0.12)',
                             borderRadius: 10, color: '#FFFFFF',
                             fontFamily: '"JetBrains Mono", "Fira Code", monospace',
                             fontSize: 14, fontWeight: 600, letterSpacing: '0.05em',
                             padding: '12px 14px', outline: 'none', resize: 'vertical', lineHeight: 1.8,
-                            caretColor: '#3366FF',
+                            caretColor: '#4387FF',
                         }}
                     />
-                    <p style={{ fontSize: 10, color: 'rgba(178,198,245,0.4)', margin: '6px 0 10px', lineHeight: 1.4 }}>
+                    <p style={{ fontSize: 10, color: '#70747B', margin: '6px 0 10px', lineHeight: 1.4 }}>
                         Una o varias. Ctrl+Enter para consultar.
                     </p>
 
@@ -718,9 +718,9 @@ export default function VehiculosPage() {
                                 style={{
                                     flex: 1, padding: '8px 0', borderRadius: 8, fontSize: 11, fontWeight: 700,
                                     cursor: 'pointer', transition: 'all 0.15s',
-                                    background: queryMode === mode ? (mode === 'year' ? 'rgba(16,185,129,0.18)' : 'rgba(51,102,255,0.18)') : 'rgba(6,14,50,0.4)',
+                                    background: queryMode === mode ? (mode === 'year' ? 'rgba(16,185,129,0.18)' : 'rgba(255,255,255,0.08)') : '#0D0F12',
                                     color: queryMode === mode ? (mode === 'year' ? '#10b981' : '#6699ff') : 'rgba(178,198,245,0.45)',
-                                    border: queryMode === mode ? `1px solid ${mode === 'year' ? 'rgba(16,185,129,0.4)' : 'rgba(51,102,255,0.4)'}` : '1px solid rgba(61,112,255,0.1)',
+                                    border: queryMode === mode ? `1px solid ${mode === 'year' ? 'rgba(16,185,129,0.4)' : 'rgba(67,135,255,0.3)'}` : '1px solid rgba(255,255,255,0.06)',
                                 }}>
                                 {label}
                             </button>
@@ -743,7 +743,7 @@ export default function VehiculosPage() {
                         disabled={!input.trim() || globalLoading}
                         style={{
                             width: '100%', padding: '13px 0', borderRadius: 10,
-                            background: globalLoading ? 'rgba(18,64,204,0.3)' : !input.trim() ? 'rgba(18,64,204,0.2)' : 'linear-gradient(135deg,#1240CC,#3366FF)',
+                            background: globalLoading ? 'rgba(67,135,255,0.25)' : !input.trim() ? 'rgba(67,135,255,0.12)' : '#4387FF',
                             color: '#fff', border: 'none', fontSize: 13, fontWeight: 800,
                             letterSpacing: '0.06em', textTransform: 'uppercase',
                             cursor: (!input.trim() || globalLoading) ? 'not-allowed' : 'pointer',
@@ -766,25 +766,25 @@ export default function VehiculosPage() {
                     {hasQueried && cards.length > 0 && (
                         <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 5 }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
-                                <span style={{ color: 'rgba(178,198,245,0.5)' }}>Total</span>
+                                <span style={{ color: '#70747B' }}>Total</span>
                                 <span style={{ color: '#FFFFFF', fontWeight: 700 }}>{cards.length} matrículas</span>
                             </div>
                             {sdDone > 0 && (
                                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
-                                    <span style={{ color: 'rgba(178,198,245,0.5)' }}>Con datos</span>
+                                    <span style={{ color: '#70747B' }}>Con datos</span>
                                     <span style={{ color: '#10b981', fontWeight: 700 }}>{sdDone}</span>
                                 </div>
                             )}
                             {sdFailed > 0 && (
                                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
-                                    <span style={{ color: 'rgba(178,198,245,0.5)' }}>Sin Silverdat</span>
+                                    <span style={{ color: '#70747B' }}>Sin Silverdat</span>
                                     <span style={{ color: '#f59e0b', fontWeight: 700 }}>{sdFailed}</span>
                                 </div>
                             )}
                             {sdPending > 0 && (
                                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
-                                    <span style={{ color: 'rgba(178,198,245,0.5)' }}>Pendientes</span>
-                                    <span style={{ color: '#3366FF', fontWeight: 700 }}>{sdPending}</span>
+                                    <span style={{ color: '#70747B' }}>Pendientes</span>
+                                    <span style={{ color: '#4387FF', fontWeight: 700 }}>{sdPending}</span>
                                 </div>
                             )}
                         </div>
@@ -807,10 +807,10 @@ export default function VehiculosPage() {
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12 }}>
                     {!hasQueried && (
                         <div style={{ textAlign: 'center', padding: '80px 0', opacity: 0.3 }}>
-                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#3366FF" strokeWidth="1.2" style={{ margin: '0 auto 14px', display: 'block' }}>
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#4387FF" strokeWidth="1.2" style={{ margin: '0 auto 14px', display: 'block' }}>
                                 <rect x="2" y="5" width="20" height="14" rx="2" /><line x1="2" y1="10" x2="22" y2="10" />
                             </svg>
-                            <p style={{ color: '#BDD4FF', fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Introduce matrículas y pulsa Consultar</p>
+                            <p style={{ color: '#A1A1A6', fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Introduce matrículas y pulsa Consultar</p>
                         </div>
                     )}
 
@@ -819,21 +819,21 @@ export default function VehiculosPage() {
                         <div style={{ ...GLASS, borderRadius: 14, overflow: 'hidden' }}>
                             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                                 <thead>
-                                    <tr style={{ background: 'rgba(6,14,50,0.8)', borderBottom: '1px solid rgba(51,102,255,0.2)' }}>
+                                    <tr style={{ background: '#090A0C', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
                                         {['#', 'Matrícula', 'Fecha Matric. (SD)', 'Año Fab. (SD)', 'Fecha Local', 'Estado'].map(h => (
-                                            <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontSize: 10, fontWeight: 800, color: 'rgba(178,198,245,0.5)', textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>{h}</th>
+                                            <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontSize: 10, fontWeight: 800, color: '#70747B', textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>{h}</th>
                                         ))}
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {cards.map((card, i) => {
                                         const sd = card.sdVehicle;
-                                        const stripe = i % 2 === 1 ? 'rgba(6,14,50,0.25)' : 'transparent';
-                                        const statusColor = card.sdStatus === 'ok' ? '#10b981' : card.sdStatus === 'error' ? '#f59e0b' : card.sdStatus === 'loading' ? '#3366FF' : 'rgba(178,198,245,0.3)';
+                                        const stripe = i % 2 === 1 ? 'rgba(255,255,255,0.02)' : 'transparent';
+                                        const statusColor = card.sdStatus === 'ok' ? '#10b981' : card.sdStatus === 'error' ? '#f59e0b' : card.sdStatus === 'loading' ? '#4387FF' : 'rgba(255,255,255,0.2)';
                                         const statusLabel = card.sdStatus === 'ok' ? '✓' : card.sdStatus === 'error' ? card.sdError || 'Sin datos' : card.sdStatus === 'loading' ? '…' : '—';
                                         return (
-                                            <tr key={i} style={{ background: stripe, borderBottom: '1px solid rgba(61,112,255,0.07)' }}>
-                                                <td style={{ padding: '9px 14px', color: 'rgba(178,198,245,0.3)', fontSize: 11, fontWeight: 700 }}>{i + 1}</td>
+                                            <tr key={i} style={{ background: stripe, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                                <td style={{ padding: '9px 14px', color: 'rgba(255,255,255,0.2)', fontSize: 11, fontWeight: 700 }}>{i + 1}</td>
                                                 <td style={{ padding: '9px 14px', fontFamily: '"JetBrains Mono",monospace', fontWeight: 800, color: '#FFFFFF', letterSpacing: '0.06em' }}>{card.plate}</td>
                                                 <td style={{ padding: '9px 14px', fontWeight: 700, color: sd?.fecha_matriculacion ? '#10b981' : 'rgba(178,198,245,0.25)', fontFamily: 'monospace' }}>{sd?.fecha_matriculacion || '—'}</td>
                                                 <td style={{ padding: '9px 14px', fontWeight: 700, color: sd?.anyo_fabricacion ? '#6699ff' : 'rgba(178,198,245,0.25)', fontFamily: 'monospace' }}>{sd?.anyo_fabricacion || '—'}</td>
@@ -858,11 +858,11 @@ export default function VehiculosPage() {
                                 <div style={{ padding: '13px 18px', display: 'flex', alignItems: 'center', gap: 14 }}>
                                     {/* Plate badge */}
                                     <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-                                        <div style={{ width: 20, height: 34, background: 'linear-gradient(180deg,#003DA5,#002D7A)', borderRadius: '4px 0 0 4px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1, border: '1px solid rgba(51,102,255,0.3)', borderRight: 'none' }}>
+                                        <div style={{ width: 20, height: 34, background: 'linear-gradient(180deg,#003DA5,#002D7A)', borderRadius: '4px 0 0 4px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1, border: '1px solid rgba(67,135,255,0.25)', borderRight: 'none' }}>
                                             <svg width="9" height="9" viewBox="0 0 18 18" fill="none">{[...Array(12)].map((_, j) => { const a = (j * 30 - 90) * Math.PI / 180; return <circle key={j} cx={9 + 6 * Math.cos(a)} cy={9 + 6 * Math.sin(a)} r="0.8" fill="#FFD700" />; })}</svg>
                                             <span style={{ color: '#FFF', fontSize: 5, fontWeight: 800 }}>E</span>
                                         </div>
-                                        <div style={{ height: 34, background: 'rgba(255,255,255,0.04)', borderRadius: '0 4px 4px 0', border: '1px solid rgba(61,112,255,0.2)', borderLeft: 'none', display: 'flex', alignItems: 'center', padding: '0 10px' }}>
+                                        <div style={{ height: 34, background: 'rgba(255,255,255,0.04)', borderRadius: '0 4px 4px 0', border: '1px solid rgba(255,255,255,0.08)', borderLeft: 'none', display: 'flex', alignItems: 'center', padding: '0 10px' }}>
                                             <span style={{ fontFamily: '"JetBrains Mono",monospace', fontSize: 15, fontWeight: 800, color: '#FFFFFF', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>{card.plate}</span>
                                         </div>
                                     </div>
@@ -871,7 +871,7 @@ export default function VehiculosPage() {
                                     <div style={{ flex: 1, minWidth: 0 }}>
                                         {card.date
                                             ? <span style={{ fontSize: 17, fontWeight: 800, color: '#FFFFFF' }}>{card.date}</span>
-                                            : <span style={{ fontSize: 13, color: 'rgba(178,198,245,0.4)', fontStyle: 'italic' }}>Sin fecha</span>
+                                            : <span style={{ fontSize: 13, color: '#70747B', fontStyle: 'italic' }}>Sin fecha</span>
                                         }
                                         {sd?.marca && (
                                             <div style={{ fontSize: 12, color: 'rgba(178,198,245,0.65)', marginTop: 2, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -945,7 +945,7 @@ export default function VehiculosPage() {
 
                                         {/* Catalog match */}
                                         {card.catStatus === 'loading' && (
-                                            <p style={{ margin: '10px 0 0', fontSize: 11, color: 'rgba(178,198,245,0.4)' }}>Buscando en catálogo...</p>
+                                            <p style={{ margin: '10px 0 0', fontSize: 11, color: '#70747B' }}>Buscando en catálogo...</p>
                                         )}
                                         {hasCat && (
                                             <CatalogResult
@@ -959,13 +959,13 @@ export default function VehiculosPage() {
 
                                 {/* ── Manual fallback — always available ──── */}
                                 {card.sdStatus !== 'loading' && (
-                                    <div style={{ borderTop: '1px solid rgba(61,112,255,0.1)', padding: '0 18px 14px' }}>
+                                    <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '0 18px 14px' }}>
                                         <button
                                             onClick={() => updateCard(card.originalInput, { manualOpen: !card.manualOpen })}
                                             style={{
                                                 width: '100%', marginTop: 12, padding: '8px 12px', borderRadius: 8,
-                                                background: 'rgba(61,112,255,0.07)', border: '1px solid rgba(61,112,255,0.15)',
-                                                color: 'rgba(178,198,245,0.6)', fontSize: 11, fontWeight: 700,
+                                                background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)',
+                                                color: '#A1A1A6', fontSize: 11, fontWeight: 700,
                                                 letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer',
                                                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                                             }}

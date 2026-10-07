@@ -99,7 +99,7 @@ const HojaSinco = forwardRef<HojaSincoHandle, Props>(function HojaSinco({ header
             <tr style={{ background: '#f3f4f6', position: 'sticky', top: 0, zIndex: 1 }}>
               <th style={{ ...thStyle, width: 44, color: '#9ca3af' }}>#</th>
               {SINCO_COL_NAMES.map((name, i) => (
-                <th key={name} style={{ ...thStyle, background: i < 5 ? '#eff0ff' : '#f3f4f6', color: i < 5 ? '#4338ca' : '#374151' }}>
+                <th key={name} style={{ ...thStyle, background: i < 5 ? 'rgba(67,135,255,0.08)' : '#f3f4f6', color: i < 5 ? '#4387FF' : '#374151' }}>
                   {name}
                 </th>
               ))}

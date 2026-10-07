@@ -14,6 +14,7 @@
     "docxtemplater": "^3.68.3",
     "exceljs": "^4.4.0",
     "file-saver": "^2.0.5",
+    "html2pdf.js": "^0.14.0",
     "jscanify": "^1.4.2",
     "jszip": "^3.10.1",
     "next": "16.1.6",

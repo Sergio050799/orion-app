@@ -121,7 +121,7 @@ export default function FlotasContratadas({ onSelect }: Props) {
     const hr = ws.addRow(headers);
     hr.height = 22;
     hr.eachCell(cell => {
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1240CC' } };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4387FF' } };
       cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, name: 'Calibri', size: 10 };
       cell.alignment = { horizontal: 'center', vertical: 'middle' };
     });
@@ -177,8 +177,8 @@ export default function FlotasContratadas({ onSelect }: Props) {
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button onClick={handleDescargarPlantilla} style={{
-            background: 'rgba(6,14,50,0.5)', border: '1px solid rgba(61,112,255,0.22)',
-            borderRadius: 10, padding: '8px 16px', color: '#BDD4FF', fontSize: 12, cursor: 'pointer', fontWeight: 500,
+            background: 'transparent', border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: 10, padding: '8px 16px', color: '#A1A1A6', fontSize: 12, cursor: 'pointer', fontWeight: 500,
           }}>
             Plantilla Excel
           </button>
@@ -225,7 +225,7 @@ export default function FlotasContratadas({ onSelect }: Props) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
         <div style={{
           display: 'flex', alignItems: 'center', gap: 8,
-          background: 'rgba(6,14,50,0.5)', border: '1px solid rgba(61,112,255,0.22)',
+          background: '#0D0F12', border: '1px solid rgba(255,255,255,0.08)',
           borderRadius: 10, padding: '0 14px', flex: 1, maxWidth: 340,
         }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(70,120,255,0.5)" strokeWidth="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
@@ -253,15 +253,15 @@ export default function FlotasContratadas({ onSelect }: Props) {
       })()}
 
       {/* Tabla */}
-      <div style={{ background: 'rgba(12,28,82,0.42)', border: '1px solid rgba(61,112,255,0.16)', borderRadius: 16, overflowX: 'auto' }}>
+      <div style={{ background: '#090A0C', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, overflowX: 'auto' }}>
         <div style={{ minWidth: 900 }}>
           {/* Cabecera */}
           <div style={{
             display: 'grid',
             gridTemplateColumns: '1.6fr 1fr 130px 90px 110px 110px 70px 110px',
             padding: '10px 18px',
-            borderBottom: '1px solid rgba(51,102,255,0.15)',
-            background: 'rgba(6,14,50,0.4)',
+            borderBottom: '1px solid rgba(255,255,255,0.08)',
+            background: 'rgba(255,255,255,0.02)',
           }}>
             {['Nombre / CIF', 'Corredor', 'Forma Pago', 'Periodicidad', 'F. Inicio', 'F. Vencimiento', 'Comis.', 'Estado'].map(h => (
               <span key={h} style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.10em', color: '#10b981' }}>{h}</span>
@@ -286,7 +286,7 @@ export default function FlotasContratadas({ onSelect }: Props) {
                   display: 'grid',
                   gridTemplateColumns: '1.6fr 1fr 130px 90px 110px 110px 70px 110px',
                   alignItems: 'center', padding: '11px 18px',
-                  borderBottom: '1px solid rgba(61,112,255,0.07)',
+                  borderBottom: '1px solid rgba(255,255,255,0.05)',
                   cursor: 'pointer', transition: 'background 180ms',
                 }}
                 onMouseEnter={e => (e.currentTarget.style.background = 'rgba(16,185,129,0.04)')}
@@ -306,7 +306,7 @@ export default function FlotasContratadas({ onSelect }: Props) {
 
                 {/* Corredor */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <span style={{ fontSize: 12, color: '#BDD4FF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <span style={{ fontSize: 12, color: '#A1A1A6', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {corr?.nombre ?? <span style={{ color: 'rgba(178,198,245,0.3)' }}>—</span>}
                   </span>
                   {corr?.comercial && <span style={{ fontSize: 10, color: 'rgba(178,198,245,0.4)' }}>{corr.comercial}</span>}

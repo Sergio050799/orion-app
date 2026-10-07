@@ -87,7 +87,7 @@ interface Props {
 // ─── Design tokens ────────────────────────────────────────────────────────────
 
 const glass: React.CSSProperties = {
-    background: 'rgba(12, 28, 82, 0.5)',
+    background: '#090A0C',
     border: '1px solid rgba(61, 112, 255, 0.18)',
     borderRadius: 16,
 };
@@ -118,12 +118,12 @@ function SilverdatModal({ onClose, onSuccess }: { onClose: () => void; onSuccess
 
     return (
         <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }} onClick={onClose}>
-            <div onClick={e => e.stopPropagation()} style={{ width: 360, padding: 28, borderRadius: 18, background: 'rgba(8,22,72,0.97)', border: '1px solid rgba(245,158,11,0.25)', boxShadow: '0 30px 80px rgba(0,0,0,0.7)' }}>
+            <div onClick={e => e.stopPropagation()} style={{ width: 360, padding: 28, borderRadius: 18, background: '#090A0C', border: '1px solid rgba(245,158,11,0.25)', boxShadow: '0 30px 80px rgba(0,0,0,0.7)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
                     <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg, #f59e0b, #d97706)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 800, color: '#fff' }}>S</div>
                     <div>
                         <h2 style={{ margin: 0, fontSize: 16, color: '#FFFFFF', fontWeight: 700 }}>Silverdat</h2>
-                        <p style={{ margin: 0, fontSize: 11, color: 'rgba(178,198,245,0.6)' }}>Credenciales DAT / fastVALUATE</p>
+                        <p style={{ margin: 0, fontSize: 11, color: '#A1A1A6' }}>Credenciales DAT / fastVALUATE</p>
                     </div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -137,7 +137,7 @@ function SilverdatModal({ onClose, onSuccess }: { onClose: () => void; onSuccess
                     <button onClick={handleLogin} disabled={loading || !datId.trim() || !user.trim() || !pass.trim()} style={{ flex: 1, fontSize: 12, fontWeight: 700, padding: '10px 0', borderRadius: 10, background: loading ? 'rgba(245,158,11,0.3)' : 'linear-gradient(135deg, #d97706, #f59e0b)', color: '#fff', border: 'none', cursor: loading ? 'not-allowed' : 'pointer' }}>
                         {loading ? 'Conectando...' : 'Iniciar sesión'}
                     </button>
-                    <button onClick={onClose} style={{ fontSize: 12, padding: '10px 16px', borderRadius: 10, background: 'rgba(6,14,50,0.5)', color: '#BDD4FF', border: '1px solid rgba(61,112,255,0.22)', cursor: 'pointer' }}>Cancelar</button>
+                    <button onClick={onClose} style={{ fontSize: 12, padding: '10px 16px', borderRadius: 10, background: '#0D0F12', color: '#A1A1A6', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer' }}>Cancelar</button>
                 </div>
             </div>
         </div>
@@ -180,8 +180,8 @@ function ModeToggle({ value, onChange }: { value: ProcessMode; onChange: (m: Pro
                         onClick={() => onChange(opt.id)}
                         style={{
                             flex: 1, textAlign: 'left', padding: '14px 16px', borderRadius: 12, cursor: 'pointer',
-                            background: active ? opt.bg : 'rgba(12,28,82,0.4)',
-                            border: `1.5px solid ${active ? opt.accent : 'rgba(61,112,255,0.15)'}`,
+                            background: active ? opt.bg : '#090A0C',
+                            border: `1.5px solid ${active ? opt.accent : 'rgba(255,255,255,0.08)'}`,
                             transition: 'all 0.18s',
                             position: 'relative', overflow: 'hidden',
                         }}
@@ -207,13 +207,13 @@ function ModeToggle({ value, onChange }: { value: ProcessMode; onChange: (m: Pro
                             <span style={{
                                 marginLeft: 'auto', fontSize: 9, fontWeight: 800, letterSpacing: '0.08em',
                                 textTransform: 'uppercase', padding: '2px 7px', borderRadius: 20,
-                                background: active ? opt.tagBg : 'rgba(61,112,255,0.08)',
-                                color: active ? opt.accent : 'rgba(178,198,245,0.35)',
+                                background: active ? opt.tagBg : 'rgba(255,255,255,0.06)',
+                                color: active ? opt.accent : 'rgba(255,255,255,0.2)',
                             }}>
                                 {opt.tag}
                             </span>
                         </div>
-                        <p style={{ margin: 0, fontSize: 11, color: active ? 'rgba(178,198,245,0.65)' : 'rgba(178,198,245,0.35)', lineHeight: 1.5 }}>
+                        <p style={{ margin: 0, fontSize: 11, color: active ? 'rgba(178,198,245,0.65)' : 'rgba(255,255,255,0.2)', lineHeight: 1.5 }}>
                             {opt.desc}
                         </p>
                     </button>
@@ -231,7 +231,7 @@ function estadoBg(estado: string) {
         case 'OFERTADA':   return 'rgba(59,130,246,0.15)';
         case 'EN ESTUDIO': return 'rgba(245,158,11,0.15)';
         case 'RECHAZADA':  return 'rgba(239,68,68,0.15)';
-        default:           return 'rgba(61,112,255,0.15)';
+        default:           return 'rgba(255,255,255,0.08)';
     }
 }
 function estadoColor(estado: string) {
@@ -240,7 +240,7 @@ function estadoColor(estado: string) {
         case 'OFERTADA':   return '#3b82f6';
         case 'EN ESTUDIO': return '#f59e0b';
         case 'RECHAZADA':  return '#ef4444';
-        default:           return '#BDD4FF';
+        default:           return '#A1A1A6';
     }
 }
 
@@ -374,7 +374,7 @@ function Step1({
             <div style={{ textAlign: 'center', marginBottom: 32 }}>
                 <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#f59e0b', marginBottom: 8 }}>Paso 1 de 3</div>
                 <h2 style={{ fontSize: 22, fontWeight: 800, color: '#FFFFFF', margin: '0 0 8px' }}>Plantilla de vehículos</h2>
-                <p style={{ fontSize: 13, color: 'rgba(178,198,245,0.6)', margin: 0 }}>
+                <p style={{ fontSize: 13, color: '#A1A1A6', margin: 0 }}>
                     Descarga la plantilla, rellena los datos de los vehículos y súbela.
                 </p>
             </div>
@@ -384,14 +384,14 @@ function Step1({
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
                     <div>
                         <p style={{ margin: '0 0 4px', fontSize: 13, fontWeight: 700, color: '#FFFFFF' }}>1. Descargar plantilla</p>
-                        <p style={{ margin: 0, fontSize: 11, color: 'rgba(178,198,245,0.5)' }}>Excel con columnas: matrícula, marca, modelo, tipo, coberturas, prima referencia...</p>
+                        <p style={{ margin: 0, fontSize: 11, color: '#70747B' }}>Excel con columnas: matrícula, marca, modelo, tipo, coberturas, prima referencia...</p>
                     </div>
                     <button
                         onClick={handleDownload}
                         disabled={downloadLoading}
                         style={{
                             flexShrink: 0, padding: '10px 20px', borderRadius: 10,
-                            background: downloadLoading ? 'rgba(51,102,255,0.2)' : 'linear-gradient(135deg, #1240CC, #3366FF)',
+                            background: downloadLoading ? 'rgba(67,135,255,0.15)' : '#4387FF',
                             color: '#fff', border: 'none', fontSize: 12, fontWeight: 700,
                             cursor: downloadLoading ? 'not-allowed' : 'pointer',
                             display: 'flex', alignItems: 'center', gap: 8,
@@ -413,21 +413,21 @@ function Step1({
                     onDragOver={e => { e.preventDefault(); }}
                     onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
                     style={{
-                        border: '2px dashed rgba(61,112,255,0.3)',
+                        border: '2px dashed rgba(255,255,255,0.1)',
                         borderRadius: 12, padding: '32px 24px', textAlign: 'center',
                         cursor: 'pointer', transition: 'border-color 0.2s',
-                        background: 'rgba(18,64,204,0.05)',
+                        background: 'rgba(67,135,255,0.04)',
                     }}
-                    onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(61,112,255,0.55)'}
-                    onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(61,112,255,0.3)'}
+                    onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'}
+                    onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'}
                 >
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(61,112,255,0.6)" strokeWidth="1.5" style={{ margin: '0 auto 12px' }}>
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" style={{ margin: '0 auto 12px' }}>
                         <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" />
                     </svg>
                     <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'rgba(178,198,245,0.7)' }}>
                         {uploadedRows ? `✓ ${uploadedRows.length} vehículos detectados` : 'Haz click o arrastra tu Excel aquí'}
                     </p>
-                    {!uploadedRows && <p style={{ margin: '4px 0 0', fontSize: 11, color: 'rgba(178,198,245,0.35)' }}>.xlsx</p>}
+                    {!uploadedRows && <p style={{ margin: '4px 0 0', fontSize: 11, color: 'rgba(255,255,255,0.2)' }}>.xlsx</p>}
                     <input ref={fileInputRef} type="file" accept=".xlsx,.xls" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = ''; }} />
                 </div>
 
@@ -485,12 +485,12 @@ function Step1({
                                         const mat = r['matricula']?.trim().replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
                                         const isDup = duplicadas.includes(mat);
                                         return (
-                                            <span key={i} style={{ fontSize: 10, fontWeight: 700, color: isDup ? '#ef4444' : 'rgba(178,198,245,0.6)', background: isDup ? 'rgba(239,68,68,0.1)' : 'rgba(61,112,255,0.1)', border: `1px solid ${isDup ? 'rgba(239,68,68,0.3)' : 'rgba(61,112,255,0.15)'}`, borderRadius: 4, padding: '2px 7px', fontFamily: 'monospace' }}>
+                                            <span key={i} style={{ fontSize: 10, fontWeight: 700, color: isDup ? '#ef4444' : '#A1A1A6', background: isDup ? 'rgba(239,68,68,0.1)' : 'rgba(255,255,255,0.06)', border: `1px solid ${isDup ? 'rgba(239,68,68,0.3)' : 'rgba(255,255,255,0.08)'}`, borderRadius: 4, padding: '2px 7px', fontFamily: 'monospace' }}>
                                                 {r['matricula']}
                                             </span>
                                         );
                                     })}
-                                    {uploadedRows.length > 8 && <span style={{ fontSize: 10, color: 'rgba(178,198,245,0.4)' }}>+{uploadedRows.length - 8} más</span>}
+                                    {uploadedRows.length > 8 && <span style={{ fontSize: 10, color: '#70747B' }}>+{uploadedRows.length - 8} más</span>}
                                 </div>
                             </div>
                         </>
@@ -518,7 +518,7 @@ function Step1({
                         {flotasMatch.map(c => (
                             <div key={c.id} style={{ fontSize: 11, color: 'rgba(178,198,245,0.75)', marginBottom: 5, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                                 <span style={{ fontWeight: 700 }}>{c.nombre}</span>
-                                {c.header.tomador && <span style={{ color: 'rgba(178,198,245,0.5)' }}>{c.header.tomador}</span>}
+                                {c.header.tomador && <span style={{ color: '#70747B' }}>{c.header.tomador}</span>}
                                 <span style={{
                                     padding: '1px 8px', borderRadius: 20,
                                     fontSize: 10, fontWeight: 800,
@@ -535,7 +535,7 @@ function Step1({
                     </div>
                     <button
                         onClick={() => setFlotasMatch([])}
-                        style={{ background: 'none', border: 'none', color: 'rgba(178,198,245,0.35)', cursor: 'pointer', padding: '2px 4px', flexShrink: 0, fontSize: 16, lineHeight: 1 }}
+                        style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.2)', cursor: 'pointer', padding: '2px 4px', flexShrink: 0, fontSize: 16, lineHeight: 1 }}
                         title="Ignorar aviso"
                     >✕</button>
                 </div>
@@ -779,14 +779,14 @@ function Step2({
             <div style={{ textAlign: 'center', marginBottom: 32 }}>
                 <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#f59e0b', marginBottom: 8 }}>Paso 2 de 3</div>
                 <h2 style={{ fontSize: 22, fontWeight: 800, color: '#FFFFFF', margin: '0 0 8px' }}>Procesado automático</h2>
-                <p style={{ fontSize: 13, color: 'rgba(178,198,245,0.6)', margin: 0 }}>
+                <p style={{ fontSize: 13, color: '#A1A1A6', margin: 0 }}>
                     Consultando Silverdat y catálogo SINCO para {progress.total} vehículos
                 </p>
             </div>
 
             {!started ? (
                 <div style={{ textAlign: 'center' }}>
-                    <p style={{ fontSize: 13, color: 'rgba(178,198,245,0.6)', marginBottom: 24 }}>
+                    <p style={{ fontSize: 13, color: '#A1A1A6', marginBottom: 24 }}>
                         Se consultará Silverdat por cada matrícula (~{Math.ceil(progress.total * 0.5)} segundos)
                     </p>
                     <button onClick={checkAndRun} style={{
@@ -815,7 +815,7 @@ function Step2({
                                 )}
                             </div>
                         </div>
-                        <div style={{ height: 8, borderRadius: 4, background: 'rgba(61,112,255,0.15)', overflow: 'hidden' }}>
+                        <div style={{ height: 8, borderRadius: 4, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
                             <div style={{
                                 height: '100%', borderRadius: 4, transition: 'width 0.4s ease',
                                 width: `${pct}%`,
@@ -823,7 +823,7 @@ function Step2({
                             }} />
                         </div>
                         {progress.current < progress.total && (
-                            <p style={{ margin: '8px 0 0', fontSize: 11, color: 'rgba(178,198,245,0.5)' }}>
+                            <p style={{ margin: '8px 0 0', fontSize: 11, color: '#70747B' }}>
                                 Restante estimado: ~{Math.ceil((progress.total - progress.current) * 2.5)}s · Consulta secuencial para fiabilidad máxima
                             </p>
                         )}
@@ -832,10 +832,10 @@ function Step2({
                     {/* Log */}
                     <div style={{ ...glass, padding: 16, maxHeight: 220, overflowY: 'auto' }}>
                         {progress.log.length === 0 ? (
-                            <p style={{ margin: 0, fontSize: 12, color: 'rgba(178,198,245,0.4)', textAlign: 'center' }}>Iniciando...</p>
+                            <p style={{ margin: 0, fontSize: 12, color: '#70747B', textAlign: 'center' }}>Iniciando...</p>
                         ) : (
                             progress.log.map((entry, i) => (
-                                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '4px 0', borderBottom: i < progress.log.length - 1 ? '1px solid rgba(61,112,255,0.07)' : 'none' }}>
+                                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '4px 0', borderBottom: i < progress.log.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
                                     <span style={{ fontSize: 12, color: entry.ok ? '#10b981' : '#ef4444', flexShrink: 0 }}>{entry.ok ? '✓' : '✗'}</span>
                                     <span style={{ fontSize: 12, fontFamily: 'monospace', fontWeight: 700, color: '#FFFFFF', flexShrink: 0 }}>{entry.plate}</span>
                                     {entry.ok && <span style={{ fontSize: 11, color: 'rgba(178,198,245,0.55)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{entry.marca} {entry.modelo}</span>}
@@ -854,19 +854,19 @@ function Step2({
                             <div style={{ display: 'flex', gap: 16, marginBottom: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
                                 <div style={{ textAlign: 'center' }}>
                                     <div style={{ fontSize: 24, fontWeight: 900, color: '#10b981' }}>{okCount}</div>
-                                    <div style={{ fontSize: 10, color: 'rgba(178,198,245,0.5)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Con Silverdat</div>
+                                    <div style={{ fontSize: 10, color: '#70747B', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Con Silverdat</div>
                                 </div>
-                                <div style={{ width: 1, background: 'rgba(61,112,255,0.2)' }} />
+                                <div style={{ width: 1, background: 'rgba(255,255,255,0.08)' }} />
                                 <div style={{ textAlign: 'center' }}>
                                     <div style={{ fontSize: 24, fontWeight: 900, color: failedCount > 0 ? '#f59e0b' : '#10b981' }}>{failedCount}</div>
-                                    <div style={{ fontSize: 10, color: 'rgba(178,198,245,0.5)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Sin datos</div>
+                                    <div style={{ fontSize: 10, color: '#70747B', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Sin datos</div>
                                 </div>
                                 {cacheCount > 0 && (
                                     <>
-                                        <div style={{ width: 1, background: 'rgba(61,112,255,0.2)' }} />
+                                        <div style={{ width: 1, background: 'rgba(255,255,255,0.08)' }} />
                                         <div style={{ textAlign: 'center' }}>
                                             <div style={{ fontSize: 24, fontWeight: 900, color: '#6366f1' }}>{cacheCount}</div>
-                                            <div style={{ fontSize: 10, color: 'rgba(178,198,245,0.5)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Del historial</div>
+                                            <div style={{ fontSize: 10, color: '#70747B', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Del historial</div>
                                         </div>
                                     </>
                                 )}
@@ -893,7 +893,7 @@ function Step2({
                                 </button>
                                 <button onClick={() => onComplete(allProcessedRef.current)} style={{
                                     flex: 1, padding: '11px 0', borderRadius: 10,
-                                    background: 'linear-gradient(135deg, #1240CC, #2563eb)',
+                                    background: 'linear-gradient(135deg, #4387FF, #2563eb)',
                                     border: 'none', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer',
                                 }}>
                                     Continuar → Paso 3
@@ -997,7 +997,7 @@ function Step3({
             <div style={{ textAlign: 'center', marginBottom: 28 }}>
                 <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#f59e0b', marginBottom: 8 }}>Paso 3 de 3</div>
                 <h2 style={{ fontSize: 22, fontWeight: 800, color: '#FFFFFF', margin: '0 0 8px' }}>Confirmar oferta</h2>
-                <p style={{ fontSize: 13, color: 'rgba(178,198,245,0.6)', margin: 0 }}>
+                <p style={{ fontSize: 13, color: '#A1A1A6', margin: 0 }}>
                     {vehicles.length} vehículos · primas y coberturas del Excel
                 </p>
             </div>
@@ -1022,20 +1022,20 @@ function Step3({
                 };
                 return (
                     <div style={{ ...glass, padding: 16, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(178,198,245,0.5)', textTransform: 'uppercase', letterSpacing: '0.08em', flexShrink: 0 }}>Cambio masivo</span>
-                        <select value={bulkFrom} onChange={e => setBulkFrom(e.target.value)} style={{ background: 'rgba(6,14,50,0.7)', color: '#BDD4FF', border: '1px solid rgba(61,112,255,0.3)', borderRadius: 8, padding: '6px 10px', fontSize: 12, cursor: 'pointer', flex: '1 1 140px' }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: '#70747B', textTransform: 'uppercase', letterSpacing: '0.08em', flexShrink: 0 }}>Cambio masivo</span>
+                        <select value={bulkFrom} onChange={e => setBulkFrom(e.target.value)} style={{ background: '#0D0F12', color: '#A1A1A6', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '6px 10px', fontSize: 12, cursor: 'pointer', flex: '1 1 140px' }}>
                             <option value="">— Sin tipo —</option>
                             {presentTypes.filter(Boolean).map(t => <option key={t} value={t}>{t}</option>)}
                         </select>
-                        <span style={{ fontSize: 11, color: 'rgba(178,198,245,0.4)', flexShrink: 0 }}>→</span>
-                        <select value={bulkTo} onChange={e => setBulkTo(e.target.value)} style={{ background: 'rgba(6,14,50,0.7)', color: '#BDD4FF', border: '1px solid rgba(61,112,255,0.3)', borderRadius: 8, padding: '6px 10px', fontSize: 12, cursor: 'pointer', flex: '1 1 140px' }}>
+                        <span style={{ fontSize: 11, color: '#70747B', flexShrink: 0 }}>→</span>
+                        <select value={bulkTo} onChange={e => setBulkTo(e.target.value)} style={{ background: '#0D0F12', color: '#A1A1A6', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '6px 10px', fontSize: 12, cursor: 'pointer', flex: '1 1 140px' }}>
                             <option value="">— Tipo nuevo —</option>
                             {TIPO_VEHICULO_OPTS.map(o => <option key={o} value={o}>{o}</option>)}
                         </select>
-                        <button onClick={applyBulk} disabled={!bulkTo} style={{ padding: '7px 18px', borderRadius: 8, background: bulkTo ? 'linear-gradient(135deg, #1240CC, #3366FF)' : 'rgba(18,64,204,0.2)', color: '#fff', border: 'none', fontSize: 12, fontWeight: 700, cursor: bulkTo ? 'pointer' : 'not-allowed', flexShrink: 0 }}>
+                        <button onClick={applyBulk} disabled={!bulkTo} style={{ padding: '7px 18px', borderRadius: 8, background: bulkTo ? '#4387FF' : 'rgba(67,135,255,0.10)', color: '#fff', border: 'none', fontSize: 12, fontWeight: 700, cursor: bulkTo ? 'pointer' : 'not-allowed', flexShrink: 0 }}>
                             Aplicar
                         </button>
-                        {bulkFrom === '' && <span style={{ fontSize: 10, color: 'rgba(178,198,245,0.35)', flex: '100%' }}>Selecciona un tipo origen para cambiar todos los vehículos de ese tipo, o deja vacío para asignar a los que no tienen tipo.</span>}
+                        {bulkFrom === '' && <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)', flex: '100%' }}>Selecciona un tipo origen para cambiar todos los vehículos de ese tipo, o deja vacío para asignar a los que no tienen tipo.</span>}
                     </div>
                 );
             })()}
@@ -1050,12 +1050,12 @@ function Step3({
                         {vehicles.filter(v => !effectiveTipo(v)).map(v => (
                             <div key={v.matricula} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                                 <span style={{ fontFamily: 'monospace', fontSize: 13, fontWeight: 700, color: '#FFFFFF', minWidth: 100 }}>{v.matricula}</span>
-                                {v.marca && <span style={{ fontSize: 12, color: 'rgba(178,198,245,0.5)', flex: 1 }}>{v.marca} {v.modelo}</span>}
+                                {v.marca && <span style={{ fontSize: 12, color: '#70747B', flex: 1 }}>{v.marca} {v.modelo}</span>}
                                 <select
                                     value={tipoOverrides[v.matricula] || ''}
                                     onChange={e => setTipoOverrides(prev => ({ ...prev, [v.matricula]: e.target.value }))}
                                     style={{
-                                        background: 'rgba(6,14,50,0.7)', color: '#fff', border: '1px solid rgba(245,158,11,0.4)',
+                                        background: '#0D0F12', color: '#fff', border: '1px solid rgba(245,158,11,0.4)',
                                         borderRadius: 8, padding: '6px 10px', fontSize: 12, fontWeight: 600, cursor: 'pointer', minWidth: 160,
                                     }}
                                 >
@@ -1071,21 +1071,21 @@ function Step3({
             {/* Stats */}
             <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
                 {[
-                    { label: 'Total vehículos', value: vehicles.length, color: '#3366FF' },
+                    { label: 'Total vehículos', value: vehicles.length, color: '#4387FF' },
                     { label: 'Con Silverdat', value: sdOkCount, color: '#10b981' },
-                    { label: 'Sin tipo', value: vehicles.filter(v => !effectiveTipo(v)).length, color: vehicles.some(v => !effectiveTipo(v)) ? '#f59e0b' : 'rgba(178,198,245,0.3)' },
+                    { label: 'Sin tipo', value: vehicles.filter(v => !effectiveTipo(v)).length, color: vehicles.some(v => !effectiveTipo(v)) ? '#f59e0b' : 'rgba(255,255,255,0.2)' },
                     { label: 'Grupos', value: Object.keys(groups).length, color: '#a78bfa' },
                 ].map(({ label, value, color }) => (
                     <div key={label} style={{ flex: '1 1 120px', ...glass, padding: '12px 16px', textAlign: 'center' }}>
                         <div style={{ fontSize: 22, fontWeight: 800, color }}>{value}</div>
-                        <div style={{ fontSize: 10, fontWeight: 600, color: 'rgba(178,198,245,0.5)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>{label}</div>
+                        <div style={{ fontSize: 10, fontWeight: 600, color: '#70747B', textTransform: 'uppercase', letterSpacing: '0.07em' }}>{label}</div>
                     </div>
                 ))}
             </div>
 
             {/* Resumen por grupo (tipo + cobertura del Excel) */}
             <div style={{ ...glass, padding: 20, marginBottom: 20 }}>
-                <p style={{ margin: '0 0 14px', fontSize: 12, fontWeight: 700, color: 'rgba(178,198,245,0.6)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Resumen por tipología y cobertura</p>
+                <p style={{ margin: '0 0 14px', fontSize: 12, fontWeight: 700, color: '#A1A1A6', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Resumen por tipología y cobertura</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     {Object.entries(groups).map(([key, g]) => {
                         const groupPrimas = g.vehList.map(v => parseFloat(v.prima_referencia || '0') || 0);
@@ -1097,38 +1097,38 @@ function Step3({
                                 gridTemplateColumns: '1fr auto 64px 130px 120px',
                                 alignItems: 'center', gap: 12,
                                 padding: '12px 16px', borderRadius: 10,
-                                background: 'rgba(18,64,204,0.08)',
-                                border: '1px solid rgba(61,112,255,0.12)',
+                                background: 'rgba(67,135,255,0.05)',
+                                border: '1px solid rgba(255,255,255,0.06)',
                             }}>
                                 <div>
                                     <span style={{ fontSize: 13, fontWeight: 700, color: g.tipo ? '#FFFFFF' : '#f59e0b' }}>
                                         {g.tipo || 'Sin tipo'}
                                     </span>
-                                    <div style={{ fontSize: 10, color: 'rgba(178,198,245,0.4)', marginTop: 2 }}>
+                                    <div style={{ fontSize: 10, color: '#70747B', marginTop: 2 }}>
                                         {g.vehList.map(v => v.matricula).slice(0, 3).join(', ')}{g.vehList.length > 3 ? ` +${g.vehList.length - 3}` : ''}
                                     </div>
                                 </div>
                                 <div>
                                     {g.cob
-                                        ? <span style={{ fontSize: 11, fontWeight: 700, color: '#3D7BFF', background: 'rgba(61,112,255,0.12)', padding: '3px 9px', borderRadius: 20 }}>{g.cob}</span>
-                                        : <span style={{ fontSize: 11, color: 'rgba(178,198,245,0.3)' }}>—</span>
+                                        ? <span style={{ fontSize: 11, fontWeight: 700, color: '#4387FF', background: 'rgba(255,255,255,0.06)', padding: '3px 9px', borderRadius: 20 }}>{g.cob}</span>
+                                        : <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)' }}>—</span>
                                     }
                                 </div>
                                 <div style={{ textAlign: 'center' }}>
-                                    <span style={{ fontSize: 18, fontWeight: 800, color: '#3366FF' }}>{g.vehList.length}</span>
-                                    <div style={{ fontSize: 9, color: 'rgba(178,198,245,0.4)', textTransform: 'uppercase' }}>veh.</div>
+                                    <span style={{ fontSize: 18, fontWeight: 800, color: '#4387FF' }}>{g.vehList.length}</span>
+                                    <div style={{ fontSize: 9, color: '#70747B', textTransform: 'uppercase' }}>veh.</div>
                                 </div>
                                 <div style={{ textAlign: 'right' }}>
-                                    <div style={{ fontSize: 13, fontWeight: 700, color: avgPrima > 0 ? '#FFFFFF' : 'rgba(178,198,245,0.3)' }}>
+                                    <div style={{ fontSize: 13, fontWeight: 700, color: avgPrima > 0 ? '#FFFFFF' : 'rgba(255,255,255,0.2)' }}>
                                         {avgPrima > 0 ? `€${avgPrima.toFixed(2)}` : '—'}
                                     </div>
-                                    <div style={{ fontSize: 9, color: 'rgba(178,198,245,0.4)', textTransform: 'uppercase' }}>media/veh</div>
+                                    <div style={{ fontSize: 9, color: '#70747B', textTransform: 'uppercase' }}>media/veh</div>
                                 </div>
                                 <div style={{ textAlign: 'right' }}>
-                                    <div style={{ fontSize: 14, fontWeight: 800, color: totalGrupo > 0 ? '#f59e0b' : 'rgba(178,198,245,0.3)' }}>
+                                    <div style={{ fontSize: 14, fontWeight: 800, color: totalGrupo > 0 ? '#f59e0b' : 'rgba(255,255,255,0.2)' }}>
                                         {totalGrupo > 0 ? `€${totalGrupo.toFixed(0)}` : '—'}
                                     </div>
-                                    <div style={{ fontSize: 9, color: 'rgba(178,198,245,0.4)', textTransform: 'uppercase' }}>total grupo</div>
+                                    <div style={{ fontSize: 9, color: '#70747B', textTransform: 'uppercase' }}>total grupo</div>
                                 </div>
                             </div>
                         );
@@ -1147,10 +1147,10 @@ function Step3({
                         className="orion-input"
                         style={{ fontSize: 14, fontWeight: 700, width: 80, textAlign: 'center' }}
                     />
-                    <span style={{ fontSize: 13, color: 'rgba(178,198,245,0.5)' }}>%</span>
+                    <span style={{ fontSize: 13, color: '#70747B' }}>%</span>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: 13, color: 'rgba(178,198,245,0.5)' }}>Prima total</div>
+                    <div style={{ fontSize: 13, color: '#70747B' }}>Prima total</div>
                     <div style={{ fontSize: 22, fontWeight: 800, color: '#f59e0b' }}>€{totalPrima.toFixed(0)}</div>
                 </div>
             </div>
@@ -1159,8 +1159,8 @@ function Step3({
             <div style={{ display: 'flex', gap: 12 }}>
                 <button onClick={onBack} style={{
                     padding: '12px 24px', borderRadius: 10,
-                    background: 'rgba(6,14,50,0.5)', color: '#BDD4FF',
-                    border: '1px solid rgba(61,112,255,0.22)', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                    background: '#0D0F12', color: '#A1A1A6',
+                    border: '1px solid rgba(255,255,255,0.08)', fontSize: 12, fontWeight: 600, cursor: 'pointer',
                     display: 'flex', alignItems: 'center', gap: 8,
                 }}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
@@ -1168,7 +1168,7 @@ function Step3({
                 </button>
                 <button onClick={handleApply} style={{
                     flex: 1, padding: '14px 0', borderRadius: 12,
-                    background: 'linear-gradient(135deg, #1240CC, #3366FF)',
+                    background: '#4387FF',
                     color: '#fff', border: 'none', fontSize: 13, fontWeight: 800,
                     letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
@@ -1287,18 +1287,18 @@ export default function HojaAutomatico({ header, carpetaActiva, onComplete, onVe
                     <React.Fragment key={s}>
                         <div style={{
                             width: 28, height: 28, borderRadius: '50%',
-                            background: step === s ? 'linear-gradient(135deg, #d97706, #f59e0b)' : step > s ? 'rgba(16,185,129,0.2)' : 'rgba(61,112,255,0.12)',
-                            border: step === s ? 'none' : step > s ? '1px solid rgba(16,185,129,0.4)' : '1px solid rgba(61,112,255,0.2)',
+                            background: step === s ? 'linear-gradient(135deg, #d97706, #f59e0b)' : step > s ? 'rgba(16,185,129,0.2)' : 'rgba(255,255,255,0.06)',
+                            border: step === s ? 'none' : step > s ? '1px solid rgba(16,185,129,0.4)' : '1px solid rgba(255,255,255,0.08)',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             fontSize: 11, fontWeight: 800,
-                            color: step === s ? '#fff' : step > s ? '#10b981' : 'rgba(178,198,245,0.4)',
+                            color: step === s ? '#fff' : step > s ? '#10b981' : '#70747B',
                         }}>
                             {step > s ? '✓' : s}
                         </div>
                         {i < 2 && (
                             <div style={{
                                 width: 40, height: 2, borderRadius: 1,
-                                background: step > s ? 'rgba(16,185,129,0.4)' : 'rgba(61,112,255,0.12)',
+                                background: step > s ? 'rgba(16,185,129,0.4)' : 'rgba(255,255,255,0.06)',
                             }} />
                         )}
                     </React.Fragment>
