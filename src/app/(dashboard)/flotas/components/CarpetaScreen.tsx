@@ -123,7 +123,7 @@ export default function CarpetaScreen({ onSelect }: Props) {
   const [showCrearCorredor, setShowCrearCorredor] = useState(false);
   const [query, setQuery] = useState('');
   const [corredorFilter, setCorredorFilter] = useState('TODOS');
-  const estadoFilter = 'EN ESTUDIO';
+  const [estadoFilter, setEstadoFilter] = useState<EstadoFlota | 'TODAS'>('TODAS');
   const [sucursalFilter, setSucursalFilter] = useState('');
   const [comercialFilter, setComercialFilter] = useState('');
   const [creating, setCreating] = useState(false);
@@ -238,7 +238,7 @@ export default function CarpetaScreen({ onSelect }: Props) {
       const corrName = corr?.nombre ?? 'Sin corredor';
 
       if (corredorFilter !== 'TODOS' && corrName !== corredorFilter) return false;
-      if (c.estado !== 'EN ESTUDIO') return false;
+      if (estadoFilter !== 'TODAS' && c.estado !== estadoFilter) return false;
       if (sucursalFilter && corr?.sucursal !== sucursalFilter) return false;
       if (comercialFilter && (corr?.comercial ?? '').toLowerCase() !== comercialFilter.toLowerCase()) return false;
       const q = query.trim().toLowerCase();
@@ -390,6 +390,31 @@ export default function CarpetaScreen({ onSelect }: Props) {
       </div>
 
       {/* Filtro de estado (pills) */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+        {(['TODAS', ...ESTADOS] as (EstadoFlota | 'TODAS')[]).map(est => {
+          const count = est === 'TODAS' ? counts['TODAS'] : counts[est] ?? 0;
+          const active = estadoFilter === est;
+          const colores: Record<string, { active: string; text: string; border: string }> = {
+            'TODAS':      { active: 'rgba(51,102,255,0.2)',  text: '#3366FF', border: 'rgba(51,102,255,0.4)' },
+            'EN ESTUDIO': { active: 'rgba(51,102,255,0.15)', text: '#3366FF', border: 'rgba(51,102,255,0.35)' },
+            'OFERTADA':   { active: 'rgba(245,158,11,0.15)', text: '#f59e0b', border: 'rgba(245,158,11,0.35)' },
+            'CONTRATADA': { active: 'rgba(16,185,129,0.15)', text: '#10b981', border: 'rgba(16,185,129,0.35)' },
+            'RECHAZADA':  { active: 'rgba(239,68,68,0.15)',  text: '#ef4444', border: 'rgba(239,68,68,0.35)' },
+          };
+          const c = colores[est] ?? colores['TODAS'];
+          return (
+            <button key={est} onClick={() => setEstadoFilter(est)} style={{
+              padding: '5px 14px', borderRadius: 999, fontSize: 11, fontWeight: 700,
+              cursor: 'pointer', transition: 'all 140ms',
+              background: active ? c.active : 'rgba(6,14,50,0.4)',
+              color: active ? c.text : 'rgba(178,198,245,0.5)',
+              border: `1px solid ${active ? c.border : 'rgba(61,112,255,0.16)'}`,
+            }}>
+              {est} <span style={{ opacity: 0.75, fontWeight: 500 }}>{count}</span>
+            </button>
+          );
+        })}
+      </div>
 
       {/* Confirmacion cambio de estado */}
       {pendingEstado && (

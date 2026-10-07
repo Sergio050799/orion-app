@@ -231,9 +231,9 @@ export default function DashboardPage() {
     return counts;
   }, [carpetas, historicas]);
 
-  // Usar totales del donut (incluye historicas) para que KPIs y donut cuadren
   const totalPortfolio = Object.values(flotasEstadoCounts).reduce((s, v) => s + v, 0);
-  const contratadas = flotasEstadoCounts['CONTRATADA'] ?? 0;
+  // KPI contratadas = solo carpetas activas (igual que la página de Flotas)
+  const contratadas = carpetas.filter(c => c.estado === 'CONTRATADA').length;
   const tasaContratacion = totalPortfolio > 0 ? Math.round((contratadas / totalPortfolio) * 100) : null;
 
   const donutData = useMemo(() => {
