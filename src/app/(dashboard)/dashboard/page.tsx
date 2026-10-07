@@ -58,18 +58,12 @@ function KpiCard({ title, value, color, sub }: { title: string; value: string; c
 function RenovBadge({ dias, fecha }: { dias: number; fecha: Date }) {
   const s: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', padding: '4px 11px', borderRadius: 999, fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap' };
   if (dias < 0 && fecha.getFullYear() < CURRENT_YEAR) {
-    return <span style={{ ...s, background: 'rgba(239,68,68,0.14)', border: '1px solid rgba(239,68,68,0.30)', color: '#fca5a5' }}>Vencida {Math.abs(dias)}d</span>;
+    return <span style={{ ...s, background: 'rgba(239,68,68,0.14)', border: '1px solid rgba(239,68,68,0.30)', color: '#fca5a5' }}>Vencida {Math.abs(dias)} Días</span>;
   }
   if (dias < 0) {
-    return <span style={{ ...s, background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.28)', color: '#fcd34d' }}>−{Math.abs(dias)}d</span>;
+    return <span style={{ ...s, background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.28)', color: '#fcd34d' }}>−{Math.abs(dias)} Días</span>;
   }
-  if (dias <= 30) {
-    return <span style={{ ...s, background: 'rgba(239,68,68,0.14)', border: '1px solid rgba(239,68,68,0.30)', color: '#fca5a5' }}>{dias}d</span>;
-  }
-  if (dias <= 90) {
-    return <span style={{ ...s, background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.28)', color: '#fcd34d' }}>{dias}d</span>;
-  }
-  return <span style={{ ...s, background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.28)', color: '#6ee7b7' }}>{dias}d</span>;
+  return <span style={{ ...s, background: 'rgba(239,68,68,0.14)', border: '1px solid rgba(239,68,68,0.30)', color: '#fca5a5' }}>{dias} Días</span>;
 }
 
 function SugerenciasSection({ user }: { user: string | null }) {
@@ -260,7 +254,8 @@ export default function DashboardPage() {
         const corredor = c.corredor_id ? (corredorMap.get(c.corredor_id) ?? null) : null;
         return [{ carpeta: c, corredor, fecha, dias }];
       })
-      .sort((a, b) => a.dias - b.dias);
+      .sort((a, b) => a.dias - b.dias)
+      .filter(r => r.dias <= 30);
   }, [carpetas, corredorMap]);
 
   const vencidasUrgentes = renovaciones.filter(
