@@ -244,17 +244,31 @@ function PanelCorredor({
 // ─── Vista detalle ─────────────────────────────────────────────────────────
 
 function DetalleView({
-  corredor, flotas, onVolver, onEditar, onEliminar, onNuevaFlota, onDesvincularFlota,
+  corredor, flotas, todasLasCarpetas, onVolver, onEditar, onEliminar, onNuevaFlota, onDesvincularFlota, onVincularExistente,
 }: {
-  corredor: Corredor; flotas: FlotaCarpeta[];
+  corredor: Corredor; flotas: FlotaCarpeta[]; todasLasCarpetas: FlotaCarpeta[];
   onVolver: () => void; onEditar: () => void;
   onEliminar: (mode: 'desvincular' | 'borrar_flotas') => void;
   onNuevaFlota: () => void;
   onDesvincularFlota: (flotaId: string) => void;
+  onVincularExistente: (flotaId: string) => void;
 }) {
   const [confirmElim, setConfirmElim] = useState(false);
   const [confirmEdit, setConfirmEdit] = useState(false);
   const [confirmDesvincular, setConfirmDesvincular] = useState<string | null>(null);
+  const [showVincular, setShowVincular] = useState(false);
+  const [vincularSearch, setVincularSearch] = useState('');
+
+  const disponibles = todasLasCarpetas.filter(c => {
+    if (c.corredor_id === corredor.id) return false;
+    const q = vincularSearch.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      c.nombre.toLowerCase().includes(q) ||
+      (c.header?.tomador ?? '').toLowerCase().includes(q) ||
+      (c.header?.cif ?? '').toLowerCase().includes(q)
+    );
+  });
 
   return (
     <div className="animate-in fade-in duration-500" style={{ maxWidth: 900, margin: '0 auto' }}>
@@ -423,17 +437,87 @@ function DetalleView({
           }}>
             Flotas asociadas · {flotas.length}
           </h3>
-          <button onClick={onNuevaFlota} style={{
-            background: 'none', border: 'none', cursor: 'pointer',
-            color: '#3366FF', fontSize: 12, fontWeight: 600,
-          }}>+ Vincular flota</button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={() => { setShowVincular(v => !v); setVincularSearch(''); }} style={{
+              background: showVincular ? 'rgba(51,102,255,0.15)' : 'none',
+              border: '1px solid rgba(61,112,255,0.3)', borderRadius: 8,
+              cursor: 'pointer', color: '#3366FF', fontSize: 12, fontWeight: 600,
+              padding: '4px 12px',
+            }}>Vincular existentes</button>
+            <button onClick={onNuevaFlota} style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              color: '#3366FF', fontSize: 12, fontWeight: 600,
+            }}>+ Nueva flota</button>
+          </div>
         </div>
 
-        {flotas.length === 0 ? (
+        {showVincular && (
+          <div style={{
+            marginBottom: 16, padding: '14px 16px',
+            background: 'rgba(51,102,255,0.06)', border: '1px solid rgba(61,112,255,0.2)',
+            borderRadius: 12,
+          }}>
+            <p style={{ margin: '0 0 10px', fontSize: 11, color: 'rgba(178,198,245,0.6)', fontWeight: 600 }}>
+              Selecciona carpetas para vincular a {corredor.nombre}:
+            </p>
+            <input
+              placeholder="Buscar por nombre, tomador, CIF..."
+              value={vincularSearch}
+              onChange={e => setVincularSearch(e.target.value)}
+              style={{
+                width: '100%', marginBottom: 10, padding: '7px 12px',
+                background: 'rgba(6,14,50,0.6)', border: '1px solid rgba(61,112,255,0.22)',
+                borderRadius: 8, color: '#fff', fontSize: 12, outline: 'none',
+                boxSizing: 'border-box',
+              }}
+            />
+            {disponibles.length === 0 ? (
+              <p style={{ color: 'rgba(178,198,245,0.4)', fontSize: 12, textAlign: 'center', padding: '10px 0', margin: 0 }}>
+                {vincularSearch ? 'Sin resultados.' : 'Todas las carpetas ya están vinculadas a este corredor.'}
+              </p>
+            ) : (
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 2, maxHeight: 240, overflowY: 'auto' }}>
+                {disponibles.map(c => (
+                  <li key={c.id} style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '9px 12px', borderRadius: 8,
+                  }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'rgba(51,102,255,0.06)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = '')}
+                  >
+                    <span style={{ fontSize: 13, color: '#FFFFFF', fontWeight: 500 }}>
+                      {c.nombre || '(sin nombre)'}
+                      {c.header?.tomador && (
+                        <span style={{ color: 'rgba(178,198,245,0.5)', fontSize: 11, fontWeight: 400, marginLeft: 8 }}>
+                          {c.header.tomador}
+                        </span>
+                      )}
+                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{
+                        fontSize: 10, padding: '2px 8px', borderRadius: 999, fontWeight: 600,
+                        color: estadoColor(c.estado ?? 'EN ESTUDIO'),
+                        background: `${estadoColor(c.estado ?? 'EN ESTUDIO')}18`,
+                        border: `1px solid ${estadoColor(c.estado ?? 'EN ESTUDIO')}40`,
+                      }}>{c.estado ?? 'EN ESTUDIO'}</span>
+                      <button onClick={() => { onVincularExistente(c.id); }} style={{
+                        background: 'linear-gradient(135deg, #1240CC, #3366FF)',
+                        border: 'none', borderRadius: 6, padding: '4px 12px',
+                        color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer',
+                      }}>Vincular</button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+
+        {flotas.length === 0 && !showVincular ? (
           <p style={{ color: 'rgba(178,198,245,0.4)', fontSize: 12, textAlign: 'center', padding: '30px 0', margin: 0 }}>
-            Sin flotas vinculadas.
+            Sin flotas vinculadas. Usa "Vincular existentes" para asociar carpetas.
           </p>
-        ) : (
+        ) : flotas.length > 0 ? (
           <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
             {flotas.map(f => {
               const rows = f.trabajo?.length > 0 ? f.trabajo : f.original;
@@ -781,6 +865,12 @@ export default function CorredoresPage() {
     cargar();
     if (corredorDetalle) setCorredorDetalle({ ...corredorDetalle });
   }
+  function handleVincularExistente(flotaId: string) {
+    const flota = carpetas.find(c => c.id === flotaId);
+    if (!flota || !corredorDetalle) return;
+    guardarCarpeta({ ...flota, corredor_id: corredorDetalle.id });
+    cargar();
+  }
   function handleNuevaFlota() {
     if (!corredorDetalle) return;
     crearCarpeta('', corredorDetalle.id);
@@ -942,11 +1032,13 @@ export default function CorredoresPage() {
           <DetalleView
             corredor={corredorDetalle}
             flotas={flotasDe(corredorDetalle.id)}
+            todasLasCarpetas={carpetas}
             onVolver={() => setVista('lista')}
             onEditar={() => abrirPanel(corredorDetalle)}
             onEliminar={handleEliminar}
             onNuevaFlota={handleNuevaFlota}
             onDesvincularFlota={handleDesvincularFlota}
+            onVincularExistente={handleVincularExistente}
           />
         )
       )}
