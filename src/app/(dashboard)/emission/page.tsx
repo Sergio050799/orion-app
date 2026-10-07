@@ -166,21 +166,18 @@ const fmtD = (d: string) => d ? new Date(d + (d.includes('T') ? '' : 'T12:00:00'
 
 function usePortfolio() {
   const [carpetas,   setCarpetas]   = useState<FlotaCarpeta[]>([]);
-  const [historicas, setHistoricas] = useState<FlotaHistorica[]>([]);
   const [corredores, setCorredores] = useState<Corredor[]>([]);
   const [loading,    setLoading]    = useState(true);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [rCarp, rHist, rCor] = await Promise.all([
+      const [rCarp, rCor] = await Promise.all([
         fetch('/api/flotas/carpetas'),
-        fetch('/api/flotas/historicas'),
         fetch('/api/flotas/corredores'),
       ]);
-      const [dCarp, dHist, dCor] = await Promise.all([rCarp.json(), rHist.json(), rCor.json()]);
+      const [dCarp, dCor] = await Promise.all([rCarp.json(), rCor.json()]);
       setCarpetas(Array.isArray(dCarp) ? dCarp : []);
-      setHistoricas(Array.isArray(dHist) ? dHist : []);
       setCorredores(Array.isArray(dCor) ? dCor : []);
     } catch { /* silent */ }
     finally { setLoading(false); }
@@ -194,40 +191,18 @@ function usePortfolio() {
     return m;
   }, [corredores]);
 
+  const corredoresLista = useMemo(() => {
+    return corredores.map(c => c.nombre).sort((a, b) => a.localeCompare(b));
+  }, [corredores]);
+
   const flotas = useMemo<FlotaView[]>(() => {
-    const fromCarpetas = carpetas
+    return carpetas
       .map(c => normalizarCarpeta(c, corredoresMap))
-      .filter((f): f is FlotaView => f !== null);
-    const carpetaNombres = new Set(fromCarpetas.map(f => f.nombre.toUpperCase().trim()));
-    const fromHistoricas = historicas
-      .filter(h => !carpetaNombres.has((h.nombre ?? '').toUpperCase().trim()))
-      .map(normalizarHistorica);
-    return [...fromCarpetas, ...fromHistoricas].sort((a, b) => a.nombre.localeCompare(b.nombre));
-  }, [carpetas, historicas, corredoresMap]);
+      .filter((f): f is FlotaView => f !== null)
+      .sort((a, b) => a.nombre.localeCompare(b.nombre));
+  }, [carpetas, corredoresMap]);
 
-  const createHistorica = async (body: typeof EMPTY_FORM & { created_by: string }) => {
-    const res = await fetch('/api/flotas/historicas', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
-    });
-    if (!res.ok) throw new Error('Error al crear');
-    await load();
-  };
-
-  const updateHistorica = async (id: string, body: typeof EMPTY_FORM) => {
-    const res = await fetch(`/api/flotas/historicas/${id}`, {
-      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
-    });
-    if (!res.ok) throw new Error('Error al actualizar');
-    await load();
-  };
-
-  const removeHistorica = async (id: string) => {
-    const res = await fetch(`/api/flotas/historicas/${id}`, { method: 'DELETE' });
-    if (!res.ok) throw new Error('Error al eliminar');
-    await load();
-  };
-
-  return { flotas, loading, createHistorica, updateHistorica, removeHistorica };
+  return { flotas, corredoresLista, loading };
 }
 
 // ─── Formulario (solo para históricas) ───────────────────────────────────────
@@ -490,58 +465,40 @@ function FichaPoliza({ flota, onClose, onEdit, onDelete }: {
 // ─── Página principal ─────────────────────────────────────────────────────────
 
 export default function FlotasPage() {
-  const { user } = useAuth();
-  const { flotas, loading, createHistorica, updateHistorica, removeHistorica } = usePortfolio();
+  const { flotas, corredoresLista, loading } = usePortfolio();
 
-  const [tab,      setTab]      = useState<EstadoFlota>('CONTRATADA');
-  const [search,   setSearch]   = useState('');
-  const [modal,    setModal]    = useState<'create' | 'edit' | null>(null);
-  const [selected, setSelected] = useState<FlotaView | null>(null);
-  const [ficha,    setFicha]    = useState<FlotaView | null>(null);
-  const [saving,   setSaving]   = useState(false);
-  const [toast,    setToast]    = useState('');
+  const [estadoFilter,   setEstadoFilter]   = useState<EstadoFlota | 'TODAS'>('CONTRATADA');
+  const [corredorFilter, setCorredorFilter] = useState('TODAS');
+  const [search,         setSearch]         = useState('');
+  const [ficha,          setFicha]          = useState<FlotaView | null>(null);
+  const [toast,          setToast]          = useState('');
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 2200); };
 
   const q = search.trim().toLowerCase();
-  const searchResults = q.length >= 2
-    ? flotas.filter(f =>
-        f.nombre.toLowerCase().includes(q) ||
-        f.tomador.toLowerCase().includes(q) ||
-        f.cif.toLowerCase().includes(q) ||
-        f.corredor_nombre.toLowerCase().includes(q)
-      )
-    : null;
 
-  const filtered = searchResults ?? flotas.filter(f => f.estado === tab);
-  const counts = {
+  const filtered = useMemo(() => {
+    return flotas.filter(f => {
+      if (estadoFilter !== 'TODAS' && f.estado !== estadoFilter) return false;
+      if (corredorFilter !== 'TODAS' && f.corredor_nombre !== corredorFilter) return false;
+      if (q) {
+        const matches =
+          f.nombre.toLowerCase().includes(q) ||
+          f.tomador.toLowerCase().includes(q) ||
+          f.cif.toLowerCase().includes(q) ||
+          f.corredor_nombre.toLowerCase().includes(q);
+        if (!matches) return false;
+      }
+      return true;
+    });
+  }, [flotas, estadoFilter, corredorFilter, q]);
+
+  const counts: Record<string, number> = useMemo(() => ({
+    TODAS:        flotas.length,
     CONTRATADA:   flotas.filter(f => f.estado === 'CONTRATADA').length,
-    'EN ESTUDIO': flotas.filter(f => f.estado === 'EN ESTUDIO').length,
     OFERTADA:     flotas.filter(f => f.estado === 'OFERTADA').length,
     RECHAZADA:    flotas.filter(f => f.estado === 'RECHAZADA').length,
-  };
-
-  const handleCreate = async (data: typeof EMPTY_FORM) => {
-    setSaving(true);
-    try { await createHistorica({ ...data, created_by: user ?? '' }); setModal(null); showToast('Flota creada'); }
-    catch { showToast('Error al crear'); }
-    finally { setSaving(false); }
-  };
-
-  const handleUpdate = async (data: typeof EMPTY_FORM) => {
-    if (!selected?.raw_historica) return;
-    setSaving(true);
-    try { await updateHistorica(selected.id, data); setModal(null); setFicha(null); setSelected(null); showToast('Flota actualizada'); }
-    catch { showToast('Error al actualizar'); }
-    finally { setSaving(false); }
-  };
-
-  const handleDelete = async () => {
-    if (!ficha?.raw_historica) return;
-    if (!confirm(`¿Eliminar "${ficha.nombre}"?`)) return;
-    try { await removeHistorica(ficha.id); setFicha(null); showToast('Flota eliminada'); }
-    catch { showToast('Error al eliminar'); }
-  };
+  }), [flotas]);
 
   return (
     <div className="h-full overflow-y-auto custom-scrollbar animate-in fade-in duration-500">
@@ -549,70 +506,38 @@ export default function FlotasPage() {
 
         {/* Header */}
         <div style={{ ...glass, padding: '20px 28px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-              <div style={{ width: 4, height: 36, borderRadius: 2, background: 'linear-gradient(180deg, #3366FF 0%, #1240CC 100%)' }} />
-              <div>
-                <h1 style={{ fontSize: 15, fontWeight: 900, color: '#FFFFFF', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>Flotas</h1>
-                <p style={{ fontSize: 11, fontWeight: 600, color: 'rgba(178,198,245,0.6)', margin: '4px 0 0 0' }}>
-                  Portfolio completo · {flotas.length} {flotas.length === 1 ? 'flota' : 'flotas'}
-                </p>
-              </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
+            <div style={{ width: 4, height: 36, borderRadius: 2, background: 'linear-gradient(180deg, #3366FF 0%, #1240CC 100%)' }} />
+            <div>
+              <h1 style={{ fontSize: 15, fontWeight: 900, color: '#FFFFFF', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>Flotas</h1>
+              <p style={{ fontSize: 11, fontWeight: 600, color: 'rgba(178,198,245,0.6)', margin: '4px 0 0 0' }}>
+                Portfolio · {filtered.length} resultado{filtered.length !== 1 ? 's' : ''} de {flotas.length}
+              </p>
             </div>
-            <button onClick={() => { setSelected(null); setModal('create'); }} style={{ fontSize: 12, fontWeight: 800, padding: '10px 20px', borderRadius: 12, background: 'linear-gradient(135deg, #1240CC, #3366FF)', color: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 8px 24px -8px rgba(18,64,204,0.4)', display: 'flex', alignItems: 'center', gap: 6 }}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
-              Nueva flota histórica
-            </button>
           </div>
 
-          {/* Buscador */}
-          <div style={{ marginTop: 16, position: 'relative' }}>
-            <svg style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(178,198,245,0.5)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input
-              type="text"
-              placeholder="Buscar por nombre, CIF o corredor…"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              style={{ ...inputStyle, paddingLeft: 34, paddingRight: search ? 34 : 12 }}
-            />
-            {search && (
-              <button onClick={() => setSearch('')} style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'rgba(178,198,245,0.5)', cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: 0 }}>×</button>
+          {/* Filtros */}
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+            <div style={{ position: 'relative', flex: '1 1 200px', minWidth: 180 }}>
+              <svg style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(178,198,245,0.5)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" placeholder="Buscar nombre, CIF, corredor…" value={search} onChange={e => setSearch(e.target.value)} style={{ ...inputStyle, paddingLeft: 30, paddingRight: search ? 30 : 10 }} />
+              {search && <button onClick={() => setSearch('')} style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'rgba(178,198,245,0.5)', cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: 0 }}>×</button>}
+            </div>
+            <select value={estadoFilter} onChange={e => setEstadoFilter(e.target.value as EstadoFlota | 'TODAS')} style={{ ...inputStyle, width: 'auto', minWidth: 165, cursor: 'pointer' }}>
+              <option value="TODAS">Todos los estados ({counts.TODAS})</option>
+              <option value="CONTRATADA">Contratada ({counts.CONTRATADA})</option>
+              <option value="OFERTADA">Ofertada ({counts.OFERTADA})</option>
+              <option value="RECHAZADA">Rechazada ({counts.RECHAZADA})</option>
+            </select>
+            <select value={corredorFilter} onChange={e => setCorredorFilter(e.target.value)} style={{ ...inputStyle, width: 'auto', minWidth: 200, cursor: 'pointer' }}>
+              <option value="TODAS">Todos los corredores</option>
+              {corredoresLista.map(n => <option key={n} value={n}>{n}</option>)}
+            </select>
+            {(estadoFilter !== 'CONTRATADA' || corredorFilter !== 'TODAS' || search) && (
+              <button onClick={() => { setEstadoFilter('CONTRATADA'); setCorredorFilter('TODAS'); setSearch(''); }} style={{ fontSize: 11, fontWeight: 700, padding: '8px 14px', borderRadius: 10, background: 'transparent', border: '1px solid rgba(239,68,68,0.3)', color: 'rgba(239,68,68,0.7)', cursor: 'pointer' }}>Limpiar</button>
             )}
           </div>
-
-          {/* Tabs */}
-          <div style={{ display: 'flex', gap: 4, marginTop: 12, borderTop: '1px solid rgba(61,112,255,0.12)', paddingTop: 14, flexWrap: 'wrap' }}>
-            {(['CONTRATADA', 'EN ESTUDIO', 'OFERTADA', 'RECHAZADA'] as const).map(t => {
-              const active = tab === t;
-              const cfg    = ESTADO_CFG[t];
-              const label  = t === 'EN ESTUDIO' ? 'En estudio' : t.charAt(0) + t.slice(1).toLowerCase();
-              return (
-                <button key={t} onClick={() => setTab(t)} style={{ fontSize: 12, fontWeight: 700, padding: '8px 18px', borderRadius: 10, cursor: 'pointer', border: 'none', background: active ? cfg.bg : 'transparent', color: active ? cfg.color : 'rgba(178,198,245,0.55)', boxShadow: active ? `0 0 0 1px ${cfg.border} inset` : 'none', transition: 'all 180ms', display: 'flex', alignItems: 'center', gap: 6 }}>
-                  {label}
-                  <span style={{ fontSize: 10, fontWeight: 800, padding: '1px 7px', borderRadius: 999, background: active ? cfg.border : 'rgba(51,102,255,0.1)', color: active ? cfg.color : 'rgba(178,198,245,0.5)' }}>{counts[t]}</span>
-                </button>
-              );
-            })}
-          </div>
         </div>
-
-        {/* Formulario */}
-        {modal && (
-          <div style={{ ...glass, padding: '22px 26px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
-              <div style={{ width: 3, height: 22, borderRadius: 2, background: '#3366FF' }} />
-              <h2 style={{ fontSize: 14, fontWeight: 800, color: '#FFFFFF', margin: 0, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
-                {modal === 'create' ? 'Nueva flota histórica' : `Editar — ${selected?.nombre}`}
-              </h2>
-            </div>
-            <FlotaForm
-              initial={modal === 'edit' ? selected?.raw_historica : undefined}
-              onSave={modal === 'create' ? handleCreate : handleUpdate}
-              onCancel={() => { setModal(null); setSelected(null); }}
-              saving={saving}
-            />
-          </div>
-        )}
 
         {/* Tabla */}
         {loading ? (
@@ -631,7 +556,7 @@ export default function FlotasPage() {
 
               {filtered.length === 0 ? (
                 <p style={{ color: 'rgba(178,198,245,0.4)', fontSize: 12, textAlign: 'center', padding: '48px 0', margin: 0 }}>
-                  {searchResults ? `Sin resultados para "${search}"` : 'No hay flotas en este estado.'}
+                  {search ? `Sin resultados para "${search}"` : 'No hay flotas con estos filtros.'}
                 </p>
               ) : filtered.map(f => {
                 const cfg  = ESTADO_CFG[f.estado] ?? ESTADO_CFG.CONTRATADA;
@@ -700,8 +625,6 @@ export default function FlotasPage() {
         <FichaPoliza
           flota={ficha}
           onClose={() => setFicha(null)}
-          onEdit={ficha.origen === 'historica' ? () => { setSelected(ficha); setFicha(null); setModal('edit'); } : undefined}
-          onDelete={ficha.origen === 'historica' ? handleDelete : undefined}
         />
       )}
 

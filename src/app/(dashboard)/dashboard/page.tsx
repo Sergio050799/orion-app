@@ -202,16 +202,11 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const [carpetas, setCarpetas] = useState<FlotaCarpeta[]>([]);
   const [corredores, setCorredores] = useState<Corredor[]>([]);
-  const [historicas, setHistoricas] = useState<{ estado: string }[]>([]);
 
   useEffect(() => {
     const ac = new AbortController();
     cargarCarpetasDelServidor(ac.signal).then(setCarpetas).catch(() => {});
     cargarCorredoresDelServidor(ac.signal).then(setCorredores).catch(() => {});
-    fetch('/api/flotas/historicas', { signal: ac.signal })
-      .then(r => r.ok ? r.json() : [])
-      .then(d => setHistoricas(Array.isArray(d) ? d : []))
-      .catch(() => {});
     return () => ac.abort();
   }, []);
 
@@ -224,16 +219,11 @@ export default function DashboardPage() {
   const flotasEstadoCounts = useMemo(() => {
     const counts: Record<string, number> = { 'EN ESTUDIO': 0, 'OFERTADA': 0, 'CONTRATADA': 0, 'RECHAZADA': 0 };
     carpetas.forEach(c => { counts[c.estado] = (counts[c.estado] ?? 0) + 1; });
-    historicas.forEach(h => {
-      const estado = h.estado === 'COTIZADA' ? 'OFERTADA' : h.estado;
-      if (estado in counts) counts[estado] = (counts[estado] ?? 0) + 1;
-    });
     return counts;
-  }, [carpetas, historicas]);
+  }, [carpetas]);
 
   const totalPortfolio = Object.values(flotasEstadoCounts).reduce((s, v) => s + v, 0);
-  // KPI contratadas = solo carpetas activas (igual que la página de Flotas)
-  const contratadas = carpetas.filter(c => c.estado === 'CONTRATADA').length;
+  const contratadas = flotasEstadoCounts['CONTRATADA'] ?? 0;
   const tasaContratacion = totalPortfolio > 0 ? Math.round((contratadas / totalPortfolio) * 100) : null;
 
   const donutData = useMemo(() => {
