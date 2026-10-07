@@ -7,7 +7,7 @@ import {
   listarCorredores, crearCorredor, guardarCorredor, eliminarCorredor, cargarCorredoresDelServidor, borrarTodosLosCorredores,
   type Corredor, type Periodicidad, type Sucursal,
 } from '@/core/flotas';
-import { listarCarpetas, crearCarpeta, guardarCarpeta, eliminarCarpeta, borrarTodasLasCarpetas, type FlotaCarpeta } from '@/core/flotas';
+import { listarCarpetas, crearCarpeta, guardarCarpeta, eliminarCarpeta, borrarTodasLasCarpetas, cargarCarpetasDelServidor, type FlotaCarpeta } from '@/core/flotas';
 
 // ─── Design tokens ──────────────────────────────────────────────────────────
 
@@ -740,9 +740,13 @@ export default function CorredoresPage() {
 
   useEffect(() => {
     cargar();
-    cargarCorredoresDelServidor()
-      .then(data => setCorredores([...data].sort((a, b) => a.nombre.localeCompare(b.nombre))))
-      .catch(() => {});
+    Promise.all([
+      cargarCorredoresDelServidor(),
+      cargarCarpetasDelServidor(),
+    ]).then(([corredoresData, carpetasData]) => {
+      setCorredores([...corredoresData].sort((a, b) => a.nombre.localeCompare(b.nombre)));
+      setCarpetas(carpetasData);
+    }).catch(() => {});
   }, [cargar]);
 
   const flotasDe = useCallback((id: string) => carpetas.filter(c => c.corredor_id === id), [carpetas]);
