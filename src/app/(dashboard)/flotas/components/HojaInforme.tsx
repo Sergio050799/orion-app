@@ -33,6 +33,7 @@ interface TarifaEntry {
 
 interface Props {
   header?: FlotaHeader;
+  carpetaNombre?: string;
   trabajoRows: Record<string, string>[];
   coberturas: CoberturaRow[];
   sincoResultRows: Record<string, string>[];
@@ -53,16 +54,17 @@ const normTipo = (t: string) => {
 };
 
 const fmtEur = (n: number) =>
-  n.toLocaleString('es-ES', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + ' €';
+  n.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
 
 const fmtEur2 = (n: number) =>
   n.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
 
-const fmt2 = (n: number) => (isNaN(n) || !isFinite(n) ? '—' : n.toFixed(2));
+const fmt2 = (n: number) =>
+  (isNaN(n) || !isFinite(n) ? '—' : n.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 
 // frecuencia es un ratio (0.14 = 14%); null = sin exposición válida
 const fmtFreq = (n: number | null) =>
-  n === null ? 'Sin exp.' : (isNaN(n) || !isFinite(n) ? '—' : `${(n * 100).toFixed(1)}%`);
+  n === null ? 'Sin exp.' : (isNaN(n) || !isFinite(n) ? '—' : `${(n * 100).toLocaleString('es-ES', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %`);
 
 const today = () => new Date().toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
@@ -106,7 +108,7 @@ const COB_NOMBRES: Record<string, string> = {
 // ─── PDF Generator ────────────────────────────────────────────────────────────
 
 // SVG logo fallback (si falla la carga del PNG)
-const LOGO_SVG_FALLBACK = `<svg class="orion-mark" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg"><path d="M17.5 3.3 29.5 9.1 29.5 23.3 17.4 31.4 5.1 24.5 5.1 10.4Z" fill="none" stroke="#15171b" stroke-linejoin="round" stroke-width="3"/><path d="M8.3 23.2 22.2 15.1M23.2 3.9 32.9 8.8 32.9 16.7M19.5 29.8 29.4 24.1" fill="none" stroke="#15171b" stroke-linecap="round" stroke-width="3"/></svg>`;
+const LOGO_SVG_FALLBACK = `<svg class="orion-mark" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg"><path d="M17.5 3.3 29.5 9.1 29.5 23.3 17.4 31.4 5.1 24.5 5.1 10.4Z" fill="none" stroke="#000" stroke-linejoin="round" stroke-width="3"/><path d="M8.3 23.2 22.2 15.1M23.2 3.9 32.9 8.8 32.9 16.7M19.5 29.8 29.4 24.1" fill="none" stroke="#000" stroke-linecap="round" stroke-width="3"/></svg>`;
 
 let _logoCache: string | null = null;
 async function fetchLogoDataUrl(): Promise<string> {
@@ -158,6 +160,8 @@ function buildPdfHtml(data: {
   sincoPorTipo?: { tipologia: string; resumen: ResumenSinco }[];
   fechaVctoDisplay?: string | null;
   logoSrc?: string;
+  tomadoresArr?: string[];
+  carpetaNombre?: string;
 }): string {
   const { header, pivot, totalVehiculos, ambitoLabel, numTomadores, adrActivo, sinco, danosPropiosPdf, primasSol, mmtRows, corredorLabel, cobAnexo, sincoPorTipo } = data;
   const totalSol = primasSol.reduce((a, r) => a + r.total, 0);
@@ -166,7 +170,7 @@ function buildPdfHtml(data: {
   const pctDif   = totalSol > 0 ? (dif / totalSol) * 100 : 0;
   const dateStr  = today();
 
-  const fleetName = header?.tomador?.trim() || '';
+  const fleetName = data.carpetaNombre?.trim() || header?.tomador?.trim() || data.tomadoresArr?.[0]?.trim() || '';
 
   const logoRight = data.logoSrc
     ? `<img src="${data.logoSrc}" alt="ORION" style="width:32px;height:32px;object-fit:contain;display:block;">`
@@ -181,12 +185,13 @@ function buildPdfHtml(data: {
   const pivotRows = pivot.tipos.map(tipo => {
     const total = pivot.cobs.reduce((a, c) => a + (pivot.counts[tipo]?.[c] ?? 0), 0);
     return `<tr>
-      <td>${tipo} <b style="float:right">${total}</b></td>
-      ${pivot.cobs.map(c => `<td class="num">${pivot.counts[tipo]?.[c] ?? 0}</td>`).join('')}
+      <td>${tipo}</td>
+      <td class="cnt"><b>${total}</b></td>
+      ${pivot.cobs.map(c => `<td class="cnt">${pivot.counts[tipo]?.[c] ?? 0}</td>`).join('')}
     </tr>`;
   }).join('');
   const pivotTotals = pivot.cobs.map(c =>
-    `<td class="num">${pivot.tipos.reduce((a, t) => a + (pivot.counts[t]?.[c] ?? 0), 0)}</td>`
+    `<td class="cnt">${pivot.tipos.reduce((a, t) => a + (pivot.counts[t]?.[c] ?? 0), 0)}</td>`
   ).join('');
 
   // Primas rows — sin columna MMT/veh (simplificado para PDF)
@@ -196,7 +201,7 @@ function buildPdfHtml(data: {
     const difCls = difRow < 0 ? ' neg' : difRow > 0 ? ' pos' : '';
     return `<tr>
       <td><strong>${r.tipo}</strong><span class="minor">${r.cob}</span></td>
-      <td class="num">${r.count}</td>
+      <td class="cnt">${r.count}</td>
       <td class="num">${r.media ? fmtEur2(r.media) : '—'}</td>
       <td class="num">${r.total ? fmtEur(r.total) : '—'}</td>
       <td class="num">${mmt?.total != null ? fmtEur(mmt.total) : '—'}</td>
@@ -225,9 +230,9 @@ function buildPdfHtml(data: {
     const tipoRows = (sincoPorTipo && sincoPorTipo.length > 1)
       ? sincoPorTipo.map(({ tipologia, resumen: r }) => `<tr>
           <td>${tipologia}</td>
-          <td class="num">${r.totalVehiculos}</td>
-          <td class="num">${r.vehiculosConSinco}</td>
-          <td class="num">${r.totalSiniestros}</td>
+          <td class="cnt">${r.totalVehiculos}</td>
+          <td class="cnt">${r.vehiculosConSinco}</td>
+          <td class="cnt">${r.totalSiniestros}</td>
           <td class="num">${fmt2(r.antiguedadMedia)} a</td>
           <td class="num">${fmt2(r.siniestrosPorAnio)}</td>
           <td class="num">${fmtFreq(r.frecuencia)}</td>
@@ -240,7 +245,7 @@ function buildPdfHtml(data: {
     ${tipoRows ? `<table class="table">
       <thead><tr>
         <th>Tipología</th>
-        <th class="num">Veh.</th><th class="num">SINCO</th><th class="num">Sin.</th>
+        <th class="cnt">Veh.</th><th class="cnt">SINCO</th><th class="cnt">Sin.</th>
         <th class="num">Antig.</th><th class="num">Sin./año</th><th class="num">Frec.</th>
       </tr></thead>
       <tbody>${tipoRows}</tbody>
@@ -266,7 +271,7 @@ function buildPdfHtml(data: {
     <div><small>Prima solicitada</small><strong>${fmtEur(totalSol)}</strong></div>
     <div><small>Prima MMT</small><strong>${fmtEur(totalMmt)}</strong></div>
     <div><small>Diferencia</small><strong class="${dif >= 0 ? 'pos' : 'neg'}">${dif >= 0 ? '+' : ''}${fmtEur(dif)}</strong></div>
-    <div><small>Variación</small><strong class="${dif >= 0 ? 'pos' : 'neg'}">${totalSol ? (dif >= 0 ? '+' : '') + pctDif.toFixed(1) + ' %' : '—'}</strong></div>
+    <div><small>Variación</small><strong class="${dif >= 0 ? 'pos' : 'neg'}">${totalSol ? (dif >= 0 ? '+' : '') + pctDif.toLocaleString('es-ES', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' %' : '—'}</strong></div>
   </div>
   <p class="method">Diferencia calculada como prima MMT menos prima solicitada.</p>` : '';
 
@@ -276,7 +281,7 @@ function buildPdfHtml(data: {
       <colgroup><col style="width:33%"><col style="width:7%"><col style="width:14%"><col style="width:15%"><col style="width:15%"><col style="width:16%"></colgroup>
       <thead><tr>
         <th>Tipo y cobertura</th>
-        <th class="num">Nº</th>
+        <th class="cnt">Nº</th>
         <th class="num">Sol./veh.</th>
         <th class="num">Total sol.</th>
         <th class="num">Total MMT</th>
@@ -285,7 +290,7 @@ function buildPdfHtml(data: {
       <tbody>${primasRows}</tbody>
       <tbody><tr class="total">
         <td>TOTAL</td>
-        <td class="num">${primasSol.reduce((a, r) => a + r.count, 0)}</td>
+        <td class="cnt">${primasSol.reduce((a, r) => a + r.count, 0)}</td>
         <td class="num">—</td>
         <td class="num">${totalSol ? fmtEur(totalSol) : '—'}</td>
         <td class="num">${totalMmt ? fmtEur(totalMmt) : '—'}</td>
@@ -330,6 +335,7 @@ body{margin:0;font-family:Arial,Helvetica,sans-serif;color:var(--ink)}
 .table th{padding:8px 7px;background:#e8edf4;font-size:9.6px;color:#303948;font-weight:750;text-align:left;border-bottom:1px solid var(--line)}
 .table td{padding:8px 7px;border-bottom:1px solid #e4e7eb;vertical-align:top;line-height:1.4;color:var(--ink)}
 .table td.num,.table th.num{text-align:right;font-variant-numeric:tabular-nums}
+.table td.cnt,.table th.cnt{text-align:center;font-variant-numeric:tabular-nums}
 .table tbody tr:nth-child(even):not(.total) td{background:#f8fafd}
 .table .total td{font-weight:800;background:#e9edf3;border-top:1px solid #aeb8c8}
 .table td:first-child{font-weight:550}
@@ -381,14 +387,16 @@ ${heroHtml}
 <section class="report-section">
   <h2 class="sec-title">Composición de la flota <em>${totalVehiculos} vehículos informados</em></h2>
   <table class="table">
-    <colgroup><col style="width:40%">${pivot.cobs.map(() => `<col style="width:${Math.floor(45/pivot.cobs.length)}%">`).join('')}</colgroup>
+    <colgroup><col style="width:35%"><col style="width:9%">${pivot.cobs.map(() => `<col style="width:${Math.floor(56/Math.max(pivot.cobs.length,1))}%">`).join('')}</colgroup>
     <thead><tr>
       <th>Tipo</th>
-      ${pivot.cobs.map(c => `<th class="num">${c || '—'}</th>`).join('')}
+      <th class="cnt">Nº</th>
+      ${pivot.cobs.map(c => `<th class="cnt">${c || '—'}</th>`).join('')}
     </tr></thead>
     <tbody>${pivotRows}</tbody>
     <tbody><tr class="total">
-      <td>Total declarado: ${totalVehiculos}</td>
+      <td>Total declarado</td>
+      <td class="cnt"><b>${totalVehiculos}</b></td>
       ${pivotTotals}
     </tr></tbody>
   </table>
@@ -429,7 +437,7 @@ ${ci === covChunks.length - 1 ? `<div class="note">Las coberturas mostradas proc
 // ─── HojaInforme ─────────────────────────────────────────────────────────────
 
 export default function HojaInforme({
-  header,
+  header, carpetaNombre,
   trabajoRows, coberturas, sincoResultRows, sincoManual, sincoGlobal,
   primasMmtValues, onPrimasMmtChange, tarifaFlota, corredorLabel, danosPropios,
 }: Props) {
@@ -440,6 +448,7 @@ export default function HojaInforme({
     const cobs  = new Set<string>();
     const counts: Record<string, Record<string, number>> = {};
     trabajoRows.forEach((r, i) => {
+      if (!r['matricula']?.trim()) return;
       const tipo = r['tipo_vehiculo'] || 'Sin tipo';
       const cob  = coberturas[i]?.cobertura || r['coberturas_solicitadas'] || 'Sin cobertura';
       tipos.add(tipo); cobs.add(cob);
@@ -935,6 +944,8 @@ export default function HojaInforme({
       sincoPorTipo,
       fechaVctoDisplay,
       logoSrc,
+      tomadoresArr: [...tomadores],
+      carpetaNombre,
     });
 
     const w = window.open('', '_blank', 'width=860,height=700');
