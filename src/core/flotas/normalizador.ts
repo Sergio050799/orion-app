@@ -24,6 +24,8 @@ export const ADR_OPTS = ['No', 'Sí'];
 
 export const ASISTENCIA_OPTS = ['no', 'oro', 'oro_plus'];
 
+export const SI_NO_OPTS = ['Sí', 'No'];
+
 // ─── Diccionario de alias → tipo canónico ────────────────────────────────────
 
 const TIPO_ALIAS: Record<string, string> = {};
@@ -125,6 +127,8 @@ const COLUMN_OPTS: Record<string, string[]> = {
   coberturas_solicitadas: COBERTURA_OPTS,
   asistencia:             ASISTENCIA_OPTS,
   lunas:                  LUNAS_OPTS,
+  animales:               SI_NO_OPTS,
+  seguro_conductor:       SI_NO_OPTS,
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -195,7 +199,7 @@ export function normalizeColumnValue(
       return { value: 'Terceros', matched: true };
     }
   }
-  if (colId === 'lunas') {
+  if (colId === 'lunas' || colId === 'animales' || colId === 'seguro_conductor') {
     const v = raw.trim().toLowerCase();
     if (['s', 'si', 'sí', 'yes', '1', 'true', 'x'].includes(v)) return { value: 'Sí', matched: true };
     if (['n', 'no', '0', 'false', ''].includes(v)) return { value: 'No', matched: true };

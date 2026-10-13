@@ -173,11 +173,54 @@
     box-shadow: 0 0 0 3px rgba(18, 64, 204, 0.15);
   }
 
-  /* Native select/option dark theme */
-  select, select option {
-    background: #020B1A;
-    color: #BDD4FF;
+  /* Input blanco con texto oscuro — para paneles siempre oscuros */
+  .panel-input {
+    display: block;
+    width: 100%;
+    height: 38px;
+    padding: 0 12px;
+    font-family: inherit;
+    font-size: 13px;
+    border-radius: 6px;
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.18);
+    color: #14161a;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    box-sizing: border-box;
+    -webkit-appearance: none;
+    appearance: none;
   }
+  textarea.panel-input { height: auto; padding: 9px 12px; resize: vertical; }
+  .panel-input::placeholder { color: #9ca3af; }
+  .panel-input:focus {
+    border-color: #4387ff;
+    box-shadow: 0 0 0 3px rgba(67, 135, 255, 0.15);
+  }
+  .panel-input option { background: #ffffff !important; color: #14161a !important; }
+
+  /* Native select/option — neutral dark (no blue) */
+  select, select option {
+    background: #111214;
+    color: #d4d6db;
+  }
+
+  /* Filter select — themed dropdown control */
+  .t-select {
+    -webkit-appearance: none;
+    appearance: none;
+    background: var(--t-surface);
+    color: var(--t-text);
+    border: 1px solid var(--t-line);
+    font-family: inherit;
+    font-size: 13px;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.15s;
+    box-sizing: border-box;
+  }
+  .t-select:focus { border-color: rgba(67, 135, 255, 0.4); }
+  .t-select option { background: #111214; color: #d4d6db; }
 
   /* Table header */
   .th {
@@ -236,84 +279,37 @@
 }
 
 /* ─────────────────────────────────────────
-   AURORA BACKGROUND (intro + login)
+   COSMIC FIELD BACKGROUND (login)
    ───────────────────────────────────────── */
-.orion-aurora-bg {
+.cosmic-field {
   position: fixed;
   inset: 0;
-  overflow: hidden;
   z-index: 0;
   background:
-    radial-gradient(ellipse 60% 40% at 50% 100%, #051650 0%, transparent 55%),
-    radial-gradient(ellipse 70% 50% at 50% 110%, rgba(61,112,255,0.22) 0%, transparent 50%),
-    linear-gradient(180deg, #000520 0%, #00072d 60%, #000418 100%);
+    radial-gradient(ellipse at 52% 48%, rgba(20,42,112,.10), transparent 42%),
+    radial-gradient(ellipse at 30% 76%, rgba(16,34,92,.08), transparent 34%),
+    radial-gradient(ellipse at 76% 20%, rgba(12,24,68,.06), transparent 30%),
+    linear-gradient(142deg, #020305 0%, #040713 52%, #020305 100%);
 }
 
-.aurora-layer {
-  position: absolute;
-  inset: -10%;
+.cosmos-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
-  filter: blur(70px);
-  mix-blend-mode: screen;
-  will-change: transform;
-}
-.aurora-1 {
-  background:
-    radial-gradient(ellipse 55% 45% at 30% 80%, rgba(51,102,255,0.55) 0%, transparent 55%),
-    radial-gradient(ellipse 50% 40% at 75% 70%, rgba(18,64,204,0.45) 0%, transparent 60%),
-    radial-gradient(ellipse 40% 35% at 55% 100%, rgba(178,198,245,0.6) 0%, transparent 55%);
-  opacity: 0.85;
-  animation: aurora-drift-1 28s ease-in-out infinite;
-}
-.aurora-2 {
-  background:
-    radial-gradient(ellipse 45% 35% at 50% 90%, rgba(178,198,245,0.78) 0%, transparent 50%),
-    radial-gradient(ellipse 40% 30% at 20% 65%, rgba(18,64,204,0.4) 0%, transparent 55%),
-    radial-gradient(ellipse 35% 30% at 85% 85%, rgba(70,120,255,0.6) 0%, transparent 55%);
-  opacity: 0.75;
-  animation: aurora-drift-2 36s ease-in-out infinite;
-}
-.aurora-3 {
-  background:
-    radial-gradient(ellipse 30% 25% at 60% 95%, rgba(255,255,255,0.55) 0%, transparent 50%),
-    radial-gradient(ellipse 25% 20% at 35% 75%, rgba(51,102,255,0.55) 0%, transparent 55%);
-  opacity: 0.6;
-  animation: aurora-drift-3 22s ease-in-out infinite;
+  z-index: 1;
 }
 
-.aurora-cursor {
-  position: absolute;
-  inset: -10%;
+.cosmic-noise {
+  position: fixed;
+  inset: 0;
   pointer-events: none;
-  mix-blend-mode: screen;
-  filter: blur(80px);
-  background: radial-gradient(
-    circle 480px at var(--mx, 50%) var(--my, 60%),
-    rgba(178,198,245,0.4) 0%,
-    rgba(61,112,255,0.22) 30%,
-    transparent 65%
-  );
-  transition: background 200ms ease-out;
-}
-
-/* Arc glow at bottom */
-.aurora-arc {
-  position: absolute;
-  left: -10%;
-  width: 120%;
-  height: 90%;
-  border-radius: 50%;
-  pointer-events: none;
-  filter: blur(60px);
-  bottom: -65%;
+  z-index: 1;
   background:
-    radial-gradient(ellipse 50% 50% at 50% 50%,
-      rgba(255,255,255,0.5) 0%,
-      rgba(51,102,255,0.85) 18%,
-      rgba(18,64,204,0.55) 35%,
-      rgba(3,10,42,0) 60%);
-  opacity: 0.7;
-  animation: arc-pulse 8s ease-in-out infinite;
+    radial-gradient(ellipse 760px 440px at 50% 52%, rgba(28,53,132,.045), transparent 72%),
+    radial-gradient(circle at 18% 84%, rgba(39,70,158,.03), transparent 20%),
+    radial-gradient(circle at 85% 18%, rgba(39,70,158,.022), transparent 17%);
 }
 
 /* Film grain texture — static (subtle interior use) */
@@ -361,27 +357,6 @@
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='s'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23s)' opacity='0.8'/></svg>");
 }
 
-@keyframes aurora-drift-1 {
-  0%   { transform: translate3d(0,0,0) scale(1) rotate(0deg); }
-  33%  { transform: translate3d(4%,-3%,0) scale(1.08) rotate(2deg); }
-  66%  { transform: translate3d(-3%,2%,0) scale(0.95) rotate(-3deg); }
-  100% { transform: translate3d(0,0,0) scale(1) rotate(0deg); }
-}
-@keyframes aurora-drift-2 {
-  0%   { transform: translate3d(0,0,0) scale(1) rotate(0deg); }
-  50%  { transform: translate3d(-5%,4%,0) scale(1.12) rotate(-4deg); }
-  100% { transform: translate3d(0,0,0) scale(1) rotate(0deg); }
-}
-@keyframes aurora-drift-3 {
-  0%   { transform: translate3d(0,0,0) scale(1); opacity: 0.55; }
-  40%  { transform: translate3d(3%,-2%,0) scale(1.15); opacity: 0.75; }
-  80%  { transform: translate3d(-2%,3%,0) scale(0.92); opacity: 0.5; }
-  100% { transform: translate3d(0,0,0) scale(1); opacity: 0.55; }
-}
-@keyframes arc-pulse {
-  0%, 100% { opacity: 0.65; transform: scale(1); }
-  50% { opacity: 0.85; transform: scale(1.04); }
-}
 
 /* ─────────────────────────────────────────
    ANIMATIONS
@@ -484,4 +459,63 @@
 }
 .rdg-centered .rdg-row {
   font-size: 13px;
+}
+
+/* ─────────────────────────────────────────
+   THEME TOKENS
+   dark  = Obsidian Black  (default)
+   light = Monochrome Hybrid
+   ───────────────────────────────────────── */
+:root,
+[data-theme="dark"] {
+  --t-bg:            #050607;
+  --t-surface:       #0b0c0f;
+  --t-line:          rgba(255, 255, 255, 0.08);
+  --t-line-soft:     rgba(255, 255, 255, 0.06);
+  --t-text:          #f4f4f5;
+  --t-text-2:        #8d9198;
+  --t-text-3:        #6d727a;
+  --t-muted:         #8d9198;
+  --t-topbar-bg:     #050607;
+  --t-topbar-border: rgba(255, 255, 255, 0.08);
+  --t-topbar-text:   #c8ccd2;
+  --t-blue:          #4387ff;
+  --t-green:         #20c982;
+  --t-violet:        #7c5cfc;
+  --t-red:           #ef4d5a;
+  --t-amber:         #f0b94d;
+  --t-amber-bg:      rgba(240, 185, 77, 0.12);
+  --t-amber-border:  rgba(240, 185, 77, 0.38);
+}
+
+[data-theme="light"] {
+  --t-bg:            #f5f6f7;
+  --t-surface:       #ffffff;
+  --t-line:          rgba(0, 0, 0, 0.09);
+  --t-line-soft:     rgba(0, 0, 0, 0.05);
+  --t-text:          #111112;
+  --t-text-2:        #555a63;
+  --t-text-3:        #888d96;
+  --t-muted:         #555a63;
+  --t-topbar-bg:     #050607;
+  --t-topbar-border: rgba(255, 255, 255, 0.08);
+  --t-topbar-text:   #c8ccd2;
+  --t-blue:          #2b6cb0;
+  --t-green:         #276749;
+  --t-violet:        #6b46c1;
+  --t-red:           #c53030;
+  --t-amber:         #b7791f;
+  --t-amber-bg:      rgba(183, 121, 31, 0.10);
+  --t-amber-border:  rgba(183, 121, 31, 0.35);
+}
+
+/* Light mode: selects and options use white bg + dark text */
+[data-theme="light"] select option,
+[data-theme="light"] .t-select option {
+  background: #ffffff;
+  color: #111112;
+}
+
+body {
+  transition: background-color 0.2s ease, color 0.2s ease;
 }

@@ -89,17 +89,16 @@ interface PlateCard {
 // ─── Design ───────────────────────────────────────────────────────────────────
 
 const GLASS: React.CSSProperties = {
-    background: 'rgba(12, 28, 82, 0.75)',
-    border: '1px solid rgba(61, 112, 255, 0.22)',
-    borderRadius: 16,
-    boxShadow: '0 20px 60px -15px rgba(0,0,0,0.5)',
+    background: 'var(--t-surface)',
+    border: '1px solid var(--t-line)',
+    borderRadius: 12,
 };
 
 const FIELD: React.CSSProperties = {
-    background: 'rgba(6,14,50,0.6)',
-    border: '1px solid rgba(61,112,255,0.2)',
+    background: 'var(--t-surface)',
+    border: '1px solid var(--t-line)',
     borderRadius: 8,
-    color: '#FFFFFF',
+    color: 'var(--t-text)',
     fontSize: 13,
     padding: '9px 12px',
     outline: 'none',
@@ -153,7 +152,7 @@ function SilverdatModal({ onClose, onSuccess }: { onClose: () => void; onSuccess
                 {error && <p style={{ margin: '8px 0 0', fontSize: 11, color: '#ef4444', fontWeight: 600 }}>{error}</p>}
                 <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
                     <button onClick={go} disabled={loading || !datId || !user || !pass} style={{ flex: 1, padding: '10px 0', borderRadius: 9, background: loading ? 'rgba(245,158,11,0.3)' : 'linear-gradient(135deg,#d97706,#f59e0b)', color: '#fff', border: 'none', fontWeight: 700, fontSize: 12, cursor: loading ? 'not-allowed' : 'pointer' }}>{loading ? 'Conectando...' : 'Iniciar sesión'}</button>
-                    <button onClick={onClose} style={{ padding: '10px 14px', borderRadius: 9, background: 'rgba(6,14,50,0.5)', color: '#BDD4FF', border: '1px solid rgba(61,112,255,0.22)', fontSize: 12, cursor: 'pointer' }}>Cancelar</button>
+                    <button onClick={onClose} style={{ padding: '10px 14px', borderRadius: 9, background: 'transparent', color: 'var(--t-text-2)', border: '1px solid var(--t-line)', fontSize: 12, cursor: 'pointer' }}>Cancelar</button>
                 </div>
             </div>
         </div>
@@ -174,9 +173,9 @@ function CatalogResult({ matches, selected, onSelect }: {
         const m = matches[0];
         return (
             <div style={{ marginTop: 10, padding: '10px 14px', background: 'rgba(51,102,255,0.08)', border: '1px solid rgba(51,102,255,0.18)', borderRadius: 10 }}>
-                <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: '#FFFFFF' }}>{m.marca} {m.modelo}</p>
-                <p style={{ margin: '2px 0 4px', fontSize: 11, color: 'rgba(178,198,245,0.6)' }}>{m.version}</p>
-                <p style={{ margin: 0, fontSize: 10, fontFamily: 'monospace', color: 'rgba(178,198,245,0.35)' }}>id: {m.id_veh}</p>
+                <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: 'var(--t-text)' }}>{m.marca} {m.modelo}</p>
+                <p style={{ margin: '2px 0 4px', fontSize: 11, color: 'var(--t-text-2)' }}>{m.version}</p>
+                <p style={{ margin: 0, fontSize: 10, fontFamily: 'monospace', color: 'var(--t-text-3)' }}>id: {m.id_veh}</p>
             </div>
         );
     }
@@ -184,21 +183,21 @@ function CatalogResult({ matches, selected, onSelect }: {
     // Multiple acabados or low-confidence — user picks
     return (
         <div style={{ marginTop: 10 }}>
-            <p style={{ margin: '0 0 6px', fontSize: 10, fontWeight: 700, color: 'rgba(178,198,245,0.45)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Selecciona el acabado</p>
+            <p style={{ margin: '0 0 6px', fontSize: 10, fontWeight: 700, color: 'var(--t-text-3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Selecciona el acabado</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                 {matches.map(m => {
                     const isSelected = selected?.id_veh === m.id_veh;
                     return (
                         <button key={m.id_veh} onClick={() => onSelect(m)} style={{
                             padding: '8px 12px', borderRadius: 8, cursor: 'pointer', textAlign: 'left',
-                            background: isSelected ? 'rgba(51,102,255,0.18)' : 'rgba(18,40,100,0.4)',
-                            border: isSelected ? '1px solid rgba(51,102,255,0.45)' : '1px solid rgba(61,112,255,0.12)',
+                            background: isSelected ? 'rgba(67,135,255,0.12)' : 'var(--t-surface)',
+                            border: isSelected ? '1px solid var(--t-blue)' : '1px solid var(--t-line)',
                             transition: 'all 150ms', width: '100%',
                         }}>
-                            <p style={{ margin: 0, fontSize: 12, fontWeight: isSelected ? 700 : 500, color: isSelected ? '#FFFFFF' : 'rgba(178,198,245,0.85)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            <p style={{ margin: 0, fontSize: 12, fontWeight: isSelected ? 700 : 500, color: isSelected ? 'var(--t-text)' : 'var(--t-text-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                 {m.version || `${m.modelo} (sin versión)`}
                             </p>
-                            {isSelected && <p style={{ margin: '2px 0 0', fontSize: 10, fontFamily: 'monospace', color: 'rgba(178,198,245,0.35)' }}>id: {m.id_veh}</p>}
+                            {isSelected && <p style={{ margin: '2px 0 0', fontSize: 10, fontFamily: 'monospace', color: 'var(--t-text-3)' }}>id: {m.id_veh}</p>}
                         </button>
                     );
                 })}
@@ -254,7 +253,7 @@ function ManualForm({ card, onUpdate }: {
     };
 
     return (
-        <div style={{ marginTop: 10, padding: '14px 16px', background: 'rgba(6,14,50,0.4)', border: '1px solid rgba(61,112,255,0.12)', borderRadius: 12 }}>
+        <div style={{ marginTop: 10, padding: '14px 16px', background: 'var(--t-line-soft)', border: '1px solid var(--t-line)', borderRadius: 12 }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 70px 70px', gap: 8 }}>
                 <input
                     placeholder="Marca"
@@ -285,7 +284,7 @@ function ManualForm({ card, onUpdate }: {
             </div>
 
             {card.manualCatStatus === 'loading' && (
-                <p style={{ margin: '8px 0 0', fontSize: 11, color: 'rgba(178,198,245,0.4)' }}>Buscando...</p>
+                <p style={{ margin: '8px 0 0', fontSize: 11, color: 'var(--t-text-3)' }}>Buscando...</p>
             )}
 
             {card.manualCatStatus === 'done' && card.manualMatches.length === 0 && (
@@ -646,49 +645,47 @@ export default function VehiculosPage() {
 
             {showSdModal && <SilverdatModal onClose={() => setShowSdModal(false)} onSuccess={handleSdSuccess} />}
 
-            {/* Header + tab toggle */}
-            <div style={{ marginBottom: 18, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
-                    <div style={{ width: 4, height: 48, borderRadius: 2, background: 'linear-gradient(180deg,#1240CC,#3366FF)', marginTop: 2, flexShrink: 0 }} />
-                    <div>
-                        <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#3366FF', marginBottom: 3 }}>Consulta</p>
-                        <h1 style={{ fontSize: 26, fontWeight: 800, color: '#FFFFFF', margin: 0, lineHeight: 1.2 }}>Vehículos</h1>
+            {/* intro */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 20, marginBottom: 31 }}>
+                <div style={{ borderLeft: '3px solid var(--t-blue)', paddingLeft: 17 }}>
+                    <div style={{ color: 'var(--t-blue)', letterSpacing: '1.35px', fontSize: 11, fontWeight: 750, textTransform: 'uppercase' }}>Consulta</div>
+                    <h1 style={{ fontSize: 34, letterSpacing: '-1.2px', lineHeight: 1.05, margin: '6px 0 7px', fontWeight: 720, color: 'var(--t-text)' }}>Vehículos</h1>
+                    <p style={{ margin: 0, color: 'var(--t-text-3)', fontSize: 13 }}>Identificación individual y procesamiento por lotes</p>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+                    <SilverdatChip onSessionChange={ok => setSdSession(ok ? 'ok' : 'none')} />
+                    <div style={{ display: 'flex', border: '1px solid var(--t-line)', padding: 3, borderRadius: 7 }}>
+                        {([
+                            ['identificar', 'Identificar'],
+                            ['masivo',      'Masivo'],
+                        ] as const).map(([t, l]) => (
+                            <button key={t} onClick={() => setTab(t)} style={{
+                                border: 0, background: tab === t ? 'var(--t-line-soft)' : 'transparent',
+                                color: tab === t ? 'var(--t-text)' : 'var(--t-text-3)',
+                                borderRadius: 4, padding: '9px 19px', fontWeight: 650, cursor: 'pointer', fontSize: 13,
+                            }}>{l}</button>
+                        ))}
                     </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <SilverdatChip onSessionChange={ok => setSdSession(ok ? 'ok' : 'none')} />
-                <div style={{ display: 'flex', gap: 0 }}>
-                    {([
-                        ['identificar', 'Identificar'],
-                        ['masivo',      'Masivo'],
-                    ] as const).map(([t, l]) => (
-                        <button key={t} onClick={() => setTab(t)} style={{
-                            padding: '7px 20px', fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer',
-                            borderRadius: t === 'identificar' ? '10px 0 0 10px' : '0 10px 10px 0',
-                            background: tab === t ? 'rgba(18,64,204,0.35)' : 'rgba(6,14,50,0.5)',
-                            color: tab === t ? '#3D7BFF' : 'rgba(178,198,245,0.5)',
-                            boxShadow: tab === t ? '0 0 0 1px rgba(51,102,255,0.4) inset' : '0 0 0 1px rgba(61,112,255,0.12) inset',
-                            transition: 'all 180ms', letterSpacing: '0.04em',
-                        }}>{l}</button>
-                    ))}
-                </div>
-                </div>
             </div>
+            <div style={{ borderTop: '1px solid var(--t-line)', margin: '0 0 28px' }} />
 
             {/* Tab: Masivo */}
             {tab === 'masivo' && (
-                <div style={{ flex: 1, minHeight: 0, background: 'rgba(0,7,45,0.85)', border: '1px solid rgba(51,102,255,0.1)', borderRadius: 16, overflow: 'hidden' }}>
+                <div style={{ flex: 1, minHeight: 0, background: 'var(--t-surface)', border: '1px solid var(--t-line)', borderRadius: 12, overflow: 'hidden' }}>
                     <IdentificacionMasiva />
                 </div>
             )}
 
             {/* Tab: Identificar (original) */}
-            {tab === 'identificar' && <div style={{ display: 'flex', gap: 22, alignItems: 'flex-start' }}>
+            {tab === 'identificar' && <div style={{ display: 'grid', gridTemplateColumns: '360px minmax(0,1fr)', gap: 43, alignItems: 'start' }}>
 
                 {/* ── LEFT PANEL ─────────────────────────────────────────── */}
-                <div style={{ ...GLASS, padding: 22, flex: '0 0 320px', position: 'sticky', top: 16 }}>
-                    <label style={{ fontSize: 10, fontWeight: 800, color: 'rgba(51,102,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8, display: 'block' }}>
-                        Matrículas
+                <div style={{ position: 'sticky', top: 16 }}>
+                    <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4, color: 'var(--t-text)' }}>Consultar matrículas</div>
+                    <div style={{ fontSize: 13, color: 'var(--t-text-3)', marginBottom: 22 }}>Introduce una matrícula o varias, separadas por líneas.</div>
+                    <label style={{ fontSize: 11, letterSpacing: '1px', fontWeight: 750, color: 'var(--t-text-3)', margin: '0 0 9px', display: 'block' }}>
+                        MATRÍCULAS
                     </label>
                     <textarea
                         ref={textareaRef}
@@ -699,28 +696,28 @@ export default function VehiculosPage() {
                         spellCheck={false}
                         style={{
                             width: '100%', minHeight: 160,
-                            background: 'rgba(6,14,50,0.55)', border: '1px solid rgba(51,102,255,0.15)',
-                            borderRadius: 10, color: '#FFFFFF',
+                            background: 'var(--t-bg)', border: '1px solid var(--t-line)',
+                            borderRadius: 10, color: 'var(--t-text)',
                             fontFamily: '"JetBrains Mono", "Fira Code", monospace',
                             fontSize: 14, fontWeight: 600, letterSpacing: '0.05em',
                             padding: '12px 14px', outline: 'none', resize: 'vertical', lineHeight: 1.8,
                             caretColor: '#3366FF',
                         }}
                     />
-                    <p style={{ fontSize: 10, color: 'rgba(178,198,245,0.4)', margin: '6px 0 10px', lineHeight: 1.4 }}>
+                    <p style={{ fontSize: 10, color: 'var(--t-text-3)', margin: '6px 0 10px', lineHeight: 1.4 }}>
                         Una o varias. Ctrl+Enter para consultar.
                     </p>
 
                     {/* Mode selector */}
-                    <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, margin: '20px 0' }}>
                         {([['year', 'Solo año', 'Rápido — solo fecha matriculación'], ['full', 'Info completa', 'Todos los datos + catálogo']] as const).map(([mode, label, title]) => (
                             <button key={mode} title={title} onClick={() => setQueryMode(mode)}
                                 style={{
-                                    flex: 1, padding: '8px 0', borderRadius: 8, fontSize: 11, fontWeight: 700,
-                                    cursor: 'pointer', transition: 'all 0.15s',
-                                    background: queryMode === mode ? (mode === 'year' ? 'rgba(16,185,129,0.18)' : 'rgba(51,102,255,0.18)') : 'rgba(6,14,50,0.4)',
-                                    color: queryMode === mode ? (mode === 'year' ? '#10b981' : '#6699ff') : 'rgba(178,198,245,0.45)',
-                                    border: queryMode === mode ? `1px solid ${mode === 'year' ? 'rgba(16,185,129,0.4)' : 'rgba(51,102,255,0.4)'}` : '1px solid rgba(61,112,255,0.1)',
+                                    padding: 12, borderRadius: 6, fontSize: 12, fontWeight: 600,
+                                    cursor: 'pointer',
+                                    background: queryMode === mode ? 'rgba(18,64,204,0.09)' : 'var(--t-surface)',
+                                    color: queryMode === mode ? 'var(--t-text)' : 'var(--t-text-3)',
+                                    border: queryMode === mode ? '1px solid var(--t-blue)' : '1px solid var(--t-line)',
                                 }}>
                                 {label}
                             </button>
@@ -742,13 +739,12 @@ export default function VehiculosPage() {
                         onClick={handleConsultar}
                         disabled={!input.trim() || globalLoading}
                         style={{
-                            width: '100%', padding: '13px 0', borderRadius: 10,
-                            background: globalLoading ? 'rgba(18,64,204,0.3)' : !input.trim() ? 'rgba(18,64,204,0.2)' : 'linear-gradient(135deg,#1240CC,#3366FF)',
-                            color: '#fff', border: 'none', fontSize: 13, fontWeight: 800,
-                            letterSpacing: '0.06em', textTransform: 'uppercase',
+                            width: '100%', padding: '11px 15px', minHeight: 40, borderRadius: 6,
+                            background: (!input.trim() || globalLoading) ? 'var(--t-line-soft)' : 'var(--t-blue)',
+                            border: (!input.trim() || globalLoading) ? '1px solid var(--t-line)' : '1px solid var(--t-blue)',
+                            color: (!input.trim() || globalLoading) ? 'var(--t-text-3)' : '#fff', fontSize: 13, fontWeight: 600,
                             cursor: (!input.trim() || globalLoading) ? 'not-allowed' : 'pointer',
                             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                            opacity: !input.trim() ? 0.4 : 1, transition: 'opacity 0.2s',
                         }}
                     >
                         {globalLoading ? (
@@ -766,25 +762,25 @@ export default function VehiculosPage() {
                     {hasQueried && cards.length > 0 && (
                         <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 5 }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
-                                <span style={{ color: 'rgba(178,198,245,0.5)' }}>Total</span>
-                                <span style={{ color: '#FFFFFF', fontWeight: 700 }}>{cards.length} matrículas</span>
+                                <span style={{ color: 'var(--t-text-3)' }}>Total</span>
+                                <span style={{ color: 'var(--t-text)', fontWeight: 700 }}>{cards.length} matrículas</span>
                             </div>
                             {sdDone > 0 && (
                                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
-                                    <span style={{ color: 'rgba(178,198,245,0.5)' }}>Con datos</span>
+                                    <span style={{ color: 'var(--t-text-3)' }}>Con datos</span>
                                     <span style={{ color: '#10b981', fontWeight: 700 }}>{sdDone}</span>
                                 </div>
                             )}
                             {sdFailed > 0 && (
                                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
-                                    <span style={{ color: 'rgba(178,198,245,0.5)' }}>Sin Silverdat</span>
+                                    <span style={{ color: 'var(--t-text-3)' }}>Sin Silverdat</span>
                                     <span style={{ color: '#f59e0b', fontWeight: 700 }}>{sdFailed}</span>
                                 </div>
                             )}
                             {sdPending > 0 && (
                                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
-                                    <span style={{ color: 'rgba(178,198,245,0.5)' }}>Pendientes</span>
-                                    <span style={{ color: '#3366FF', fontWeight: 700 }}>{sdPending}</span>
+                                    <span style={{ color: 'var(--t-text-3)' }}>Pendientes</span>
+                                    <span style={{ color: 'var(--t-blue)', fontWeight: 700 }}>{sdPending}</span>
                                 </div>
                             )}
                         </div>
@@ -804,13 +800,12 @@ export default function VehiculosPage() {
                 </div>
 
                 {/* ── RESULTS ────────────────────────────────────────────── */}
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ borderLeft: '1px solid var(--t-line)', paddingLeft: 42, display: 'flex', flexDirection: 'column', gap: 12 }}>
                     {!hasQueried && (
-                        <div style={{ textAlign: 'center', padding: '80px 0', opacity: 0.3 }}>
-                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#3366FF" strokeWidth="1.2" style={{ margin: '0 auto 14px', display: 'block' }}>
-                                <rect x="2" y="5" width="20" height="14" rx="2" /><line x1="2" y1="10" x2="22" y2="10" />
-                            </svg>
-                            <p style={{ color: '#BDD4FF', fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Introduce matrículas y pulsa Consultar</p>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 385, textAlign: 'center', gap: 10 }}>
+                            <div style={{ fontSize: 35, color: 'var(--t-text-3)', fontWeight: 250, marginBottom: 14 }}>▱</div>
+                            <h2 style={{ fontSize: 18, margin: 0, color: 'var(--t-text)', fontWeight: 700 }}>Resultados de la consulta</h2>
+                            <p style={{ fontSize: 13, maxWidth: 420, color: 'var(--t-text-3)', margin: 0 }}>Introduce las matrículas a la izquierda. Los resultados aparecerán aquí, sin cambiar de pantalla.</p>
                         </div>
                     )}
 
@@ -819,25 +814,25 @@ export default function VehiculosPage() {
                         <div style={{ ...GLASS, borderRadius: 14, overflow: 'hidden' }}>
                             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                                 <thead>
-                                    <tr style={{ background: 'rgba(6,14,50,0.8)', borderBottom: '1px solid rgba(51,102,255,0.2)' }}>
+                                    <tr style={{ background: 'var(--t-surface)', borderBottom: '1px solid var(--t-line)' }}>
                                         {['#', 'Matrícula', 'Fecha Matric. (SD)', 'Año Fab. (SD)', 'Fecha Local', 'Estado'].map(h => (
-                                            <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontSize: 10, fontWeight: 800, color: 'rgba(178,198,245,0.5)', textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>{h}</th>
+                                            <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontSize: 10, fontWeight: 800, color: 'var(--t-text-3)', textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>{h}</th>
                                         ))}
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {cards.map((card, i) => {
                                         const sd = card.sdVehicle;
-                                        const stripe = i % 2 === 1 ? 'rgba(6,14,50,0.25)' : 'transparent';
-                                        const statusColor = card.sdStatus === 'ok' ? '#10b981' : card.sdStatus === 'error' ? '#f59e0b' : card.sdStatus === 'loading' ? '#3366FF' : 'rgba(178,198,245,0.3)';
+                                        const stripe = i % 2 === 1 ? 'var(--t-line-soft)' : 'transparent';
+                                        const statusColor = card.sdStatus === 'ok' ? '#10b981' : card.sdStatus === 'error' ? '#f59e0b' : card.sdStatus === 'loading' ? 'var(--t-blue)' : 'var(--t-text-3)';
                                         const statusLabel = card.sdStatus === 'ok' ? '✓' : card.sdStatus === 'error' ? card.sdError || 'Sin datos' : card.sdStatus === 'loading' ? '…' : '—';
                                         return (
                                             <tr key={i} style={{ background: stripe, borderBottom: '1px solid rgba(61,112,255,0.07)' }}>
-                                                <td style={{ padding: '9px 14px', color: 'rgba(178,198,245,0.3)', fontSize: 11, fontWeight: 700 }}>{i + 1}</td>
-                                                <td style={{ padding: '9px 14px', fontFamily: '"JetBrains Mono",monospace', fontWeight: 800, color: '#FFFFFF', letterSpacing: '0.06em' }}>{card.plate}</td>
-                                                <td style={{ padding: '9px 14px', fontWeight: 700, color: sd?.fecha_matriculacion ? '#10b981' : 'rgba(178,198,245,0.25)', fontFamily: 'monospace' }}>{sd?.fecha_matriculacion || '—'}</td>
-                                                <td style={{ padding: '9px 14px', fontWeight: 700, color: sd?.anyo_fabricacion ? '#6699ff' : 'rgba(178,198,245,0.25)', fontFamily: 'monospace' }}>{sd?.anyo_fabricacion || '—'}</td>
-                                                <td style={{ padding: '9px 14px', color: 'rgba(178,198,245,0.55)', fontFamily: 'monospace' }}>{card.date || '—'}</td>
+                                                <td style={{ padding: '9px 14px', color: 'var(--t-text-3)', fontSize: 11, fontWeight: 700 }}>{i + 1}</td>
+                                                <td style={{ padding: '9px 14px', fontFamily: '"JetBrains Mono",monospace', fontWeight: 800, color: 'var(--t-text)', letterSpacing: '0.06em' }}>{card.plate}</td>
+                                                <td style={{ padding: '9px 14px', fontWeight: 700, color: sd?.fecha_matriculacion ? '#10b981' : 'var(--t-text-3)', fontFamily: 'monospace' }}>{sd?.fecha_matriculacion || '—'}</td>
+                                                <td style={{ padding: '9px 14px', fontWeight: 700, color: sd?.anyo_fabricacion ? 'var(--t-blue)' : 'var(--t-text-3)', fontFamily: 'monospace' }}>{sd?.anyo_fabricacion || '—'}</td>
+                                                <td style={{ padding: '9px 14px', color: 'var(--t-text-2)', fontFamily: 'monospace' }}>{card.date || '—'}</td>
                                                 <td style={{ padding: '9px 14px', fontSize: 11, fontWeight: 700, color: statusColor, maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={statusLabel}>{statusLabel}</td>
                                             </tr>
                                         );
@@ -862,19 +857,19 @@ export default function VehiculosPage() {
                                             <svg width="9" height="9" viewBox="0 0 18 18" fill="none">{[...Array(12)].map((_, j) => { const a = (j * 30 - 90) * Math.PI / 180; return <circle key={j} cx={9 + 6 * Math.cos(a)} cy={9 + 6 * Math.sin(a)} r="0.8" fill="#FFD700" />; })}</svg>
                                             <span style={{ color: '#FFF', fontSize: 5, fontWeight: 800 }}>E</span>
                                         </div>
-                                        <div style={{ height: 34, background: 'rgba(255,255,255,0.04)', borderRadius: '0 4px 4px 0', border: '1px solid rgba(61,112,255,0.2)', borderLeft: 'none', display: 'flex', alignItems: 'center', padding: '0 10px' }}>
-                                            <span style={{ fontFamily: '"JetBrains Mono",monospace', fontSize: 15, fontWeight: 800, color: '#FFFFFF', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>{card.plate}</span>
+                                        <div style={{ height: 34, background: 'var(--t-line-soft)', borderRadius: '0 4px 4px 0', border: '1px solid var(--t-line)', borderLeft: 'none', display: 'flex', alignItems: 'center', padding: '0 10px' }}>
+                                            <span style={{ fontFamily: '"JetBrains Mono",monospace', fontSize: 15, fontWeight: 800, color: 'var(--t-text)', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>{card.plate}</span>
                                         </div>
                                     </div>
 
                                     {/* Date / vehicle summary */}
                                     <div style={{ flex: 1, minWidth: 0 }}>
                                         {card.date
-                                            ? <span style={{ fontSize: 17, fontWeight: 800, color: '#FFFFFF' }}>{card.date}</span>
-                                            : <span style={{ fontSize: 13, color: 'rgba(178,198,245,0.4)', fontStyle: 'italic' }}>Sin fecha</span>
+                                            ? <span style={{ fontSize: 17, fontWeight: 800, color: 'var(--t-text)' }}>{card.date}</span>
+                                            : <span style={{ fontSize: 13, color: 'var(--t-text-3)', fontStyle: 'italic' }}>Sin fecha</span>
                                         }
                                         {sd?.marca && (
-                                            <div style={{ fontSize: 12, color: 'rgba(178,198,245,0.65)', marginTop: 2, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                            <div style={{ fontSize: 12, color: 'var(--t-text-2)', marginTop: 2, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                                 {sd.marca} {sd.modelo?.toUpperCase().startsWith(sd.marca.toUpperCase()) ? sd.modelo.slice(sd.marca.length).trim() : sd.modelo}
                                             </div>
                                         )}
@@ -904,7 +899,7 @@ export default function VehiculosPage() {
                                 {sd && (
                                     <div style={{ borderTop: '1px solid rgba(245,158,11,0.12)', background: 'rgba(245,158,11,0.03)', padding: '12px 18px' }}>
                                         {sd.version && (
-                                            <p style={{ margin: '0 0 8px', fontSize: 11, color: 'rgba(178,198,245,0.55)', fontStyle: 'italic' }}>
+                                            <p style={{ margin: '0 0 8px', fontSize: 11, color: 'var(--t-text-2)', fontStyle: 'italic' }}>
                                                 {sd.version}
                                                 {sd.vin && <span style={{ marginLeft: 12, fontFamily: 'monospace', fontSize: 10 }}>VIN: {sd.vin}</span>}
                                             </p>
@@ -926,7 +921,7 @@ export default function VehiculosPage() {
                                             ] as [string, string | null | undefined][]).filter(([, v]) => v).map(([label, val]) => (
                                                 <div key={label}>
                                                     <span style={{ fontSize: 9, fontWeight: 700, color: 'rgba(245,158,11,0.45)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block' }}>{label}</span>
-                                                    <span style={{ fontSize: 12, fontWeight: 600, color: '#FFFFFF' }}>{val}</span>
+                                                    <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--t-text)' }}>{val}</span>
                                                 </div>
                                             ))}
                                         </div>
@@ -945,7 +940,7 @@ export default function VehiculosPage() {
 
                                         {/* Catalog match */}
                                         {card.catStatus === 'loading' && (
-                                            <p style={{ margin: '10px 0 0', fontSize: 11, color: 'rgba(178,198,245,0.4)' }}>Buscando en catálogo...</p>
+                                            <p style={{ margin: '10px 0 0', fontSize: 11, color: 'var(--t-text-3)' }}>Buscando en catálogo...</p>
                                         )}
                                         {hasCat && (
                                             <CatalogResult
@@ -959,13 +954,13 @@ export default function VehiculosPage() {
 
                                 {/* ── Manual fallback — always available ──── */}
                                 {card.sdStatus !== 'loading' && (
-                                    <div style={{ borderTop: '1px solid rgba(61,112,255,0.1)', padding: '0 18px 14px' }}>
+                                    <div style={{ borderTop: '1px solid var(--t-line)', padding: '0 18px 14px' }}>
                                         <button
                                             onClick={() => updateCard(card.originalInput, { manualOpen: !card.manualOpen })}
                                             style={{
                                                 width: '100%', marginTop: 12, padding: '8px 12px', borderRadius: 8,
-                                                background: 'rgba(61,112,255,0.07)', border: '1px solid rgba(61,112,255,0.15)',
-                                                color: 'rgba(178,198,245,0.6)', fontSize: 11, fontWeight: 700,
+                                                background: 'var(--t-line-soft)', border: '1px solid var(--t-line)',
+                                                color: 'var(--t-text-2)', fontSize: 11, fontWeight: 700,
                                                 letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer',
                                                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                                             }}

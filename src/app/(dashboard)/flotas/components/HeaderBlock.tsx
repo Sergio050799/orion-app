@@ -25,18 +25,28 @@ const PERIODICIDAD_OPTS: { value: Periodicidad; label: string }[] = [
   { value: 'anual',      label: 'ANUAL' },
 ];
 
-const selectStyle: React.CSSProperties = {
-  background: 'transparent',
-  border: 'none',
-  borderBottom: '1px solid rgba(51,102,255,0.3)',
-  color: '#FFFFFF',
+const fieldLabel: React.CSSProperties = {
+  display: 'block',
+  color: 'var(--t-text-3)',
+  textTransform: 'uppercase',
+  fontSize: 10,
+  letterSpacing: '0.07em',
+  fontWeight: 750,
+  marginBottom: 6,
+};
+
+const fieldInput: React.CSSProperties = {
+  width: '100%',
+  minHeight: 36,
+  background: 'var(--t-bg)',
+  border: '1px solid var(--t-line)',
+  borderRadius: 5,
+  padding: '7px 9px',
+  color: 'var(--t-text)',
   fontSize: 13,
   fontFamily: 'monospace',
   fontWeight: 700,
   outline: 'none',
-  padding: '1px 0',
-  cursor: 'pointer',
-  width: '100%',
 };
 
 const HeaderBlock = React.memo(function HeaderBlock({ header, onChange }: Props) {
@@ -45,57 +55,50 @@ const HeaderBlock = React.memo(function HeaderBlock({ header, onChange }: Props)
 
   return (
     <div
-      className="flex items-center gap-3 px-4 py-2 shrink-0 flex-wrap"
-      style={{ background: 'rgba(18,64,204,0.08)', borderBottom: '1px solid rgba(18,64,204,0.2)' }}
+      className="flex items-center gap-3 px-4 py-3 shrink-0 flex-wrap"
+      style={{ background: 'var(--t-surface)', borderBottom: '1px solid var(--t-line)' }}
     >
       {TEXT_FIELDS.map(f => (
-        <div key={f.key} className="flex flex-col gap-0.5 min-w-[120px]">
-          <span className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'rgba(70,120,255,0.8)' }}>
-            {f.label}
-          </span>
+        <div key={f.key} style={{ minWidth: 120 }}>
+          <span style={fieldLabel}>{f.label}</span>
           <input
             type="text"
             value={(header[f.key] as string) ?? ''}
             onChange={e => set(f.key, e.target.value)}
             placeholder={f.placeholder}
-            className="text-[13px] font-mono font-bold outline-none bg-transparent border-b"
-            style={{ color: '#FFFFFF', borderColor: 'rgba(51,102,255,0.3)', width: '100%', padding: '1px 0' }}
-            onFocus={e => (e.currentTarget.style.borderColor = '#3366FF')}
-            onBlur={e => (e.currentTarget.style.borderColor = 'rgba(51,102,255,0.3)')}
+            style={fieldInput}
+            onFocus={e => (e.currentTarget.style.borderColor = 'var(--t-blue)')}
+            onBlur={e => (e.currentTarget.style.borderColor = 'var(--t-line)')}
           />
         </div>
       ))}
 
       {/* Forma de pago — INTERNA / EXTERNA */}
-      <div className="flex flex-col gap-0.5 min-w-[120px]">
-        <span className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'rgba(70,120,255,0.8)' }}>
-          FORMA DE PAGO
-        </span>
+      <div style={{ minWidth: 120 }}>
+        <span style={fieldLabel}>FORMA DE PAGO</span>
         <select
           value={header.formaPago ?? ''}
           onChange={e => set('formaPago', e.target.value)}
-          style={selectStyle}
+          style={fieldInput}
         >
-          <option value="" style={{ background: '#030a2a' }}>— seleccionar —</option>
+          <option value="">— seleccionar —</option>
           {FORMA_PAGO_OPTS.map(o => (
-            <option key={o} value={o} style={{ background: '#030a2a' }}>{o}</option>
+            <option key={o} value={o}>{o}</option>
           ))}
         </select>
       </div>
 
       {/* Periodicidad */}
-      <div className="flex flex-col gap-0.5 min-w-[120px]">
-        <span className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'rgba(70,120,255,0.8)' }}>
-          PERIODICIDAD
-        </span>
+      <div style={{ minWidth: 120 }}>
+        <span style={fieldLabel}>PERIODICIDAD</span>
         <select
           value={header.periodicidad ?? ''}
           onChange={e => onChange({ ...header, periodicidad: e.target.value as Periodicidad })}
-          style={selectStyle}
+          style={fieldInput}
         >
-          <option value="" style={{ background: '#030a2a' }}>— seleccionar —</option>
+          <option value="">— seleccionar —</option>
           {PERIODICIDAD_OPTS.map(o => (
-            <option key={o.value} value={o.value} style={{ background: '#030a2a' }}>{o.label}</option>
+            <option key={o.value} value={o.value}>{o.label}</option>
           ))}
         </select>
       </div>

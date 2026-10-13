@@ -87,9 +87,9 @@ interface Props {
 // ─── Design tokens ────────────────────────────────────────────────────────────
 
 const glass: React.CSSProperties = {
-    background: 'rgba(12, 28, 82, 0.5)',
-    border: '1px solid rgba(61, 112, 255, 0.18)',
-    borderRadius: 16,
+    background: 'var(--t-surface)',
+    border: '1px solid var(--t-line)',
+    borderRadius: 12,
 };
 
 // ─── Silverdat login modal ────────────────────────────────────────────────────
@@ -122,8 +122,8 @@ function SilverdatModal({ onClose, onSuccess }: { onClose: () => void; onSuccess
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
                     <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg, #f59e0b, #d97706)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 800, color: '#fff' }}>S</div>
                     <div>
-                        <h2 style={{ margin: 0, fontSize: 16, color: '#FFFFFF', fontWeight: 700 }}>Silverdat</h2>
-                        <p style={{ margin: 0, fontSize: 11, color: 'rgba(178,198,245,0.6)' }}>Credenciales DAT / fastVALUATE</p>
+                        <h2 style={{ margin: 0, fontSize: 16, color: 'var(--t-text)', fontWeight: 700 }}>Silverdat</h2>
+                        <p style={{ margin: 0, fontSize: 11, color: 'var(--t-text-2)' }}>Credenciales DAT / fastVALUATE</p>
                     </div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -132,12 +132,12 @@ function SilverdatModal({ onClose, onSuccess }: { onClose: () => void; onSuccess
                     <input placeholder="Contraseña" type="password" value={pass} onChange={e => setPass(e.target.value)} className="orion-input" style={{ fontSize: 13 }} onKeyDown={e => { if (e.key === 'Enter') handleLogin(); }} />
                 </div>
                 {error && <pre style={{ margin: '10px 0 0', fontSize: 11, color: '#ef4444', whiteSpace: 'pre-wrap', wordBreak: 'break-all', maxHeight: 100, overflow: 'auto', background: 'rgba(239,68,68,0.06)', padding: 8, borderRadius: 8 }}>{error}</pre>}
-                <p style={{ margin: '12px 0', fontSize: 10, color: 'rgba(178,198,245,0.42)', lineHeight: 1.4 }}>Las credenciales NO se guardan. Solo para esta sesión.</p>
+                <p style={{ margin: '12px 0', fontSize: 10, color: 'var(--t-text-3)', lineHeight: 1.4 }}>Las credenciales NO se guardan. Solo para esta sesión.</p>
                 <div style={{ display: 'flex', gap: 8 }}>
                     <button onClick={handleLogin} disabled={loading || !datId.trim() || !user.trim() || !pass.trim()} style={{ flex: 1, fontSize: 12, fontWeight: 700, padding: '10px 0', borderRadius: 10, background: loading ? 'rgba(245,158,11,0.3)' : 'linear-gradient(135deg, #d97706, #f59e0b)', color: '#fff', border: 'none', cursor: loading ? 'not-allowed' : 'pointer' }}>
                         {loading ? 'Conectando...' : 'Iniciar sesión'}
                     </button>
-                    <button onClick={onClose} style={{ fontSize: 12, padding: '10px 16px', borderRadius: 10, background: 'rgba(6,14,50,0.5)', color: '#BDD4FF', border: '1px solid rgba(61,112,255,0.22)', cursor: 'pointer' }}>Cancelar</button>
+                    <button onClick={onClose} style={{ fontSize: 12, padding: '10px 16px', borderRadius: 10, background: 'transparent', color: 'var(--t-text-2)', border: '1px solid var(--t-line)', cursor: 'pointer' }}>Cancelar</button>
                 </div>
             </div>
         </div>
@@ -180,8 +180,8 @@ function ModeToggle({ value, onChange }: { value: ProcessMode; onChange: (m: Pro
                         onClick={() => onChange(opt.id)}
                         style={{
                             flex: 1, textAlign: 'left', padding: '14px 16px', borderRadius: 12, cursor: 'pointer',
-                            background: active ? opt.bg : 'rgba(12,28,82,0.4)',
-                            border: `1.5px solid ${active ? opt.accent : 'rgba(61,112,255,0.15)'}`,
+                            background: active ? opt.bg : 'transparent',
+                            border: `1.5px solid ${active ? opt.accent : 'var(--t-line)'}`,
                             transition: 'all 0.18s',
                             position: 'relative', overflow: 'hidden',
                         }}
@@ -195,13 +195,13 @@ function ModeToggle({ value, onChange }: { value: ProcessMode; onChange: (m: Pro
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                             <div style={{
                                 width: 14, height: 14, borderRadius: '50%', flexShrink: 0,
-                                border: `2px solid ${active ? opt.accent : 'rgba(178,198,245,0.25)'}`,
+                                border: `2px solid ${active ? opt.accent : 'var(--t-line)'}`,
                                 background: active ? opt.accent : 'transparent',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                             }}>
                                 {active && <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#fff' }} />}
                             </div>
-                            <span style={{ fontSize: 13, fontWeight: 800, color: active ? '#FFFFFF' : 'rgba(178,198,245,0.55)' }}>
+                            <span style={{ fontSize: 13, fontWeight: 800, color: active ? 'var(--t-text)' : 'var(--t-text-2)' }}>
                                 {opt.title}
                             </span>
                             <span style={{
@@ -213,7 +213,7 @@ function ModeToggle({ value, onChange }: { value: ProcessMode; onChange: (m: Pro
                                 {opt.tag}
                             </span>
                         </div>
-                        <p style={{ margin: 0, fontSize: 11, color: active ? 'rgba(178,198,245,0.65)' : 'rgba(178,198,245,0.35)', lineHeight: 1.5 }}>
+                        <p style={{ margin: 0, fontSize: 11, color: active ? 'var(--t-text-2)' : 'var(--t-text-3)', lineHeight: 1.5 }}>
                             {opt.desc}
                         </p>
                     </button>
@@ -371,204 +371,184 @@ function Step1({
 
     return (
         <div style={{ maxWidth: 700, margin: '0 auto', padding: '32px 24px' }}>
-            <div style={{ textAlign: 'center', marginBottom: 32 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#f59e0b', marginBottom: 8 }}>Paso 1 de 3</div>
-                <h2 style={{ fontSize: 22, fontWeight: 800, color: '#FFFFFF', margin: '0 0 8px' }}>Plantilla de vehículos</h2>
-                <p style={{ fontSize: 13, color: 'rgba(178,198,245,0.6)', margin: 0 }}>
-                    Descarga la plantilla, rellena los datos de los vehículos y súbela.
-                </p>
+
+            {/* shead */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 17 }}>
+                <div>
+                    <h2 style={{ fontSize: 22, letterSpacing: '-0.55px', margin: '0 0 5px', fontWeight: 720, color: 'var(--t-text)' }}>Plantilla de vehículos</h2>
+                    <p style={{ fontSize: 12, color: 'var(--t-text-3)', lineHeight: 1.5, margin: 0 }}>Descarga, cumplimenta e importa el Excel del estudio.</p>
+                </div>
+                <span style={{ display: 'inline-block', padding: '5px 8px', border: '1px solid var(--t-line)', borderRadius: 4, color: 'var(--t-text-3)', fontSize: 10, fontWeight: 750, whiteSpace: 'nowrap', flexShrink: 0 }}>PASO 1 DE 3</span>
             </div>
 
-            {/* Download */}
-            <div style={{ ...glass, padding: 24, marginBottom: 20 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
-                    <div>
-                        <p style={{ margin: '0 0 4px', fontSize: 13, fontWeight: 700, color: '#FFFFFF' }}>1. Descargar plantilla</p>
-                        <p style={{ margin: 0, fontSize: 11, color: 'rgba(178,198,245,0.5)' }}>Excel con columnas: matrícula, marca, modelo, tipo, coberturas, prima referencia...</p>
-                    </div>
-                    <button
-                        onClick={handleDownload}
-                        disabled={downloadLoading}
-                        style={{
-                            flexShrink: 0, padding: '10px 20px', borderRadius: 10,
-                            background: downloadLoading ? 'rgba(51,102,255,0.2)' : 'linear-gradient(135deg, #1240CC, #3366FF)',
-                            color: '#fff', border: 'none', fontSize: 12, fontWeight: 700,
-                            cursor: downloadLoading ? 'not-allowed' : 'pointer',
-                            display: 'flex', alignItems: 'center', gap: 8,
-                        }}
-                    >
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
-                        </svg>
-                        {downloadLoading ? 'Generando...' : 'Descargar plantilla'}
-                    </button>
-                </div>
-            </div>
-
-            {/* Upload */}
-            <div style={{ ...glass, padding: 24, marginBottom: 20 }}>
-                <p style={{ margin: '0 0 14px', fontSize: 13, fontWeight: 700, color: '#FFFFFF' }}>2. Subir plantilla rellena</p>
-                <div
-                    onClick={() => fileInputRef.current?.click()}
-                    onDragOver={e => { e.preventDefault(); }}
-                    onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
-                    style={{
-                        border: '2px dashed rgba(61,112,255,0.3)',
-                        borderRadius: 12, padding: '32px 24px', textAlign: 'center',
-                        cursor: 'pointer', transition: 'border-color 0.2s',
-                        background: 'rgba(18,64,204,0.05)',
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(61,112,255,0.55)'}
-                    onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(61,112,255,0.3)'}
-                >
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(61,112,255,0.6)" strokeWidth="1.5" style={{ margin: '0 auto 12px' }}>
-                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" />
-                    </svg>
-                    <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'rgba(178,198,245,0.7)' }}>
-                        {uploadedRows ? `✓ ${uploadedRows.length} vehículos detectados` : 'Haz click o arrastra tu Excel aquí'}
-                    </p>
-                    {!uploadedRows && <p style={{ margin: '4px 0 0', fontSize: 11, color: 'rgba(178,198,245,0.35)' }}>.xlsx</p>}
-                    <input ref={fileInputRef} type="file" accept=".xlsx,.xls" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = ''; }} />
-                </div>
-
-                {parseError && (
-                    <p style={{ margin: '10px 0 0', fontSize: 12, color: '#ef4444', fontWeight: 600 }}>{parseError}</p>
-                )}
-
-                {uploadedRows && (() => {
-                    const seen = new Map<string, number>();
-                    uploadedRows.forEach(r => {
-                        const mat = r['matricula']?.trim().replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-                        if (mat) seen.set(mat, (seen.get(mat) ?? 0) + 1);
-                    });
-                    const duplicadas = Array.from(seen.entries()).filter(([, n]) => n > 1).map(([m]) => m);
-                    return (
-                        <>
-                            {duplicadas.length > 0 && (
-                                <div style={{ marginTop: 10, padding: '10px 14px', background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.35)', borderRadius: 10 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                                        <span style={{ fontSize: 12, fontWeight: 700, color: '#ef4444' }}>
-                                            {duplicadas.length} matrícula{duplicadas.length !== 1 ? 's' : ''} duplicada{duplicadas.length !== 1 ? 's' : ''}
-                                        </span>
-                                        <button
-                                            onClick={() => {
-                                                const firstSeen = new Set<string>();
-                                                setUploadedRows(uploadedRows!.filter(r => {
-                                                    const mat = r['matricula']?.trim().replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-                                                    if (!mat) return true;
-                                                    if (firstSeen.has(mat)) return false;
-                                                    firstSeen.add(mat);
-                                                    return true;
-                                                }));
-                                            }}
-                                            style={{ fontSize: 11, fontWeight: 700, color: '#fff', background: '#ef4444', border: 'none', borderRadius: 6, padding: '4px 12px', cursor: 'pointer', flexShrink: 0 }}
-                                        >
-                                            Eliminar duplicadas
-                                        </button>
-                                    </div>
-                                    <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                                        {duplicadas.map(m => (
-                                            <span key={m} style={{ fontSize: 11, fontWeight: 800, color: '#ef4444', background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 4, padding: '2px 8px', fontFamily: 'monospace' }}>
-                                                {m} ×{seen.get(m)}
-                                            </span>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                            <div style={{ marginTop: 10, padding: '10px 14px', background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: 10 }}>
-                                <span style={{ fontSize: 12, fontWeight: 700, color: '#10b981' }}>
-                                    {uploadedRows.length} vehículo{uploadedRows.length !== 1 ? 's' : ''} detectados
-                                    {duplicadas.length > 0 && <span style={{ color: '#f59e0b', fontWeight: 700 }}> · {duplicadas.length} dup.</span>}
-                                </span>
-                                <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                                    {uploadedRows.slice(0, 8).map((r, i) => {
-                                        const mat = r['matricula']?.trim().replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-                                        const isDup = duplicadas.includes(mat);
-                                        return (
-                                            <span key={i} style={{ fontSize: 10, fontWeight: 700, color: isDup ? '#ef4444' : 'rgba(178,198,245,0.6)', background: isDup ? 'rgba(239,68,68,0.1)' : 'rgba(61,112,255,0.1)', border: `1px solid ${isDup ? 'rgba(239,68,68,0.3)' : 'rgba(61,112,255,0.15)'}`, borderRadius: 4, padding: '2px 7px', fontFamily: 'monospace' }}>
-                                                {r['matricula']}
-                                            </span>
-                                        );
-                                    })}
-                                    {uploadedRows.length > 8 && <span style={{ fontSize: 10, color: 'rgba(178,198,245,0.4)' }}>+{uploadedRows.length - 8} más</span>}
-                                </div>
-                            </div>
-                        </>
-                    );
-                })()}
+            {/* processline */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 9, color: 'var(--t-text-3)', fontSize: 11, margin: '0 0 30px' }}>
+                <span style={{ display: 'grid', placeItems: 'center', border: '1px solid var(--t-blue)', borderRadius: '50%', width: 26, height: 26, background: 'var(--t-blue)', color: '#fff', flexShrink: 0, fontSize: 11 }}>1</span>
+                <span style={{ flex: 1, height: 1, background: 'var(--t-line)', display: 'block' }} />
+                <span style={{ display: 'grid', placeItems: 'center', border: '1px solid var(--t-line)', borderRadius: '50%', width: 26, height: 26, flexShrink: 0, fontSize: 11 }}>2</span>
+                <span style={{ flex: 1, height: 1, background: 'var(--t-line)', display: 'block' }} />
+                <span style={{ display: 'grid', placeItems: 'center', border: '1px solid var(--t-line)', borderRadius: '50%', width: 26, height: 26, flexShrink: 0, fontSize: 11 }}>3</span>
             </div>
 
             {/* Banner: flota ya registrada */}
             {flotasMatch.length > 0 && (
-                <div style={{
-                    marginBottom: 16, padding: '14px 16px',
-                    background: 'rgba(245,158,11,0.07)',
-                    border: '1.5px solid rgba(245,158,11,0.35)',
-                    borderRadius: 12,
-                    display: 'flex', alignItems: 'flex-start', gap: 12,
-                }}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2.5" style={{ flexShrink: 0, marginTop: 1 }}>
-                        <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-                        <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
-                    </svg>
-                    <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 12, fontWeight: 800, color: '#f59e0b', marginBottom: 8 }}>
-                            Esta flota ya está registrada en Orion
+                <div style={{ padding: '13px 16px', background: 'rgba(245,158,11,0.07)', borderLeft: '2px solid var(--t-amber)', color: 'var(--t-amber)', fontSize: 12, marginBottom: 26 }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+                        <div style={{ flex: 1 }}>
+                            <div style={{ fontWeight: 800, marginBottom: 8 }}>Esta flota ya está registrada en Orion</div>
+                            {flotasMatch.map(c => (
+                                <div key={c.id} style={{ fontSize: 11, color: 'var(--t-text-2)', marginBottom: 5, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                                    <span style={{ fontWeight: 700 }}>{c.nombre}</span>
+                                    {c.header.tomador && <span style={{ color: 'var(--t-text-3)' }}>{c.header.tomador}</span>}
+                                    <span style={{ padding: '1px 8px', borderRadius: 20, fontSize: 10, fontWeight: 800, background: estadoBg(c.estado), color: estadoColor(c.estado) }}>{c.estado}</span>
+                                </div>
+                            ))}
+                            <div style={{ fontSize: 11, color: 'var(--t-text-3)', marginTop: 8 }}>Puedes continuar para estudiarla de nuevo o cerrar este archivo.</div>
                         </div>
-                        {flotasMatch.map(c => (
-                            <div key={c.id} style={{ fontSize: 11, color: 'rgba(178,198,245,0.75)', marginBottom: 5, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                                <span style={{ fontWeight: 700 }}>{c.nombre}</span>
-                                {c.header.tomador && <span style={{ color: 'rgba(178,198,245,0.5)' }}>{c.header.tomador}</span>}
-                                <span style={{
-                                    padding: '1px 8px', borderRadius: 20,
-                                    fontSize: 10, fontWeight: 800,
-                                    background: estadoBg(c.estado),
-                                    color: estadoColor(c.estado),
-                                }}>
-                                    {c.estado}
-                                </span>
-                            </div>
-                        ))}
-                        <div style={{ fontSize: 11, color: 'rgba(178,198,245,0.45)', marginTop: 8 }}>
-                            Puedes continuar para estudiarla de nuevo o cerrar este archivo.
-                        </div>
+                        <button onClick={() => setFlotasMatch([])} style={{ background: 'none', border: 'none', color: 'var(--t-text-3)', cursor: 'pointer', padding: '2px 4px', flexShrink: 0, fontSize: 16, lineHeight: 1 }} title="Ignorar aviso">✕</button>
                     </div>
-                    <button
-                        onClick={() => setFlotasMatch([])}
-                        style={{ background: 'none', border: 'none', color: 'rgba(178,198,245,0.35)', cursor: 'pointer', padding: '2px 4px', flexShrink: 0, fontSize: 16, lineHeight: 1 }}
-                        title="Ignorar aviso"
-                    >✕</button>
                 </div>
             )}
 
-            {/* Mode selector */}
-            <div style={{ ...glass, padding: 20, marginBottom: 20 }}>
-                <p style={{ margin: '0 0 12px', fontSize: 12, fontWeight: 700, color: 'rgba(178,198,245,0.55)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                    3. Modo de procesado
-                </p>
-                <ModeToggle value={mode} onChange={setMode} />
+            {/* stepitem 01 — Descargar plantilla */}
+            <div style={{ display: 'flex', gap: 18, padding: '22px 0', borderTop: '1px solid var(--t-line)', alignItems: 'flex-start' }}>
+                <span style={{ fontSize: 12, color: 'var(--t-text-3)', fontWeight: 730, width: 19, flexShrink: 0 }}>01</span>
+                <div style={{ flex: 1 }}>
+                    <h3 style={{ fontSize: 14, margin: '0 0 6px', color: 'var(--t-text)', fontWeight: 700 }}>Descargar plantilla</h3>
+                    <p style={{ fontSize: 12, lineHeight: 1.6, color: 'var(--t-text-3)', margin: 0 }}>Plantilla MMT para 200 vehículos, con el formato corporativo original y las coberturas opcionales.</p>
+                </div>
+                <button
+                    onClick={handleDownload}
+                    disabled={downloadLoading}
+                    style={{ flexShrink: 0, padding: '10px 14px', border: '1px solid var(--t-line)', borderRadius: 6, fontSize: 12, fontWeight: 600, background: 'transparent', color: 'var(--t-text)', cursor: downloadLoading ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap', minHeight: 36 }}
+                >
+                    {downloadLoading ? 'Generando...' : 'Descargar plantilla'}
+                </button>
             </div>
 
-            <button
-                onClick={() => uploadedRows && onNext(uploadedRows, detectedHeaderRef.current, mode)}
-                disabled={!uploadedRows}
-                style={{
-                    width: '100%', padding: '14px 0', borderRadius: 12,
-                    background: !uploadedRows
-                        ? 'rgba(100,116,139,0.2)'
-                        : mode === 'sin'
-                            ? 'linear-gradient(135deg, #059669, #10b981)'
-                            : 'linear-gradient(135deg, #d97706, #f59e0b)',
-                    color: '#fff', border: 'none', fontSize: 13, fontWeight: 800,
-                    letterSpacing: '0.06em', textTransform: 'uppercase',
-                    cursor: uploadedRows ? 'pointer' : 'not-allowed',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-                    transition: 'background 0.2s',
-                }}
-            >
-                {mode === 'sin' ? 'Cargar datos directamente' : 'Iniciar procesado con Silverdat'}
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
-            </button>
+            {/* stepitem 02 — Subir plantilla */}
+            <div style={{ display: 'flex', gap: 18, padding: '22px 0', borderTop: '1px solid var(--t-line)', alignItems: 'flex-start' }}>
+                <span style={{ fontSize: 12, color: 'var(--t-text-3)', fontWeight: 730, width: 19, flexShrink: 0 }}>02</span>
+                <div style={{ flex: 1 }}>
+                    <h3 style={{ fontSize: 14, margin: '0 0 6px', color: 'var(--t-text)', fontWeight: 700 }}>Subir plantilla rellenada</h3>
+                    <p style={{ fontSize: 12, lineHeight: 1.6, color: 'var(--t-text-3)', margin: '0 0 12px' }}>El formato del Excel se mantiene sin modificaciones visuales en esta etapa.</p>
+                    <div
+                        onClick={() => fileInputRef.current?.click()}
+                        onDragOver={e => { e.preventDefault(); }}
+                        onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
+                        style={{ border: '1px dashed var(--t-line)', borderRadius: 7, textAlign: 'center', padding: '33px 20px', cursor: 'pointer', background: 'transparent' }}
+                        onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = 'var(--t-blue)'}
+                        onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = uploadedRows ? 'var(--t-blue)' : 'var(--t-line)'}
+                    >
+                        <strong style={{ display: 'block', fontSize: 14, color: 'var(--t-text)', margin: '0 0 6px' }}>
+                            {uploadedRows ? `✓ ${uploadedRows.length} vehículos detectados` : 'Seleccionar o arrastrar archivo Excel'}
+                        </strong>
+                        {!uploadedRows && <span style={{ fontSize: 12, color: 'var(--t-text-3)' }}>.xlsx</span>}
+                        <input ref={fileInputRef} type="file" accept=".xlsx,.xls" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = ''; }} />
+                    </div>
+
+                    {parseError && (
+                        <p style={{ margin: '10px 0 0', fontSize: 12, color: 'var(--t-red)', fontWeight: 600 }}>{parseError}</p>
+                    )}
+
+                    {uploadedRows && (() => {
+                        const seen = new Map<string, number>();
+                        uploadedRows.forEach(r => {
+                            const mat = r['matricula']?.trim().replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+                            if (mat) seen.set(mat, (seen.get(mat) ?? 0) + 1);
+                        });
+                        const duplicadas = Array.from(seen.entries()).filter(([, n]) => n > 1).map(([m]) => m);
+                        return (
+                            <>
+                                {duplicadas.length > 0 && (
+                                    <div style={{ marginTop: 10, padding: '10px 14px', background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.35)', borderRadius: 7 }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                                            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--t-red)' }}>
+                                                {duplicadas.length} matrícula{duplicadas.length !== 1 ? 's' : ''} duplicada{duplicadas.length !== 1 ? 's' : ''}
+                                            </span>
+                                            <button
+                                                onClick={() => {
+                                                    const firstSeen = new Set<string>();
+                                                    setUploadedRows(uploadedRows!.filter(r => {
+                                                        const mat = r['matricula']?.trim().replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+                                                        if (!mat) return true;
+                                                        if (firstSeen.has(mat)) return false;
+                                                        firstSeen.add(mat);
+                                                        return true;
+                                                    }));
+                                                }}
+                                                style={{ fontSize: 11, fontWeight: 700, color: '#fff', background: 'var(--t-red)', border: 'none', borderRadius: 6, padding: '4px 12px', cursor: 'pointer', flexShrink: 0 }}
+                                            >
+                                                Eliminar duplicadas
+                                            </button>
+                                        </div>
+                                        <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                                            {duplicadas.map(m => (
+                                                <span key={m} style={{ fontSize: 11, fontWeight: 800, color: 'var(--t-red)', background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 4, padding: '2px 8px', fontFamily: 'monospace' }}>
+                                                    {m} ×{seen.get(m)}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                                <div style={{ marginTop: 10, padding: '10px 14px', background: 'rgba(81,184,138,0.08)', border: '1px solid rgba(81,184,138,0.2)', borderRadius: 7 }}>
+                                    <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--t-green)' }}>
+                                        {uploadedRows.length} vehículo{uploadedRows.length !== 1 ? 's' : ''} detectados
+                                        {duplicadas.length > 0 && <span style={{ color: 'var(--t-amber)', fontWeight: 700 }}> · {duplicadas.length} dup.</span>}
+                                    </span>
+                                    <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                                        {uploadedRows.slice(0, 8).map((r, i) => {
+                                            const mat = r['matricula']?.trim().replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+                                            const isDup = duplicadas.includes(mat);
+                                            return (
+                                                <span key={i} style={{ fontSize: 10, fontWeight: 700, color: isDup ? 'var(--t-red)' : 'var(--t-text-3)', background: isDup ? 'rgba(239,68,68,0.1)' : 'var(--t-line-soft)', border: `1px solid ${isDup ? 'rgba(239,68,68,0.3)' : 'var(--t-line)'}`, borderRadius: 4, padding: '2px 7px', fontFamily: 'monospace' }}>
+                                                    {r['matricula']}
+                                                </span>
+                                            );
+                                        })}
+                                        {uploadedRows.length > 8 && <span style={{ fontSize: 10, color: 'var(--t-text-3)' }}>+{uploadedRows.length - 8} más</span>}
+                                    </div>
+                                </div>
+                            </>
+                        );
+                    })()}
+                </div>
+            </div>
+
+            {/* stepitem 03 — Modo de procesado */}
+            <div style={{ display: 'flex', gap: 18, padding: '22px 0', borderTop: '1px solid var(--t-line)', alignItems: 'flex-start' }}>
+                <span style={{ fontSize: 12, color: 'var(--t-text-3)', fontWeight: 730, width: 19, flexShrink: 0 }}>03</span>
+                <div style={{ flex: 1 }}>
+                    <h3 style={{ fontSize: 14, margin: '0 0 12px', color: 'var(--t-text)', fontWeight: 700 }}>Modo de procesado</h3>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                        <button
+                            onClick={() => setMode('con')}
+                            style={{ padding: 18, background: mode === 'con' ? 'rgba(18,64,204,0.05)' : 'transparent', border: `1px solid ${mode === 'con' ? 'var(--t-blue)' : 'var(--t-line)'}`, borderRadius: 7, textAlign: 'left', color: 'var(--t-text)', cursor: 'pointer' }}
+                        >
+                            <h4 style={{ fontSize: 13, margin: '0 0 7px', fontWeight: 700, color: 'var(--t-text)' }}>Con Silverdat</h4>
+                            <p style={{ fontSize: 12, color: 'var(--t-text-3)', lineHeight: 1.5, margin: 0 }}>Enriquece los vehículos con los datos técnicos de la conexión existente.</p>
+                        </button>
+                        <button
+                            onClick={() => setMode('sin')}
+                            style={{ padding: 18, background: mode === 'sin' ? 'rgba(18,64,204,0.05)' : 'transparent', border: `1px solid ${mode === 'sin' ? 'var(--t-blue)' : 'var(--t-line)'}`, borderRadius: 7, textAlign: 'left', color: 'var(--t-text)', cursor: 'pointer' }}
+                        >
+                            <h4 style={{ fontSize: 13, margin: '0 0 7px', fontWeight: 700, color: 'var(--t-text)' }}>Solo plantilla</h4>
+                            <p style={{ fontSize: 12, color: 'var(--t-text-3)', lineHeight: 1.5, margin: 0 }}>Procesa las columnas originales del Excel sin consultas externas.</p>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Continue */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 20 }}>
+                <button
+                    onClick={() => uploadedRows && onNext(uploadedRows, detectedHeaderRef.current, mode)}
+                    disabled={!uploadedRows}
+                    style={{ padding: '10px 20px', background: uploadedRows ? 'linear-gradient(135deg,#1240CC,#3366FF)' : 'transparent', border: uploadedRows ? 'none' : '1px solid var(--t-line)', borderRadius: 6, color: uploadedRows ? '#fff' : 'var(--t-text-3)', fontSize: 12, fontWeight: 600, cursor: uploadedRows ? 'pointer' : 'not-allowed', whiteSpace: 'nowrap', minHeight: 36 }}
+                >
+                    Continuar
+                </button>
+            </div>
         </div>
     );
 }
@@ -777,16 +757,16 @@ function Step2({
             )}
 
             <div style={{ textAlign: 'center', marginBottom: 32 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#f59e0b', marginBottom: 8 }}>Paso 2 de 3</div>
-                <h2 style={{ fontSize: 22, fontWeight: 800, color: '#FFFFFF', margin: '0 0 8px' }}>Procesado automático</h2>
-                <p style={{ fontSize: 13, color: 'rgba(178,198,245,0.6)', margin: 0 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--t-amber)', marginBottom: 8 }}>Paso 2 de 3</div>
+                <h2 style={{ fontSize: 22, fontWeight: 800, color: 'var(--t-text)', margin: '0 0 8px' }}>Procesado automático</h2>
+                <p style={{ fontSize: 13, color: 'var(--t-text-2)', margin: 0 }}>
                     Consultando Silverdat y catálogo SINCO para {progress.total} vehículos
                 </p>
             </div>
 
             {!started ? (
                 <div style={{ textAlign: 'center' }}>
-                    <p style={{ fontSize: 13, color: 'rgba(178,198,245,0.6)', marginBottom: 24 }}>
+                    <p style={{ fontSize: 13, color: 'var(--t-text-2)', marginBottom: 24 }}>
                         Se consultará Silverdat por cada matrícula (~{Math.ceil(progress.total * 0.5)} segundos)
                     </p>
                     <button onClick={checkAndRun} style={{
@@ -803,7 +783,7 @@ function Step2({
                     {/* Progress bar */}
                     <div style={{ ...glass, padding: 20, marginBottom: 20 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                            <span style={{ fontSize: 12, fontWeight: 700, color: '#FFFFFF' }}>Progreso</span>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--t-text)' }}>Progreso</span>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                                 <span style={{ fontSize: 12, fontWeight: 700, color: '#f59e0b' }}>{progress.current}/{progress.total}</span>
                                 {progress.current < progress.total && (
@@ -815,7 +795,7 @@ function Step2({
                                 )}
                             </div>
                         </div>
-                        <div style={{ height: 8, borderRadius: 4, background: 'rgba(61,112,255,0.15)', overflow: 'hidden' }}>
+                        <div style={{ height: 3, borderRadius: 4, background: 'var(--t-line)', overflow: 'hidden' }}>
                             <div style={{
                                 height: '100%', borderRadius: 4, transition: 'width 0.4s ease',
                                 width: `${pct}%`,
@@ -823,7 +803,7 @@ function Step2({
                             }} />
                         </div>
                         {progress.current < progress.total && (
-                            <p style={{ margin: '8px 0 0', fontSize: 11, color: 'rgba(178,198,245,0.5)' }}>
+                            <p style={{ margin: '8px 0 0', fontSize: 11, color: 'var(--t-text-3)' }}>
                                 Restante estimado: ~{Math.ceil((progress.total - progress.current) * 2.5)}s · Consulta secuencial para fiabilidad máxima
                             </p>
                         )}
@@ -832,13 +812,13 @@ function Step2({
                     {/* Log */}
                     <div style={{ ...glass, padding: 16, maxHeight: 220, overflowY: 'auto' }}>
                         {progress.log.length === 0 ? (
-                            <p style={{ margin: 0, fontSize: 12, color: 'rgba(178,198,245,0.4)', textAlign: 'center' }}>Iniciando...</p>
+                            <p style={{ margin: 0, fontSize: 12, color: 'var(--t-text-3)', textAlign: 'center' }}>Iniciando...</p>
                         ) : (
                             progress.log.map((entry, i) => (
-                                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '4px 0', borderBottom: i < progress.log.length - 1 ? '1px solid rgba(61,112,255,0.07)' : 'none' }}>
-                                    <span style={{ fontSize: 12, color: entry.ok ? '#10b981' : '#ef4444', flexShrink: 0 }}>{entry.ok ? '✓' : '✗'}</span>
-                                    <span style={{ fontSize: 12, fontFamily: 'monospace', fontWeight: 700, color: '#FFFFFF', flexShrink: 0 }}>{entry.plate}</span>
-                                    {entry.ok && <span style={{ fontSize: 11, color: 'rgba(178,198,245,0.55)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{entry.marca} {entry.modelo}</span>}
+                                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '4px 0', borderBottom: i < progress.log.length - 1 ? '1px solid var(--t-line)' : 'none' }}>
+                                    <span style={{ fontSize: 12, color: entry.ok ? 'var(--t-green)' : 'var(--t-red)', flexShrink: 0 }}>{entry.ok ? '✓' : '✗'}</span>
+                                    <span style={{ fontSize: 12, fontFamily: 'monospace', fontWeight: 700, color: 'var(--t-text)', flexShrink: 0 }}>{entry.plate}</span>
+                                    {entry.ok && <span style={{ fontSize: 11, color: 'var(--t-text-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{entry.marca} {entry.modelo}</span>}
                                     {entry.ok && entry.fromCache && <span style={{ fontSize: 10, color: '#6366f1', fontWeight: 700, flexShrink: 0 }}>historial</span>}
                                     {!entry.ok && <span style={{ fontSize: 11, color: 'rgba(239,68,68,0.6)' }}>Sin datos Silverdat</span>}
                                 </div>
@@ -854,19 +834,19 @@ function Step2({
                             <div style={{ display: 'flex', gap: 16, marginBottom: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
                                 <div style={{ textAlign: 'center' }}>
                                     <div style={{ fontSize: 24, fontWeight: 900, color: '#10b981' }}>{okCount}</div>
-                                    <div style={{ fontSize: 10, color: 'rgba(178,198,245,0.5)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Con Silverdat</div>
+                                    <div style={{ fontSize: 10, color: 'var(--t-text-3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Con Silverdat</div>
                                 </div>
-                                <div style={{ width: 1, background: 'rgba(61,112,255,0.2)' }} />
+                                <div style={{ width: 1, background: 'var(--t-line)' }} />
                                 <div style={{ textAlign: 'center' }}>
-                                    <div style={{ fontSize: 24, fontWeight: 900, color: failedCount > 0 ? '#f59e0b' : '#10b981' }}>{failedCount}</div>
-                                    <div style={{ fontSize: 10, color: 'rgba(178,198,245,0.5)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Sin datos</div>
+                                    <div style={{ fontSize: 24, fontWeight: 900, color: failedCount > 0 ? 'var(--t-amber)' : 'var(--t-green)' }}>{failedCount}</div>
+                                    <div style={{ fontSize: 10, color: 'var(--t-text-3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Sin datos</div>
                                 </div>
                                 {cacheCount > 0 && (
                                     <>
-                                        <div style={{ width: 1, background: 'rgba(61,112,255,0.2)' }} />
+                                        <div style={{ width: 1, background: 'var(--t-line)' }} />
                                         <div style={{ textAlign: 'center' }}>
-                                            <div style={{ fontSize: 24, fontWeight: 900, color: '#6366f1' }}>{cacheCount}</div>
-                                            <div style={{ fontSize: 10, color: 'rgba(178,198,245,0.5)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Del historial</div>
+                                            <div style={{ fontSize: 24, fontWeight: 900, color: 'var(--t-blue)' }}>{cacheCount}</div>
+                                            <div style={{ fontSize: 10, color: 'var(--t-text-3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Del historial</div>
                                         </div>
                                     </>
                                 )}
@@ -995,9 +975,9 @@ function Step3({
     return (
         <div style={{ maxWidth: 800, margin: '0 auto', padding: '32px 24px' }}>
             <div style={{ textAlign: 'center', marginBottom: 28 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#f59e0b', marginBottom: 8 }}>Paso 3 de 3</div>
-                <h2 style={{ fontSize: 22, fontWeight: 800, color: '#FFFFFF', margin: '0 0 8px' }}>Confirmar oferta</h2>
-                <p style={{ fontSize: 13, color: 'rgba(178,198,245,0.6)', margin: 0 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--t-amber)', marginBottom: 8 }}>Paso 3 de 3</div>
+                <h2 style={{ fontSize: 22, fontWeight: 800, color: 'var(--t-text)', margin: '0 0 8px' }}>Confirmar oferta</h2>
+                <p style={{ fontSize: 13, color: 'var(--t-text-2)', margin: 0 }}>
                     {vehicles.length} vehículos · primas y coberturas del Excel
                 </p>
             </div>
@@ -1022,20 +1002,20 @@ function Step3({
                 };
                 return (
                     <div style={{ ...glass, padding: 16, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(178,198,245,0.5)', textTransform: 'uppercase', letterSpacing: '0.08em', flexShrink: 0 }}>Cambio masivo</span>
-                        <select value={bulkFrom} onChange={e => setBulkFrom(e.target.value)} style={{ background: 'rgba(6,14,50,0.7)', color: '#BDD4FF', border: '1px solid rgba(61,112,255,0.3)', borderRadius: 8, padding: '6px 10px', fontSize: 12, cursor: 'pointer', flex: '1 1 140px' }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--t-text-3)', textTransform: 'uppercase', letterSpacing: '0.08em', flexShrink: 0 }}>Cambio masivo</span>
+                        <select value={bulkFrom} onChange={e => setBulkFrom(e.target.value)} style={{ background: 'var(--t-bg)', color: 'var(--t-text)', border: '1px solid var(--t-line)', borderRadius: 8, padding: '6px 10px', fontSize: 12, cursor: 'pointer', flex: '1 1 140px' }}>
                             <option value="">— Sin tipo —</option>
                             {presentTypes.filter(Boolean).map(t => <option key={t} value={t}>{t}</option>)}
                         </select>
-                        <span style={{ fontSize: 11, color: 'rgba(178,198,245,0.4)', flexShrink: 0 }}>→</span>
-                        <select value={bulkTo} onChange={e => setBulkTo(e.target.value)} style={{ background: 'rgba(6,14,50,0.7)', color: '#BDD4FF', border: '1px solid rgba(61,112,255,0.3)', borderRadius: 8, padding: '6px 10px', fontSize: 12, cursor: 'pointer', flex: '1 1 140px' }}>
+                        <span style={{ fontSize: 11, color: 'var(--t-text-3)', flexShrink: 0 }}>→</span>
+                        <select value={bulkTo} onChange={e => setBulkTo(e.target.value)} style={{ background: 'var(--t-bg)', color: 'var(--t-text)', border: '1px solid var(--t-line)', borderRadius: 8, padding: '6px 10px', fontSize: 12, cursor: 'pointer', flex: '1 1 140px' }}>
                             <option value="">— Tipo nuevo —</option>
                             {TIPO_VEHICULO_OPTS.map(o => <option key={o} value={o}>{o}</option>)}
                         </select>
-                        <button onClick={applyBulk} disabled={!bulkTo} style={{ padding: '7px 18px', borderRadius: 8, background: bulkTo ? 'linear-gradient(135deg, #1240CC, #3366FF)' : 'rgba(18,64,204,0.2)', color: '#fff', border: 'none', fontSize: 12, fontWeight: 700, cursor: bulkTo ? 'pointer' : 'not-allowed', flexShrink: 0 }}>
+                        <button onClick={applyBulk} disabled={!bulkTo} style={{ padding: '7px 18px', borderRadius: 8, background: bulkTo ? 'linear-gradient(135deg,#1240CC,#3366FF)' : 'var(--t-line)', color: '#fff', border: 'none', fontSize: 12, fontWeight: 700, cursor: bulkTo ? 'pointer' : 'not-allowed', flexShrink: 0 }}>
                             Aplicar
                         </button>
-                        {bulkFrom === '' && <span style={{ fontSize: 10, color: 'rgba(178,198,245,0.35)', flex: '100%' }}>Selecciona un tipo origen para cambiar todos los vehículos de ese tipo, o deja vacío para asignar a los que no tienen tipo.</span>}
+                        {bulkFrom === '' && <span style={{ fontSize: 10, color: 'var(--t-text-3)', flex: '100%' }}>Selecciona un tipo origen para cambiar todos los vehículos de ese tipo, o deja vacío para asignar a los que no tienen tipo.</span>}
                     </div>
                 );
             })()}
@@ -1049,13 +1029,13 @@ function Step3({
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                         {vehicles.filter(v => !effectiveTipo(v)).map(v => (
                             <div key={v.matricula} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                <span style={{ fontFamily: 'monospace', fontSize: 13, fontWeight: 700, color: '#FFFFFF', minWidth: 100 }}>{v.matricula}</span>
-                                {v.marca && <span style={{ fontSize: 12, color: 'rgba(178,198,245,0.5)', flex: 1 }}>{v.marca} {v.modelo}</span>}
+                                <span style={{ fontFamily: 'monospace', fontSize: 13, fontWeight: 700, color: 'var(--t-text)', minWidth: 100 }}>{v.matricula}</span>
+                                {v.marca && <span style={{ fontSize: 12, color: 'var(--t-text-3)', flex: 1 }}>{v.marca} {v.modelo}</span>}
                                 <select
                                     value={tipoOverrides[v.matricula] || ''}
                                     onChange={e => setTipoOverrides(prev => ({ ...prev, [v.matricula]: e.target.value }))}
                                     style={{
-                                        background: 'rgba(6,14,50,0.7)', color: '#fff', border: '1px solid rgba(245,158,11,0.4)',
+                                        background: 'var(--t-bg)', color: 'var(--t-text)', border: '1px solid rgba(245,158,11,0.4)',
                                         borderRadius: 8, padding: '6px 10px', fontSize: 12, fontWeight: 600, cursor: 'pointer', minWidth: 160,
                                     }}
                                 >
@@ -1073,19 +1053,19 @@ function Step3({
                 {[
                     { label: 'Total vehículos', value: vehicles.length, color: '#3366FF' },
                     { label: 'Con Silverdat', value: sdOkCount, color: '#10b981' },
-                    { label: 'Sin tipo', value: vehicles.filter(v => !effectiveTipo(v)).length, color: vehicles.some(v => !effectiveTipo(v)) ? '#f59e0b' : 'rgba(178,198,245,0.3)' },
-                    { label: 'Grupos', value: Object.keys(groups).length, color: '#a78bfa' },
+                    { label: 'Sin tipo', value: vehicles.filter(v => !effectiveTipo(v)).length, color: vehicles.some(v => !effectiveTipo(v)) ? 'var(--t-amber)' : 'var(--t-text-3)' },
+                    { label: 'Grupos', value: Object.keys(groups).length, color: 'var(--t-blue)' },
                 ].map(({ label, value, color }) => (
                     <div key={label} style={{ flex: '1 1 120px', ...glass, padding: '12px 16px', textAlign: 'center' }}>
                         <div style={{ fontSize: 22, fontWeight: 800, color }}>{value}</div>
-                        <div style={{ fontSize: 10, fontWeight: 600, color: 'rgba(178,198,245,0.5)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>{label}</div>
+                        <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--t-text-3)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>{label}</div>
                     </div>
                 ))}
             </div>
 
             {/* Resumen por grupo (tipo + cobertura del Excel) */}
             <div style={{ ...glass, padding: 20, marginBottom: 20 }}>
-                <p style={{ margin: '0 0 14px', fontSize: 12, fontWeight: 700, color: 'rgba(178,198,245,0.6)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Resumen por tipología y cobertura</p>
+                <p style={{ margin: '0 0 14px', fontSize: 12, fontWeight: 700, color: 'var(--t-text-3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Resumen por tipología y cobertura</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     {Object.entries(groups).map(([key, g]) => {
                         const groupPrimas = g.vehList.map(v => parseFloat(v.prima_referencia || '0') || 0);
@@ -1097,38 +1077,38 @@ function Step3({
                                 gridTemplateColumns: '1fr auto 64px 130px 120px',
                                 alignItems: 'center', gap: 12,
                                 padding: '12px 16px', borderRadius: 10,
-                                background: 'rgba(18,64,204,0.08)',
-                                border: '1px solid rgba(61,112,255,0.12)',
+                                background: 'var(--t-line-soft)',
+                                border: '1px solid var(--t-line)',
                             }}>
                                 <div>
-                                    <span style={{ fontSize: 13, fontWeight: 700, color: g.tipo ? '#FFFFFF' : '#f59e0b' }}>
+                                    <span style={{ fontSize: 13, fontWeight: 700, color: g.tipo ? 'var(--t-text)' : 'var(--t-amber)' }}>
                                         {g.tipo || 'Sin tipo'}
                                     </span>
-                                    <div style={{ fontSize: 10, color: 'rgba(178,198,245,0.4)', marginTop: 2 }}>
+                                    <div style={{ fontSize: 10, color: 'var(--t-text-3)', marginTop: 2 }}>
                                         {g.vehList.map(v => v.matricula).slice(0, 3).join(', ')}{g.vehList.length > 3 ? ` +${g.vehList.length - 3}` : ''}
                                     </div>
                                 </div>
                                 <div>
                                     {g.cob
-                                        ? <span style={{ fontSize: 11, fontWeight: 700, color: '#3D7BFF', background: 'rgba(61,112,255,0.12)', padding: '3px 9px', borderRadius: 20 }}>{g.cob}</span>
-                                        : <span style={{ fontSize: 11, color: 'rgba(178,198,245,0.3)' }}>—</span>
+                                        ? <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--t-blue)', background: 'rgba(18,64,204,0.08)', padding: '3px 9px', borderRadius: 20 }}>{g.cob}</span>
+                                        : <span style={{ fontSize: 11, color: 'var(--t-text-3)' }}>—</span>
                                     }
                                 </div>
                                 <div style={{ textAlign: 'center' }}>
-                                    <span style={{ fontSize: 18, fontWeight: 800, color: '#3366FF' }}>{g.vehList.length}</span>
-                                    <div style={{ fontSize: 9, color: 'rgba(178,198,245,0.4)', textTransform: 'uppercase' }}>veh.</div>
+                                    <span style={{ fontSize: 18, fontWeight: 800, color: 'var(--t-blue)' }}>{g.vehList.length}</span>
+                                    <div style={{ fontSize: 9, color: 'var(--t-text-3)', textTransform: 'uppercase' }}>veh.</div>
                                 </div>
                                 <div style={{ textAlign: 'right' }}>
-                                    <div style={{ fontSize: 13, fontWeight: 700, color: avgPrima > 0 ? '#FFFFFF' : 'rgba(178,198,245,0.3)' }}>
+                                    <div style={{ fontSize: 13, fontWeight: 700, color: avgPrima > 0 ? 'var(--t-text)' : 'var(--t-text-3)' }}>
                                         {avgPrima > 0 ? `€${avgPrima.toFixed(2)}` : '—'}
                                     </div>
-                                    <div style={{ fontSize: 9, color: 'rgba(178,198,245,0.4)', textTransform: 'uppercase' }}>media/veh</div>
+                                    <div style={{ fontSize: 9, color: 'var(--t-text-3)', textTransform: 'uppercase' }}>media/veh</div>
                                 </div>
                                 <div style={{ textAlign: 'right' }}>
-                                    <div style={{ fontSize: 14, fontWeight: 800, color: totalGrupo > 0 ? '#f59e0b' : 'rgba(178,198,245,0.3)' }}>
+                                    <div style={{ fontSize: 14, fontWeight: 800, color: totalGrupo > 0 ? 'var(--t-amber)' : 'var(--t-text-3)' }}>
                                         {totalGrupo > 0 ? `€${totalGrupo.toFixed(0)}` : '—'}
                                     </div>
-                                    <div style={{ fontSize: 9, color: 'rgba(178,198,245,0.4)', textTransform: 'uppercase' }}>total grupo</div>
+                                    <div style={{ fontSize: 9, color: 'var(--t-text-3)', textTransform: 'uppercase' }}>total grupo</div>
                                 </div>
                             </div>
                         );
@@ -1139,7 +1119,7 @@ function Step3({
             {/* Global discount */}
             <div style={{ ...glass, padding: 16, marginBottom: 24, display: 'flex', alignItems: 'center', gap: 20 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1 }}>
-                    <label style={{ fontSize: 12, fontWeight: 700, color: 'rgba(178,198,245,0.7)', flexShrink: 0 }}>Descuento global</label>
+                    <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--t-text-2)', flexShrink: 0 }}>Descuento global</label>
                     <input
                         type="number" min="0" max="100" step="0.5"
                         value={globalDiscount}
@@ -1147,10 +1127,10 @@ function Step3({
                         className="orion-input"
                         style={{ fontSize: 14, fontWeight: 700, width: 80, textAlign: 'center' }}
                     />
-                    <span style={{ fontSize: 13, color: 'rgba(178,198,245,0.5)' }}>%</span>
+                    <span style={{ fontSize: 13, color: 'var(--t-text-3)' }}>%</span>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: 13, color: 'rgba(178,198,245,0.5)' }}>Prima total</div>
+                    <div style={{ fontSize: 13, color: 'var(--t-text-3)' }}>Prima total</div>
                     <div style={{ fontSize: 22, fontWeight: 800, color: '#f59e0b' }}>€{totalPrima.toFixed(0)}</div>
                 </div>
             </div>
@@ -1159,8 +1139,8 @@ function Step3({
             <div style={{ display: 'flex', gap: 12 }}>
                 <button onClick={onBack} style={{
                     padding: '12px 24px', borderRadius: 10,
-                    background: 'rgba(6,14,50,0.5)', color: '#BDD4FF',
-                    border: '1px solid rgba(61,112,255,0.22)', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                    background: 'transparent', color: 'var(--t-text-2)',
+                    border: '1px solid var(--t-line)', fontSize: 12, fontWeight: 600, cursor: 'pointer',
                     display: 'flex', alignItems: 'center', gap: 8,
                 }}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
@@ -1287,18 +1267,18 @@ export default function HojaAutomatico({ header, carpetaActiva, onComplete, onVe
                     <React.Fragment key={s}>
                         <div style={{
                             width: 28, height: 28, borderRadius: '50%',
-                            background: step === s ? 'linear-gradient(135deg, #d97706, #f59e0b)' : step > s ? 'rgba(16,185,129,0.2)' : 'rgba(61,112,255,0.12)',
-                            border: step === s ? 'none' : step > s ? '1px solid rgba(16,185,129,0.4)' : '1px solid rgba(61,112,255,0.2)',
+                            background: step === s ? 'var(--t-blue)' : step > s ? 'rgba(81,184,138,0.15)' : 'var(--t-line-soft)',
+                            border: step === s ? 'none' : step > s ? '1px solid rgba(81,184,138,0.4)' : '1px solid var(--t-line)',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             fontSize: 11, fontWeight: 800,
-                            color: step === s ? '#fff' : step > s ? '#10b981' : 'rgba(178,198,245,0.4)',
+                            color: step === s ? '#fff' : step > s ? 'var(--t-green)' : 'var(--t-text-3)',
                         }}>
                             {step > s ? '✓' : s}
                         </div>
                         {i < 2 && (
                             <div style={{
-                                width: 40, height: 2, borderRadius: 1,
-                                background: step > s ? 'rgba(16,185,129,0.4)' : 'rgba(61,112,255,0.12)',
+                                width: 40, height: 1, borderRadius: 1,
+                                background: step > s ? 'rgba(81,184,138,0.4)' : 'var(--t-line)',
                             }} />
                         )}
                     </React.Fragment>

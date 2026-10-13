@@ -111,23 +111,23 @@ function normalizarHistorica(h: FlotaHistorica): FlotaView {
 // ─── Estilos ─────────────────────────────────────────────────────────────────
 
 const glass: React.CSSProperties = {
-  background: 'rgba(12, 28, 82, 0.75)', border: '1px solid rgba(61, 112, 255, 0.22)',
-  borderRadius: 22, boxShadow: '0 30px 80px -20px rgba(0,0,0,0.6), 0 1px 0 rgba(255,255,255,0.06) inset',
+  background: 'var(--t-surface)', border: '1px solid var(--t-line)',
+  borderRadius: 14,
 };
 const inputStyle: React.CSSProperties = {
-  fontSize: 13, padding: '9px 12px', borderRadius: 10,
-  background: 'rgba(6,14,50,0.6)', border: '1px solid rgba(51,102,255,0.2)',
-  color: '#FFFFFF', outline: 'none', width: '100%',
+  fontSize: 13, padding: '9px 12px', borderRadius: 8,
+  background: 'var(--t-surface)', border: '1px solid var(--t-line)',
+  color: 'var(--t-text)', outline: 'none', width: '100%', fontFamily: 'inherit',
 };
 const labelStyle: React.CSSProperties = {
-  fontSize: 11, fontWeight: 700, color: 'rgba(178,198,245,0.6)',
+  fontSize: 11, fontWeight: 700, color: 'var(--t-text-3)',
   textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 5, display: 'block',
 };
 const ESTADO_CFG: Record<EstadoFlota, { bg: string; border: string; color: string }> = {
-  CONTRATADA:   { bg: 'rgba(16,140,90,0.12)',   border: 'rgba(20,160,100,0.28)',  color: '#2bb589' },
-  RECHAZADA:    { bg: 'rgba(180,40,40,0.10)',   border: 'rgba(200,60,60,0.25)',   color: '#c45858' },
-  'EN ESTUDIO': { bg: 'rgba(90,100,120,0.14)',  border: 'rgba(120,135,158,0.22)', color: 'rgba(185,195,215,0.85)' },
-  OFERTADA:     { bg: 'rgba(180,120,20,0.12)',  border: 'rgba(200,145,30,0.28)',  color: '#c9923a' },
+  CONTRATADA:   { bg: 'rgba(32,201,130,0.08)',  border: 'rgba(32,201,130,0.25)', color: 'var(--t-green)' },
+  RECHAZADA:    { bg: 'rgba(239,77,90,0.08)',   border: 'rgba(239,77,90,0.25)',  color: 'var(--t-red)' },
+  'EN ESTUDIO': { bg: 'var(--t-line-soft)',     border: 'var(--t-line)',         color: 'var(--t-text-2)' },
+  OFERTADA:     { bg: 'rgba(240,185,77,0.08)',  border: 'rgba(240,185,77,0.25)', color: 'var(--t-amber)' },
 };
 
 function toDateInput(s?: string): string {
@@ -165,7 +165,7 @@ function fmtVcto(s?: string): string {
 }
 
 function vctoColor(dias: number | null): string {
-  if (dias === null) return 'rgba(178,198,245,0.55)';
+  if (dias === null) return 'var(--t-text-3)';
   if (dias < 0)  return '#f87171';
   if (dias < 30) return '#fb923c';
   if (dias < 90) return '#fbbf24';
@@ -430,43 +430,43 @@ function FichaPoliza({ flota, corredores, onClose, onEdit, onDelete, onSaved }: 
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,8,0.7)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }} onClick={onClose}>
-      <div style={{ ...glass, width: '100%', maxWidth: 740, maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
+      <div style={{ background: 'var(--t-surface)', border: '1px solid var(--t-line)', borderRadius: 14, width: '100%', maxWidth: 740, maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
 
         {/* Header */}
-        <div style={{ padding: '20px 26px', borderBottom: '1px solid rgba(61,112,255,0.15)', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+        <div style={{ padding: '20px 26px', borderBottom: '1px solid var(--t-line)', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
           <div style={{ flex: 1 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
-              <h2 style={{ fontSize: 16, fontWeight: 900, color: '#FFFFFF', margin: 0, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{flota.nombre}</h2>
+              <h2 style={{ fontSize: 16, fontWeight: 900, color: 'var(--t-text)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{flota.nombre}</h2>
               <span style={{ fontSize: 9, fontWeight: 800, padding: '3px 9px', borderRadius: 6, background: cfg.bg, border: `1px solid ${cfg.border}`, color: cfg.color, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{flota.estado}</span>
               <span style={{ fontSize: 9, fontWeight: 800, padding: '3px 9px', borderRadius: 6, background: esOrion ? 'rgba(99,102,241,0.15)' : 'rgba(51,102,255,0.12)', border: esOrion ? '1px solid rgba(99,102,241,0.35)' : '1px solid rgba(51,102,255,0.3)', color: esOrion ? '#818cf8' : '#3366FF', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
                 {esOrion ? 'Orion' : 'Histórica'}
               </span>
             </div>
-            <div style={{ fontSize: 12, color: 'rgba(178,198,245,0.6)' }}>
-              {flota.tomador}{flota.cif && <> · <span style={{ fontFamily: 'monospace', color: '#BDD4FF' }}>{flota.cif}</span></>}
+            <div style={{ fontSize: 12, color: 'var(--t-text-2)' }}>
+              {flota.tomador}{flota.cif && <> · <span style={{ fontFamily: 'monospace', color: 'var(--t-text)' }}>{flota.cif}</span></>}
               {flota.actividad && <> · {flota.actividad}</>}
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
             {esOrion && !editMode && (
-              <a href="/flotas" style={{ fontSize: 11, fontWeight: 600, padding: '7px 14px', borderRadius: 10, background: 'rgba(50,60,90,0.4)', color: 'rgba(160,180,220,0.8)', border: '1px solid rgba(80,95,120,0.3)', cursor: 'pointer', textDecoration: 'none' }}>
+              <a href="/flotas" style={{ fontSize: 11, fontWeight: 600, padding: '7px 14px', borderRadius: 10, background: 'var(--t-line-soft)', color: 'var(--t-text-2)', border: '1px solid var(--t-line)', cursor: 'pointer', textDecoration: 'none' }}>
                 Ver estudio
               </a>
             )}
             {canEdit && !editMode && (
-              <button onClick={() => setEditMode(true)} style={{ fontSize: 11, fontWeight: 700, padding: '7px 16px', borderRadius: 10, background: 'linear-gradient(135deg,#1240CC,#3366FF)', color: '#fff', border: 'none', cursor: 'pointer' }}>
+              <button onClick={() => setEditMode(true)} style={{ fontSize: 11, fontWeight: 700, padding: '7px 16px', borderRadius: 10, background: 'var(--t-blue)', color: '#fff', border: 'none', cursor: 'pointer' }}>
                 Editar datos
               </button>
             )}
             {editMode && (
-              <button onClick={() => setEditMode(false)} style={{ fontSize: 11, fontWeight: 600, padding: '7px 14px', borderRadius: 10, background: 'transparent', color: 'rgba(160,180,220,0.8)', border: '1px solid rgba(80,95,120,0.3)', cursor: 'pointer' }}>
+              <button onClick={() => setEditMode(false)} style={{ fontSize: 11, fontWeight: 600, padding: '7px 14px', borderRadius: 10, background: 'transparent', color: 'var(--t-text-2)', border: '1px solid var(--t-line)', cursor: 'pointer' }}>
                 Cancelar
               </button>
             )}
             {!esOrion && onEdit && (
-              <button onClick={onEdit} style={{ fontSize: 11, fontWeight: 700, padding: '7px 14px', borderRadius: 10, background: 'rgba(51,102,255,0.15)', color: '#3366FF', border: '1px solid rgba(51,102,255,0.3)', cursor: 'pointer' }}>Editar</button>
+              <button onClick={onEdit} style={{ fontSize: 11, fontWeight: 700, padding: '7px 14px', borderRadius: 10, background: 'rgba(67,135,255,0.12)', color: 'var(--t-blue)', border: '1px solid rgba(67,135,255,0.3)', cursor: 'pointer' }}>Editar</button>
             )}
-            <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 10, border: '1px solid rgba(80,95,120,0.3)', background: 'rgba(20,28,55,0.6)', color: 'rgba(180,195,225,0.8)', cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+            <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 10, border: '1px solid var(--t-line)', background: 'var(--t-line-soft)', color: 'var(--t-text-2)', cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
           </div>
         </div>
 
@@ -483,9 +483,9 @@ function FichaPoliza({ flota, corredores, onClose, onEdit, onDelete, onSaved }: 
                 </div>
               )}
               {flota.prima_mmt && flota.prima_mmt > 0 && (
-                <div style={{ padding: '14px 18px', borderRadius: 14, background: 'rgba(51,102,255,0.08)', border: '1px solid rgba(51,102,255,0.2)' }}>
+                <div style={{ padding: '14px 18px', borderRadius: 14, background: 'rgba(67,135,255,0.07)', border: '1px solid rgba(67,135,255,0.2)' }}>
                   <div style={{ ...labelStyle, marginBottom: 4 }}>Prima MMT ofertada</div>
-                  <div style={{ fontSize: 20, fontWeight: 900, color: '#3366FF', fontFamily: 'monospace' }}>{fmtE(flota.prima_mmt)}</div>
+                  <div style={{ fontSize: 20, fontWeight: 900, color: 'var(--t-blue)', fontFamily: 'monospace' }}>{fmtE(flota.prima_mmt)}</div>
                 </div>
               )}
               {flota.prima_total > 0 && (
@@ -553,8 +553,8 @@ function FichaPoliza({ flota, corredores, onClose, onEdit, onDelete, onSaved }: 
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-                <button onClick={() => setEditMode(false)} disabled={saving} style={{ fontSize: 13, fontWeight: 600, padding: '10px 22px', borderRadius: 12, background: 'transparent', color: 'rgba(178,198,245,0.7)', border: '1px solid rgba(80,95,120,0.3)', cursor: 'pointer' }}>Cancelar</button>
-                <button onClick={handleSave} disabled={saving} style={{ fontSize: 13, fontWeight: 800, padding: '10px 28px', borderRadius: 12, background: saving ? 'rgba(18,64,204,0.5)' : 'linear-gradient(135deg, #1240CC, #3366FF)', color: '#fff', border: 'none', cursor: saving ? 'not-allowed' : 'pointer', boxShadow: '0 8px 24px -8px rgba(18,64,204,0.5)' }}>
+                <button onClick={() => setEditMode(false)} disabled={saving} style={{ fontSize: 13, fontWeight: 600, padding: '10px 22px', borderRadius: 12, background: 'transparent', color: 'var(--t-text-2)', border: '1px solid var(--t-line)', cursor: 'pointer' }}>Cancelar</button>
+                <button onClick={handleSave} disabled={saving} style={{ fontSize: 13, fontWeight: 800, padding: '10px 28px', borderRadius: 12, background: saving ? 'rgba(67,135,255,0.4)' : 'var(--t-blue)', color: '#fff', border: 'none', cursor: saving ? 'not-allowed' : 'pointer' }}>
                   {saving ? 'Guardando...' : 'Guardar cambios'}
                 </button>
               </div>
@@ -562,9 +562,9 @@ function FichaPoliza({ flota, corredores, onClose, onEdit, onDelete, onSaved }: 
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
               {infoGrid.map(({ label, value, mono }) => (
-                <div key={label} style={{ padding: '10px 14px', borderRadius: 12, background: 'rgba(6,14,50,0.5)', border: '1px solid rgba(51,102,255,0.1)' }}>
+                <div key={label} style={{ padding: '10px 14px', borderRadius: 12, background: 'var(--t-line-soft)', border: '1px solid var(--t-line)' }}>
                   <div style={{ ...labelStyle, marginBottom: 3 }}>{label}</div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#FFFFFF', fontFamily: mono ? 'monospace' : 'inherit' }}>{value}</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--t-text)', fontFamily: mono ? 'monospace' : 'inherit' }}>{value}</div>
                 </div>
               ))}
             </div>
@@ -574,19 +574,19 @@ function FichaPoliza({ flota, corredores, onClose, onEdit, onDelete, onSaved }: 
           {flota.coberturas.length > 0 && (
             <div>
               <div style={{ ...labelStyle, marginBottom: 8 }}>Coberturas</div>
-              <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid rgba(51,102,255,0.12)' }}>
+              <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid var(--t-line)' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
-                    <tr style={{ background: 'rgba(6,14,50,0.6)' }}>
-                      <th style={{ ...labelStyle, padding: '9px 14px', margin: 0, textAlign: 'left', borderBottom: '1px solid rgba(51,102,255,0.12)' }}>Cobertura</th>
-                      <th style={{ ...labelStyle, padding: '9px 14px', margin: 0, textAlign: 'right', borderBottom: '1px solid rgba(51,102,255,0.12)' }}>Prima</th>
+                    <tr style={{ background: 'var(--t-surface)' }}>
+                      <th style={{ ...labelStyle, padding: '9px 14px', margin: 0, textAlign: 'left', borderBottom: '1px solid var(--t-line)' }}>Cobertura</th>
+                      <th style={{ ...labelStyle, padding: '9px 14px', margin: 0, textAlign: 'right', borderBottom: '1px solid var(--t-line)' }}>Prima</th>
                     </tr>
                   </thead>
                   <tbody>
                     {flota.coberturas.map((cob, i) => (
-                      <tr key={i} style={{ borderBottom: '1px solid rgba(51,102,255,0.07)' }}>
-                        <td style={{ padding: '9px 14px', fontSize: 13, color: '#BDD4FF' }}>{cob.nombre}</td>
-                        <td style={{ padding: '9px 14px', fontSize: 13, fontWeight: 700, color: '#FFFFFF', textAlign: 'right', fontFamily: 'monospace' }}>{fmtE(Number(cob.prima) || 0)}</td>
+                      <tr key={i} style={{ borderBottom: '1px solid var(--t-line)' }}>
+                        <td style={{ padding: '9px 14px', fontSize: 13, color: 'var(--t-text-2)' }}>{cob.nombre}</td>
+                        <td style={{ padding: '9px 14px', fontSize: 13, fontWeight: 700, color: 'var(--t-text)', textAlign: 'right', fontFamily: 'monospace' }}>{fmtE(Number(cob.prima) || 0)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -597,9 +597,9 @@ function FichaPoliza({ flota, corredores, onClose, onEdit, onDelete, onSaved }: 
 
           {/* Notas */}
           {flota.notas && (
-            <div style={{ padding: '12px 16px', borderRadius: 12, background: 'rgba(6,14,50,0.4)', border: '1px solid rgba(51,102,255,0.1)' }}>
+            <div style={{ padding: '12px 16px', borderRadius: 12, background: 'var(--t-line-soft)', border: '1px solid var(--t-line)' }}>
               <div style={{ ...labelStyle, marginBottom: 4 }}>Notas</div>
-              <p style={{ fontSize: 13, color: 'rgba(178,198,245,0.8)', margin: 0, lineHeight: 1.6 }}>{flota.notas}</p>
+              <p style={{ fontSize: 13, color: 'var(--t-text-2)', margin: 0, lineHeight: 1.6 }}>{flota.notas}</p>
             </div>
           )}
 
@@ -688,10 +688,10 @@ export default function FlotasPage() {
   }, [filtered, sortCol, sortDir]);
 
   const kpisFlotas = useMemo(() => [
-    { label: 'Portfolio total', value: String(flotas.length),     color: 'rgba(220,230,248,0.92)' },
-    { label: 'Contratadas',     value: String(counts.CONTRATADA), color: '#2bb589' },
-    { label: 'Ofertadas',       value: String(counts.OFERTADA),   color: '#c9923a' },
-    { label: 'Rechazadas',      value: String(counts.RECHAZADA),  color: '#c45858' },
+    { label: 'Portfolio total', value: String(flotas.length),     color: 'var(--t-text)' },
+    { label: 'Contratadas',     value: String(counts.CONTRATADA), color: 'var(--t-green)' },
+    { label: 'Ofertadas',       value: String(counts.OFERTADA),   color: 'var(--t-amber)' },
+    { label: 'Rechazadas',      value: String(counts.RECHAZADA),  color: 'var(--t-red)' },
   ], [flotas, counts]);
 
   return (
@@ -699,63 +699,57 @@ export default function FlotasPage() {
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 16px', display: 'flex', flexDirection: 'column', gap: 20 }}>
 
         {/* Header */}
-        <div style={{ ...glass, padding: '20px 28px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
-            <div style={{ width: 4, height: 36, borderRadius: 2, background: 'linear-gradient(180deg, #3366FF 0%, #1240CC 100%)' }} />
-            <div>
-              <h1 style={{ fontSize: 15, fontWeight: 900, color: '#FFFFFF', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>Flotas</h1>
-              <p style={{ fontSize: 11, fontWeight: 600, color: 'rgba(178,198,245,0.6)', margin: '4px 0 0 0' }}>
-                Portfolio · {filtered.length} resultado{filtered.length !== 1 ? 's' : ''} de {flotas.length}
-              </p>
-            </div>
-          </div>
-
-          {/* Filtros */}
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-            <div style={{ position: 'relative', flex: '1 1 200px', minWidth: 180 }}>
-              <svg style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(178,198,245,0.5)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              <input type="text" placeholder="Buscar nombre, CIF, corredor…" value={search} onChange={e => setSearch(e.target.value)} style={{ ...inputStyle, paddingLeft: 30, paddingRight: search ? 30 : 10 }} />
-              {search && <button onClick={() => setSearch('')} style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'rgba(178,198,245,0.5)', cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: 0 }}>×</button>}
-            </div>
-            <select value={estadoFilter} onChange={e => setEstadoFilter(e.target.value as EstadoFlota | 'TODAS')} style={{ ...inputStyle, width: 'auto', minWidth: 165, cursor: 'pointer' }}>
-              <option value="TODAS">Todos los estados ({counts.TODAS})</option>
-              <option value="CONTRATADA">Contratada ({counts.CONTRATADA})</option>
-              <option value="OFERTADA">Ofertada ({counts.OFERTADA})</option>
-              <option value="RECHAZADA">Rechazada ({counts.RECHAZADA})</option>
-            </select>
-            <select value={corredorFilter} onChange={e => setCorredorFilter(e.target.value)} style={{ ...inputStyle, width: 'auto', minWidth: 200, cursor: 'pointer' }}>
-              <option value="TODAS">Todos los corredores</option>
-              {corredoresLista.map(n => <option key={n} value={n}>{n}</option>)}
-            </select>
-            {(estadoFilter !== 'CONTRATADA' || corredorFilter !== 'TODAS' || search) && (
-              <button onClick={() => { setEstadoFilter('CONTRATADA'); setCorredorFilter('TODAS'); setSearch(''); }} style={{ fontSize: 11, fontWeight: 700, padding: '8px 14px', borderRadius: 10, background: 'transparent', border: '1px solid rgba(239,68,68,0.3)', color: 'rgba(239,68,68,0.7)', cursor: 'pointer' }}>Limpiar</button>
-            )}
-          </div>
+        <div>
+          <h1 style={{ margin: '0 0 6px', fontSize: 34, fontWeight: 680, letterSpacing: '-0.04em', color: 'var(--t-text)' }}>
+            Flotas
+          </h1>
+          <p style={{ margin: 0, fontSize: 14, color: 'var(--t-text-2)' }}>
+            Portfolio · {filtered.length} resultado{filtered.length !== 1 ? 's' : ''} de {flotas.length}
+          </p>
         </div>
 
         {/* KPIs Flotas */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 1, background: 'rgba(8,16,38,0.55)', border: '1px solid rgba(60,75,100,0.3)', borderRadius: 14, overflow: 'hidden' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr 1fr 1fr', paddingBottom: 24, borderBottom: '1px solid var(--t-line)' }}>
           {kpisFlotas.map((k, i) => (
-            <div key={k.label} style={{
-              padding: '14px 20px', background: 'rgba(6,12,30,0.5)',
-              borderRight: i < kpisFlotas.length - 1 ? '1px solid rgba(60,75,100,0.22)' : undefined,
-            }}>
-              <div style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.09em', color: 'rgba(145,158,178,0.7)', marginBottom: 6 }}>{k.label}</div>
-              <div style={{ fontSize: 26, fontWeight: 800, color: k.color, fontFamily: 'monospace', lineHeight: 1 }}>{k.value}</div>
+            <div key={k.label} style={{ textAlign: i === 0 ? 'left' : i === 3 ? 'right' : 'center' }}>
+              <small style={{ display: 'block', color: 'var(--t-text-2)', fontSize: 12, letterSpacing: '0.06em', marginBottom: 4 }}>{k.label.toUpperCase()}</small>
+              <strong style={{ fontSize: 48, fontWeight: 620, letterSpacing: '-0.04em', lineHeight: 1, color: k.color }}>{k.value}</strong>
             </div>
           ))}
         </div>
 
+        {/* Filtros */}
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+          <div style={{ position: 'relative', flex: '1 1 200px', minWidth: 180 }}>
+            <svg style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--t-text-3)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" placeholder="Buscar nombre, CIF, corredor…" value={search} onChange={e => setSearch(e.target.value)} style={{ ...inputStyle, paddingLeft: 30, paddingRight: search ? 30 : 10 }} />
+            {search && <button onClick={() => setSearch('')} style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--t-text-3)', cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: 0 }}>×</button>}
+          </div>
+          <select value={estadoFilter} onChange={e => setEstadoFilter(e.target.value as EstadoFlota | 'TODAS')} style={{ ...inputStyle, width: 'auto', minWidth: 165, cursor: 'pointer' }}>
+            <option value="TODAS">Todos los estados ({counts.TODAS})</option>
+            <option value="CONTRATADA">Contratada ({counts.CONTRATADA})</option>
+            <option value="OFERTADA">Ofertada ({counts.OFERTADA})</option>
+            <option value="RECHAZADA">Rechazada ({counts.RECHAZADA})</option>
+          </select>
+          <select value={corredorFilter} onChange={e => setCorredorFilter(e.target.value)} style={{ ...inputStyle, width: 'auto', minWidth: 200, cursor: 'pointer' }}>
+            <option value="TODAS">Todos los corredores</option>
+            {corredoresLista.map(n => <option key={n} value={n}>{n}</option>)}
+          </select>
+          {(estadoFilter !== 'CONTRATADA' || corredorFilter !== 'TODAS' || search) && (
+            <button onClick={() => { setEstadoFilter('CONTRATADA'); setCorredorFilter('TODAS'); setSearch(''); }} style={{ fontSize: 11, fontWeight: 700, padding: '8px 14px', borderRadius: 10, background: 'transparent', border: '1px solid var(--t-red)', color: 'var(--t-red)', cursor: 'pointer', opacity: 0.7 }}>Limpiar</button>
+          )}
+        </div>
+
         {/* Tabla */}
         {loading ? (
-          <div style={{ ...glass, padding: '60px 40px', textAlign: 'center' }}>
-            <p style={{ color: 'rgba(178,198,245,0.5)', fontSize: 13, margin: 0 }}>Cargando portfolio...</p>
+          <div style={{ padding: '60px 40px', textAlign: 'center' }}>
+            <p style={{ color: 'var(--t-text-3)', fontSize: 13, margin: 0 }}>Cargando portfolio...</p>
           </div>
         ) : (
-          <div style={{ background: 'rgba(12,28,82,0.42)', border: '1px solid rgba(61,112,255,0.16)', borderRadius: 16, overflowX: 'auto' }}>
+          <div style={{ background: 'transparent', border: '1px solid var(--t-line)', borderRadius: 10, overflowX: 'auto' }}>
             <div style={{ minWidth: 820 }}>
               {/* Cabecera */}
-              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.1fr minmax(0,100px) minmax(0,130px) minmax(0,130px) minmax(0,72px) minmax(0,128px)', padding: '12px 18px', borderBottom: '1px solid rgba(60,75,100,0.35)', background: 'rgba(8,16,38,0.65)', gap: 8 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.1fr minmax(0,100px) minmax(0,130px) minmax(0,130px) minmax(0,90px) minmax(0,128px)', padding: '12px 18px', borderBottom: '1px solid var(--t-line)', background: 'var(--t-surface)', gap: 8 }}>
                 {([
                   { key: 'nombre'       as SortColFlotas, label: 'Nombre / CIF' },
                   { key: 'corredor'     as SortColFlotas, label: 'Corredor' },
@@ -767,7 +761,7 @@ export default function FlotasPage() {
                 ]).map(({ key, label }) => (
                   <span key={label} onClick={key ? () => toggleSortF(key) : undefined} style={{
                     fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.09em',
-                    color: sortCol === key ? '#d0daf0' : 'rgba(148,160,180,0.72)',
+                    color: sortCol === key ? 'var(--t-text)' : 'var(--t-text-3)',
                     cursor: key ? 'pointer' : 'default',
                     display: 'inline-flex', alignItems: 'center', userSelect: 'none',
                   }}>
@@ -778,7 +772,7 @@ export default function FlotasPage() {
               </div>
 
               {filtered.length === 0 ? (
-                <p style={{ color: 'rgba(178,198,245,0.4)', fontSize: 12, textAlign: 'center', padding: '48px 0', margin: 0 }}>
+                <p style={{ color: 'var(--t-text-3)', fontSize: 12, textAlign: 'center', padding: '48px 0', margin: 0 }}>
                   {search ? `Sin resultados para "${search}"` : 'No hay flotas con estos filtros.'}
                 </p>
               ) : sortedFiltered.map(f => {
@@ -787,15 +781,15 @@ export default function FlotasPage() {
                 const col  = vctoColor(dias);
                 const nombreDifTomador = f.tomador && f.tomador.trim().toLowerCase() !== f.nombre.trim().toLowerCase();
                 return (
-                  <div key={f.id} onClick={() => setFicha(f)} style={{ display: 'grid', gridTemplateColumns: '2fr 1.1fr minmax(0,100px) minmax(0,130px) minmax(0,130px) minmax(0,72px) minmax(0,128px)', gap: 8, alignItems: 'center', padding: '13px 18px', borderBottom: '1px solid rgba(61,112,255,0.07)', cursor: 'pointer', transition: 'background 180ms' }}
-                    onMouseEnter={e => (e.currentTarget.style.background = 'rgba(51,102,255,0.04)')}
+                  <div key={f.id} onClick={() => setFicha(f)} style={{ display: 'grid', gridTemplateColumns: '2fr 1.1fr minmax(0,100px) minmax(0,130px) minmax(0,130px) minmax(0,90px) minmax(0,128px)', gap: 8, alignItems: 'center', padding: '13px 18px', borderBottom: '1px solid var(--t-line)', cursor: 'pointer', transition: 'background 180ms' }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--t-line-soft)')}
                     onMouseLeave={e => (e.currentTarget.style.background = '')}>
 
                     {/* Nombre / CIF */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 2, overflow: 'hidden' }}>
-                      <span style={{ fontSize: 13, color: '#FFFFFF', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.nombre || '(sin nombre)'}</span>
+                      <span style={{ fontSize: 14, color: 'var(--t-text)', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.nombre || '(sin nombre)'}</span>
                       {(f.cif || nombreDifTomador) && (
-                        <span style={{ fontSize: 11, color: 'rgba(178,198,245,0.55)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <span style={{ fontSize: 12, color: 'var(--t-text-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {f.cif && <span style={{ fontFamily: 'monospace', letterSpacing: '0.04em' }}>{f.cif}</span>}
                           {f.cif && nombreDifTomador && <span style={{ margin: '0 4px', opacity: 0.4 }}>·</span>}
                           {nombreDifTomador && <span>{f.tomador}</span>}
@@ -804,29 +798,29 @@ export default function FlotasPage() {
                     </div>
 
                     {/* Corredor */}
-                    <span style={{ fontSize: 12, color: '#BDD4FF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {f.corredor_nombre || <span style={{ color: 'rgba(178,198,245,0.3)' }}>—</span>}
+                    <span style={{ fontSize: 14, color: 'var(--t-text-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {f.corredor_nombre || <span style={{ color: 'var(--t-text-3)' }}>—</span>}
                     </span>
 
                     {/* Periodicidad */}
-                    <span style={{ fontSize: 12, color: 'rgba(178,198,245,0.8)', textTransform: 'capitalize', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{f.periodicidad || '—'}</span>
+                    <span style={{ fontSize: 14, color: 'var(--t-text-2)', textTransform: 'capitalize', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{f.periodicidad || '—'}</span>
 
                     {/* F. Inicio */}
-                    <span style={{ fontSize: 12, color: 'rgba(178,198,245,0.7)', whiteSpace: 'nowrap' }}>{fmtVcto(f.fecha_inicio)}</span>
+                    <span style={{ fontSize: 14, color: 'var(--t-text-2)', whiteSpace: 'nowrap' }}>{fmtVcto(f.fecha_inicio)}</span>
 
                     {/* F. Vencimiento */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                      <span style={{ fontSize: 12, color: col, fontWeight: dias !== null && dias < 90 ? 700 : 500, whiteSpace: 'nowrap' }}>{fmtVcto(f.fecha_vencimiento)}</span>
+                      <span style={{ fontSize: 14, color: col, fontWeight: dias !== null && dias < 90 ? 700 : 500, whiteSpace: 'nowrap' }}>{fmtVcto(f.fecha_vencimiento)}</span>
                       {dias !== null && (
-                        <span style={{ fontSize: 10, fontWeight: 700, color: col, whiteSpace: 'nowrap' }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: col, whiteSpace: 'nowrap' }}>
                           {dias < 0 ? `Vencida ${Math.abs(dias)} días` : `${dias} días`}
                         </span>
                       )}
                     </div>
 
                     {/* Comisión */}
-                    <span style={{ fontSize: 12, color: f.comision ? '#BDD4FF' : 'rgba(178,198,245,0.35)', whiteSpace: 'nowrap' }}>
-                      {f.comision ? `${f.comision}%` : '—'}
+                    <span style={{ fontSize: 14, color: f.comision ? 'var(--t-text)' : 'var(--t-text-3)', whiteSpace: 'nowrap' }}>
+                      {f.comision ? `${f.comision.toFixed(1).replace('.', ',')} %` : '—'}
                     </span>
 
                     {/* Estado */}

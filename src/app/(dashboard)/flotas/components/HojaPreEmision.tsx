@@ -169,7 +169,7 @@ function ManualSearchPanel({ vehicle, yearHint, onSelect, onClose }: {
   const onKey = (e: React.KeyboardEvent) => { if (e.key === 'Enter') doSearch(); };
 
   return (
-    <div style={{ padding: '10px 14px 14px', background: '#f0f4ff', borderTop: '1px solid #c8d8f5' }}>
+    <div style={{ padding: '10px 14px 14px', background: 'var(--t-line-soft)', borderTop: '1px solid var(--t-line)' }}>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: 8 }}>
         <Fld label="Marca">
           <input value={marca} onChange={e => setMarca(e.target.value)} onKeyDown={onKey}
@@ -198,34 +198,34 @@ function ManualSearchPanel({ vehicle, yearHint, onSelect, onClose }: {
             style={{ ...inS, width: 70 }} />
         </Fld>
         <button onClick={doSearch} disabled={loading}
-          style={{ padding: '5px 14px', borderRadius: 6, background: '#1240CC', color: '#fff', border: 'none', fontSize: 11, fontWeight: 700, cursor: loading ? 'wait' : 'pointer', opacity: loading ? 0.7 : 1, alignSelf: 'flex-end', height: 28 }}>
+          style={{ padding: '5px 14px', borderRadius: 6, background: 'var(--t-blue)', color: '#fff', border: 'none', fontSize: 11, fontWeight: 700, cursor: loading ? 'wait' : 'pointer', opacity: loading ? 0.7 : 1, alignSelf: 'flex-end', height: 28 }}>
           {loading ? '...' : 'Buscar'}
         </button>
         <button onClick={onClose}
-          style={{ padding: '5px 10px', borderRadius: 6, background: '#fff', color: '#6b7280', border: '1px solid #e5e7eb', fontSize: 11, cursor: 'pointer', alignSelf: 'flex-end', height: 28 }}>
+          style={{ padding: '5px 10px', borderRadius: 6, background: 'transparent', color: 'var(--t-text-3)', border: '1px solid var(--t-line)', fontSize: 11, cursor: 'pointer', alignSelf: 'flex-end', height: 28 }}>
           ✕
         </button>
       </div>
 
       {searched && (
-        <div style={{ maxHeight: 220, overflowY: 'auto', border: '1px solid #d4dff5', borderRadius: 8, background: '#fff' }}>
+        <div style={{ maxHeight: 220, overflowY: 'auto', border: '1px solid var(--t-line)', borderRadius: 8, background: 'var(--t-surface)' }}>
           {results.length === 0 ? (
-            <div style={{ padding: '20px', textAlign: 'center', color: '#9ca3af', fontSize: 12 }}>
+            <div style={{ padding: '20px', textAlign: 'center', color: 'var(--t-text-3)', fontSize: 12 }}>
               Sin resultados. Ajusta los filtros.
             </div>
           ) : results.map(c => (
             <button key={c.id_veh} type="button" onClick={() => onSelect(c)}
-              style={{ display: 'flex', width: '100%', textAlign: 'left', padding: '8px 12px', background: '#fff', border: 'none', borderBottom: '1px solid #f3f4f6', cursor: 'pointer', alignItems: 'center', gap: 10 }}
-              onMouseEnter={e => (e.currentTarget.style.background = '#eef3ff')}
-              onMouseLeave={e => (e.currentTarget.style.background = '#fff')}>
-              <span style={{ flex: 1, fontSize: 12, fontWeight: 600, color: '#111827' }}>{c.version}</span>
-              <span style={{ fontSize: 10, color: '#374151', whiteSpace: 'nowrap' }}>
+              style={{ display: 'flex', width: '100%', textAlign: 'left', padding: '8px 12px', background: 'transparent', border: 'none', borderBottom: '1px solid var(--t-line)', cursor: 'pointer', alignItems: 'center', gap: 10 }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'var(--t-line-soft)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+              <span style={{ flex: 1, fontSize: 12, fontWeight: 600, color: 'var(--t-text)' }}>{c.version}</span>
+              <span style={{ fontSize: 10, color: 'var(--t-text-2)', whiteSpace: 'nowrap' }}>
                 {c.kw > 0 ? `${c.kw}kW · ` : ''}{FUEL_LABEL[c.combustible] ?? c.combustible}
                 {c.anyo ? ` · ${c.anyo}` : ''}
                 {c.cilindrada > 0 ? ` · ${c.cilindrada}cc` : ''}
                 {c.tara > 0 ? ` · ${c.tara}kg` : ''}
               </span>
-              <span style={{ fontSize: 10, fontFamily: 'monospace', color: '#374151', whiteSpace: 'nowrap' }}>{c.id_veh}</span>
+              <span style={{ fontSize: 10, fontFamily: 'monospace', color: 'var(--t-text-3)', whiteSpace: 'nowrap' }}>{c.id_veh}</span>
             </button>
           ))}
         </div>
@@ -237,7 +237,7 @@ function ManualSearchPanel({ vehicle, yearHint, onSelect, onClose }: {
 function Fld({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <div style={{ fontSize: 9, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2 }}>{label}</div>
+      <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--t-text-3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2 }}>{label}</div>
       {children}
     </div>
   );
@@ -245,7 +245,7 @@ function Fld({ label, children }: { label: string; children: React.ReactNode }) 
 
 const inS: React.CSSProperties = {
   fontSize: 11, padding: '5px 8px', borderRadius: 6,
-  border: '1px solid #d1d5db', outline: 'none', background: '#fff', color: '#111827',
+  border: '1px solid var(--t-line)', outline: 'none', background: 'var(--t-bg)', color: 'var(--t-text)',
 };
 
 // ─── SimilarModal ─────────────────────────────────────────────────────────────
@@ -272,13 +272,13 @@ function SimilarModal({ source, similar, selected, onApply, onClose }: {
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
       onClick={onClose}>
-      <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)' }} />
-      <div style={{ position: 'relative', background: '#fff', borderRadius: 16, padding: 24, maxWidth: 520, width: '90%', maxHeight: '80vh', overflow: 'auto', boxShadow: '0 25px 80px rgba(0,0,0,0.3)' }}
+      <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)' }} />
+      <div style={{ position: 'relative', background: 'var(--t-surface)', border: '1px solid var(--t-line)', borderRadius: 12, padding: 24, maxWidth: 520, width: '90%', maxHeight: '80vh', overflow: 'auto', boxShadow: '0 25px 80px rgba(0,0,0,0.4)' }}
         onClick={e => e.stopPropagation()}>
-        <div style={{ fontSize: 14, fontWeight: 900, color: '#111827', marginBottom: 4 }}>
+        <div style={{ fontSize: 14, fontWeight: 900, color: 'var(--t-text)', marginBottom: 4 }}>
           Vehículos similares sin versión
         </div>
-        <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 16 }}>
+        <div style={{ fontSize: 11, color: 'var(--t-text-3)', marginBottom: 16 }}>
           ¿Aplicar <strong>{selected.version}</strong> también a estos vehículos?
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 20 }}>
@@ -286,19 +286,19 @@ function SimilarModal({ source, similar, selected, onApply, onClose }: {
             <label key={s.idx}
               style={{
                 display: 'flex', alignItems: 'flex-start', gap: 10, padding: '8px 10px', borderRadius: 8, cursor: 'pointer',
-                background: checked.has(s.idx) ? 'rgba(245,158,11,0.08)' : '#f9fafb',
-                border: `1px solid ${checked.has(s.idx) ? '#fcd34d' : '#e5e7eb'}`,
+                background: checked.has(s.idx) ? 'rgba(245,158,11,0.08)' : 'var(--t-line-soft)',
+                border: `1px solid ${checked.has(s.idx) ? 'rgba(245,158,11,0.4)' : 'var(--t-line)'}`,
                 transition: 'all 0.12s',
               }}>
               <input type="checkbox" checked={checked.has(s.idx)} onChange={() => toggle(s.idx)}
-                style={{ marginTop: 2, accentColor: '#d97706' }} />
+                style={{ marginTop: 2, accentColor: 'var(--t-amber)' }} />
               <div style={{ flex: 1 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 13, fontWeight: 700, fontFamily: 'monospace', color: '#111827' }}>{s.vehicle.matricula}</span>
-                  <span style={{ fontSize: 9, fontWeight: 800, padding: '1px 6px', borderRadius: 4, background: '#fef3c7', color: '#92400e', textTransform: 'uppercase' }}>Similar</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, fontFamily: 'monospace', color: 'var(--t-text)' }}>{s.vehicle.matricula}</span>
+                  <span style={{ fontSize: 9, fontWeight: 800, padding: '1px 6px', borderRadius: 4, background: 'rgba(245,158,11,0.15)', color: 'var(--t-amber)', textTransform: 'uppercase' }}>Similar</span>
                 </div>
                 {s.diffs.length > 0 && (
-                  <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 2 }}>
+                  <div style={{ fontSize: 10, color: 'var(--t-text-3)', marginTop: 2 }}>
                     {s.diffs.join(' · ')}
                   </div>
                 )}
@@ -308,12 +308,12 @@ function SimilarModal({ source, similar, selected, onApply, onClose }: {
         </div>
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
           <button type="button" onClick={onClose}
-            style={{ fontSize: 11, fontWeight: 700, padding: '8px 16px', borderRadius: 8, background: '#f3f4f6', border: '1px solid #e5e7eb', color: '#6b7280', cursor: 'pointer' }}>
+            style={{ fontSize: 11, fontWeight: 700, padding: '8px 16px', borderRadius: 8, background: 'transparent', border: '1px solid var(--t-line)', color: 'var(--t-text-2)', cursor: 'pointer' }}>
             Solo estos ya aplicados
           </button>
           <button type="button" onClick={() => onApply(Array.from(checked))}
             disabled={checked.size === 0}
-            style={{ fontSize: 11, fontWeight: 700, padding: '8px 16px', borderRadius: 8, cursor: checked.size > 0 ? 'pointer' : 'not-allowed', background: checked.size > 0 ? '#1240CC' : '#d1d5db', color: '#fff', border: 'none' }}>
+            style={{ fontSize: 11, fontWeight: 700, padding: '8px 16px', borderRadius: 8, cursor: checked.size > 0 ? 'pointer' : 'not-allowed', background: checked.size > 0 ? 'linear-gradient(135deg,#1240CC,#3366FF)' : 'var(--t-line)', color: '#fff', border: 'none' }}>
             Aplicar a {checked.size} vehículo{checked.size !== 1 ? 's' : ''}
           </button>
         </div>
@@ -326,12 +326,12 @@ function SimilarModal({ source, similar, selected, onApply, onClose }: {
 
 function StatusChip({ status }: { status: EmisionStatus }) {
   const cfg = {
-    pendiente:    { bg: '#fef3c7', text: '#92400e', label: 'Pendiente' },
-    listo:        { bg: '#d1fae5', text: '#065f46', label: 'Listo' },
-    sin_catalogo: { bg: '#fee2e2', text: '#991b1b', label: 'Sin catálogo' },
+    pendiente:    { border: 'rgba(233,165,75,0.3)',  color: 'var(--t-amber)', label: 'Pendiente' },
+    listo:        { border: 'rgba(81,184,138,0.25)', color: 'var(--t-green)', label: 'Listo' },
+    sin_catalogo: { border: 'rgba(237,133,133,0.3)', color: 'var(--t-red)',   label: 'Sin catálogo' },
   }[status];
   return (
-    <span style={{ fontSize: 10, fontWeight: 800, padding: '2px 7px', borderRadius: 4, background: cfg.bg, color: cfg.text, textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>
+    <span style={{ fontSize: 10, fontWeight: 800, padding: '4px 8px', borderRadius: 4, background: 'transparent', border: `1px solid ${cfg.border}`, color: cfg.color, textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>
       {cfg.label}
     </span>
   );
@@ -793,14 +793,14 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
     <div className="flex flex-col h-full min-h-0">
 
       {/* ── Toolbar ─────────────────────────────────────────────────────────── */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px', borderBottom: '1px solid #e5e7eb', background: '#f9fafb', flexShrink: 0, gap: 10 }}>
-        <span style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#6b7280' }}>
-          Listos: <span style={{ color: '#1240CC' }}>{listos}</span> / {vehicles.length}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px', borderBottom: '1px solid var(--t-line)', background: 'transparent', flexShrink: 0, gap: 10 }}>
+        <span style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--t-text-3)' }}>
+          Listos: <span style={{ color: 'var(--t-blue)' }}>{listos}</span> / {vehicles.length}
         </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, justifyContent: 'flex-end' }}>
           {listos > 0 && (
             <button onClick={handleDownloadEmision}
-              style={{ fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 7, background: 'rgba(5,150,105,0.08)', border: '1px solid rgba(5,150,105,0.25)', color: '#059669', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              style={{ fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 7, background: 'rgba(81,184,138,0.08)', border: '1px solid rgba(81,184,138,0.25)', color: 'var(--t-green)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
               </svg>
@@ -818,10 +818,10 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
               Detener todo
             </button>
           )}
-          <div style={{ height: 6, width: 120, background: '#e5e7eb', borderRadius: 3, overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: `${pct}%`, background: pct === 100 ? '#059669' : '#1240CC', borderRadius: 3, transition: 'width 0.3s' }} />
+          <div style={{ height: 3, width: 120, background: 'var(--t-line)', borderRadius: 5, overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: `${pct}%`, background: pct === 100 ? 'var(--t-green)' : 'var(--t-blue)', borderRadius: 5, transition: 'width 0.3s' }} />
           </div>
-          <span style={{ fontSize: 11, fontWeight: 700, color: pct === 100 ? '#059669' : '#1240CC' }}>{pct}%</span>
+          <span style={{ fontSize: 11, fontWeight: 700, color: pct === 100 ? 'var(--t-green)' : 'var(--t-blue)' }}>{pct}%</span>
         </div>
       </div>
 
@@ -830,8 +830,8 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
         const firstIdx = [...checkedRows].find(i => vehicles[i]?.candidatos.length > 0) ?? -1;
         const candidatos = firstIdx >= 0 ? vehicles[firstIdx].candidatos : [];
         return (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 16px', borderBottom: '1px solid #c8d8f5', background: '#eef3ff', flexShrink: 0, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 11, fontWeight: 800, color: '#1240CC' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 16px', borderBottom: '1px solid var(--t-line)', background: 'var(--t-line-soft)', flexShrink: 0, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--t-blue)' }}>
               {checkedRows.size} seleccionado{checkedRows.size > 1 ? 's' : ''}
             </span>
             {candidatos.length > 0 && (
@@ -841,7 +841,7 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
                   const c = candidatos.find(c => c.id_veh === e.target.value);
                   if (c) handleBulkAssign(c);
                 }}
-                style={{ fontSize: 11, padding: '4px 8px', borderRadius: 6, border: '1px solid #a5b8e8', background: '#fff', outline: 'none', cursor: 'pointer', maxWidth: 320 }}>
+                style={{ fontSize: 11, padding: '4px 8px', borderRadius: 6, border: '1px solid var(--t-line)', background: 'var(--t-bg)', color: 'var(--t-text)', outline: 'none', cursor: 'pointer', maxWidth: 320 }}>
                 <option value="" disabled>— Versión de candidatos —</option>
                 {candidatos.map(c => (
                   <option key={c.id_veh} value={c.id_veh}>{c.version}{c.score ? ` · ${c.score}%` : ''}</option>
@@ -850,7 +850,7 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
             )}
             <BulkIdInput onSubmit={handleBulkDirectId} />
             <button onClick={() => setCheckedRows(new Set())}
-              style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 5, background: 'transparent', border: '1px solid #a5b8e8', color: '#6b7280', cursor: 'pointer', marginLeft: 'auto' }}>
+              style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 5, background: 'transparent', border: '1px solid var(--t-line)', color: 'var(--t-text-3)', cursor: 'pointer', marginLeft: 'auto' }}>
               Cancelar
             </button>
           </div>
@@ -858,16 +858,16 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
       })()}
 
       {/* ── Grid ────────────────────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-auto custom-scrollbar" style={{ background: '#f3f4f6', padding: 12 }}>
+      <div className="flex-1 overflow-auto custom-scrollbar" style={{ background: 'var(--t-bg)', padding: 12 }}>
         {vehicles.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '60px 0', color: '#9ca3af', fontSize: 13 }}>
+          <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--t-text-3)', fontSize: 13 }}>
             Añade vehículos en TRABAJO para comenzar la pre-emisión.
           </div>
         ) : (
-          <div style={{ background: '#fff', borderRadius: 10, overflow: 'hidden', border: '1px solid #e5e7eb', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+          <div style={{ background: 'var(--t-surface)', borderRadius: 10, overflow: 'hidden', border: '1px solid var(--t-line)' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
               <thead>
-                <tr style={{ background: '#f8f9fa', borderBottom: '2px solid #e5e7eb' }}>
+                <tr style={{ background: 'var(--t-surface)', borderBottom: '2px solid var(--t-line)' }}>
                   <th style={{ ...thS, width: 42, textAlign: 'center' }}>
                     <input type="checkbox"
                       title="Seleccionar todos"
@@ -906,12 +906,12 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
                   <React.Fragment key={v.matricula || displayIdx}>
                     {/* ── Fila principal ─────────────────────────────────── */}
                     <tr style={{
-                      borderBottom: openSearchRow === origIdx ? 'none' : '1px solid #f3f4f6',
-                      background: v.status === 'listo' ? 'rgba(16,185,129,0.03)' : openSearchRow === origIdx ? '#f5f8ff' : '#fff',
+                      borderBottom: openSearchRow === origIdx ? 'none' : '1px solid var(--t-line)',
+                      background: v.status === 'listo' ? 'rgba(16,185,129,0.04)' : openSearchRow === origIdx ? 'var(--t-line-soft)' : 'transparent',
                       transition: 'background 0.12s',
                     }}
-                      onMouseEnter={e => { if (v.status !== 'listo' && openSearchRow !== origIdx) e.currentTarget.style.background = '#fafbff'; }}
-                      onMouseLeave={e => { if (v.status !== 'listo' && openSearchRow !== origIdx) e.currentTarget.style.background = '#fff'; }}>
+                      onMouseEnter={e => { if (v.status !== 'listo' && openSearchRow !== origIdx) e.currentTarget.style.background = 'var(--t-line-soft)'; }}
+                      onMouseLeave={e => { if (v.status !== 'listo' && openSearchRow !== origIdx) e.currentTarget.style.background = 'transparent'; }}>
 
                       <td style={{ ...tdS, textAlign: 'center' }}>
                         <input type="checkbox"
@@ -940,7 +940,7 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
                           style={{ cursor: 'pointer', width: 14, height: 14 }}
                         />
                       </td>
-                      <td style={{ ...tdS, fontFamily: 'monospace', fontWeight: 800, color: '#111827', letterSpacing: '0.04em' }}>{v.matricula}</td>
+                      <td style={{ ...tdS, fontFamily: 'monospace', fontWeight: 800, color: 'var(--t-text)', letterSpacing: '0.04em' }}>{v.matricula}</td>
 
                       {/* ── Marca editable ──────────────────────────────── */}
                       <td style={{ ...tdS, padding: '2px 6px' }}>
@@ -949,7 +949,7 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
                           onChange={e => setV(origIdx, { marca: e.target.value })}
                           onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleSearch(origIdx); } }}
                           title="Edita y pulsa Enter para re-buscar"
-                          style={{ width: '100%', border: 'none', borderBottom: '1px dashed #d1d5db', background: 'transparent', fontWeight: 600, color: '#111827', fontSize: 12, outline: 'none', cursor: 'text', padding: '2px 0' }}
+                          style={{ width: '100%', border: 'none', borderBottom: '1px dashed var(--t-line)', background: 'transparent', fontWeight: 600, color: 'var(--t-text)', fontSize: 12, outline: 'none', cursor: 'text', padding: '2px 0' }}
                         />
                       </td>
 
@@ -961,7 +961,7 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
                           onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleSearch(origIdx); } }}
                           title="Edita y pulsa Enter para re-buscar"
                           placeholder="—"
-                          style={{ width: '100%', border: 'none', borderBottom: '1px dashed #d1d5db', background: 'transparent', color: '#374151', fontSize: 12, outline: 'none', cursor: 'text', padding: '2px 0' }}
+                          style={{ width: '100%', border: 'none', borderBottom: '1px dashed var(--t-line)', background: 'transparent', color: 'var(--t-text-2)', fontSize: 12, outline: 'none', cursor: 'text', padding: '2px 0' }}
                         />
                       </td>
 
@@ -984,9 +984,9 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
                               title={fromFab ? 'Año fabricación (Silverdat) — edita y Enter para re-buscar' : fromPlate ? 'Estimado del diccionario de matrícula — edita y Enter para re-buscar' : 'Introduce el año y pulsa Enter'}
                               placeholder="—"
                               style={{
-                                width: 48, border: 'none', borderBottom: '1px dashed #d1d5db', background: 'transparent',
+                                width: 48, border: 'none', borderBottom: '1px dashed var(--t-line)', background: 'transparent',
                                 fontSize: 11, fontWeight: 700, fontFamily: 'monospace', outline: 'none', cursor: 'text', padding: '2px 0',
-                                color: fromFab ? '#f97316' : fromPlate ? '#1240CC' : '#6b7280',
+                                color: fromFab ? 'var(--t-amber)' : fromPlate ? 'var(--t-blue)' : 'var(--t-text-3)',
                               }}
                             />
                           );
@@ -1020,7 +1020,7 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
                                 const c = v.candidatos.find(c => c.id_veh === e.target.value);
                                 if (c) handleSelect(origIdx, c);
                               }}
-                              style={{ flex: 1, maxWidth: 380, fontSize: 11, padding: '5px 8px', borderRadius: 6, border: '1px solid #d1d5db', background: '#fff', outline: 'none', cursor: 'pointer' }}>
+                              style={{ flex: 1, maxWidth: 380, fontSize: 11, padding: '5px 8px', borderRadius: 6, border: '1px solid var(--t-line)', background: 'var(--t-bg)', color: 'var(--t-text)', outline: 'none', cursor: 'pointer' }}>
                               <option value="" disabled>— Seleccionar acabado —</option>
                               {v.candidatos.map(c => (
                                 <option key={c.id_veh} value={c.id_veh}>
@@ -1031,7 +1031,7 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
                             <button type="button"
                               onClick={() => setOpenSearchRow(openSearchRow === origIdx ? null : origIdx)}
                               title="Buscar manualmente en el catálogo"
-                              style={{ fontSize: 10, padding: '4px 8px', borderRadius: 6, background: openSearchRow === origIdx ? 'rgba(18,64,204,0.15)' : 'rgba(18,64,204,0.06)', border: '1px solid rgba(18,64,204,0.25)', color: '#1240CC', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                              style={{ fontSize: 10, padding: '4px 8px', borderRadius: 6, background: openSearchRow === origIdx ? 'rgba(18,64,204,0.15)' : 'transparent', border: '1px solid var(--t-line)', color: 'var(--t-blue)', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0 }}>
                               Buscar
                             </button>
                           </div>
@@ -1039,17 +1039,17 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
                           <button type="button"
                             onClick={() => setOpenSearchRow(openSearchRow === origIdx ? null : origIdx)}
                             style={{ fontSize: 11, fontWeight: 700, padding: '5px 12px', borderRadius: 6,
-                              background: v.status === 'sin_catalogo' ? 'rgba(220,38,38,0.06)' : 'rgba(18,64,204,0.07)',
-                              border: `1px solid ${v.status === 'sin_catalogo' ? 'rgba(220,38,38,0.25)' : 'rgba(18,64,204,0.2)'}`,
-                              color: v.status === 'sin_catalogo' ? '#dc2626' : '#1240CC', cursor: 'pointer' }}>
+                              background: v.status === 'sin_catalogo' ? 'rgba(239,68,68,0.06)' : 'transparent',
+                              border: `1px solid ${v.status === 'sin_catalogo' ? 'rgba(239,68,68,0.25)' : 'var(--t-line)'}`,
+                              color: v.status === 'sin_catalogo' ? 'var(--t-red)' : 'var(--t-blue)', cursor: 'pointer' }}>
                             {v.status === 'sin_catalogo' ? 'Sin coincidencias · Buscar' : 'Buscar en catálogo'}
                           </button>
                         )}
                       </td>
 
-                      <td style={{ ...tdS, fontFamily: 'monospace', fontSize: 11, color: '#6b7280' }}>
+                      <td style={{ ...tdS, fontFamily: 'monospace', fontSize: 11, color: 'var(--t-text-3)' }}>
                         {v.seleccionado ? (
-                          <span style={{ color: '#111827', fontWeight: 700 }}>{v.seleccionado.id_veh}</span>
+                          <span style={{ color: 'var(--t-text)', fontWeight: 700 }}>{v.seleccionado.id_veh}</span>
                         ) : (
                           <DirectIdCell onSubmit={id => handleDirectId(origIdx, id)} />
                         )}
@@ -1060,7 +1060,7 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
 
                     {/* ── Panel búsqueda manual (fila expandible) ─────────── */}
                     {openSearchRow === origIdx && (
-                      <tr style={{ borderBottom: '1px solid #c8d8f5' }}>
+                      <tr style={{ borderBottom: '1px solid var(--t-line)' }}>
                         <td colSpan={8} style={{ padding: 0 }}>
                           <ManualSearchPanel
                             vehicle={v}
@@ -1106,7 +1106,7 @@ function DirectIdCell({ onSubmit }: { onSubmit: (id: string) => void }) {
     return (
       <button type="button" onClick={() => setEditing(true)}
         title="Asignar por ID de catálogo"
-        style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 5, background: 'rgba(18,64,204,0.05)', border: '1px solid rgba(18,64,204,0.15)', color: '#1240CC', cursor: 'pointer' }}>
+        style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 5, background: 'transparent', border: '1px solid var(--t-line)', color: 'var(--t-blue)', cursor: 'pointer' }}>
         + ID
       </button>
     );
@@ -1116,9 +1116,9 @@ function DirectIdCell({ onSubmit }: { onSubmit: (id: string) => void }) {
       <input autoFocus value={val} onChange={e => setVal(e.target.value)}
         placeholder="241210258"
         onKeyDown={e => { if (e.key === 'Enter' && val.trim()) { onSubmit(val.trim()); setEditing(false); setVal(''); } if (e.key === 'Escape') { setEditing(false); setVal(''); } }}
-        style={{ width: 90, fontSize: 11, padding: '3px 6px', borderRadius: 5, border: '1px solid #1240CC', outline: 'none', fontFamily: 'monospace' }} />
+        style={{ width: 90, fontSize: 11, padding: '3px 6px', borderRadius: 5, border: '1px solid var(--t-blue)', outline: 'none', fontFamily: 'monospace', background: 'var(--t-bg)', color: 'var(--t-text)' }} />
       <button type="button" onClick={() => { if (val.trim()) { onSubmit(val.trim()); setEditing(false); setVal(''); } }}
-        style={{ fontSize: 10, fontWeight: 700, padding: '3px 7px', borderRadius: 5, background: '#1240CC', color: '#fff', border: 'none', cursor: 'pointer' }}>
+        style={{ fontSize: 10, fontWeight: 700, padding: '3px 7px', borderRadius: 5, background: 'var(--t-blue)', color: '#fff', border: 'none', cursor: 'pointer' }}>
         ✓
       </button>
     </div>
@@ -1141,16 +1141,16 @@ function BulkIdInput({ onSubmit }: { onSubmit: (id: string) => void }) {
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-      <span style={{ fontSize: 10, color: '#6b7280', fontWeight: 600, whiteSpace: 'nowrap' }}>o ID directo:</span>
+      <span style={{ fontSize: 10, color: 'var(--t-text-3)', fontWeight: 600, whiteSpace: 'nowrap' }}>o ID directo:</span>
       <input
         value={val}
         onChange={e => setVal(e.target.value)}
         onKeyDown={e => { if (e.key === 'Enter') submit(); }}
         placeholder="241210258"
-        style={{ width: 100, fontSize: 11, padding: '3px 6px', borderRadius: 5, border: '1px solid #a5b8e8', outline: 'none', fontFamily: 'monospace' }}
+        style={{ width: 100, fontSize: 11, padding: '3px 6px', borderRadius: 5, border: '1px solid var(--t-line)', outline: 'none', fontFamily: 'monospace', background: 'var(--t-bg)', color: 'var(--t-text)' }}
       />
       <button onClick={submit} disabled={!val.trim() || loading}
-        style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 5, background: val.trim() && !loading ? '#1240CC' : '#d1d5db', color: '#fff', border: 'none', cursor: val.trim() && !loading ? 'pointer' : 'not-allowed' }}>
+        style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 5, background: val.trim() && !loading ? 'var(--t-blue)' : 'var(--t-line)', color: val.trim() && !loading ? '#fff' : 'var(--t-text-3)', border: 'none', cursor: val.trim() && !loading ? 'pointer' : 'not-allowed' }}>
         {loading ? '...' : 'Aplicar'}
       </button>
     </div>
@@ -1161,9 +1161,9 @@ function BulkIdInput({ onSubmit }: { onSubmit: (id: string) => void }) {
 
 const thS: React.CSSProperties = {
   padding: '9px 12px', textAlign: 'left', fontSize: 11, fontWeight: 700,
-  color: '#374151', borderBottom: '2px solid #e5e7eb', whiteSpace: 'nowrap',
+  color: 'var(--t-text-3)', borderBottom: '2px solid var(--t-line)', whiteSpace: 'nowrap',
 };
 
 const tdS: React.CSSProperties = {
-  padding: '10px 12px', fontSize: 12, color: '#111827', verticalAlign: 'middle',
+  padding: '10px 12px', fontSize: 12, color: 'var(--t-text)', verticalAlign: 'middle',
 };

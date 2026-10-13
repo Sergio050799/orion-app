@@ -166,8 +166,8 @@ function SilverdatLoginModal({ onClose, onSuccess }: { onClose: () => void; onSu
           </button>
           <button onClick={onClose} style={{
             fontSize: 12, padding: '10px 16px', borderRadius: 10,
-            background: 'rgba(6,14,50,0.5)', color: '#BDD4FF',
-            border: '1px solid rgba(61,112,255,0.22)', cursor: 'pointer',
+            background: 'transparent', color: 'var(--t-text-2)',
+            border: '1px solid var(--t-line)', cursor: 'pointer',
           }}>Cancelar</button>
         </div>
       </div>
@@ -643,9 +643,9 @@ if (key !== prevClaveKeyRef.current) {
       <HeaderBlock header={header} onChange={onHeaderChange} />
 
       {/* Toolbar de hoja */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '6px 16px', borderBottom: '1px solid #e5e7eb', background: '#f9fafb', flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '6px 16px', borderBottom: '1px solid var(--t-line)', background: 'transparent', flexShrink: 0 }}>
         <span className="text-[12px] font-black uppercase tracking-widest px-2 py-1 rounded-md"
-          style={{ background: 'rgba(18,64,204,0.1)', color: '#1240CC', border: '1px solid rgba(18,64,204,0.2)' }}>
+          style={{ background: 'transparent', color: 'var(--t-text-2)', border: '1px solid var(--t-line)' }}>
           Vehículos: {vehicleCount}
         </span>
 

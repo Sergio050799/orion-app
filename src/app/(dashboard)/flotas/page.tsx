@@ -37,7 +37,19 @@ const TABS: TabName[] = ['DATOS GENERALES', 'AUTOMÁTICO', 'ORIGINAL', 'TRABAJO'
 const EMPTY_HEADER: FlotaHeader = { cif: '', tomador: '', actividad: '', formaPago: '', efecto: '' };
 
 function normalizarCarpeta(c: FlotaCarpeta): FlotaCarpeta {
-  return { ...c, estado: c.estado ?? 'EN ESTUDIO', historico: c.historico ?? [] };
+  return {
+    ...c,
+    estado:    c.estado    ?? 'EN ESTUDIO',
+    historico: c.historico ?? [],
+    header: {
+      ...c.header,
+      cif:       c.header?.cif       ?? '',
+      tomador:   c.header?.tomador   ?? '',
+      actividad: c.header?.actividad ?? '',
+      formaPago: c.header?.formaPago ?? '',
+      efecto:    c.header?.efecto    ?? '',
+    },
+  };
 }
 
 // ─── Descarga zip ────────────────────────────────────────────────────────────
@@ -164,7 +176,7 @@ async function descargarTodo(carpeta: FlotaCarpeta, corredorNombre?: string) {
 // ─── FlotasPage ─────────────────────────────────────────────────────────────
 
 export default function FlotasPage() {
-  const [activeTab, setActiveTab] = useState<TabName>('ORIGINAL');
+  const [activeTab, setActiveTab] = useState<TabName>('DATOS GENERALES');
   const [carpetaActiva, setCarpetaActiva] = useState<FlotaCarpeta | null>(null);
   const [showCarpetaScreen, setShowCarpetaScreen] = useState(true);
   const [flotaHeader, setFlotaHeader] = useState<FlotaHeader>(EMPTY_HEADER);
@@ -246,7 +258,8 @@ export default function FlotasPage() {
     setFlotaHeader(carpeta.header);
     setOriginalData(carpeta.original);
     setOfertaRows(carpeta.oferta);
-    setSincoResultRows(carpeta.sincoResultados);
+    setSincoResultRows(carpeta.sincoResultados ?? []);
+    setActiveTab('DATOS GENERALES');
     setShowCarpetaScreen(false);
     setFichaMode(carpeta.estado === 'CONTRATADA');
     setTrabajoRows(carpeta.trabajo);
@@ -280,7 +293,8 @@ export default function FlotasPage() {
     setFlotaHeader(fresh.header);
     setOriginalData(fresh.original);
     setOfertaRows(fresh.oferta);
-    setSincoResultRows(fresh.sincoResultados);
+    setSincoResultRows(fresh.sincoResultados ?? []);
+    setActiveTab('DATOS GENERALES');
     setShowCarpetaScreen(false);
     setFichaMode(fresh.estado === 'CONTRATADA');
     setTrabajoRows(fresh.trabajo);
@@ -345,7 +359,7 @@ export default function FlotasPage() {
       setFlotaHeader(fresh.header);
       setOriginalData(fresh.original);
       setOfertaRows(fresh.oferta);
-      setSincoResultRows(fresh.sincoResultados);
+      setSincoResultRows(fresh.sincoResultados ?? []);
       setTrabajoRows(fresh.trabajo);
     } catch { /* si falla, mantiene estado actual */ }
     finally { setIsRefreshing(false); }
@@ -368,6 +382,43 @@ export default function FlotasPage() {
 
   const completedCount = useMemo(() => TABS.filter(t => tabComplete[t]).length, [tabComplete]);
   const activeTabIndex = TABS.indexOf(activeTab);
+
+  // ─── handleCloseTab ──────────────────────────────────────────────────────────
+
+  const handleCloseTab = useCallback((f: FlotaCarpeta) => {
+    const isActive = f.id === carpetaActiva?.id;
+    if (isActive && carpetaActiva) {
+      guardarCarpeta({
+        ...carpetaActiva,
+        header: flotaHeader,
+        original: originalRef.current?.getData() ?? originalData,
+        trabajo: trabajoRef.current?.getData() ?? trabajoRows,
+        sincoResultados: sincoResultRows,
+        oferta: ofertaRef.current?.getData() ?? ofertaRows,
+      });
+    }
+    const remaining = openFlotas.filter(x => x.id !== f.id);
+    setOpenFlotas(remaining);
+    if (isActive) {
+      if (remaining.length > 0) {
+        const next = normalizarCarpeta(cargarCarpeta(remaining[0].id) ?? remaining[0]);
+        if (next.oferta.length > 0) ofertaRef.current?.setData(next.oferta);
+        if (next.original.length > 0) originalRef.current?.setData(next.original);
+        if (next.trabajo.length > 0) trabajoRef.current?.setData(next.trabajo);
+        setCarpetaActiva(next);
+        setFlotaHeader(next.header);
+        setOriginalData(next.original);
+        setOfertaRows(next.oferta);
+        setSincoResultRows(next.sincoResultados ?? []);
+        setTrabajoRows(next.trabajo);
+        setFichaMode(next.estado === 'CONTRATADA');
+        setActiveTab('DATOS GENERALES');
+      } else {
+        setCarpetaActiva(null);
+        setShowCarpetaScreen(true);
+      }
+    }
+  }, [carpetaActiva, flotaHeader, originalData, trabajoRows, sincoResultRows, ofertaRows, openFlotas]);
 
   // ─── Render ───────────────────────────────────────────────────────────────
 
@@ -397,383 +448,314 @@ export default function FlotasPage() {
           text-align: center;
           justify-content: center;
         }
+        .t-stage:hover { background: rgba(255,255,255,0.04); }
+        .t-stage-x:hover { color: #ef4444 !important; }
       `}</style>
 
-      <div className="flex flex-col animate-in fade-in duration-500" style={{ height: 'calc(100vh - 126px)' }}>
-        {/* Zone header */}
+      <div className="flex flex-col" style={{ height: 'calc(100vh - 126px)' }}>
+
+        {/* ── CarpetaScreen ── */}
+        {showCarpetaScreen && <CarpetaScreen onSelect={handleSelectCarpeta} />}
+
+        {/* ── Study view ── */}
         {!showCarpetaScreen && carpetaActiva && (
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            flexWrap: 'wrap', gap: 12,
-            padding: '14px 22px', marginBottom: 18, borderRadius: 18,
-            background: 'rgba(12, 28, 82, 0.75)',
-            border: '1px solid rgba(61, 112, 255, 0.22)',
-            position: 'relative', zIndex: 20,
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-              <div style={{
-                width: 4, height: 32, borderRadius: 2,
-                background: 'linear-gradient(180deg, #1240CC, #3366FF)',
-                boxShadow: '0 0 12px rgba(70,120,255,0.5)',
-              }} />
-              <div>
-                <h1 style={{
-                  margin: 0, fontSize: 18, color: '#FFFFFF',
-                  fontFamily: 'var(--font-display), Inter, sans-serif', fontWeight: 700,
-                }}>Estudio de Flotas</h1>
-                {fichaMode ? (
-                  <p style={{ margin: '2px 0 0', fontSize: 12, color: 'rgba(16,185,129,0.65)' }}>Ficha de datos contratados</p>
-                ) : (
-                  <p style={{ margin: '2px 0 0', fontSize: 12, color: 'rgba(178,198,245,0.6)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span>Paso {activeTabIndex + 1}/{TABS.length} — {activeTab}</span>
-                    <span style={{
-                      fontSize: 10, fontWeight: 700,
-                      color: completedCount === TABS.length ? '#10b981' : '#3366FF',
-                      background: completedCount === TABS.length ? 'rgba(16,185,129,0.12)' : 'rgba(51,102,255,0.12)',
-                      border: `1px solid ${completedCount === TABS.length ? 'rgba(16,185,129,0.3)' : 'rgba(51,102,255,0.25)'}`,
-                      borderRadius: 999, padding: '1px 7px',
-                    }}>{completedCount}/{TABS.length} completos</span>
+          <>
+            {/* ── Heading block ── */}
+            <div style={{ flexShrink: 0, borderBottom: '1px solid var(--t-line)', padding: '14px 28px 13px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 18, paddingBottom: 13, marginBottom: 12, borderBottom: '1px solid var(--t-line)' }}>
+                <div>
+                  <p style={{ margin: '0 0 5px', fontSize: 10, fontWeight: 750, letterSpacing: '0.13em', textTransform: 'uppercase', color: 'var(--t-muted)' }}>
+                    {fichaMode ? 'FICHA CONTRATADA' : `ESTUDIO · ${String(activeTabIndex + 1).padStart(2, '0')} / 08`}
                   </p>
-                )}
-              </div>
-            </div>
+                  <h1 style={{ margin: '0 0 4px', fontSize: 24, fontWeight: 720, letterSpacing: '-0.04em', color: 'var(--t-text)', lineHeight: 1.1 }}>
+                    Estudio de Flotas
+                  </h1>
+                  <p style={{ margin: 0, fontSize: 13, color: 'var(--t-muted)' }}>
+                    {fichaMode ? 'Datos del expediente contratado' : `${activeTab} · ${completedCount}/${TABS.length} pasos completados`}
+                  </p>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                  <SilverdatChip />
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-              <SilverdatChip />
-              {/* Folder pill */}
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: 8,
-                padding: '6px 14px', borderRadius: 999,
-                background: 'rgba(61,112,255,0.12)', border: '1px solid rgba(51,102,255,0.2)',
-              }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#FFFFFF', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {carpetaActiva.nombre}
-                </span>
-                <span style={{ fontSize: 12, color: 'rgba(178,198,245,0.6)', fontStyle: 'italic' }}>
-                  {numVeh} veh.
-                </span>
-              </div>
-
-              {/* Estado */}
-              <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 4 }}>
-                <EstadoBadge estado={carpetaActiva.estado} />
-                <select value="" onChange={e => {
-                  const val = e.target.value as EstadoFlota;
-                  if (val && val !== carpetaActiva.estado) setEstadoPopover({ estado: val, motivo: '' });
-                }} style={{
-                  fontSize: 13, background: 'rgba(3,10,42,0.8)', border: '1px solid rgba(61,112,255,0.22)',
-                  color: '#BDD4FF', cursor: 'pointer', outline: 'none', padding: '4px 8px',
-                  borderRadius: 6, appearance: 'auto',
-                }}>
-                  <option value="" style={{ background: '#020B1A', color: '#BDD4FF' }}>Cambiar estado</option>
-                  {(['EN ESTUDIO', 'OFERTADA', 'CONTRATADA', 'RECHAZADA'] as EstadoFlota[])
-                    .filter(e => e !== carpetaActiva.estado)
-                    .map(e => <option key={e} value={e} style={{ background: '#020B1A', color: '#BDD4FF' }}>{e}</option>)}
-                </select>
-
-                {estadoPopover && (
-                  <div style={{
-                    position: 'absolute', top: '100%', right: 0, marginTop: 8, zIndex: 100,
-                    padding: 14, borderRadius: 14,
-                    background: 'rgba(0,7,45,0.97)', border: '1px solid rgba(61,112,255,0.22)',
-                    boxShadow: '0 20px 60px rgba(0,0,0,0.6)', minWidth: 220,
+                  {/* Actualizar estudio */}
+                  <button onClick={handleRefresh} disabled={isRefreshing} style={{
+                    border: '1px solid var(--t-line)', color: 'var(--t-text)', background: 'transparent',
+                    padding: '8px 12px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: isRefreshing ? 'not-allowed' : 'pointer',
+                    display: 'flex', alignItems: 'center', gap: 5, opacity: isRefreshing ? 0.5 : 1, whiteSpace: 'nowrap',
                   }}>
-                    <p style={{ fontSize: 10, fontWeight: 700, color: 'rgba(178,198,245,0.6)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>
-                      Cambiar a <EstadoBadge estado={estadoPopover.estado} small />
-                    </p>
-                    <input autoFocus placeholder="Motivo (opcional)"
-                      value={estadoPopover.motivo}
-                      onChange={e => setEstadoPopover(p => p ? { ...p, motivo: e.target.value } : null)}
-                      onKeyDown={e => { if (e.key === 'Enter') handleConfirmarEstado(); if (e.key === 'Escape') setEstadoPopover(null); }}
-                      className="orion-input" style={{ width: '100%', fontSize: 12, marginBottom: 10 }} />
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      <button onClick={handleConfirmarEstado} style={{
-                        flex: 1, fontSize: 11, fontWeight: 600, padding: '6px 0', borderRadius: 8,
-                        background: 'linear-gradient(135deg, #1240CC, #3366FF)', color: '#fff', border: 'none', cursor: 'pointer',
-                      }}>Confirmar</button>
-                      <button onClick={() => setEstadoPopover(null)} style={{
-                        fontSize: 11, padding: '6px 12px', borderRadius: 8,
-                        background: 'rgba(6,14,50,0.5)', color: '#BDD4FF', border: '1px solid rgba(61,112,255,0.22)', cursor: 'pointer',
-                      }}>Cancelar</button>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Cambiar */}
-              <button onClick={() => setShowCarpetaScreen(true)} style={{
-                background: 'rgba(6,14,50,0.5)', border: '1px solid rgba(61,112,255,0.22)',
-                borderRadius: 8, padding: '5px 12px', color: '#BDD4FF', fontSize: 13, cursor: 'pointer', fontWeight: 500,
-              }}>Cambiar</button>
-
-              {/* Actualizar estudio */}
-              <button onClick={handleRefresh} disabled={isRefreshing} title="Recargar datos del servidor" style={{
-                background: 'rgba(6,14,50,0.5)', border: '1px solid rgba(61,112,255,0.22)',
-                borderRadius: 8, padding: '6px 12px',
-                color: isRefreshing ? 'rgba(178,198,245,0.4)' : '#BDD4FF',
-                fontSize: 13, fontWeight: 500, cursor: isRefreshing ? 'not-allowed' : 'pointer',
-                display: 'flex', alignItems: 'center', gap: 5,
-                opacity: isRefreshing ? 0.6 : 1,
-              }}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
-                  style={{ animation: isRefreshing ? 'spin 0.8s linear infinite' : 'none' }}>
-                  <polyline points="23 4 23 10 17 10"/>
-                  <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
-                </svg>
-                {isRefreshing ? 'Actualizando...' : 'Actualizar estudio'}
-              </button>
-
-              {/* Guardar */}
-              <button onClick={handleSave} style={{
-                background: saveFlash ? 'rgba(34,197,94,0.2)' : 'rgba(6,14,50,0.5)',
-                border: `1px solid ${saveFlash ? 'rgba(34,197,94,0.4)' : 'rgba(61,112,255,0.22)'}`,
-                borderRadius: 8, padding: '6px 14px',
-                color: saveFlash ? '#4ade80' : '#BDD4FF', fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                display: 'flex', alignItems: 'center', gap: 5,
-                transition: 'all 300ms',
-              }}>
-                {saveFlash ? (
-                  <>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                      <polyline points="20 6 9 17 4 12"/>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+                      style={{ animation: isRefreshing ? 'spin 0.8s linear infinite' : 'none' }}>
+                      <polyline points="23 4 23 10 17 10"/>
+                      <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
                     </svg>
-                    Guardado
-                  </>
-                ) : (
-                  <>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
-                      <polyline points="17 21 17 13 7 13 7 21"/>
-                      <polyline points="7 3 7 8 15 8"/>
-                    </svg>
-                    Guardar
-                  </>
-                )}
-              </button>
+                    {isRefreshing ? 'Actualizando...' : 'Actualizar estudio'}
+                  </button>
 
-              {/* Download */}
-              <button onClick={handleDownload} disabled={isDownloading} style={{
-                background: 'linear-gradient(135deg, #1240CC, #3366FF)',
-                border: 'none', borderRadius: 8, padding: '6px 14px',
-                color: '#fff', fontSize: 13, fontWeight: 600, cursor: isDownloading ? 'not-allowed' : 'pointer',
-                opacity: isDownloading ? 0.5 : 1, display: 'flex', alignItems: 'center', gap: 5,
-              }}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
-                </svg>
-                {isDownloading ? 'Generando...' : 'Descargar todo'}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Open flotas quick-switch strip */}
-        {openFlotas.length > 1 && (
-          <div style={{
-            flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6,
-            padding: '5px 22px', marginBottom: 6,
-            background: 'rgba(0,7,45,0.5)',
-            borderRadius: 12, border: '1px solid rgba(51,102,255,0.1)',
-          }}>
-            <span style={{ fontSize: 9, fontWeight: 700, color: 'rgba(178,198,245,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em', marginRight: 4 }}>Abiertas</span>
-            {openFlotas.map(f => (
-              <button key={f.id} onClick={() => handleSwitchFlota(f)} style={{
-                padding: '3px 12px', fontSize: 11, fontWeight: 600, borderRadius: 6,
-                background: carpetaActiva?.id === f.id ? 'rgba(18,64,204,0.3)' : 'rgba(6,14,50,0.5)',
-                border: `1px solid ${carpetaActiva?.id === f.id ? 'rgba(51,102,255,0.45)' : 'rgba(61,112,255,0.15)'}`,
-                color: carpetaActiva?.id === f.id ? '#3D7BFF' : 'rgba(178,198,245,0.7)',
-                cursor: carpetaActiva?.id === f.id ? 'default' : 'pointer',
-                maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                transition: 'all 150ms',
-              }}>
-                {flotaLabel(f)}
-              </button>
-            ))}
-          </div>
-        )}
-
-
-        {/* Main container */}
-        <div className="flex-1 flex flex-col min-h-0 rounded-2xl overflow-hidden"
-          style={{ background: 'rgba(0,7,45,0.85)', border: '1px solid rgba(51,102,255,0.1)' }}>
-
-          {showCarpetaScreen && <CarpetaScreen onSelect={handleSelectCarpeta} />}
-
-          {/* Ficha contratada */}
-          {!showCarpetaScreen && fichaMode && carpetaActiva && (
-            <FichaContratada
-              carpeta={carpetaActiva}
-              corredor={carpetaActiva.corredor_id ? listarCorredores().find(c => c.id === carpetaActiva.corredor_id) : undefined}
-              onAbrirEstudio={() => setFichaMode(false)}
-            />
-          )}
-
-          {/* Hojas */}
-          <div className="flex-1 min-h-0 relative" style={{ display: (!showCarpetaScreen && !fichaMode) ? 'block' : 'none' }}>
-            {TABS.map(tab => (
-              <div key={tab} style={{ position: 'absolute', inset: 0, display: activeTab === tab ? 'flex' : 'none', flexDirection: 'column' }}>
-                {tab === 'DATOS GENERALES' && carpetaActiva && (
-                  <HojaDatosGenerales carpetaActiva={carpetaActiva} header={flotaHeader} onHeaderChange={setFlotaHeader} onCarpetaChange={handleCarpetaChange} />
-                )}
-                {tab === 'AUTOMÁTICO' && (
-                  <HojaAutomatico
-                    header={flotaHeader}
-                    carpetaActiva={carpetaActiva}
-                    onHeaderUpdate={(h) => {
-                      setFlotaHeader(prev => ({ ...prev, ...h }));
-                    }}
-                    onVehiclesProcessed={(vehicles) => {
-                      if (!carpetaActiva) return;
-                      const updated = { ...carpetaActiva, automaticoVehicles: vehicles };
-                      guardarCarpeta(updated);
-                      setCarpetaActiva(normalizarCarpeta(updated));
-                    }}
-                    onComplete={(rows) => {
-                      setTrabajoRows(rows);
-                      setOriginalData(rows);
-                      setTimeout(() => {
-                        trabajoRef.current?.setData(rows);
-                        originalRef.current?.setData(rows);
-                      }, 0);
-                      setActiveTab('SINCO');
-                    }}
-                  />
-                )}
-                {tab === 'ORIGINAL' && (
-                  <HojaOriginal ref={originalRef} header={flotaHeader} onHeaderChange={setFlotaHeader} onDataChange={handleOriginalChange} carpetaOriginalEmpty={carpetaActiva ? carpetaActiva.original.length === 0 : false} />
-                )}
-                {tab === 'TRABAJO' && (
-                  <HojaTrabajos ref={trabajoRef} header={flotaHeader} onHeaderChange={setFlotaHeader} getOriginalSnapshot={getOriginalSnapshot} onDataChange={handleTrabajoChange} />
-                )}
-                {tab === 'SINCO' && carpetaActiva && (
-                  <HojaSincoUnificado header={flotaHeader} trabajoRows={trabajoRows} carpetaActiva={carpetaActiva} sincoResultRows={sincoResultRows} onSincoResultChange={setSincoResultRows} onTrabajoChange={setTrabajoRows} onCarpetaChange={handleCarpetaChange} />
-                )}
-                {tab === 'INFORME' && (() => {
-                  const corredor = carpetaActiva?.corredor_id
-                    ? listarCorredores().find(c => c.id === carpetaActiva.corredor_id)
-                    : null;
-                  const corredorLabel = corredor
-                    ? [corredor.comercial, corredor.nombre].filter(Boolean).join(' · ')
-                    : undefined;
-                  return (
-                    <HojaInforme header={flotaHeader} trabajoRows={trabajoRows} coberturas={coberturas} sincoResultRows={sincoResultRows} sincoManual={carpetaActiva?.sincoManual ?? []} sincoGlobal={carpetaActiva?.sincoGlobal ?? null} primasMmtValues={carpetaActiva?.primasMmtInforme} onPrimasMmtChange={(primas) => { const cur = carpetaActivaRef.current; if (cur) { const updated = { ...cur, primasMmtInforme: primas }; setCarpetaActiva(updated); guardarCarpeta(updated); } }} tarifaFlota={carpetaActiva?.tarifaFlota} corredorLabel={corredorLabel} danosPropios={carpetaActiva?.danosPropios} />
-                  );
-                })()}
-                {tab === 'OFERTA' && (
-                  <Suspense fallback={<div className="flex-1 animate-pulse rounded-xl bg-white/5" />}>
-                    <HojaOferta
-                      ref={ofertaRef}
-                      trabajoRows={trabajoRows}
-                      header={flotaHeader}
-                      carpetaNombre={carpetaActiva?.nombre}
-                      primasMmt={carpetaActiva?.primasMmtInforme}
-                      onDataChange={handleOfertaChange}
-                      primaClienteTotal={carpetaActiva?.primaClienteTotal}
-                      descuentoOferta={carpetaActiva?.descuentoOferta}
-                      descuentosCoberturas={carpetaActiva?.descuentosCoberturas}
-                      onOfertaFieldsChange={(fields) => {
-                        if (!carpetaActiva) return;
-                        const updated = { ...carpetaActiva, ...fields };
-                        setCarpetaActiva(normalizarCarpeta(updated));
-                        guardarCarpeta(updated);
-                      }}
-                    />
-                  </Suspense>
-                )}
-                {tab === 'PRE-EMISIÓN' && (
-                  <HojaPreEmision trabajoRows={trabajoRows} onCatalogoChange={(selecciones) => { if (carpetaActiva) setCarpetaActiva({ ...carpetaActiva, catalogoSeleccion: selecciones }); }} />
-                )}
-              </div>
-            ))}
-          </div>
-
-          {/* Tab bar at bottom */}
-          {!showCarpetaScreen && !fichaMode && (
-            <div style={{
-              display: 'flex', alignItems: 'stretch', gap: 0, padding: '0 8px',
-              borderTop: '1px solid rgba(61,112,255,0.16)', background: 'rgba(0,7,45,0.6)',
-              flexShrink: 0,
-            }}>
-              {/* Prev */}
-              <button
-                onClick={() => { if (activeTabIndex > 0) setActiveTab(TABS[activeTabIndex - 1]); }}
-                disabled={activeTabIndex === 0}
-                style={{
-                  padding: '0 10px', fontSize: 11, fontWeight: 600, border: 'none',
-                  background: 'transparent', cursor: activeTabIndex === 0 ? 'default' : 'pointer',
-                  color: activeTabIndex === 0 ? 'rgba(178,198,245,0.15)' : 'rgba(178,198,245,0.5)',
-                  display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0,
-                  transition: 'color 150ms',
-                }}
-                onMouseEnter={e => { if (activeTabIndex > 0) e.currentTarget.style.color = '#BDD4FF'; }}
-                onMouseLeave={e => { if (activeTabIndex > 0) e.currentTarget.style.color = 'rgba(178,198,245,0.5)'; }}
-                title="Paso anterior"
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>
-              </button>
-
-              {/* Tabs */}
-              {TABS.map((tab, idx) => {
-                const isActive = activeTab === tab;
-                const done = tabComplete[tab];
-                return (
-                  <button key={tab} onClick={() => setActiveTab(tab)} style={{
-                    padding: '9px 14px', fontSize: 11, fontWeight: 700,
-                    textTransform: 'uppercase', letterSpacing: '0.06em',
-                    whiteSpace: 'nowrap', border: 'none', cursor: 'pointer',
-                    borderTopLeftRadius: 8, borderTopRightRadius: 8,
-                    borderTop: isActive ? '2px solid #1240CC' : '2px solid transparent',
-                    background: isActive ? 'rgba(18,64,204,0.15)' : 'transparent',
-                    color: isActive ? '#3366FF' : done ? 'rgba(178,198,245,0.55)' : 'rgba(178,198,245,0.35)',
-                    transition: 'all 180ms',
-                    marginBottom: -1,
-                    display: 'flex', alignItems: 'center', gap: 5,
-                  }}
-                    onMouseEnter={e => { if (!isActive) e.currentTarget.style.color = '#BDD4FF'; }}
-                    onMouseLeave={e => { if (!isActive) e.currentTarget.style.color = done ? 'rgba(178,198,245,0.55)' : 'rgba(178,198,245,0.35)'; }}
-                  >
-                    <span style={{
-                      fontSize: 8, fontWeight: 800, lineHeight: 1,
-                      color: isActive ? '#3366FF' : done ? 'rgba(16,185,129,0.7)' : 'rgba(178,198,245,0.25)',
-                    }}>{String(idx + 1).padStart(2, '0')}</span>
-                    {tab}
-                    {done && (
-                      <span style={{
-                        width: 5, height: 5, borderRadius: '50%', flexShrink: 0,
-                        background: isActive ? '#3366FF' : '#10b981',
-                        boxShadow: `0 0 5px ${isActive ? 'rgba(51,102,255,0.5)' : 'rgba(16,185,129,0.5)'}`,
-                      }} />
+                  {/* Guardar */}
+                  <button onClick={handleSave} style={{
+                    border: `1px solid ${saveFlash ? 'rgba(34,197,94,0.4)' : 'var(--t-line)'}`,
+                    color: saveFlash ? '#4ade80' : 'var(--t-text)',
+                    background: saveFlash ? 'rgba(34,197,94,0.1)' : 'transparent',
+                    padding: '8px 12px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap',
+                    transition: 'all 200ms',
+                  }}>
+                    {saveFlash ? (
+                      <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>Guardado</>
+                    ) : (
+                      <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Guardar</>
                     )}
                   </button>
-                );
-              })}
 
-              <div style={{ flex: 1 }} />
+                  {/* Descargar todo */}
+                  <button onClick={handleDownload} disabled={isDownloading} style={{
+                    background: 'var(--t-blue)', border: '1px solid var(--t-blue)',
+                    color: '#fff', padding: '8px 14px', borderRadius: 6, fontSize: 12, fontWeight: 600,
+                    cursor: isDownloading ? 'not-allowed' : 'pointer', opacity: isDownloading ? 0.5 : 1,
+                    display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap',
+                  }}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                    </svg>
+                    {isDownloading ? 'Generando...' : 'Descargar todo'}
+                  </button>
+                </div>
+              </div>
 
-              {/* Next */}
-              <button
-                onClick={() => { if (activeTabIndex < TABS.length - 1) setActiveTab(TABS[activeTabIndex + 1]); }}
-                disabled={activeTabIndex === TABS.length - 1}
-                style={{
-                  padding: '0 12px', fontSize: 11, fontWeight: 600,
-                  border: activeTabIndex < TABS.length - 1 ? '1px solid rgba(61,112,255,0.22)' : 'none',
-                  borderRadius: 7, margin: '6px 4px',
-                  background: activeTabIndex < TABS.length - 1 ? 'rgba(18,64,204,0.14)' : 'transparent',
-                  cursor: activeTabIndex === TABS.length - 1 ? 'default' : 'pointer',
-                  color: activeTabIndex === TABS.length - 1 ? 'rgba(178,198,245,0.15)' : '#BDD4FF',
-                  display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0,
-                  transition: 'all 150ms',
-                }}
-                onMouseEnter={e => { if (activeTabIndex < TABS.length - 1) { e.currentTarget.style.color = '#FFFFFF'; e.currentTarget.style.background = 'rgba(18,64,204,0.28)'; } }}
-                onMouseLeave={e => { if (activeTabIndex < TABS.length - 1) { e.currentTarget.style.color = '#BDD4FF'; e.currentTarget.style.background = 'rgba(18,64,204,0.14)'; } }}
-                title="Paso siguiente"
-              >
-                Siguiente
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>
-              </button>
+              {/* Casebar */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 15 }}>
+                <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--t-muted)', marginRight: 2 }}>EXPEDIENTE</span>
+                  <strong style={{ fontSize: 15, color: 'var(--t-text)', fontWeight: 700 }}>{carpetaActiva.nombre}</strong>
+                  <span style={{ fontSize: 12, color: 'var(--t-muted)' }}>{numVeh} vehículos</span>
+                  <EstadoBadge estado={carpetaActiva.estado} />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7, position: 'relative' }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--t-muted)' }}>ESTADO</span>
+                  <select
+                    value=""
+                    onChange={e => {
+                      const val = e.target.value as EstadoFlota;
+                      if (val && val !== carpetaActiva.estado) setEstadoPopover({ estado: val, motivo: '' });
+                    }}
+                    style={{
+                      border: '1px solid var(--t-line)', background: 'var(--t-surface)', color: 'var(--t-text)',
+                      padding: '7px 10px', borderRadius: 5, fontSize: 12, cursor: 'pointer', outline: 'none',
+                    }}
+                  >
+                    <option value="">Cambiar estado</option>
+                    {(['EN ESTUDIO', 'OFERTADA', 'CONTRATADA', 'RECHAZADA'] as EstadoFlota[])
+                      .filter(e => e !== carpetaActiva.estado)
+                      .map(e => <option key={e} value={e}>{e}</option>)}
+                  </select>
+
+                  {/* Estado popover */}
+                  {estadoPopover && (
+                    <div style={{
+                      position: 'absolute', top: '100%', right: 0, marginTop: 8, zIndex: 100,
+                      padding: 14, borderRadius: 8, minWidth: 220,
+                      background: 'var(--t-surface)', border: '1px solid var(--t-line)',
+                      boxShadow: '0 12px 40px rgba(0,0,0,0.3)',
+                    }}>
+                      <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--t-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>
+                        Cambiar a <EstadoBadge estado={estadoPopover.estado} small />
+                      </p>
+                      <input autoFocus placeholder="Motivo (opcional)"
+                        value={estadoPopover.motivo}
+                        onChange={e => setEstadoPopover(p => p ? { ...p, motivo: e.target.value } : null)}
+                        onKeyDown={e => { if (e.key === 'Enter') handleConfirmarEstado(); if (e.key === 'Escape') setEstadoPopover(null); }}
+                        style={{
+                          width: '100%', fontSize: 12, marginBottom: 10,
+                          border: '1px solid var(--t-line)', background: 'var(--t-surface)', color: 'var(--t-text)',
+                          padding: '7px 10px', borderRadius: 5, outline: 'none', boxSizing: 'border-box',
+                        }} />
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button onClick={handleConfirmarEstado} style={{
+                          flex: 1, fontSize: 11, fontWeight: 600, padding: '6px 0', borderRadius: 6,
+                          background: 'var(--t-blue)', color: '#fff', border: 'none', cursor: 'pointer',
+                        }}>Confirmar</button>
+                        <button onClick={() => setEstadoPopover(null)} style={{
+                          fontSize: 11, padding: '6px 12px', borderRadius: 6,
+                          background: 'transparent', color: 'var(--t-muted)', border: '1px solid var(--t-line)', cursor: 'pointer',
+                        }}>Cancelar</button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Cambiar expediente */}
+                  <button onClick={() => setShowCarpetaScreen(true)} style={{
+                    border: '1px solid var(--t-line)', color: 'var(--t-muted)', background: 'transparent',
+                    padding: '7px 12px', borderRadius: 5, fontSize: 12, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',
+                  }}>
+                    Expedientes
+                  </button>
+                </div>
+              </div>
             </div>
-          )}
-        </div>
+
+            {/* ── Tabstrip: open flotas ── */}
+            {openFlotas.length > 0 && (
+              <div style={{
+                flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6,
+                padding: '6px 28px 6px', borderBottom: '1px solid var(--t-line)',
+                overflowX: 'auto', scrollbarWidth: 'none',
+              }}>
+                <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--t-muted)', marginRight: 6, flexShrink: 0, whiteSpace: 'nowrap' }}>
+                  ABIERTAS
+                </span>
+                {openFlotas.map(f => {
+                  const isActiveTab = carpetaActiva?.id === f.id;
+                  return (
+                    <div key={f.id} style={{
+                      display: 'flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap',
+                      border: `1px solid ${isActiveTab ? 'var(--t-text)' : 'var(--t-line)'}`,
+                      borderRadius: 5, padding: '5px 6px 5px 10px',
+                      background: isActiveTab ? 'rgba(255,255,255,0.04)' : 'transparent',
+                      fontSize: 11, fontWeight: 650,
+                      color: isActiveTab ? 'var(--t-text)' : 'var(--t-muted)',
+                    }}>
+                      <button
+                        onClick={() => handleSwitchFlota(f)}
+                        style={{ all: 'unset', cursor: 'pointer', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis' }}
+                      >
+                        {flotaLabel(f)}
+                      </button>
+                      <button
+                        onClick={() => handleCloseTab(f)}
+                        className="t-stage-x"
+                        title={`Cerrar ${flotaLabel(f)}`}
+                        style={{ border: 'none', background: 'transparent', color: 'var(--t-muted)', fontSize: 16, lineHeight: 1, padding: '0 2px', cursor: 'pointer' }}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* ── Stages: navegación de 8 hojas ── */}
+            {!fichaMode && (
+              <div style={{
+                flexShrink: 0, display: 'flex', gap: 0,
+                borderBottom: '1px solid var(--t-line)',
+                overflowX: 'auto', scrollbarWidth: 'thin',
+              }}>
+                {TABS.map((tab, idx) => {
+                  const isActive = activeTab === tab;
+                  const done = tabComplete[tab];
+                  return (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveTab(tab)}
+                      className="t-stage"
+                      style={{
+                        whiteSpace: 'nowrap', flex: '1', textAlign: 'center', minWidth: 120,
+                        border: 'none', borderBottom: `2px solid ${isActive ? 'var(--t-blue)' : 'transparent'}`,
+                        padding: '14px 9px 12px', background: 'none', cursor: 'pointer',
+                        color: isActive ? 'var(--t-text)' : 'var(--t-muted)',
+                        fontSize: 10, fontWeight: 750, letterSpacing: '0.025em',
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+                        transition: 'color 150ms, border-color 150ms',
+                      }}
+                    >
+                      <b style={{ fontSize: 10, opacity: 0.65, marginRight: 3 }}>{String(idx + 1).padStart(2, '0')}</b>
+                      {tab.toUpperCase()}
+                      {done && <span style={{ color: '#10b981', fontSize: 20, lineHeight: 0, verticalAlign: 'middle', marginLeft: 3 }}>·</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* ── Content ── */}
+            <div className="flex-1 min-h-0">
+              {fichaMode ? (
+                <FichaContratada
+                  carpeta={carpetaActiva}
+                  corredor={carpetaActiva.corredor_id ? listarCorredores().find(c => c.id === carpetaActiva.corredor_id) : undefined}
+                  onAbrirEstudio={() => setFichaMode(false)}
+                />
+              ) : (
+                <div style={{ position: 'relative', height: '100%' }}>
+                  {TABS.map(tab => (
+                    <div key={tab} style={{ position: 'absolute', inset: 0, display: activeTab === tab ? 'flex' : 'none', flexDirection: 'column' }}>
+                      {tab === 'DATOS GENERALES' && carpetaActiva && (
+                        <HojaDatosGenerales carpetaActiva={carpetaActiva} header={flotaHeader} onHeaderChange={setFlotaHeader} onCarpetaChange={handleCarpetaChange} />
+                      )}
+                      {tab === 'AUTOMÁTICO' && (
+                        <HojaAutomatico
+                          header={flotaHeader}
+                          carpetaActiva={carpetaActiva}
+                          onHeaderUpdate={(h) => { setFlotaHeader(prev => ({ ...prev, ...h })); }}
+                          onVehiclesProcessed={(vehicles) => {
+                            if (!carpetaActiva) return;
+                            const updated = { ...carpetaActiva, automaticoVehicles: vehicles };
+                            guardarCarpeta(updated);
+                            setCarpetaActiva(normalizarCarpeta(updated));
+                          }}
+                          onComplete={(rows) => {
+                            setTrabajoRows(rows);
+                            setOriginalData(rows);
+                            setTimeout(() => {
+                              trabajoRef.current?.setData(rows);
+                              originalRef.current?.setData(rows);
+                            }, 0);
+                            setActiveTab('SINCO');
+                          }}
+                        />
+                      )}
+                      {tab === 'ORIGINAL' && (
+                        <HojaOriginal ref={originalRef} header={flotaHeader} onHeaderChange={setFlotaHeader} onDataChange={handleOriginalChange} carpetaOriginalEmpty={carpetaActiva ? carpetaActiva.original.length === 0 : false} />
+                      )}
+                      {tab === 'TRABAJO' && (
+                        <HojaTrabajos ref={trabajoRef} header={flotaHeader} onHeaderChange={setFlotaHeader} getOriginalSnapshot={getOriginalSnapshot} onDataChange={handleTrabajoChange} />
+                      )}
+                      {tab === 'SINCO' && carpetaActiva && (
+                        <HojaSincoUnificado header={flotaHeader} trabajoRows={trabajoRows} carpetaActiva={carpetaActiva} sincoResultRows={sincoResultRows} onSincoResultChange={setSincoResultRows} onTrabajoChange={setTrabajoRows} onCarpetaChange={handleCarpetaChange} />
+                      )}
+                      {tab === 'INFORME' && (() => {
+                        const corredor = carpetaActiva?.corredor_id
+                          ? listarCorredores().find(c => c.id === carpetaActiva.corredor_id)
+                          : null;
+                        const corredorLabel = corredor
+                          ? [corredor.comercial, corredor.nombre].filter(Boolean).join(' · ')
+                          : undefined;
+                        return (
+                          <HojaInforme header={flotaHeader} trabajoRows={trabajoRows} coberturas={coberturas} sincoResultRows={sincoResultRows} sincoManual={carpetaActiva?.sincoManual ?? []} sincoGlobal={carpetaActiva?.sincoGlobal ?? null} primasMmtValues={carpetaActiva?.primasMmtInforme} onPrimasMmtChange={(primas) => { const cur = carpetaActivaRef.current; if (cur) { const updated = { ...cur, primasMmtInforme: primas }; setCarpetaActiva(updated); guardarCarpeta(updated); } }} tarifaFlota={carpetaActiva?.tarifaFlota} corredorLabel={corredorLabel} danosPropios={carpetaActiva?.danosPropios} />
+                        );
+                      })()}
+                      {tab === 'OFERTA' && (
+                        <Suspense fallback={<div className="flex-1 animate-pulse rounded-xl bg-white/5" />}>
+                          <HojaOferta
+                            ref={ofertaRef}
+                            trabajoRows={trabajoRows}
+                            header={flotaHeader}
+                            carpetaNombre={carpetaActiva?.nombre}
+                            primasMmt={carpetaActiva?.primasMmtInforme}
+                            onDataChange={handleOfertaChange}
+                            primaClienteTotal={carpetaActiva?.primaClienteTotal}
+                            descuentoOferta={carpetaActiva?.descuentoOferta}
+                            descuentosCoberturas={carpetaActiva?.descuentosCoberturas}
+                            onOfertaFieldsChange={(fields) => {
+                              if (!carpetaActiva) return;
+                              const updated = { ...carpetaActiva, ...fields };
+                              setCarpetaActiva(normalizarCarpeta(updated));
+                              guardarCarpeta(updated);
+                            }}
+                          />
+                        </Suspense>
+                      )}
+                      {tab === 'PRE-EMISIÓN' && (
+                        <HojaPreEmision trabajoRows={trabajoRows} onCatalogoChange={(selecciones) => { if (carpetaActiva) setCarpetaActiva({ ...carpetaActiva, catalogoSeleccion: selecciones }); }} />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </>
   );

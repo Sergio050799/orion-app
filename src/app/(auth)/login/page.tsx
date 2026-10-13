@@ -16,19 +16,146 @@ export default function LoginPage() {
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
-    const bgRef = useRef<HTMLDivElement>(null);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
 
     useEffect(() => {
-        const handleMouse = (e: MouseEvent) => {
-            if (bgRef.current) {
-                const x = ((e.clientX / window.innerWidth) * 100).toFixed(1);
-                const y = ((e.clientY / window.innerHeight) * 100).toFixed(1);
-                bgRef.current.style.setProperty('--mx', `${x}%`);
-                bgRef.current.style.setProperty('--my', `${y}%`);
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d', { alpha: true });
+        if (!ctx) return;
+
+        const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        let w = 0, h = 0;
+        type Star = { x: number; y: number; r: number; a: number; phase: number; speed: number; depth: number; dx: number; dy: number };
+        let stars: Star[] = [];
+        let running = !reduced;
+        let raf = 0;
+        const pointer = { x: -1000, y: -1000, active: false };
+        const rand = (min: number, max: number) => min + Math.random() * (max - min);
+
+        function resize() {
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            w = innerWidth;
+            h = innerHeight;
+            canvas!.width = Math.floor(w * dpr);
+            canvas!.height = Math.floor(h * dpr);
+            canvas!.style.width = w + 'px';
+            canvas!.style.height = h + 'px';
+            ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
+            const count = Math.min(190, Math.max(62, Math.round(w * h / 9800)));
+            stars = Array.from({ length: count }, () => ({
+                x: rand(0, w), y: rand(0, h),
+                r: rand(0.35, 1.1), a: rand(0.16, 0.58),
+                phase: rand(0, Math.PI * 2), speed: rand(0.05, 0.22),
+                depth: rand(0.4, 1), dx: 0, dy: 0,
+            }));
+            draw(0);
+        }
+
+        function draw(t: number) {
+            ctx!.clearRect(0, 0, w, h);
+            const glowX = pointer.active ? pointer.x : w * 0.5;
+            const glowY = pointer.active ? pointer.y : h * 0.53;
+            const gr = Math.max(300, Math.min(w * 0.48, 560));
+            const gradient = ctx!.createRadialGradient(glowX, glowY, 0, glowX, glowY, gr);
+            gradient.addColorStop(0, 'rgba(36,70,164,.075)');
+            gradient.addColorStop(0.45, 'rgba(18,36,96,.05)');
+            gradient.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx!.fillStyle = gradient;
+            ctx!.fillRect(0, 0, w, h);
+
+            const pts: { x: number; y: number; a: number; near: boolean }[] = [];
+            for (const s of stars) {
+                const drift = running ? t * s.speed : 0;
+                const bx = (s.x + Math.sin(drift + s.phase) * 5 * s.depth + w) % w;
+                const by = (s.y + Math.cos(drift * 0.72 + s.phase) * 3.4 * s.depth + h) % h;
+                let tx = 0, ty = 0, lum = 0;
+                if (pointer.active) {
+                    const vx = bx - pointer.x, vy = by - pointer.y;
+                    const dist = Math.hypot(vx, vy);
+                    const pr = 150;
+                    if (dist < pr) {
+                        const inf = Math.pow(1 - dist / pr, 2);
+                        const strength = 21 * inf * s.depth;
+                        tx = (vx / (dist || 1)) * strength;
+                        ty = (vy / (dist || 1)) * strength;
+                        lum = inf * 0.24;
+                    }
+                }
+                s.dx += (tx - s.dx) * 0.075;
+                s.dy += (ty - s.dy) * 0.075;
+                const x = bx + s.dx, y = by + s.dy;
+                const a = Math.max(0.06, Math.min(0.82,
+                    s.a + (running ? Math.sin(t * 0.56 + s.phase) * 0.055 : 0) + lum
+                ));
+                pts.push({ x, y, a, near: lum > 0.04 });
+                ctx!.beginPath();
+                ctx!.arc(x, y, s.r, 0, Math.PI * 2);
+                ctx!.fillStyle = `rgba(170,194,255,${a})`;
+                ctx!.fill();
+            }
+
+            if (pointer.active) {
+                const candidates = pts.filter(p => p.near);
+                if (candidates.length > 1) {
+                    ctx!.lineWidth = 0.55;
+                    let lines = 0;
+                    for (let i = 0; i < candidates.length && lines < 14; i++) {
+                        for (let j = i + 1; j < candidates.length && lines < 14; j++) {
+                            const ca = candidates[i], cb = candidates[j];
+                            const dist = Math.hypot(ca.x - cb.x, ca.y - cb.y);
+                            if (dist < 82) {
+                                ctx!.strokeStyle = `rgba(104,139,236,${(1 - dist / 82) * 0.075})`;
+                                ctx!.beginPath();
+                                ctx!.moveTo(ca.x, ca.y);
+                                ctx!.lineTo(cb.x, cb.y);
+                                ctx!.stroke();
+                                lines++;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        function frame(ms: number) {
+            if (!running) return;
+            draw(ms / 1000);
+            raf = requestAnimationFrame(frame);
+        }
+
+        const onResize = () => resize();
+        const onMove = (e: PointerEvent) => {
+            if (e.pointerType === 'touch') return;
+            pointer.x = e.clientX;
+            pointer.y = e.clientY;
+            pointer.active = true;
+        };
+        const onLeave = () => { pointer.active = false; };
+        const onVisibility = () => {
+            if (document.hidden) {
+                cancelAnimationFrame(raf);
+            } else if (running) {
+                cancelAnimationFrame(raf);
+                raf = requestAnimationFrame(frame);
             }
         };
-        window.addEventListener('mousemove', handleMouse);
-        return () => window.removeEventListener('mousemove', handleMouse);
+
+        window.addEventListener('resize', onResize, { passive: true });
+        window.addEventListener('pointermove', onMove as EventListener, { passive: true });
+        document.addEventListener('pointerleave', onLeave);
+        document.addEventListener('visibilitychange', onVisibility);
+
+        resize();
+        if (running) raf = requestAnimationFrame(frame);
+
+        return () => {
+            cancelAnimationFrame(raf);
+            window.removeEventListener('resize', onResize);
+            window.removeEventListener('pointermove', onMove as EventListener);
+            document.removeEventListener('pointerleave', onLeave);
+            document.removeEventListener('visibilitychange', onVisibility);
+        };
     }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -56,16 +183,11 @@ export default function LoginPage() {
 
     return (
         <div className="h-screen w-screen overflow-hidden relative">
-            {/* Aurora background */}
-            <div ref={bgRef} className="orion-aurora-bg">
-                <div className="aurora-layer aurora-1" />
-                <div className="aurora-layer aurora-2" />
-                <div className="aurora-layer aurora-3" />
-                <div className="aurora-cursor" />
-                <div className="aurora-arc" />
-                <div className="aurora-grain" />
-                <div className="grain-animated" />
-            </div>
+            {/* Cosmic field background */}
+            <div className="cosmic-field" />
+            <canvas ref={canvasRef} className="cosmos-canvas" aria-hidden="true" />
+            <div className="cosmic-noise" />
+            <div className="grain-animated" />
 
             {/* Header */}
             <header style={{

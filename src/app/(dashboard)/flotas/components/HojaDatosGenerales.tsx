@@ -47,10 +47,17 @@ function useHistorial(cif: string, tomador: string) {
   return { results, loading };
 }
 
-// ─── Badge próxima renovación ─────────────────────────────────────────────────
+// ─── Helpers de fecha ─────────────────────────────────────────────────────────
 
 function parseFechaHoja(s?: string): Date | null {
   if (!s) return null;
+  // ISO YYYY-MM-DD — parse local to avoid TZ shift
+  const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (iso) {
+    const d = new Date(parseInt(iso[1]), parseInt(iso[2]) - 1, parseInt(iso[3]));
+    return isNaN(d.getTime()) ? null : d;
+  }
+  // Legacy DD/MM or DD/MM/YYYY
   const m = s.match(/^(\d{1,2})\/(\d{1,2})(?:\/(\d{4}))?$/);
   if (m) {
     const year = m[3] ? parseInt(m[3]) : new Date().getFullYear();
@@ -61,13 +68,13 @@ function parseFechaHoja(s?: string): Date | null {
   return isNaN(d.getTime()) ? null : d;
 }
 
-function autoCompletarAno(s: string): string {
-  if (!s.match(/^(\d{1,2})\/(\d{1,2})$/)) return s;
-  const [dd, mm] = s.split('/').map(Number);
-  const now = new Date();
-  const candidate = new Date(now.getFullYear(), mm - 1, dd);
-  const year = candidate > now ? now.getFullYear() : now.getFullYear() + 1;
-  return `${String(dd).padStart(2, '0')}/${String(mm).padStart(2, '0')}/${year}`;
+/** Convert any stored date string to YYYY-MM-DD for <input type="date"> */
+function toIsoDate(s?: string): string {
+  if (!s) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!m) return ''; // incomplete old format → let user re-enter
+  return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
 }
 
 function proximaRenovacion(fechaStr?: string): boolean {
@@ -79,6 +86,54 @@ function proximaRenovacion(fechaStr?: string): boolean {
   return diff >= 0 && diff <= 30;
 }
 
+// ─── Helpers para normalizar cobertura ─────────────────────────────────────
+function normalizeCobertura(raw: string): string {
+  const c = raw.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+  if (c.includes('todo riesgo')) return 'Todo Riesgo con Franquicia';
+  if (c.includes('terceros ampliado') || c.includes('terceros amp')) return 'Terceros Ampliado';
+  if (c.includes('terceros')) return 'Terceros';
+  return raw.trim();
+}
+
+// ─── Estilos base ─────────────────────────────────────────────────────────────
+
+const fieldLabel: React.CSSProperties = {
+  display: 'block',
+  textTransform: 'uppercase',
+  fontSize: 11,
+  fontWeight: 720,
+  letterSpacing: '0.045em',
+  color: 'var(--t-muted)',
+  marginBottom: 8,
+};
+
+const fieldInput: React.CSSProperties = {
+  width: '100%',
+  height: 44,
+  border: '1px solid var(--t-line)',
+  background: 'var(--t-surface)',
+  color: 'var(--t-text)',
+  borderRadius: 6,
+  padding: '0 13px',
+  fontSize: 14,
+  fontFamily: 'inherit',
+  outline: 'none',
+  boxSizing: 'border-box',
+};
+
+const sectionStyle: React.CSSProperties = {
+  paddingBottom: 28,
+  marginBottom: 27,
+  borderBottom: '1px solid var(--t-line)',
+};
+
+const gridStyle: React.CSSProperties = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(12, minmax(0, 1fr))',
+  columnGap: 16,
+  rowGap: 19,
+};
+
 // ─── HojaDatosGenerales ───────────────────────────────────────────────────────
 
 interface Props {
@@ -88,41 +143,12 @@ interface Props {
   onCarpetaChange: (c: FlotaCarpeta) => void;
 }
 
-const labelStyle: React.CSSProperties = {
-  display: 'block',
-  fontSize: 10,
-  fontWeight: 800,
-  color: 'rgba(70,120,255,0.8)',
-  textTransform: 'uppercase',
-  letterSpacing: '0.08em',
-  marginBottom: 4,
-};
-
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  fontSize: 12,
-  padding: '7px 10px',
-  borderRadius: 8,
-  background: 'rgba(6,14,50,0.55)',
-  border: '1px solid rgba(61,112,255,0.22)',
-  color: '#FFFFFF',
-  outline: 'none',
-  fontFamily: 'inherit',
-};
-
-// ─── Helpers para normalizar cobertura ─────────────────────────────────────
-function normalizeCobertura(raw: string): string {
-  const c = raw.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
-  if (c.includes('todo riesgo')) return 'Todo Riesgo con Franquicia';
-  if (c.includes('terceros ampliado') || c.includes('terceros amp')) return 'Terceros Ampliado';
-  if (c.includes('terceros')) return 'Terceros';
-  return raw.trim();
-}
-
 export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChange, onCarpetaChange }: Props) {
   const [corredores, setCorredores] = useState<Corredor[]>([]);
   const [tarifaToast, setTarifaToast] = useState('');
   const tarifaFileRef = useRef<HTMLInputElement>(null);
+  const datosFileRef  = useRef<HTMLInputElement>(null);
+  const [datosToast, setDatosToast] = useState('');
 
   useEffect(() => {
     setCorredores(listarCorredores());
@@ -131,7 +157,7 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
       .catch(() => {});
   }, []);
 
-  // ─── Importar tarifa desde Excel ─────────────────────────────────────────
+  // ─── Importar tarifa desde Excel (función conservada, no expuesta en UI) ──
   const handleImportTarifa = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -145,23 +171,21 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
 
       const entries: TarifaEntry[] = [];
 
-      // Intentar leer como tabla con columnas (tipo, cobertura, precio)
       if (rows.length > 0) {
         const keys = Object.keys(rows[0]);
-        // Detectar si tiene columnas tipo/cobertura/precio
         const hasColumns = keys.some(k => {
-          const kn = k.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+          const kn = k.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
           return kn.includes('tipo') || kn.includes('cobertura') || kn.includes('precio');
         });
 
         if (hasColumns) {
-          // Modo columnas: buscar tipo, cobertura, precio
           for (const r of rows) {
             const get = (...aliases: string[]) => {
               for (const a of aliases) {
                 for (const rk of Object.keys(r)) {
-                  if (rk.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim() === a) {
-                    return String(r[rk] ?? '').trim();
+                  if (rk.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim() === a) {
+                    const v = String(r[rk] ?? '').trim();
+                    if (v) return v;
                   }
                 }
               }
@@ -179,14 +203,11 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
             }
           }
         } else {
-          // Modo "campo / valor" — filas como "Furgoneta / Terceros Ampliado" → precio
           for (const r of rows) {
             const vals = Object.values(r).map(v => String(v).trim());
-            // Buscar una fila con formato "Tipo / Cobertura" en una celda y un numero en otra
             for (let i = 0; i < vals.length; i++) {
               if (vals[i].includes('/')) {
                 const [tipoPart, cobPart] = vals[i].split('/').map(s => s.trim());
-                // Buscar precio en otra celda
                 for (let j = 0; j < vals.length; j++) {
                   if (j === i) continue;
                   const num = parseFloat(vals[j].replace(',', '.').replace(/[^0-9.]/g, ''));
@@ -222,10 +243,7 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
     }
   }, [carpetaActiva, onCarpetaChange]);
 
-  // ─── Importar datos generales desde Excel ────────────────────────────────
-  const datosFileRef = useRef<HTMLInputElement>(null);
-  const [datosToast, setDatosToast] = useState('');
-
+  // ─── Importar datos generales desde Excel (función conservada, no expuesta en UI) ──
   const handleImportDatos = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -239,24 +257,21 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
 
       if (rows.length === 0) { setDatosToast('Excel vacio'); setTimeout(() => setDatosToast(''), 2000); return; }
 
-      // Helper flexible para buscar valor
       const find = (...aliases: string[]): string => {
         for (const r of rows) {
           const vals = Object.values(r).map(v => String(v).trim());
           const keys = Object.keys(r);
-          // Buscar en las claves del objeto
           for (const a of aliases) {
             for (const k of keys) {
-              const kn = k.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+              const kn = k.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
               if (kn === a || kn.includes(a)) {
                 const v = String(r[k] ?? '').trim();
                 if (v) return v;
               }
             }
           }
-          // Buscar en formato campo/valor (primera columna = campo, segunda = valor)
           if (vals.length >= 2) {
-            const campo = vals[0].normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+            const campo = vals[0].normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
             for (const a of aliases) {
               if (campo === a || campo.includes(a)) return vals[1];
             }
@@ -298,7 +313,6 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
         count++;
       }
 
-      // Nombre de la flota
       const nombreFlota = find('nombre flota', 'nombre', 'flota');
       if (nombreFlota && nombreFlota !== tomador) {
         const updNombre = { ...carpetaActiva, nombre: nombreFlota };
@@ -320,7 +334,7 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
       setDatosToast('Error al leer el archivo');
       setTimeout(() => setDatosToast(''), 3000);
     }
-  }, [header, onHeaderChange]);
+  }, [header, onHeaderChange, carpetaActiva, onCarpetaChange]);
 
   const set = (key: keyof FlotaHeader, value: string) => {
     onHeaderChange({ ...header, [key]: value });
@@ -331,7 +345,6 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
     const updated: FlotaCarpeta = {
       ...carpetaActiva,
       corredor_id: corredor_id || undefined,
-      // Auto-fill commission from corredor if not yet set
       porcentajeComision: carpetaActiva.porcentajeComision ?? corredor?.porcentajeComision,
     };
     guardarCarpeta(updated);
@@ -350,83 +363,99 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
   const venceProximo = proximaRenovacion(header.fechaVencimiento);
   const { results: historial, loading: histLoading } = useHistorial(header.cif ?? '', header.tomador ?? '');
 
+  // Silence unused-variable lint for preserved state
+  void tarifaToast; void datosToast;
+
   return (
     <div style={{ flex: 1, overflowY: 'auto', padding: '24px 32px' }} className="custom-scrollbar">
-      <div style={{ maxWidth: 720, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 24 }}>
+      {/* Hidden file inputs — logic preserved, not exposed in UI per T02 */}
+      <input ref={datosFileRef}  type="file" accept=".xlsx,.xls,.csv" style={{ display: 'none' }} onChange={handleImportDatos} />
+      <input ref={tarifaFileRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: 'none' }} onChange={handleImportTarifa} />
 
-        {/* ── Identificación ── */}
-        <section>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-            <p style={{ fontSize: 10, fontWeight: 900, color: 'rgba(178,198,245,0.5)', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>
-              Identificación
-            </p>
-            <button onClick={() => datosFileRef.current?.click()} style={{
-              fontSize: 10, fontWeight: 600, padding: '4px 12px', borderRadius: 6,
-              background: 'rgba(6,14,50,0.5)', color: 'rgba(178,198,245,0.7)',
-              border: '1px solid rgba(61,112,255,0.22)', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', gap: 5,
-            }}>
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
-              </svg>
-              Importar desde Excel
-            </button>
-            <input ref={datosFileRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: 'none' }} onChange={handleImportDatos} />
-            {datosToast && (
-              <span style={{
-                fontSize: 10, fontWeight: 600, padding: '3px 10px', borderRadius: 6,
-                background: datosToast.startsWith('Error') || datosToast.startsWith('No se') ? 'rgba(220,38,38,0.2)' : 'rgba(16,185,129,0.2)',
-                color: datosToast.startsWith('Error') || datosToast.startsWith('No se') ? '#fca5a5' : '#6ee7b7',
-              }}>{datosToast}</span>
-            )}
+      <div style={{ maxWidth: 1060, margin: '0 auto' }}>
+
+        {/* ── 01 / Identificación ────────────────────────────────────────────── */}
+        <section style={sectionStyle}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 20 }}>
+            <h3 style={{ fontSize: 16, margin: 0, letterSpacing: '-0.01em', color: 'var(--t-text)', fontWeight: 700 }}>Identificación</h3>
+            <p style={{ fontSize: 12, color: 'var(--t-muted)', margin: '0 0 0 auto' }}>Información de la empresa y del tomador</p>
           </div>
-          <div style={{ marginBottom: 14 }}>
-            <label style={labelStyle}>Nombre de la flota</label>
-            <input style={{ ...inputStyle, fontSize: 14, fontWeight: 700 }}
-              value={carpetaActiva.nombre}
-              onChange={e => {
-                const updated = { ...carpetaActiva, nombre: e.target.value };
-                guardarCarpeta(updated);
-                onCarpetaChange(updated);
-              }}
-              placeholder="Nombre de la flota"
-              onFocus={e => (e.currentTarget.style.borderColor = 'rgba(18,64,204,0.5)')}
-              onBlur={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.22)')} />
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}>
-            <div>
-              <label style={labelStyle}>CIF Empresa</label>
-              <input style={inputStyle} value={header.cif} onChange={e => set('cif', e.target.value)} placeholder="A12345678"
-                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(18,64,204,0.5)')}
-                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.22)')} />
+          <div style={gridStyle}>
+            {/* Nombre de la flota — wide */}
+            <div style={{ gridColumn: 'span 12' }}>
+              <label style={fieldLabel}>Nombre de la flota</label>
+              <input
+                style={fieldInput}
+                value={carpetaActiva.nombre}
+                onChange={e => {
+                  const updated = { ...carpetaActiva, nombre: e.target.value };
+                  guardarCarpeta(updated);
+                  onCarpetaChange(updated);
+                }}
+                placeholder="Nombre de la flota"
+                onFocus={e => (e.currentTarget.style.borderColor = 'var(--t-blue)')}
+                onBlur={e => (e.currentTarget.style.borderColor = 'var(--t-line)')}
+              />
             </div>
-            <div>
-              <label style={labelStyle}>Tomador</label>
-              <input style={inputStyle} value={header.tomador} onChange={e => set('tomador', e.target.value)} placeholder="Empresa S.L."
-                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(18,64,204,0.5)')}
-                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.22)')} />
+            {/* CIF empresa */}
+            <div style={{ gridColumn: 'span 4' }}>
+              <label style={fieldLabel}>CIF empresa</label>
+              <input
+                style={fieldInput}
+                value={header.cif ?? ''}
+                onChange={e => set('cif', e.target.value)}
+                placeholder="Ej. A12345678"
+                onFocus={e => (e.currentTarget.style.borderColor = 'var(--t-blue)')}
+                onBlur={e => (e.currentTarget.style.borderColor = 'var(--t-line)')}
+              />
             </div>
-            <div>
-              <label style={labelStyle}>CIF Tomador</label>
-              <input style={inputStyle} value={header.cifTomador ?? ''} onChange={e => set('cifTomador', e.target.value)} placeholder="B12345678"
-                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(18,64,204,0.5)')}
-                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.22)')} />
+            {/* Tomador */}
+            <div style={{ gridColumn: 'span 4' }}>
+              <label style={fieldLabel}>Tomador</label>
+              <input
+                style={fieldInput}
+                value={header.tomador ?? ''}
+                onChange={e => set('tomador', e.target.value)}
+                placeholder="Nombre o razón social"
+                onFocus={e => (e.currentTarget.style.borderColor = 'var(--t-blue)')}
+                onBlur={e => (e.currentTarget.style.borderColor = 'var(--t-line)')}
+              />
             </div>
-            <div style={{ gridColumn: '1 / 4' }}>
-              <label style={labelStyle}>Actividad</label>
-              <input style={inputStyle} value={header.actividad} onChange={e => set('actividad', e.target.value)} placeholder="Transporte de mercancías"
-                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(18,64,204,0.5)')}
-                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.22)')} />
+            {/* CIF tomador */}
+            <div style={{ gridColumn: 'span 4' }}>
+              <label style={fieldLabel}>CIF tomador</label>
+              <input
+                style={fieldInput}
+                value={header.cifTomador ?? ''}
+                onChange={e => set('cifTomador', e.target.value)}
+                placeholder="Ej. B12345678"
+                onFocus={e => (e.currentTarget.style.borderColor = 'var(--t-blue)')}
+                onBlur={e => (e.currentTarget.style.borderColor = 'var(--t-line)')}
+              />
+            </div>
+            {/* Actividad — wide */}
+            <div style={{ gridColumn: 'span 12' }}>
+              <label style={fieldLabel}>Actividad</label>
+              <input
+                style={fieldInput}
+                value={header.actividad ?? ''}
+                onChange={e => set('actividad', e.target.value)}
+                placeholder="Ej. Transporte de mercancías"
+                onFocus={e => (e.currentTarget.style.borderColor = 'var(--t-blue)')}
+                onBlur={e => (e.currentTarget.style.borderColor = 'var(--t-line)')}
+              />
             </div>
           </div>
         </section>
 
-        {/* ── Historial previo ── */}
+        {/* ── Historial previo (condicional) ─────────────────────────────────── */}
         {(histLoading || historial.length > 0) && (
-          <section>
-            <p style={{ fontSize: 10, fontWeight: 900, color: 'rgba(245,158,11,0.7)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>
-              {histLoading ? 'Buscando en historial…' : `Historial previo · ${historial.length} resultado${historial.length !== 1 ? 's' : ''}`}
-            </p>
+          <section style={sectionStyle}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 14 }}>
+              <span style={{ fontSize: 12, color: 'rgba(245,158,11,0.7)', fontWeight: 700 }}>
+                {histLoading ? 'Buscando en historial…' : `Historial previo · ${historial.length} resultado${historial.length !== 1 ? 's' : ''}`}
+              </span>
+            </div>
             {!histLoading && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {historial.map(h => {
@@ -434,20 +463,28 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
                   return (
                     <div key={h.id} style={{
                       display: 'flex', alignItems: 'center', gap: 12,
-                      padding: '10px 14px', borderRadius: 10,
-                      background: 'rgba(6,14,50,0.5)', border: `1px solid ${cfg.border}`,
+                      padding: '10px 14px', borderRadius: 8,
+                      background: 'var(--t-surface)', border: `1px solid ${cfg.border}`,
                     }}>
-                      <span style={{ fontSize: 9, fontWeight: 900, padding: '2px 8px', borderRadius: 5, background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}`, textTransform: 'uppercase', letterSpacing: '0.07em', flexShrink: 0 }}>
+                      <span style={{
+                        fontSize: 9, fontWeight: 900, padding: '2px 8px', borderRadius: 4,
+                        background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}`,
+                        textTransform: 'uppercase', letterSpacing: '0.07em', flexShrink: 0,
+                      }}>
                         {h.estado}
                       </span>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: '#FFFFFF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{h.nombre}</div>
-                        <div style={{ fontSize: 11, color: 'rgba(178,198,245,0.5)', marginTop: 1, display: 'flex', gap: 8 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--t-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{h.nombre}</div>
+                        <div style={{ fontSize: 11, color: 'var(--t-muted)', marginTop: 2, display: 'flex', gap: 8 }}>
                           {h.cif && <span style={{ fontFamily: 'monospace' }}>{h.cif}</span>}
                           {h.corredor_nombre && <span>Corredor: {h.corredor_nombre}</span>}
                         </div>
                       </div>
-                      <a href="/emission" target="_blank" style={{ fontSize: 10, fontWeight: 700, padding: '5px 10px', borderRadius: 7, background: 'rgba(51,102,255,0.1)', color: '#3366FF', border: '1px solid rgba(51,102,255,0.25)', textDecoration: 'none', flexShrink: 0 }}>
+                      <a href="/emission" target="_blank" style={{
+                        fontSize: 10, fontWeight: 700, padding: '5px 10px', borderRadius: 5,
+                        background: 'transparent', color: 'var(--t-blue)',
+                        border: '1px solid var(--t-line)', textDecoration: 'none', flexShrink: 0,
+                      }}>
                         Ver ficha
                       </a>
                     </div>
@@ -458,268 +495,105 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
           </section>
         )}
 
-        {/* ── Corredor ── */}
-        <section>
-          <p style={{ fontSize: 10, fontWeight: 900, color: 'rgba(178,198,245,0.5)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>
-            Corredor vinculado
-          </p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px', gap: 14 }}>
-            <div>
-              <label style={labelStyle}>Corredor</label>
+        {/* ── 02 / Corredor vinculado ────────────────────────────────────────── */}
+        <section style={sectionStyle}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 20 }}>
+            <h3 style={{ fontSize: 16, margin: 0, letterSpacing: '-0.01em', color: 'var(--t-text)', fontWeight: 700 }}>Corredor vinculado</h3>
+            <p style={{ fontSize: 12, color: 'var(--t-muted)', margin: '0 0 0 auto' }}>Datos de mediación del expediente</p>
+          </div>
+          <div style={gridStyle}>
+            {/* Corredor — two-thirds (8/12) */}
+            <div style={{ gridColumn: 'span 8' }}>
+              <label style={fieldLabel}>Corredor</label>
               <select
+                style={{ ...fieldInput, cursor: 'pointer' }}
                 value={carpetaActiva.corredor_id ?? ''}
                 onChange={e => handleCorredorChange(e.target.value)}
-                style={{ ...inputStyle, cursor: 'pointer', color: carpetaActiva.corredor_id ? '#FFFFFF' : 'rgba(178,198,245,0.6)' }}>
+                onFocus={e => (e.currentTarget.style.borderColor = 'var(--t-blue)')}
+                onBlur={e => (e.currentTarget.style.borderColor = 'var(--t-line)')}
+              >
                 <option value="">Sin corredor</option>
                 {corredores.map(c => (
-                  <option key={c.id} value={c.id}>
-                    {c.nombre} · {c.porcentajeComision}%
-                  </option>
+                  <option key={c.id} value={c.id}>{c.nombre} · {c.porcentajeComision}%</option>
                 ))}
               </select>
+              <small style={{ display: 'block', color: 'var(--t-muted)', fontSize: 11, marginTop: 7, lineHeight: 1.4 }}>
+                El listado procede del catálogo real de corredores.
+              </small>
             </div>
-            <div>
-              <label style={{ ...labelStyle, display: 'flex', alignItems: 'center', gap: 6 }}>
+            {/* % Comisión — third (4/12) */}
+            <div style={{ gridColumn: 'span 4' }}>
+              <label style={fieldLabel}>
                 % Comisión flota
                 {(() => {
                   const corredor = corredores.find(c => c.id === carpetaActiva.corredor_id);
                   if (corredor && carpetaActiva.porcentajeComision != null && carpetaActiva.porcentajeComision !== corredor.porcentajeComision) {
-                    return <span style={{ fontSize: 8, color: '#F59E0B', fontWeight: 600 }}>diferente al corredor ({corredor.porcentajeComision}%)</span>;
+                    return <span style={{ marginLeft: 6, fontSize: 9, color: '#F59E0B', fontWeight: 600 }}>diferente al corredor ({corredor.porcentajeComision}%)</span>;
                   }
                   return null;
                 })()}
               </label>
-              <input inputMode="decimal"
-                style={inputStyle}
+              <input
+                inputMode="decimal"
+                style={fieldInput}
                 value={carpetaActiva.porcentajeComision ?? ''}
                 onChange={e => { const v = e.target.value; if (v === '' || /^\d*\.?\d*$/.test(v)) handleComisionChange(v); }}
                 placeholder={(() => {
                   const c = corredores.find(x => x.id === carpetaActiva.corredor_id);
                   return c ? `${c.porcentajeComision}% (corredor)` : '0';
                 })()}
-                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(18,64,204,0.5)')}
-                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.22)')} />
+                onFocus={e => (e.currentTarget.style.borderColor = 'var(--t-blue)')}
+                onBlur={e => (e.currentTarget.style.borderColor = 'var(--t-line)')}
+              />
             </div>
-          </div>
-          {carpetaActiva.corredor_id && (() => {
-            const c = corredores.find(x => x.id === carpetaActiva.corredor_id);
-            if (!c) return null;
-            return (
-              <p style={{ marginTop: 6, fontSize: 11, color: 'rgba(178,198,245,0.6)' }}>
-                {c.email && <span>{c.email}</span>}
-                {c.email && c.telefono && <span> · </span>}
-                {c.telefono && <span>{c.telefono}</span>}
-              </p>
-            );
-          })()}
-        </section>
-
-        {/* ── Póliza actual ── */}
-        <section>
-          <p style={{ fontSize: 10, fontWeight: 900, color: 'rgba(178,198,245,0.5)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>
-            Póliza vigente
-          </p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-            <div>
-              <label style={labelStyle}>Póliza actual</label>
-              <input style={inputStyle} value={header.polizaActual ?? ''} onChange={e => set('polizaActual', e.target.value)} placeholder="Referencia de la póliza"
-                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(18,64,204,0.5)')}
-                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.22)')} />
-            </div>
-            <div>
-              <label style={labelStyle}>Compañía actual</label>
-              <input style={inputStyle} value={header.ciaActual ?? ''} onChange={e => set('ciaActual', e.target.value)} placeholder="Nombre de la compañía"
-                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(18,64,204,0.5)')}
-                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.22)')} />
-            </div>
+            {/* Datos de contacto del corredor seleccionado */}
+            {carpetaActiva.corredor_id && (() => {
+              const c = corredores.find(x => x.id === carpetaActiva.corredor_id);
+              if (!c) return null;
+              return (
+                <div style={{ gridColumn: 'span 12' }}>
+                  <p style={{ margin: 0, fontSize: 11, color: 'var(--t-muted)' }}>
+                    {c.email && <span>{c.email}</span>}
+                    {c.email && c.telefono && <span> · </span>}
+                    {c.telefono && <span>{c.telefono}</span>}
+                  </p>
+                </div>
+              );
+            })()}
           </div>
         </section>
 
-        {/* ── Vigencia ── */}
-        <section>
-          <p style={{ fontSize: 10, fontWeight: 900, color: 'rgba(178,198,245,0.5)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>
-            Vigencia
-          </p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}>
-            <div>
-              <label style={labelStyle}>Periodicidad</label>
-              <select style={{ ...inputStyle, cursor: 'pointer' }} value={header.periodicidad ?? ''} onChange={e => set('periodicidad', e.target.value)}
-                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(18,64,204,0.5)')}
-                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.22)')}>
-                <option value="">Sin definir</option>
-                <option value="mensual">Mensual</option>
-                <option value="bimestral">Bimestral</option>
-                <option value="trimestral">Trimestral</option>
-                <option value="semestral">Semestral</option>
-                <option value="anual">Anual</option>
-              </select>
-            </div>
-            <div>
-              <label style={{ ...labelStyle, display: 'flex', alignItems: 'center', gap: 6 }}>
-                Fecha vencimiento
+        {/* ── 03 / Vencimiento de la flota ───────────────────────────────────── */}
+        <section style={{ ...sectionStyle, borderBottom: 'none', marginBottom: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 20 }}>
+            <h3 style={{ fontSize: 16, margin: 0, letterSpacing: '-0.01em', color: 'var(--t-text)', fontWeight: 700 }}>Vencimiento de la flota</h3>
+            <p style={{ fontSize: 12, color: 'var(--t-muted)', margin: '0 0 0 auto' }}>Fecha común para todos los vehículos</p>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 18 }}>
+            <div style={{ width: 320 }}>
+              <label style={{ ...fieldLabel, display: 'flex', alignItems: 'center', gap: 8 }}>
+                Fecha de vencimiento
                 {venceProximo && (
                   <span style={{
                     fontSize: 9, fontWeight: 900, padding: '1px 6px', borderRadius: 4,
                     background: 'rgba(234,179,8,0.15)', border: '1px solid rgba(234,179,8,0.35)',
-                    color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.05em',
+                    color: '#f0b94d', textTransform: 'uppercase', letterSpacing: '0.05em',
                     whiteSpace: 'nowrap',
                   }}>Próxima renovación</span>
                 )}
               </label>
               <input
-                style={{ ...inputStyle, borderColor: venceProximo ? 'rgba(234,179,8,0.4)' : 'rgba(61,112,255,0.22)' }}
-                value={header.fechaVencimiento ?? ''}
-                placeholder="dd/mm"
+                type="date"
+                style={{ ...fieldInput, borderColor: venceProximo ? 'rgba(234,179,8,0.4)' : 'var(--t-line)' }}
+                value={toIsoDate(header.fechaVencimiento)}
                 onChange={e => set('fechaVencimiento', e.target.value)}
-                onBlur={e => {
-                  const v = autoCompletarAno(e.target.value.trim());
-                  if (v !== e.target.value) set('fechaVencimiento', v);
-                }}
-                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(18,64,204,0.5)')}
+                onFocus={e => (e.currentTarget.style.borderColor = 'var(--t-blue)')}
+                onBlur={e => (e.currentTarget.style.borderColor = venceProximo ? 'rgba(234,179,8,0.4)' : 'var(--t-line)')}
               />
             </div>
-          </div>
-        </section>
-
-        {/* ── Efecto + Emisión ── */}
-        <section>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-            <div>
-              <label style={labelStyle}>Efecto</label>
-              <input style={inputStyle} value={header.efecto} onChange={e => set('efecto', e.target.value)} placeholder="DD/MM/YYYY"
-                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(18,64,204,0.5)')}
-                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.22)')} />
-            </div>
-            <div>
-              <label style={labelStyle}>Fecha de emisi&oacute;n</label>
-              <input type="date" style={inputStyle} value={header.fechaEmision ?? ''} onChange={e => set('fechaEmision', e.target.value)}
-                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(18,64,204,0.5)')}
-                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.22)')} />
-            </div>
-          </div>
-        </section>
-
-        {/* ── Observaciones ── */}
-        <section>
-          <p style={{ fontSize: 10, fontWeight: 900, color: 'rgba(178,198,245,0.5)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>
-            Observaciones
-          </p>
-          <textarea
-            style={{ ...inputStyle, minHeight: 72, resize: 'vertical', lineHeight: 1.5 }}
-            value={carpetaActiva.observaciones ?? ''}
-            onChange={e => {
-              const updated = { ...carpetaActiva, observaciones: e.target.value };
-              guardarCarpeta(updated);
-              onCarpetaChange(updated);
-            }}
-            placeholder="Notas sobre la flota, condiciones especiales, acuerdos..."
-            onFocus={e => (e.currentTarget.style.borderColor = 'rgba(18,64,204,0.5)')}
-            onBlur={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.22)')}
-          />
-        </section>
-
-        {/* ── Tarifa de la Flota ── */}
-        <section>
-          <p style={{ fontSize: 10, fontWeight: 900, color: 'rgba(178,198,245,0.5)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>
-            Tarifa acordada
-          </p>
-          <p style={{ fontSize: 11, color: 'rgba(178,198,245,0.45)', marginBottom: 14 }}>
-            Precio por tipo de vehículo y cobertura. Se aplica automáticamente en el Centro de Emisión.
-          </p>
-
-          {(carpetaActiva.tarifaFlota ?? []).length > 0 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14 }}>
-              {(carpetaActiva.tarifaFlota ?? []).map((t, i) => (
-                <div key={i} style={{
-                  display: 'grid', gridTemplateColumns: '1fr 1fr 100px 32px', gap: 8, alignItems: 'center',
-                  padding: '8px 12px', borderRadius: 10,
-                  background: 'rgba(6,14,50,0.4)', border: '1px solid rgba(61,112,255,0.12)',
-                }}>
-                  <select style={{ ...inputStyle, fontSize: 11 }} value={t.tipo}
-                    onChange={e => {
-                      const tarifa = [...(carpetaActiva.tarifaFlota ?? [])];
-                      tarifa[i] = { ...tarifa[i], tipo: e.target.value };
-                      const updated = { ...carpetaActiva, tarifaFlota: tarifa };
-                      guardarCarpeta(updated);
-                      onCarpetaChange(updated);
-                    }}>
-                    <option value="">Tipo...</option>
-                    {TIPO_VEHICULO_OPTS.map(o => <option key={o} value={o}>{o}</option>)}
-                    <option value="Derivado de turismo">Derivado de turismo</option>
-                  </select>
-                  <select style={{ ...inputStyle, fontSize: 11 }} value={t.cobertura}
-                    onChange={e => {
-                      const tarifa = [...(carpetaActiva.tarifaFlota ?? [])];
-                      tarifa[i] = { ...tarifa[i], cobertura: e.target.value };
-                      const updated = { ...carpetaActiva, tarifaFlota: tarifa };
-                      guardarCarpeta(updated);
-                      onCarpetaChange(updated);
-                    }}>
-                    <option value="">Cobertura...</option>
-                    {COBERTURA_OPTS.map(o => <option key={o} value={o}>{o}</option>)}
-                  </select>
-                  <input inputMode="decimal" style={{ ...inputStyle, fontSize: 12, fontWeight: 700, fontFamily: 'monospace', textAlign: 'right' }}
-                    value={t.precio || ''} placeholder="0,00"
-                    onChange={e => {
-                      const val = e.target.value.replace(',', '.');
-                      const tarifa = [...(carpetaActiva.tarifaFlota ?? [])];
-                      tarifa[i] = { ...tarifa[i], precio: parseFloat(val) || 0 };
-                      const updated = { ...carpetaActiva, tarifaFlota: tarifa };
-                      guardarCarpeta(updated);
-                      onCarpetaChange(updated);
-                    }}
-                    onFocus={e => (e.currentTarget.style.borderColor = 'rgba(18,64,204,0.5)')}
-                    onBlur={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.22)')} />
-                  <button onClick={() => {
-                    const tarifa = (carpetaActiva.tarifaFlota ?? []).filter((_, j) => j !== i);
-                    const updated = { ...carpetaActiva, tarifaFlota: tarifa };
-                    guardarCarpeta(updated);
-                    onCarpetaChange(updated);
-                  }} style={{
-                    fontSize: 13, color: 'rgba(239,68,68,0.4)', background: 'none',
-                    border: 'none', cursor: 'pointer', padding: 4,
-                  }}
-                    onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')}
-                    onMouseLeave={e => (e.currentTarget.style.color = 'rgba(239,68,68,0.4)')}>
-                    x
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-            <button onClick={() => {
-              const tarifa = [...(carpetaActiva.tarifaFlota ?? []), { tipo: '', cobertura: '', precio: 0 }];
-              const updated = { ...carpetaActiva, tarifaFlota: tarifa };
-              guardarCarpeta(updated);
-              onCarpetaChange(updated);
-            }} style={{
-              fontSize: 11, fontWeight: 700, padding: '8px 16px', borderRadius: 8,
-              background: 'rgba(18,64,204,0.15)', color: '#3366FF',
-              border: '1px solid rgba(18,64,204,0.3)', cursor: 'pointer',
-            }}>
-              + Añadir tarifa
-            </button>
-            <button onClick={() => tarifaFileRef.current?.click()} style={{
-              fontSize: 11, fontWeight: 600, padding: '8px 16px', borderRadius: 8,
-              background: 'rgba(6,14,50,0.5)', color: 'rgba(178,198,245,0.8)',
-              border: '1px solid rgba(61,112,255,0.22)', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', gap: 6,
-            }}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
-              </svg>
-              Importar tarifa desde Excel
-            </button>
-            <input ref={tarifaFileRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: 'none' }} onChange={handleImportTarifa} />
-            {tarifaToast && (
-              <span style={{
-                fontSize: 11, fontWeight: 600, padding: '5px 12px', borderRadius: 6,
-                background: tarifaToast.startsWith('Error') || tarifaToast.startsWith('No se') ? 'rgba(220,38,38,0.2)' : 'rgba(16,185,129,0.2)',
-                color: tarifaToast.startsWith('Error') || tarifaToast.startsWith('No se') ? '#fca5a5' : '#6ee7b7',
-              }}>{tarifaToast}</span>
-            )}
+            <p style={{ fontSize: 12, color: 'var(--t-muted)', maxWidth: 390, lineHeight: 1.55, marginBottom: 7 }}>
+              Esta fecha es la fuente canónica para Dashboard, Flotas contratadas e Informe.
+            </p>
           </div>
         </section>
 

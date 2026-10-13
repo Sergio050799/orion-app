@@ -55,12 +55,13 @@ export function filtrarFilasReales(rows: Record<string, string>[]): Record<strin
 // ─── E-3: CONSOLIDADO Y MERGE SINCO ──────────────────────────────────────────
 
 export interface ResumenSinco {
-    totalVehiculos: number;       // filas reales en sincoResultados
-    vehiculosConSinco: number;    // con código de retorno válido
-    totalSiniestros: number;      // suma de num_siniestros de todas las filas
-    antiguedadMedia: number;      // años — media de todas las filas con fecha
-    siniestrosPorAnio: number;    // calcularSiniestrosPorAnio(total, antiguedadMedia)
-    frecuencia: number;           // calcularFrecuencia(siniestrosPorAnio, vehiculosConSinco)
+    totalVehiculos: number;          // filas reales en sincoResultados
+    vehiculosConSinco: number;       // con código de retorno válido (Codigo_Retorno vacío/0)
+    vehiculosConExposicion: number;  // con Num_Anios_Asegurado > 0 (exposición positiva)
+    totalSiniestros: number;         // suma de Num_Siniestros de todas las filas
+    antiguedadMedia: number;         // años — media de filas con exposición > 0
+    siniestrosPorAnio: number;       // totalSiniestros / antiguedadMedia (0 si sin exposición)
+    frecuencia: number | null;       // null = sin exposición válida; 0 = historial limpio; >0 = siniestralidad
 }
 
 /** Resume una flota SINCO entera a estadísticas listas para la UI.
@@ -88,15 +89,15 @@ export function consolidarSinco(rows: Record<string, string>[]): ResumenSinco {
             if (!isNaN(n)) totalSiniestros += n;
         }
 
-        // Antigüedad — solo filas exitosas (sin código de error)
+        // Antigüedad — solo filas exitosas con exposición POSITIVA (> 0 años)
+        // Num_Anios_Asegurado = 0 significa sin historial registrado, no "0 años de historia limpia"
         const isOk = !cod || cod.trim() === '' || cod.trim() === '0';
         if (isOk) {
             const anyosRaw = row['Num_Anios_Asegurado'] ?? row['num_anios_asegurado'];
             let pushed = false;
             if (anyosRaw !== undefined && anyosRaw !== '') {
                 const n = parseFloat(anyosRaw);
-                // Reject suspiciously small values (< ~1 month) — they inflate frequency x100+
-                if (!isNaN(n) && n >= 0.08) { numAniosList.push(n); pushed = true; }
+                if (!isNaN(n) && n > 0) { numAniosList.push(n); pushed = true; }
             }
             if (!pushed) {
                 // Fallback: calcular desde Fec_Ini_Cobertura
@@ -109,16 +110,27 @@ export function consolidarSinco(rows: Record<string, string>[]): ResumenSinco {
         }
     }
 
-    const vehiculosConSinco  = contarVehiculosConSinco(codigosRetorno);
-    const antiguedadMedia    = numAniosList.length > 0
-        ? numAniosList.reduce((a, b) => a + b, 0) / numAniosList.length
+    const vehiculosConSinco      = contarVehiculosConSinco(codigosRetorno);
+    const vehiculosConExposicion = numAniosList.length;
+    const antiguedadMedia        = vehiculosConExposicion > 0
+        ? numAniosList.reduce((a, b) => a + b, 0) / vehiculosConExposicion
         : 0;
-    const siniestrosPorAnio  = calcularSiniestrosPorAnio(totalSiniestros, antiguedadMedia);
-    const frecuencia         = calcularFrecuencia(siniestrosPorAnio, vehiculosConSinco);
+    const siniestrosPorAnio      = calcularSiniestrosPorAnio(totalSiniestros, antiguedadMedia);
+
+    // frecuencia = null cuando hay SINCO válido pero sin exposición calculable
+    // frecuencia = 0   cuando hay exposición positiva y cero siniestros (historial limpio)
+    // frecuencia > 0   cuando hay siniestros con exposición válida
+    let frecuencia: number | null;
+    if (vehiculosConSinco > 0 && vehiculosConExposicion === 0) {
+        frecuencia = null;
+    } else {
+        frecuencia = calcularFrecuencia(siniestrosPorAnio, vehiculosConSinco);
+    }
 
     return {
         totalVehiculos: reales.length,
         vehiculosConSinco,
+        vehiculosConExposicion,
         totalSiniestros,
         antiguedadMedia,
         siniestrosPorAnio,

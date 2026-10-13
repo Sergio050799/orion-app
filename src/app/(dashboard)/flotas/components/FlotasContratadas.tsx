@@ -15,13 +15,27 @@ interface Props {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function diasHastaVencimiento(fechaStr?: string): number | null {
+function parseFechaVcto(fechaStr?: string): Date | null {
   if (!fechaStr) return null;
-  const parts = fechaStr.split('/');
-  if (parts.length !== 3) return null;
-  const [d, m, y] = parts.map(Number);
-  if (!d || !m || !y) return null;
-  const fecha = new Date(y, m - 1, d);
+  // ISO YYYY-MM-DD
+  const iso = fechaStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (iso) return new Date(parseInt(iso[1]), parseInt(iso[2]) - 1, parseInt(iso[3]));
+  // Legacy DD/MM/YYYY
+  const leg = fechaStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (leg) return new Date(parseInt(leg[3]), parseInt(leg[2]) - 1, parseInt(leg[1]));
+  return null;
+}
+
+function formatFechaVcto(fechaStr?: string): string {
+  if (!fechaStr) return '—';
+  const iso = fechaStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (iso) return `${iso[3]}/${iso[2]}/${iso[1]}`;
+  return fechaStr;
+}
+
+function diasHastaVencimiento(fechaStr?: string): number | null {
+  const fecha = parseFechaVcto(fechaStr);
+  if (!fecha) return null;
   const today = new Date(); today.setHours(0, 0, 0, 0);
   return Math.ceil((fecha.getTime() - today.getTime()) / 86400000);
 }
@@ -323,7 +337,7 @@ export default function FlotasContratadas({ onSelect }: Props) {
 
                 {/* F.Vencimiento */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <span style={{ fontSize: 12, color, fontWeight: dias !== null && dias < 90 ? 700 : 400 }}>{c.header?.fechaVencimiento || '—'}</span>
+                  <span style={{ fontSize: 12, color, fontWeight: dias !== null && dias < 90 ? 700 : 400 }}>{formatFechaVcto(c.header?.fechaVencimiento)}</span>
                   {dias !== null && (
                     <span style={{ fontSize: 9, fontWeight: 700, color }}>
                       {dias < 0 ? `Vencida ${Math.abs(dias)}d` : `${dias}d`}

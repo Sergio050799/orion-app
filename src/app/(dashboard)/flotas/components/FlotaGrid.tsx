@@ -554,9 +554,9 @@ const FlotaGrid = forwardRef<FlotaGridHandle, FlotaGridProps>(function FlotaGrid
     <div className="flex flex-col h-full min-h-0" style={{ fontFamily: 'ui-sans-serif, system-ui, sans-serif' }}>
 
       {/* ── Toolbar ── */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 14px', borderBottom: '1px solid #e5e7eb', background: '#f9fafb', flexShrink: 0, gap: 8 }}>
-        <span style={{ fontSize: 11, fontWeight: 700, color: '#6b7280' }}>
-          <span style={{ color: '#1240CC' }}>{filledCount}</span> vehículos
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 14px', borderBottom: '1px solid var(--t-line)', background: 'var(--t-surface)', flexShrink: 0, gap: 8 }}>
+        <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--t-text-2)' }}>
+          <span style={{ color: 'var(--t-blue)' }}>{filledCount}</span> vehículos
           {normRange && (normRange.r2 > normRange.r1 || normRange.c2 > normRange.c1) && (
             <span style={{ marginLeft: 8, color: '#9ca3af' }}>
               · {normRange.r2 - normRange.r1 + 1} filas × {normRange.c2 - normRange.c1 + 1} cols seleccionadas
@@ -565,19 +565,19 @@ const FlotaGrid = forwardRef<FlotaGridHandle, FlotaGridProps>(function FlotaGrid
         </span>
         <div style={{ display: 'flex', gap: 6 }}>
           <button onClick={() => fileInputRef.current?.click()}
-            style={{ fontSize: 11, fontWeight: 700, padding: '5px 11px', borderRadius: 7, background: 'rgba(18,64,204,0.07)', color: '#1240CC', border: '1px solid rgba(18,64,204,0.2)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            style={{ fontSize: 11, fontWeight: 700, padding: '5px 11px', borderRadius: 7, background: 'transparent', color: 'var(--t-blue)', border: '1px solid var(--t-line)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
             Importar
           </button>
           <button onClick={handleDownloadExcel}
-            style={{ fontSize: 11, fontWeight: 700, padding: '5px 11px', borderRadius: 7, background: 'rgba(18,64,204,0.07)', color: '#1240CC', border: '1px solid rgba(18,64,204,0.2)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            style={{ fontSize: 11, fontWeight: 700, padding: '5px 11px', borderRadius: 7, background: 'transparent', color: 'var(--t-blue)', border: '1px solid var(--t-line)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             Descargar
           </button>
           <button onClick={() => addRows(10)}
-            style={{ fontSize: 11, fontWeight: 700, padding: '5px 10px', borderRadius: 7, background: 'rgba(18,64,204,0.07)', color: '#1240CC', border: '1px solid rgba(18,64,204,0.2)', cursor: 'pointer' }}>+ 10</button>
+            style={{ fontSize: 11, fontWeight: 700, padding: '5px 10px', borderRadius: 7, background: 'transparent', color: 'var(--t-blue)', border: '1px solid var(--t-line)', cursor: 'pointer' }}>+ 10</button>
           <button onClick={() => addRows(50)}
-            style={{ fontSize: 11, fontWeight: 700, padding: '5px 10px', borderRadius: 7, background: 'rgba(18,64,204,0.07)', color: '#1240CC', border: '1px solid rgba(18,64,204,0.2)', cursor: 'pointer' }}>+ 50</button>
+            style={{ fontSize: 11, fontWeight: 700, padding: '5px 10px', borderRadius: 7, background: 'transparent', color: 'var(--t-blue)', border: '1px solid var(--t-line)', cursor: 'pointer' }}>+ 50</button>
           <input ref={fileInputRef} type="file" accept=".xlsx,.csv" style={{ display: 'none' }}
             onChange={e => { const f = e.target.files?.[0]; if (f) handleImportFile(f); e.target.value = ''; }} />
         </div>
@@ -600,17 +600,17 @@ const FlotaGrid = forwardRef<FlotaGridHandle, FlotaGridProps>(function FlotaGrid
 
         <table style={{ borderCollapse: 'collapse', minWidth: '100%', fontSize: 13 }}>
           <thead>
-            <tr style={{ background: '#1240CC', position: 'sticky', top: 0, zIndex: 5 }}>
-              <th style={{ width: 36, padding: '0 4px', position: 'sticky', left: 0, background: '#1240CC', zIndex: 6 }}>
-                <input type="checkbox" checked={allChecked} onChange={toggleAllCheck} style={{ cursor: 'pointer', accentColor: '#fff' }} />
+            <tr style={{ background: 'var(--t-surface)', position: 'sticky', top: 0, zIndex: 5, borderBottom: '1px solid var(--t-line)' }}>
+              <th style={{ width: 36, padding: '0 4px', position: 'sticky', left: 0, background: 'var(--t-surface)', zIndex: 6 }}>
+                <input type="checkbox" checked={allChecked} onChange={toggleAllCheck} style={{ cursor: 'pointer', accentColor: 'var(--t-blue)' }} />
               </th>
-              <th style={{ width: 36, position: 'sticky', left: 36, background: '#1240CC', zIndex: 6, borderRight: '1px solid rgba(255,255,255,0.15)', color: '#fff', fontSize: 10, fontWeight: 700 }}>#</th>
+              <th style={{ width: 36, position: 'sticky', left: 36, background: 'var(--t-surface)', zIndex: 6, borderRight: '1px solid var(--t-line)', color: 'var(--t-text-3)', fontSize: 10, fontWeight: 700 }}>#</th>
               {colDefs.map(col => {
                 const isActive = sortConfig?.col === col.id;
                 return (
                   <th key={col.id}
                     onClick={() => !col.isComputed && handleSort(col.id)}
-                    style={{ minWidth: col.width, maxWidth: col.width, padding: '8px 6px', textAlign: 'left', color: '#fff', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap', letterSpacing: '0.04em', textTransform: 'uppercase', cursor: col.isComputed ? 'default' : 'pointer', background: col.isComputed ? 'rgba(255,255,255,0.06)' : undefined, userSelect: 'none', borderRight: '1px solid rgba(255,255,255,0.12)' }}>
+                    style={{ minWidth: col.width, maxWidth: col.width, padding: '8px 6px', textAlign: 'left', color: isActive ? 'var(--t-text)' : 'var(--t-text-3)', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap', letterSpacing: '0.04em', textTransform: 'uppercase', cursor: col.isComputed ? 'default' : 'pointer', background: col.isComputed ? 'var(--t-line-soft)' : undefined, userSelect: 'none', borderRight: '1px solid var(--t-line)' }}>
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
                       {col.name}
                       {!col.isComputed && <span style={{ opacity: isActive ? 1 : 0.25, fontSize: 8 }}>{isActive && sortConfig!.dir === 'desc' ? '▼' : '▲'}</span>}
@@ -618,7 +618,7 @@ const FlotaGrid = forwardRef<FlotaGridHandle, FlotaGridProps>(function FlotaGrid
                   </th>
                 );
               })}
-              <th style={{ width: 32, background: '#1240CC' }} />
+              <th style={{ width: 32, background: 'var(--t-surface)' }} />
             </tr>
           </thead>
           <tbody>
@@ -649,33 +649,33 @@ const FlotaGrid = forwardRef<FlotaGridHandle, FlotaGridProps>(function FlotaGrid
 
       {/* ── Bulk assign ── */}
       {selectedRows.size >= 2 && (
-        <div style={{ position: 'sticky', bottom: 0, display: 'flex', alignItems: 'center', gap: 10, padding: '8px 16px', background: 'rgba(5,12,40,0.97)', borderTop: '1px solid rgba(18,64,204,0.4)', flexShrink: 0 }}>
-          <span style={{ fontSize: 11, fontWeight: 800, color: 'rgba(178,198,245,0.8)', whiteSpace: 'nowrap' }}>{selectedRows.size} filas</span>
+        <div style={{ position: 'sticky', bottom: 0, display: 'flex', alignItems: 'center', gap: 10, padding: '8px 16px', background: 'var(--t-surface)', borderTop: '1px solid var(--t-line)', flexShrink: 0 }}>
+          <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--t-text-2)', whiteSpace: 'nowrap' }}>{selectedRows.size} filas</span>
           <select value={bulkCol} onChange={e => { setBulkCol(e.target.value); setBulkValue(''); }}
-            style={{ fontSize: 11, padding: '4px 8px', borderRadius: 6, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: bulkCol ? '#fff' : 'rgba(178,198,245,0.5)', outline: 'none', cursor: 'pointer' }}>
+            style={{ fontSize: 11, padding: '4px 8px', borderRadius: 6, background: 'var(--t-line-soft)', border: '1px solid var(--t-line)', color: bulkCol ? 'var(--t-text)' : 'var(--t-text-3)', outline: 'none', cursor: 'pointer' }}>
             <option value="">— campo —</option>
             {bulkColOptions.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
           {bulkCol && (
             <select value={bulkValue} onChange={e => setBulkValue(e.target.value)}
-              style={{ fontSize: 11, padding: '4px 8px', borderRadius: 6, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: bulkValue ? '#fff' : 'rgba(178,198,245,0.5)', outline: 'none', cursor: 'pointer' }}>
+              style={{ fontSize: 11, padding: '4px 8px', borderRadius: 6, background: 'var(--t-line-soft)', border: '1px solid var(--t-line)', color: bulkValue ? 'var(--t-text)' : 'var(--t-text-3)', outline: 'none', cursor: 'pointer' }}>
               <option value="">— valor —</option>
               {DROPDOWN_OPTS[bulkCol].map(o => <option key={o} value={o}>{o}</option>)}
             </select>
           )}
           <button onClick={handleBulkApply} disabled={!bulkCol || !bulkValue}
-            style={{ fontSize: 11, fontWeight: 700, padding: '5px 14px', borderRadius: 6, background: bulkCol && bulkValue ? '#1240CC' : 'rgba(18,64,204,0.3)', color: '#fff', border: 'none', cursor: bulkCol && bulkValue ? 'pointer' : 'not-allowed' }}>
+            style={{ fontSize: 11, fontWeight: 700, padding: '5px 14px', borderRadius: 6, background: bulkCol && bulkValue ? 'var(--t-blue)' : 'var(--t-line)', color: '#fff', border: 'none', cursor: bulkCol && bulkValue ? 'pointer' : 'not-allowed' }}>
             Aplicar
           </button>
           <button onClick={() => { setSelectedRows(new Set()); setBulkCol(''); setBulkValue(''); }}
-            style={{ fontSize: 16, lineHeight: 1, color: 'rgba(255,255,255,0.4)', background: 'none', border: 'none', cursor: 'pointer', padding: '0 6px', marginLeft: 'auto' }}>×</button>
+            style={{ fontSize: 16, lineHeight: 1, color: 'var(--t-text-2)', background: 'none', border: 'none', cursor: 'pointer', padding: '0 6px', marginLeft: 'auto' }}>×</button>
         </div>
       )}
 
       {/* ── Añadir filas ── */}
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0', flexShrink: 0, borderTop: '1px solid #e5e7eb', background: '#f9fafb' }}>
+      <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0', flexShrink: 0, borderTop: '1px solid var(--t-line)', background: 'var(--t-surface)' }}>
         <button onClick={() => addRows(10)}
-          style={{ fontSize: 11, fontWeight: 700, padding: '5px 14px', borderRadius: 7, background: 'rgba(18,64,204,0.07)', color: '#1240CC', border: '1px solid rgba(18,64,204,0.2)', cursor: 'pointer' }}>
+          style={{ fontSize: 11, fontWeight: 700, padding: '5px 14px', borderRadius: 7, background: 'transparent', color: 'var(--t-blue)', border: '1px solid var(--t-line)', cursor: 'pointer' }}>
           + Añadir 10 filas
         </button>
       </div>

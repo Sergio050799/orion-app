@@ -29,6 +29,8 @@ const COLUMNS = [
   { key: 'ambito',                header: 'AMBITO',                width: 14 },
   { key: 'coberturas_solicitadas',header: 'COBERTURAS SOLICITADAS',width: 28 },
   { key: 'lunas',                 header: 'LUNAS',                 width: 10 },
+  { key: 'animales',              header: 'ANIMALES',              width: 12 },
+  { key: 'seguro_conductor',      header: 'SEGURO DEL CONDUCTOR',  width: 22 },
   { key: 'frq',                   header: 'FRQ',                   width: 8  },
   { key: 'asistencia',            header: 'ASISTENCIA',            width: 16 },
   { key: 'prima_referencia',      header: 'PRIMA REFERENCIA',      width: 16 },
@@ -167,8 +169,7 @@ export async function generarPlantillaExcel(carpeta?: Pick<FlotaCarpeta, 'nombre
   const ADR_OPTIONS_DV = '"No,Si"';
   const AMBITO_OPTIONS = '"Nacional,Internacional"';
   const COB_OPTIONS    = '"Terceros,Terceros Ampliado,Todo Riesgo con Franquicia"';
-  const LUNAS_OPTIONS  = '"Si,No"';
-  const ASIST_OPTIONS  = '"Si,No"';
+  const SI_NO_OPTIONS  = '"Si,No"';
 
   const dvMap: Record<string, string> = {
     tipo_vehiculo:          TIPO_OPTIONS,
@@ -176,11 +177,13 @@ export async function generarPlantillaExcel(carpeta?: Pick<FlotaCarpeta, 'nombre
     adr:                    ADR_OPTIONS_DV,
     ambito:                 AMBITO_OPTIONS,
     coberturas_solicitadas: COB_OPTIONS,
-    lunas:                  LUNAS_OPTIONS,
-    asistencia:             ASIST_OPTIONS,
+    lunas:                  SI_NO_OPTIONS,
+    animales:               SI_NO_OPTIONS,
+    seguro_conductor:       SI_NO_OPTIONS,
+    asistencia:             SI_NO_OPTIONS,
   };
 
-  for (let r = DATA_START_ROW; r < DATA_START_ROW + 100; r++) {
+  for (let r = DATA_START_ROW; r < DATA_START_ROW + 200; r++) {
     const row = ws.getRow(r);
     row.height = 18;
     const isEven = (r - DATA_START_ROW) % 2 === 0;
@@ -211,13 +214,6 @@ export async function generarPlantillaExcel(carpeta?: Pick<FlotaCarpeta, 'nombre
       }
     });
   }
-
-  // ── Nota al pie ───────────────────────────────────────────────────────────
-  const noteRow = DATA_START_ROW + 101;
-  const noteCell = ws.getCell(noteRow, 1);
-  noteCell.value = 'MMT Seguros | ADR, LUNAS y ASISTENCIA: escribe Si o No';
-  noteCell.font = { name: 'Calibri', size: 8, italic: true, color: { argb: 'FF9CA3AF' } };
-  noteCell.alignment = { horizontal: 'left' };
 
   // ── Hoja oculta con lista de corredores ──────────────────────────────────
   if (hasCorredores) {

@@ -18,6 +18,7 @@ export interface Corredor {
   observaciones: string;
   sucursal?: Sucursal;
   comercial?: string;
+  idPerceptor?: string;
   creado_por?: string;   // username de quien lo creó
   creadoEn: string;
   actualizadoEn: string;

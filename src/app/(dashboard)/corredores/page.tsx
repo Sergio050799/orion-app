@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import {
@@ -9,14 +9,7 @@ import {
 } from '@/core/flotas';
 import { listarCarpetas, crearCarpeta, guardarCarpeta, eliminarCarpeta, borrarTodasLasCarpetas, cargarCarpetasDelServidor, type FlotaCarpeta } from '@/core/flotas';
 
-// ─── Design tokens ──────────────────────────────────────────────────────────
-
-const glass: React.CSSProperties = {
-  background: 'rgba(12, 28, 82, 0.75)',
-  border: '1px solid rgba(61, 112, 255, 0.22)',
-  borderRadius: 22,
-  boxShadow: '0 30px 80px -20px rgba(0,0,0,0.6), 0 1px 0 rgba(255,255,255,0.06) inset, 0 0 0 1px rgba(61,112,255,0.14) inset',
-};
+// ─── Constantes ──────────────────────────────────────────────────────────────
 
 const SUCURSALES: Sucursal[] = ['TITAN', 'MEDIACION'];
 
@@ -25,11 +18,13 @@ const SUCURSALES: Sucursal[] = ['TITAN', 'MEDIACION'];
 type Vista = 'lista' | 'detalle';
 type FormData = Omit<Corredor, 'id' | 'creadoEn' | 'actualizadoEn'>;
 
+type SortKey = 'nombre' | 'sucursal' | 'comercial' | 'cif' | 'porcentajeComision' | 'periodicidad' | 'flotas';
+
 const FORM_VACIO: FormData = {
   codigo: '', nombre: '', cif: '', domicilio: '', porcentajeComision: 0,
   periodicidad: 'mensual', formaPago: '', contacto: '',
   email: '', telefono: '', observaciones: '',
-  sucursal: undefined, comercial: '',
+  sucursal: undefined, comercial: '', idPerceptor: '',
 };
 
 // ─── Icons ──────────────────────────────────────────────────────────────────
@@ -53,10 +48,10 @@ function SearchIcon() {
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 function estadoColor(estado: string) {
-  if (estado === 'OFERTADA') return '#f59e0b';
-  if (estado === 'CONTRATADA') return '#10b981';
-  if (estado === 'RECHAZADA') return '#ef4444';
-  return '#3366FF';
+  if (estado === 'OFERTADA') return 'var(--t-amber)';
+  if (estado === 'CONTRATADA') return 'var(--t-green)';
+  if (estado === 'RECHAZADA') return 'var(--t-red)';
+  return 'var(--t-blue)';
 }
 
 function FormField({ label, children }: { label: string; children: React.ReactNode }) {
@@ -64,21 +59,51 @@ function FormField({ label, children }: { label: string; children: React.ReactNo
     <label style={{ display: 'block' }}>
       <span style={{
         display: 'block', fontSize: 10, fontWeight: 700, letterSpacing: '0.08em',
-        textTransform: 'uppercase', color: 'rgba(70,120,255,0.8)', marginBottom: 6,
+        textTransform: 'uppercase', color: 'var(--t-text-3)', marginBottom: 6,
       }}>{label}</span>
       {children}
     </label>
   );
 }
 
-// ─── Panel lateral (crear / editar) ─────────────────────────────────────────
+// ─── SortTh — encabezado de columna ordenable sin icono ─────────────────────
+
+function SortTh({
+  col, sortCol, sortDir, onSort, children, style,
+}: {
+  col: SortKey; sortCol: SortKey; sortDir: 'asc' | 'desc';
+  onSort: (col: SortKey) => void; children: React.ReactNode;
+  style: React.CSSProperties;
+}) {
+  const active = sortCol === col;
+  return (
+    <th style={style}>
+      <button
+        onClick={() => onSort(col)}
+        aria-sort={active ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
+        style={{
+          background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+          font: 'inherit', letterSpacing: 'inherit', textTransform: 'uppercase',
+          color: active ? 'var(--t-text-2)' : 'var(--t-text-3)',
+          fontWeight: active ? 700 : 600,
+          display: 'block', width: '100%', textAlign: 'left',
+        }}
+      >
+        {children}
+      </button>
+    </th>
+  );
+}
+
+// ─── Panel lateral (crear / editar) — siempre oscuro ────────────────────────
 
 function PanelCorredor({
-  corredor, onClose, onSave,
+  corredor, onClose, onSave, comercialesUnicos,
 }: {
   corredor: Corredor | null;
   onClose: () => void;
   onSave: (c: Corredor) => void;
+  comercialesUnicos: string[];
 }) {
   const [form, setForm] = useState<FormData>(corredor ? {
     codigo: corredor.codigo ?? '', nombre: corredor.nombre, cif: corredor.cif,
@@ -90,6 +115,7 @@ function PanelCorredor({
     observaciones: corredor.observaciones,
     sucursal: corredor.sucursal,
     comercial: corredor.comercial ?? '',
+    idPerceptor: corredor.idPerceptor ?? '',
   } : { ...FORM_VACIO });
 
   function set(field: keyof FormData, value: string | number | Periodicidad | Sucursal | undefined) {
@@ -116,26 +142,22 @@ function PanelCorredor({
         backdropFilter: 'blur(4px)', zIndex: 40,
       }} />
       <aside style={{
-        position: 'fixed', top: 100, right: 0, bottom: 0, width: 440, zIndex: 50,
-        background: 'linear-gradient(180deg, rgba(8,22,72,0.95) 0%, rgba(0,7,45,0.98) 100%)',
-        borderLeft: '1px solid rgba(61,112,255,0.22)',
-        borderTopLeftRadius: 22,
+        position: 'fixed', top: 56, right: 0, bottom: 0, width: 440, zIndex: 50,
+        background: '#0c0d10',
+        borderLeft: '1px solid rgba(255,255,255,0.08)',
         display: 'flex', flexDirection: 'column',
       }}>
         <header style={{
           padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          borderBottom: '1px solid rgba(61,112,255,0.16)',
+          borderBottom: '1px solid rgba(255,255,255,0.08)',
         }}>
-          <h2 style={{
-            margin: 0, fontSize: 16, color: '#FFFFFF',
-            fontFamily: 'var(--font-display), Inter, sans-serif', fontWeight: 600,
-          }}>
+          <h2 style={{ margin: 0, fontSize: 16, color: '#f4f4f5', fontWeight: 600 }}>
             {corredor ? 'Editar corredor' : 'Nuevo corredor'}
           </h2>
           <button onClick={onClose} style={{
             background: 'none', border: 'none', cursor: 'pointer',
-            color: 'rgba(178,198,245,0.5)', fontSize: 22, lineHeight: 1, padding: 4,
-          }}>x</button>
+            color: '#6f747c', fontSize: 22, lineHeight: 1, padding: 4,
+          }}>×</button>
         </header>
 
         <form onSubmit={handleSubmit} style={{ flex: 1, overflowY: 'auto', padding: '20px 24px' }}>
@@ -143,94 +165,71 @@ function PanelCorredor({
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <FormField label="Nombre *">
-                <input className="orion-input" value={form.nombre} onChange={e => set('nombre', e.target.value)} required />
+                <input className="panel-input" value={form.nombre} onChange={e => set('nombre', e.target.value)} required />
               </FormField>
-              <FormField label="Codigo corredor">
-                <input className="orion-input" value={form.codigo} onChange={e => set('codigo', e.target.value)} placeholder="COR-001" />
+              <FormField label="Código Perceptor">
+                <input className="panel-input" value={form.codigo} onChange={e => set('codigo', e.target.value)} placeholder="COR-001" />
               </FormField>
             </div>
 
+            <FormField label="ID Perceptor">
+              <input className="panel-input" value={form.idPerceptor ?? ''} onChange={e => set('idPerceptor', e.target.value)}
+                placeholder="Identificador externo del perceptor" />
+            </FormField>
+
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <FormField label="Sucursal">
-                <select className="orion-input" value={form.sucursal ?? ''}
+                <select className="panel-input" value={form.sucursal ?? ''}
                   onChange={e => set('sucursal', e.target.value as Sucursal || undefined)}>
                   <option value="">— Sin asignar —</option>
                   {SUCURSALES.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </FormField>
               <FormField label="Comercial">
-                <input className="orion-input" value={form.comercial ?? ''} placeholder="Ej: Roberto, Miguel..."
-                  onChange={e => set('comercial', e.target.value)} />
+                <select className="panel-input" value={form.comercial ?? ''}
+                  onChange={e => set('comercial', e.target.value)}>
+                  <option value="">— Sin asignar —</option>
+                  {comercialesUnicos.map(com => <option key={com} value={com}>{com}</option>)}
+                </select>
               </FormField>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <FormField label="CIF">
-                <input className="orion-input" value={form.cif} onChange={e => set('cif', e.target.value)} />
+                <input className="panel-input" value={form.cif} onChange={e => set('cif', e.target.value)} />
               </FormField>
-              <FormField label="% Comision">
-                <input className="orion-input" inputMode="decimal"
+              <FormField label="% Comisión">
+                <input className="panel-input" inputMode="decimal"
                   value={form.porcentajeComision}
                   onChange={e => { const v = e.target.value; if (v === '' || /^\d*\.?\d*$/.test(v)) set('porcentajeComision', v === '' ? 0 : parseFloat(v) || 0); }} />
               </FormField>
             </div>
 
-            <FormField label="Domicilio fiscal">
-              <textarea className="orion-input" style={{ minHeight: 60, resize: 'vertical' }}
-                value={form.domicilio ?? ''} onChange={e => set('domicilio', e.target.value)} />
-            </FormField>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <FormField label="Periodicidad">
-                <select className="orion-input" value={form.periodicidad}
-                  onChange={e => set('periodicidad', e.target.value as Periodicidad)}>
-                  <option value="mensual">Mensual</option>
-                  <option value="trimestral">Trimestral</option>
-                  <option value="semestral">Semestral</option>
-                  <option value="anual">Anual</option>
-                </select>
-              </FormField>
-              <FormField label="Forma de pago">
-                <select className="orion-input" value={form.formaPago}
-                  onChange={e => set('formaPago', e.target.value)}>
-                  <option value="">—</option>
-                  <option value="Transferencia">Transferencia</option>
-                  <option value="Domiciliacion">Domiciliacion</option>
-                  <option value="Cheque">Cheque</option>
-                </select>
-              </FormField>
-            </div>
-
-            <FormField label="Persona de contacto">
-              <input className="orion-input" value={form.contacto} onChange={e => set('contacto', e.target.value)} />
-            </FormField>
-
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <FormField label="Email">
-                <input className="orion-input" type="email" value={form.email} onChange={e => set('email', e.target.value)} />
+                <input className="panel-input" type="email" value={form.email} onChange={e => set('email', e.target.value)} />
               </FormField>
-              <FormField label="Telefono">
-                <input className="orion-input" value={form.telefono} onChange={e => set('telefono', e.target.value)} />
+              <FormField label="Teléfono">
+                <input className="panel-input" value={form.telefono} onChange={e => set('telefono', e.target.value)} />
               </FormField>
             </div>
 
             <FormField label="Observaciones">
-              <textarea className="orion-input" rows={4} value={form.observaciones}
+              <textarea className="panel-input" rows={4} value={form.observaciones}
                 onChange={e => set('observaciones', e.target.value)} />
             </FormField>
           </div>
 
           <footer style={{ marginTop: 24, display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
             <button type="button" onClick={onClose} style={{
-              background: 'rgba(6,14,50,0.5)', border: '1px solid rgba(61,112,255,0.22)',
-              borderRadius: 10, padding: '9px 18px', color: '#BDD4FF', fontSize: 13,
+              background: 'none', border: '1px solid rgba(255,255,255,0.12)',
+              borderRadius: 8, padding: '9px 18px', color: '#a1a1a6', fontSize: 13,
               cursor: 'pointer', fontWeight: 500,
             }}>Cancelar</button>
             <button type="submit" style={{
-              background: 'linear-gradient(135deg, #1240CC, #3366FF)',
-              border: 'none', borderRadius: 10, padding: '9px 22px',
+              background: '#4387ff', border: 'none',
+              borderRadius: 8, padding: '9px 22px',
               color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer',
-              boxShadow: '0 0 20px rgba(18,64,204,0.4)',
             }}>
               {corredor ? 'Guardar' : 'Crear corredor'}
             </button>
@@ -270,194 +269,184 @@ function DetalleView({
     );
   });
 
+  const lbl: React.CSSProperties = {
+    fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase',
+    color: 'var(--t-text-3)', marginBottom: 3,
+  };
+  const val: React.CSSProperties = { fontSize: 14, color: 'var(--t-text)' };
+  const valMono: React.CSSProperties = { ...val, fontFamily: 'monospace', fontSize: 13 };
+
+  function InfoField({ label, value, mono }: { label: string; value?: string | number; mono?: boolean }) {
+    if (!value && value !== 0) return null;
+    return (
+      <div>
+        <div style={lbl}>{label}</div>
+        <div style={mono ? valMono : val}>{value}</div>
+      </div>
+    );
+  }
+
+  const thF: React.CSSProperties = {
+    fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase',
+    color: 'var(--t-text-3)', padding: '0 12px 10px 0', textAlign: 'left',
+    borderBottom: '1px solid var(--t-line)', whiteSpace: 'nowrap',
+  };
+  const tdF: React.CSSProperties = {
+    padding: '13px 12px 13px 0', borderBottom: '1px solid var(--t-line)',
+    fontSize: 13, verticalAlign: 'middle', color: 'var(--t-text-2)',
+  };
+
   return (
-    <div className="animate-in fade-in duration-500" style={{ maxWidth: 900, margin: '0 auto' }}>
+    <div className="animate-in fade-in duration-500" style={{ maxWidth: 860, margin: '0 auto' }}>
+
+      {/* ── Volver ─────────────────────────────────────────────────────────── */}
       <button onClick={onVolver} style={{
         background: 'none', border: 'none', cursor: 'pointer',
-        color: '#3366FF', fontSize: 13, padding: 0, marginBottom: 20,
+        color: 'var(--t-blue)', fontSize: 13, padding: 0, marginBottom: 22,
         display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500,
-      }}>
-        Volver a corredores
-      </button>
+      }}>← Volver a corredores</button>
 
-      <div style={{ ...glass, padding: '28px 32px', marginBottom: 20 }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-          <div>
-            <h1 style={{
-              margin: 0, fontSize: 22, color: '#FFFFFF',
-              fontFamily: 'var(--font-display), Inter, sans-serif', fontWeight: 700,
-            }}>
-              {corredor.nombre}
-            </h1>
-            <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-              {corredor.cif && <span style={{ fontSize: 12, color: '#BDD4FF', fontFamily: 'monospace' }}>{corredor.cif}</span>}
-              {corredor.sucursal && (
-                <span style={{
-                  fontSize: 11, fontWeight: 700,
-                  color: corredor.sucursal === 'TITAN' ? '#60a5fa' : '#a78bfa',
-                  background: corredor.sucursal === 'TITAN' ? 'rgba(96,165,250,0.12)' : 'rgba(167,139,250,0.12)',
-                  border: `1px solid ${corredor.sucursal === 'TITAN' ? 'rgba(96,165,250,0.3)' : 'rgba(167,139,250,0.3)'}`,
-                  borderRadius: 999, padding: '3px 10px',
-                }}>{corredor.sucursal}</span>
-              )}
-              {corredor.comercial && (
-                <span style={{
-                  fontSize: 11, color: '#BDD4FF',
-                  background: 'rgba(6,14,50,0.5)',
-                  border: '1px solid rgba(61,112,255,0.16)',
-                  borderRadius: 999, padding: '3px 10px',
-                }}>{corredor.comercial}</span>
-              )}
-              <span style={{
-                fontSize: 12, fontWeight: 700, color: '#3366FF',
-                background: 'rgba(61,112,255,0.16)', border: '1px solid rgba(51,102,255,0.25)',
-                borderRadius: 999, padding: '3px 10px',
-              }}>{corredor.porcentajeComision}% comision</span>
-              <span style={{
-                fontSize: 11, color: '#BDD4FF', background: 'rgba(6,14,50,0.5)',
-                border: '1px solid rgba(61,112,255,0.16)', borderRadius: 999, padding: '3px 10px',
-                textTransform: 'capitalize',
-              }}>{corredor.periodicidad}</span>
-            </div>
-            <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {corredor.email && (
-                <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#BDD4FF' }}>
-                  <MailIcon /> {corredor.email}
-                </span>
-              )}
-              {corredor.telefono && (
-                <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#BDD4FF' }}>
-                  <PhoneIcon /> {corredor.telefono}
-                </span>
-              )}
-              {corredor.contacto && (
-                <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#BDD4FF' }}>
-                  <UserIcon /> {corredor.contacto}
-                </span>
-              )}
-              {corredor.formaPago && (
-                <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#BDD4FF' }}>
-                  <CashIcon /> {corredor.formaPago}
-                </span>
-              )}
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-            {!confirmEdit ? (
-              <button onClick={() => setConfirmEdit(true)} style={{
-                background: 'rgba(6,14,50,0.5)', border: '1px solid rgba(61,112,255,0.22)',
-                borderRadius: 10, padding: '8px 16px', color: '#BDD4FF', fontSize: 12,
-                cursor: 'pointer', fontWeight: 500,
-              }}>Editar</button>
-            ) : (
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: 6,
-                background: 'rgba(51,102,255,0.1)', border: '1px solid rgba(51,102,255,0.3)',
-                borderRadius: 10, padding: '4px 10px', fontSize: 12,
-              }}>
-                <span style={{ color: 'rgba(178,198,245,0.8)', fontSize: 11 }}>¿Editar datos?</span>
-                <button onClick={() => { setConfirmEdit(false); onEditar(); }} style={{
-                  background: 'linear-gradient(135deg, #1240CC, #3366FF)', border: 'none',
-                  borderRadius: 6, padding: '3px 10px', color: '#fff', fontSize: 11, cursor: 'pointer', fontWeight: 600,
-                }}>Sí</button>
-                <button onClick={() => setConfirmEdit(false)} style={{
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  color: 'rgba(178,198,245,0.5)', fontSize: 11, padding: '3px 4px',
-                }}>No</button>
-              </div>
+      {/* ── Encabezado ─────────────────────────────────────────────────────── */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
+        <div>
+          <h1 style={{ margin: 0, fontSize: 28, fontWeight: 680, letterSpacing: '-0.03em', color: 'var(--t-text)' }}>
+            {corredor.nombre}
+          </h1>
+          <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            {corredor.cif && (
+              <span style={{ fontSize: 12, color: 'var(--t-text-2)', fontFamily: 'monospace' }}>{corredor.cif}</span>
             )}
-            {!confirmElim ? (
-              <button onClick={() => setConfirmElim(true)} style={{
-                background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)',
-                borderRadius: 10, padding: '8px 16px', color: '#f87171', fontSize: 12,
-                cursor: 'pointer', fontWeight: 500,
-              }}>Eliminar</button>
-            ) : flotas.length > 0 ? (
-              <div style={{
-                display: 'flex', flexDirection: 'column', gap: 8,
-                background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)',
-                borderRadius: 10, padding: '10px 14px', fontSize: 12,
-              }}>
-                <span style={{ color: '#f87171', fontWeight: 600 }}>
-                  Tiene {flotas.length} flota{flotas.length > 1 ? 's' : ''}:
-                </span>
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  <button onClick={() => onEliminar('desvincular')} style={{
-                    background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.4)',
-                    borderRadius: 6, padding: '4px 10px', color: '#fbbf24', fontSize: 11, cursor: 'pointer', fontWeight: 600,
-                  }}>Desvincular todas</button>
-                  <button onClick={() => onEliminar('borrar_flotas')} style={{
-                    background: '#ef4444', border: 'none', borderRadius: 6,
-                    padding: '4px 10px', color: '#fff', fontSize: 11, cursor: 'pointer', fontWeight: 600,
-                  }}>Borrar todo</button>
-                  <button onClick={() => setConfirmElim(false)} style={{
-                    background: 'none', border: 'none', cursor: 'pointer',
-                    color: 'rgba(178,198,245,0.5)', fontSize: 11, padding: '4px 6px',
-                  }}>Cancelar</button>
-                </div>
-              </div>
-            ) : (
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: 6,
-                background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)',
-                borderRadius: 10, padding: '4px 10px', fontSize: 12,
-              }}>
-                <span style={{ color: 'rgba(178,198,245,0.7)' }}>Seguro?</span>
-                <button onClick={() => onEliminar('desvincular')} style={{
-                  background: '#ef4444', border: 'none', borderRadius: 6,
-                  padding: '3px 10px', color: '#fff', fontSize: 11, cursor: 'pointer', fontWeight: 600,
-                }}>Si</button>
-                <button onClick={() => setConfirmElim(false)} style={{
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  color: 'rgba(178,198,245,0.5)', fontSize: 11, padding: '3px 4px',
-                }}>No</button>
-              </div>
+            {corredor.sucursal && (
+              <span style={{
+                fontSize: 10, fontWeight: 700, letterSpacing: '0.06em',
+                color: 'var(--t-text-2)',
+                background: 'var(--t-line-soft)',
+                border: '1px solid var(--t-line)', borderRadius: 4, padding: '2px 7px',
+              }}>{corredor.sucursal}</span>
+            )}
+            {corredor.comercial && (
+              <span style={{ fontSize: 12, color: 'var(--t-text-2)', border: '1px solid var(--t-line)', borderRadius: 4, padding: '2px 7px' }}>
+                {corredor.comercial}
+              </span>
+            )}
+            {(corredor.porcentajeComision ?? 0) > 0 && (
+              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--t-green)' }}>
+                {corredor.porcentajeComision}%
+              </span>
             )}
           </div>
         </div>
+
+        {/* Acciones */}
+        <div style={{ display: 'flex', gap: 8, flexShrink: 0, alignItems: 'flex-start' }}>
+          {!confirmEdit ? (
+            <button onClick={() => setConfirmEdit(true)} style={{
+              height: 34, padding: '0 14px', background: 'none',
+              border: '1px solid var(--t-line)', borderRadius: 7,
+              color: 'var(--t-text-2)', fontSize: 12, cursor: 'pointer', fontWeight: 500,
+            }}>Editar</button>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, border: '1px solid var(--t-line)', borderRadius: 7, padding: '4px 10px', fontSize: 12 }}>
+              <span style={{ color: 'var(--t-text-3)', fontSize: 11 }}>¿Editar?</span>
+              <button onClick={() => { setConfirmEdit(false); onEditar(); }} style={{
+                background: 'var(--t-blue)', border: 'none', borderRadius: 5,
+                padding: '3px 10px', color: '#fff', fontSize: 11, cursor: 'pointer', fontWeight: 600,
+              }}>Sí</button>
+              <button onClick={() => setConfirmEdit(false)} style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                color: 'var(--t-text-3)', fontSize: 11,
+              }}>No</button>
+            </div>
+          )}
+          {!confirmElim ? (
+            <button onClick={() => setConfirmElim(true)} style={{
+              height: 34, padding: '0 14px', background: 'none',
+              border: '1px solid var(--t-line)', borderRadius: 7,
+              color: 'var(--t-red)', fontSize: 12, cursor: 'pointer', opacity: 0.75,
+            }}>Eliminar</button>
+          ) : flotas.length > 0 ? (
+            <div style={{ border: '1px solid var(--t-line)', borderRadius: 7, padding: '8px 12px', fontSize: 12 }}>
+              <div style={{ color: 'var(--t-red)', fontWeight: 600, marginBottom: 6 }}>
+                {flotas.length} flota{flotas.length > 1 ? 's' : ''} vinculadas
+              </div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                <button onClick={() => onEliminar('desvincular')} style={{
+                  background: 'none', border: '1px solid var(--t-amber)',
+                  borderRadius: 5, padding: '3px 10px', color: 'var(--t-amber)', fontSize: 11, cursor: 'pointer', fontWeight: 600,
+                }}>Desvincular y eliminar</button>
+                <button onClick={() => onEliminar('borrar_flotas')} style={{
+                  background: 'var(--t-red)', border: 'none', borderRadius: 5,
+                  padding: '3px 10px', color: '#fff', fontSize: 11, cursor: 'pointer', fontWeight: 600,
+                }}>Borrar todo</button>
+                <button onClick={() => setConfirmElim(false)} style={{
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  color: 'var(--t-text-3)', fontSize: 11,
+                }}>Cancelar</button>
+              </div>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, border: '1px solid var(--t-line)', borderRadius: 7, padding: '4px 10px', fontSize: 12 }}>
+              <span style={{ color: 'var(--t-text-3)' }}>¿Eliminar?</span>
+              <button onClick={() => onEliminar('desvincular')} style={{
+                background: 'var(--t-red)', border: 'none', borderRadius: 5,
+                padding: '3px 10px', color: '#fff', fontSize: 11, cursor: 'pointer', fontWeight: 600,
+              }}>Sí</button>
+              <button onClick={() => setConfirmElim(false)} style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                color: 'var(--t-text-3)', fontSize: 11,
+              }}>No</button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── Info grid ──────────────────────────────────────────────────────── */}
+      <div style={{
+        marginTop: 28, paddingTop: 24, paddingBottom: 24,
+        borderTop: '1px solid var(--t-line)', borderBottom: '1px solid var(--t-line)',
+        display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '18px 40px',
+      }}>
+        <InfoField label="Nombre" value={corredor.nombre} />
+        <InfoField label="Código Perceptor" value={corredor.codigo} />
+        <InfoField label="ID Perceptor" value={corredor.idPerceptor} />
+        <InfoField label="CIF" value={corredor.cif} mono />
+        <InfoField label="Sucursal" value={corredor.sucursal} />
+        <InfoField label="Comercial" value={corredor.comercial} />
+        <InfoField label="% Comisión" value={(corredor.porcentajeComision ?? 0) > 0 ? `${corredor.porcentajeComision}%` : undefined} />
+        <InfoField label="Email" value={corredor.email} />
+        <InfoField label="Teléfono" value={corredor.telefono} />
         {corredor.observaciones && (
-          <div style={{
-            marginTop: 18, padding: '12px 16px',
-            background: 'rgba(61,112,255,0.10)', border: '1px solid rgba(51,102,255,0.15)',
-            borderRadius: 10, fontSize: 12, color: '#BDD4FF',
-          }}>
-            <b style={{ color: '#3366FF', fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', display: 'block', marginBottom: 4 }}>Observaciones</b>
-            {corredor.observaciones}
+          <div style={{ gridColumn: '1 / -1' }}>
+            <div style={lbl}>Observaciones</div>
+            <div style={{ fontSize: 13, color: 'var(--t-text-2)', lineHeight: 1.6 }}>{corredor.observaciones}</div>
           </div>
         )}
       </div>
 
-      <div style={{ ...glass, padding: '24px 28px' }}>
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18,
-        }}>
-          <h3 style={{
-            margin: 0, fontSize: 14, color: '#FFFFFF',
-            fontFamily: 'var(--font-display), Inter, sans-serif', fontWeight: 500,
-          }}>
-            Flotas asociadas · {flotas.length}
-          </h3>
+      {/* ── Flotas asociadas ───────────────────────────────────────────────── */}
+      <div style={{ marginTop: 32 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <h2 style={{ margin: 0, fontSize: 16, fontWeight: 650, color: 'var(--t-text)', letterSpacing: '-0.02em' }}>
+            Flotas asociadas
+            <span style={{ fontSize: 13, fontWeight: 400, color: 'var(--t-text-3)', marginLeft: 8 }}>· {flotas.length}</span>
+          </h2>
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={() => { setShowVincular(v => !v); setVincularSearch(''); }} style={{
-              background: showVincular ? 'rgba(51,102,255,0.15)' : 'none',
-              border: '1px solid rgba(61,112,255,0.3)', borderRadius: 8,
-              cursor: 'pointer', color: '#3366FF', fontSize: 12, fontWeight: 600,
-              padding: '4px 12px',
+              height: 32, padding: '0 12px', background: 'none',
+              border: '1px solid var(--t-line)', borderRadius: 7,
+              color: 'var(--t-blue)', fontSize: 12, fontWeight: 600, cursor: 'pointer',
             }}>Vincular existentes</button>
             <button onClick={onNuevaFlota} style={{
-              background: 'none', border: 'none', cursor: 'pointer',
-              color: '#3366FF', fontSize: 12, fontWeight: 600,
+              height: 32, padding: '0 12px', background: 'var(--t-blue)',
+              border: 'none', borderRadius: 7, color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer',
             }}>+ Nueva flota</button>
           </div>
         </div>
 
+        {/* Búsqueda vincular */}
         {showVincular && (
-          <div style={{
-            marginBottom: 16, padding: '14px 16px',
-            background: 'rgba(51,102,255,0.06)', border: '1px solid rgba(61,112,255,0.2)',
-            borderRadius: 12,
-          }}>
-            <p style={{ margin: '0 0 10px', fontSize: 11, color: 'rgba(178,198,245,0.6)', fontWeight: 600 }}>
+          <div style={{ marginBottom: 16, padding: '12px 16px', border: '1px solid var(--t-line)', borderRadius: 8 }}>
+            <p style={{ margin: '0 0 10px', fontSize: 11, color: 'var(--t-text-3)', fontWeight: 600 }}>
               Selecciona carpetas para vincular a {corredor.nombre}:
             </p>
             <input
@@ -466,188 +455,225 @@ function DetalleView({
               onChange={e => setVincularSearch(e.target.value)}
               style={{
                 width: '100%', marginBottom: 10, padding: '7px 12px',
-                background: 'rgba(6,14,50,0.6)', border: '1px solid rgba(61,112,255,0.22)',
-                borderRadius: 8, color: '#fff', fontSize: 12, outline: 'none',
+                background: 'var(--t-surface)', border: '1px solid var(--t-line)',
+                borderRadius: 6, color: 'var(--t-text)', fontSize: 13, outline: 'none',
                 boxSizing: 'border-box',
               }}
             />
             {disponibles.length === 0 ? (
-              <p style={{ color: 'rgba(178,198,245,0.4)', fontSize: 12, textAlign: 'center', padding: '10px 0', margin: 0 }}>
+              <p style={{ color: 'var(--t-text-3)', fontSize: 12, textAlign: 'center', padding: '8px 0', margin: 0 }}>
                 {vincularSearch ? 'Sin resultados.' : 'Todas las carpetas ya están vinculadas a este corredor.'}
               </p>
             ) : (
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 2, maxHeight: 240, overflowY: 'auto' }}>
-                {disponibles.map(c => (
-                  <li key={c.id} style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    padding: '9px 12px', borderRadius: 8,
-                  }}
-                    onMouseEnter={e => (e.currentTarget.style.background = 'rgba(51,102,255,0.06)')}
-                    onMouseLeave={e => (e.currentTarget.style.background = '')}
-                  >
-                    <span style={{ fontSize: 13, color: '#FFFFFF', fontWeight: 500 }}>
-                      {c.nombre || '(sin nombre)'}
-                      {c.header?.tomador && (
-                        <span style={{ color: 'rgba(178,198,245,0.5)', fontSize: 11, fontWeight: 400, marginLeft: 8 }}>
-                          {c.header.tomador}
-                        </span>
-                      )}
-                    </span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{
-                        fontSize: 10, padding: '2px 8px', borderRadius: 999, fontWeight: 600,
-                        color: estadoColor(c.estado ?? 'EN ESTUDIO'),
-                        background: `${estadoColor(c.estado ?? 'EN ESTUDIO')}18`,
-                        border: `1px solid ${estadoColor(c.estado ?? 'EN ESTUDIO')}40`,
-                      }}>{c.estado ?? 'EN ESTUDIO'}</span>
-                      <button onClick={() => { onVincularExistente(c.id); }} style={{
-                        background: 'linear-gradient(135deg, #1240CC, #3366FF)',
-                        border: 'none', borderRadius: 6, padding: '4px 12px',
-                        color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer',
-                      }}>Vincular</button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+              <div style={{ maxHeight: 220, overflowY: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <tbody>
+                    {disponibles.map(c => (
+                      <tr key={c.id}
+                        onMouseEnter={e => (e.currentTarget.style.background = 'var(--t-line-soft)')}
+                        onMouseLeave={e => (e.currentTarget.style.background = '')}
+                      >
+                        <td style={{ padding: '8px 10px', fontSize: 13, color: 'var(--t-text)', fontWeight: 500 }}>
+                          {c.nombre || '(sin nombre)'}
+                          {c.header?.tomador && (
+                            <span style={{ color: 'var(--t-text-3)', fontSize: 11, fontWeight: 400, marginLeft: 8 }}>
+                              {c.header.tomador}
+                            </span>
+                          )}
+                        </td>
+                        <td style={{ padding: '8px 10px', fontSize: 10, color: estadoColor(c.estado ?? 'EN ESTUDIO'), fontWeight: 600, textAlign: 'right', whiteSpace: 'nowrap' }}>
+                          {c.estado ?? 'EN ESTUDIO'}
+                        </td>
+                        <td style={{ padding: '8px 0 8px 10px', textAlign: 'right' }}>
+                          <button onClick={() => onVincularExistente(c.id)} style={{
+                            background: 'var(--t-blue)', border: 'none', borderRadius: 5,
+                            padding: '3px 10px', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer',
+                          }}>Vincular</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
         )}
 
-        {flotas.length === 0 && !showVincular ? (
-          <p style={{ color: 'rgba(178,198,245,0.4)', fontSize: 12, textAlign: 'center', padding: '30px 0', margin: 0 }}>
-            Sin flotas vinculadas. Usa "Vincular existentes" para asociar carpetas.
+        {/* Tabla flotas */}
+        {flotas.length === 0 ? (
+          <p style={{ color: 'var(--t-text-3)', fontSize: 13, padding: '28px 0', textAlign: 'center', margin: 0 }}>
+            Sin flotas vinculadas. Usa &quot;Vincular existentes&quot; para asociar carpetas.
           </p>
-        ) : flotas.length > 0 ? (
-          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {flotas.map(f => {
-              const rows = f.trabajo?.length > 0 ? f.trabajo : f.original;
-              const numVeh = rows?.length ?? 0;
-              const isConfirming = confirmDesvincular === f.id;
-              return (
-                <li key={f.id} style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  padding: '12px 16px', borderRadius: 10,
-                  transition: 'background 180ms',
-                  background: isConfirming ? 'rgba(245,158,11,0.06)' : undefined,
-                }}
-                  onMouseEnter={e => { if (!isConfirming) e.currentTarget.style.background = 'rgba(51,102,255,0.04)'; }}
-                  onMouseLeave={e => { if (!isConfirming) e.currentTarget.style.background = ''; }}
-                >
-                  <span style={{ color: '#FFFFFF', fontSize: 13, fontWeight: 500 }}>
-                    {f.nombre || '(sin nombre)'}
-                    <span style={{ color: 'rgba(178,198,245,0.6)', fontWeight: 400, fontSize: 11, marginLeft: 8 }}>· {numVeh} veh.</span>
-                  </span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{
-                      fontSize: 11, padding: '3px 10px', borderRadius: 999, fontWeight: 500,
-                      color: estadoColor(f.estado ?? 'EN ESTUDIO'),
-                      background: `${estadoColor(f.estado ?? 'EN ESTUDIO')}18`,
-                      border: `1px solid ${estadoColor(f.estado ?? 'EN ESTUDIO')}40`,
-                    }}>{f.estado ?? 'EN ESTUDIO'}</span>
-                    {!isConfirming ? (
-                      <button onClick={() => setConfirmDesvincular(f.id)} style={{
-                        background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)',
-                        borderRadius: 6, padding: '3px 10px', color: '#fbbf24', fontSize: 11,
-                        cursor: 'pointer', fontWeight: 500,
-                      }}>Desvincular</button>
-                    ) : (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span style={{ fontSize: 11, color: 'rgba(178,198,245,0.7)' }}>Seguro?</span>
-                        <button onClick={() => { onDesvincularFlota(f.id); setConfirmDesvincular(null); }} style={{
-                          background: '#f59e0b', border: 'none', borderRadius: 6,
-                          padding: '3px 10px', color: '#000', fontSize: 11, cursor: 'pointer', fontWeight: 700,
-                        }}>Si</button>
-                        <button onClick={() => setConfirmDesvincular(null)} style={{
-                          background: 'none', border: 'none', cursor: 'pointer',
-                          color: 'rgba(178,198,245,0.5)', fontSize: 11,
-                        }}>No</button>
-                      </div>
-                    )}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        ) : null}
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr>
+                <th style={thF}>Flota</th>
+                <th style={{ ...thF, textAlign: 'right' }}>Veh.</th>
+                <th style={thF}>Estado</th>
+                <th style={{ ...thF, textAlign: 'right', width: 32 }}></th>
+                <th style={{ ...thF, textAlign: 'right' }}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {flotas.map(f => {
+                const numVeh = ((f.trabajo?.length > 0 ? f.trabajo : f.original)?.filter(r => r['matricula']?.trim()).length ?? 0);
+                const isConfirming = confirmDesvincular === f.id;
+                return (
+                  <tr key={f.id}
+                    onMouseEnter={e => { if (!isConfirming) e.currentTarget.style.background = 'var(--t-line-soft)'; }}
+                    onMouseLeave={e => { if (!isConfirming) e.currentTarget.style.background = ''; }}
+                  >
+                    <td style={{ ...tdF, color: 'var(--t-text)', fontWeight: 600 }}>
+                      {f.nombre || '(sin nombre)'}
+                    </td>
+                    <td style={{ ...tdF, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{numVeh}</td>
+                    <td style={{ ...tdF }}>
+                      <span style={{
+                        fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 4,
+                        color: estadoColor(f.estado ?? 'EN ESTUDIO'),
+                        border: '1px solid var(--t-line)',
+                      }}>{f.estado ?? 'EN ESTUDIO'}</span>
+                    </td>
+                    <td style={{ ...tdF, textAlign: 'right', color: 'var(--t-blue)', fontSize: 16, cursor: 'pointer' }}
+                      onClick={() => { /* navegación se puede añadir si se expone un handler */ }}>
+                      →
+                    </td>
+                    <td style={{ ...tdF, textAlign: 'right' }}>
+                      {!isConfirming ? (
+                        <button onClick={() => setConfirmDesvincular(f.id)} style={{
+                          background: 'none', border: '1px solid var(--t-line)',
+                          borderRadius: 5, padding: '3px 9px', color: 'var(--t-text-3)', fontSize: 11,
+                          cursor: 'pointer',
+                        }}>Desvincular</button>
+                      ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 5, justifyContent: 'flex-end' }}>
+                          <span style={{ fontSize: 11, color: 'var(--t-text-3)' }}>¿Seguro?</span>
+                          <button onClick={() => { onDesvincularFlota(f.id); setConfirmDesvincular(null); }} style={{
+                            background: 'var(--t-amber)', border: 'none', borderRadius: 5,
+                            padding: '3px 9px', color: '#000', fontSize: 11, cursor: 'pointer', fontWeight: 700,
+                          }}>Sí</button>
+                          <button onClick={() => setConfirmDesvincular(null)} style={{
+                            background: 'none', border: 'none', cursor: 'pointer',
+                            color: 'var(--t-text-3)', fontSize: 11,
+                          }}>No</button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );
 }
 
-// ─── Tabla de corredores (lista unica) ─────────────────────────────────────
+// ─── Tabla de corredores ─────────────────────────────────────────────────────
 
 function CorredoresTable({
-  corredores, carpetas, onVer,
+  corredores, flotasCountMap, sortCol, sortDir, onSort, onVer,
 }: {
   corredores: Corredor[];
-  carpetas: FlotaCarpeta[];
+  flotasCountMap: Record<string, number>;
+  sortCol: SortKey;
+  sortDir: 'asc' | 'desc';
+  onSort: (col: SortKey) => void;
   onVer: (c: Corredor) => void;
 }) {
-  const numFlotasDe = (id: string) => carpetas.filter(c => c.corredor_id === id).length;
+  const thStyle: React.CSSProperties = {
+    textAlign: 'left',
+    color: 'var(--t-text-3)',
+    fontSize: 12,
+    fontWeight: 600,
+    letterSpacing: '0.06em',
+    padding: '0 8px 12px',
+    borderBottom: '1px solid var(--t-line-soft)',
+    textTransform: 'uppercase',
+    whiteSpace: 'nowrap',
+  };
+
+  const tdStyle: React.CSSProperties = {
+    height: 52,
+    padding: '0 8px',
+    borderBottom: '1px solid var(--t-line-soft)',
+    fontSize: 14,
+    verticalAlign: 'middle',
+    color: 'var(--t-text-2)',
+  };
+
+  const badgeStyle: React.CSSProperties = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    height: 22,
+    padding: '0 8px',
+    borderRadius: 5,
+    border: '1px solid var(--t-line)',
+    background: 'var(--t-line-soft)',
+    color: 'var(--t-text-2)',
+    fontSize: 11,
+    letterSpacing: '0.04em',
+    fontWeight: 600,
+  };
 
   return (
-    <div style={{
-      background: 'rgba(12,28,82,0.42)',
-      border: '1px solid rgba(61,112,255,0.16)',
-      borderRadius: 16, overflow: 'hidden',
-    }}>
-      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+    <div style={{ overflowX: 'auto' }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 900 }}>
         <thead>
           <tr>
-            {['Nombre', 'Sucursal', 'Comercial', 'CIF', 'Comision %', 'Periodicidad', 'Flotas', ''].map(h => (
-              <th key={h} style={{
-                textAlign: 'left', padding: '14px 16px', fontSize: 10, fontWeight: 700,
-                textTransform: 'uppercase', letterSpacing: '0.12em', color: '#3366FF',
-                borderBottom: '1px solid rgba(51,102,255,0.15)',
-                whiteSpace: 'nowrap',
-              }}>{h}</th>
-            ))}
+            <SortTh col="nombre" sortCol={sortCol} sortDir={sortDir} onSort={onSort} style={thStyle}>Nombre</SortTh>
+            <SortTh col="sucursal" sortCol={sortCol} sortDir={sortDir} onSort={onSort} style={thStyle}>Sucursal</SortTh>
+            <SortTh col="comercial" sortCol={sortCol} sortDir={sortDir} onSort={onSort} style={thStyle}>Comercial</SortTh>
+            <SortTh col="cif" sortCol={sortCol} sortDir={sortDir} onSort={onSort} style={thStyle}>CIF</SortTh>
+            <SortTh col="porcentajeComision" sortCol={sortCol} sortDir={sortDir} onSort={onSort} style={thStyle}>Comisión %</SortTh>
+            <SortTh col="periodicidad" sortCol={sortCol} sortDir={sortDir} onSort={onSort} style={thStyle}>Periodicidad</SortTh>
+            <SortTh col="flotas" sortCol={sortCol} sortDir={sortDir} onSort={onSort} style={thStyle}>Flotas</SortTh>
+            <th style={{ ...thStyle, textAlign: 'right' }}>Ver</th>
           </tr>
         </thead>
         <tbody>
-          {corredores.map(c => (
-            <tr key={c.id} style={{ transition: 'background 180ms', cursor: 'pointer' }}
-              onClick={() => onVer(c)}
-              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(51,102,255,0.04)')}
-              onMouseLeave={e => (e.currentTarget.style.background = '')}
-            >
-              <td style={{ padding: '12px 16px', color: '#FFFFFF', fontSize: 13, fontWeight: 500, borderBottom: '1px solid rgba(61,112,255,0.10)' }}>
-                {c.nombre}
-              </td>
-              <td style={{ padding: '12px 16px', borderBottom: '1px solid rgba(61,112,255,0.10)' }}>
-                {c.sucursal ? (
-                  <span style={{
-                    fontSize: 10, fontWeight: 700,
-                    color: c.sucursal === 'TITAN' ? '#60a5fa' : '#a78bfa',
-                    background: c.sucursal === 'TITAN' ? 'rgba(96,165,250,0.12)' : 'rgba(167,139,250,0.12)',
-                    border: `1px solid ${c.sucursal === 'TITAN' ? 'rgba(96,165,250,0.3)' : 'rgba(167,139,250,0.3)'}`,
-                    borderRadius: 999, padding: '2px 8px',
-                  }}>{c.sucursal}</span>
-                ) : <span style={{ color: 'rgba(178,198,245,0.3)', fontSize: 12 }}>—</span>}
-              </td>
-              <td style={{ padding: '12px 16px', color: '#BDD4FF', fontSize: 12, borderBottom: '1px solid rgba(61,112,255,0.10)' }}>
-                {c.comercial || <span style={{ color: 'rgba(178,198,245,0.3)' }}>—</span>}
-              </td>
-              <td style={{ padding: '12px 16px', color: '#BDD4FF', fontSize: 12, fontFamily: 'monospace', borderBottom: '1px solid rgba(61,112,255,0.10)' }}>
-                {c.cif || '—'}
-              </td>
-              <td style={{ padding: '12px 16px', color: '#BDD4FF', fontSize: 12, borderBottom: '1px solid rgba(61,112,255,0.10)' }}>
-                {(c.porcentajeComision ?? 0).toLocaleString('es-ES', { minimumFractionDigits: 1 })}%
-              </td>
-              <td style={{ padding: '12px 16px', color: '#BDD4FF', fontSize: 12, borderBottom: '1px solid rgba(61,112,255,0.10)', textTransform: 'capitalize' }}>
-                {c.periodicidad}
-              </td>
-              <td style={{ padding: '12px 16px', borderBottom: '1px solid rgba(61,112,255,0.10)' }}>
-                <span style={{
-                  fontSize: 11, fontWeight: 700, color: '#3366FF',
-                  background: 'rgba(51,102,255,0.1)', borderRadius: 999, padding: '2px 8px',
-                }}>{numFlotasDe(c.id)}</span>
-              </td>
-              <td style={{ padding: '12px 16px', borderBottom: '1px solid rgba(61,112,255,0.10)', textAlign: 'right' }}>
-                <span style={{ color: '#3366FF', fontSize: 12, fontWeight: 600 }}>Ver</span>
-              </td>
-            </tr>
-          ))}
+          {corredores.map(c => {
+            const nFlotas = flotasCountMap[c.id] ?? 0;
+            const comPos = (c.porcentajeComision ?? 0) > 0;
+            return (
+              <tr
+                key={c.id}
+                onClick={() => onVer(c)}
+                style={{ cursor: 'pointer', transition: 'background 120ms' }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'var(--t-line-soft)')}
+                onMouseLeave={e => (e.currentTarget.style.background = '')}
+              >
+                <td style={{ ...tdStyle, color: 'var(--t-text)', fontWeight: 650 }}>
+                  {c.nombre}
+                </td>
+                <td style={tdStyle}>
+                  {c.sucursal
+                    ? <span style={badgeStyle}>{c.sucursal}</span>
+                    : <span style={{ color: 'var(--t-text-3)' }}>—</span>}
+                </td>
+                <td style={tdStyle}>
+                  {c.comercial || <span style={{ color: 'var(--t-text-3)' }}>—</span>}
+                </td>
+                <td style={{ ...tdStyle, fontFamily: 'monospace', fontSize: 13 }}>
+                  {c.cif || <span style={{ color: 'var(--t-text-3)' }}>—</span>}
+                </td>
+                <td style={{ ...tdStyle, color: comPos ? 'var(--t-green)' : 'var(--t-text-3)', fontWeight: comPos ? 650 : 400 }}>
+                  {(c.porcentajeComision ?? 0).toLocaleString('es-ES', { minimumFractionDigits: 1 })}%
+                </td>
+                <td style={{ ...tdStyle, textTransform: 'capitalize' }}>
+                  {c.periodicidad}
+                </td>
+                <td style={{ ...tdStyle, fontWeight: 600, color: 'var(--t-text)' }}>
+                  {nFlotas}
+                </td>
+                <td style={{ ...tdStyle, textAlign: 'right', color: 'var(--t-blue)', fontSize: 18 }}>
+                  →
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
@@ -668,9 +694,9 @@ export default function CorredoresPage() {
   const [corredorDetalle, setCorredorDetalle] = useState<Corredor | null>(null);
   const [panelAbierto, setPanelAbierto] = useState(false);
   const [corredorEditar, setCorredorEditar] = useState<Corredor | null>(null);
-  const [importToast, setImportToast] = useState('');
   const [confirmBorrarTodo, setConfirmBorrarTodo] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
+  const [sortCol, setSortCol] = useState<SortKey>('nombre');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
 
   const handleBorrarTodo = useCallback(() => {
     borrarTodosLosCorredores();
@@ -680,141 +706,6 @@ export default function CorredoresPage() {
     setVista('lista');
     setCorredorDetalle(null);
     setConfirmBorrarTodo(false);
-    setImportToast('Todos los datos eliminados');
-    setTimeout(() => setImportToast(''), 3000);
-  }, []);
-
-  const handleDescargarPlantilla = useCallback(async () => {
-    const ExcelJS = (await import('exceljs')).default;
-    const wb = new ExcelJS.Workbook();
-    const ws = wb.addWorksheet('Corredores');
-    const cols = [
-      { header: 'NOMBRE',        width: 30 },
-      { header: 'CODIGO',        width: 14 },
-      { header: 'CIF',           width: 14 },
-      { header: 'DOMICILIO',     width: 36 },
-      { header: 'COMISION',      width: 12 },
-      { header: 'PERIODICIDAD',  width: 14 },
-      { header: 'FORMA PAGO',    width: 16 },
-      { header: 'CONTACTO',      width: 22 },
-      { header: 'EMAIL',         width: 28 },
-      { header: 'TELEFONO',      width: 16 },
-      { header: 'SUCURSAL',      width: 14 },
-      { header: 'COMERCIAL',     width: 18 },
-      { header: 'OBSERVACIONES', width: 36 },
-    ];
-    ws.columns = cols.map(c => ({ header: c.header, key: c.header, width: c.width }));
-    const headerRow = ws.getRow(1);
-    headerRow.eachCell(cell => {
-      cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1240CC' } };
-      cell.alignment = { vertical: 'middle' };
-    });
-    headerRow.height = 20;
-    // Fila de ejemplo
-    ws.addRow({
-      nombre: 'Corredor Ejemplo S.L.', codigo: 'COR-001', cif: 'B12345678',
-      domicilio: 'Calle Mayor 1, Madrid', comision: 15, periodicidad: 'mensual',
-      'forma pago': 'Transferencia', contacto: 'Juan García',
-      email: 'juan@corredor.com', telefono: '600123456',
-      sucursal: 'TITAN', comercial: 'Roberto', observaciones: '',
-    });
-    const buf = await wb.xlsx.writeBuffer();
-    const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = 'plantilla_corredores.xlsx'; a.click();
-    URL.revokeObjectURL(url);
-  }, []);
-
-  const handleImportExcel = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      const XLSX = await import('xlsx');
-      const buf = await file.arrayBuffer();
-      const wb = XLSX.read(buf, { type: 'array' });
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const rows: Record<string, string>[] = XLSX.utils.sheet_to_json(ws, { defval: '' });
-      if (rows.length === 0) { setImportToast('Excel vacío'); setTimeout(() => setImportToast(''), 2000); return; }
-
-      const now = new Date().toISOString();
-      const actuales = listarCorredores();
-      const lote: Corredor[] = [];
-
-      for (const r of rows) {
-        const get = (...keys: string[]) => {
-          for (const k of keys) {
-            for (const rk of Object.keys(r)) {
-              if (rk.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim() === k.toLowerCase())
-                return String(r[rk] ?? '').trim();
-            }
-          }
-          return '';
-        };
-        const nombre = get('nombre', 'name', 'corredor', 'razon social', 'razon_social');
-        if (!nombre) continue;
-        const periodicidadRaw = get('periodicidad', 'frecuencia', 'periodo').toLowerCase();
-        let periodicidad: Periodicidad = 'mensual';
-        if (periodicidadRaw.includes('trimestral')) periodicidad = 'trimestral';
-        else if (periodicidadRaw.includes('semestral')) periodicidad = 'semestral';
-        else if (periodicidadRaw.includes('anual')) periodicidad = 'anual';
-        const comision = parseFloat(get('comision', 'comision %', 'porcentaje').replace(',', '.').replace('%', '')) || 0;
-        const sucursalRaw = get('sucursal').toUpperCase();
-        const sucursal: Sucursal | undefined = (sucursalRaw === 'TITAN' || sucursalRaw === 'MEDIACION') ? sucursalRaw : undefined;
-        const cifNuevo = get('cif', 'nif');
-        const existente = actuales.find(c => c.cif && c.cif === cifNuevo);
-        const campos = {
-          nombre, codigo: get('codigo', 'code', 'cod'), cif: cifNuevo,
-          domicilio: get('domicilio', 'direccion', 'address'),
-          porcentajeComision: comision, periodicidad,
-          formaPago: get('forma pago', 'forma_pago', 'pago'),
-          contacto: get('contacto', 'contact'),
-          email: get('email', 'correo', 'mail'),
-          telefono: get('telefono', 'phone', 'tel'),
-          observaciones: get('observaciones', 'notas', 'notes'),
-          sucursal, comercial: get('comercial'),
-        };
-        if (existente) {
-          lote.push({ ...existente, ...campos, actualizadoEn: now });
-        } else {
-          lote.push({
-            ...campos,
-            id: `corredor_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-            codigo: campos.codigo || `COR-${String(actuales.length + lote.length + 1).padStart(3, '0')}`,
-            creadoEn: now,
-            actualizadoEn: now,
-          });
-        }
-      }
-
-      if (lote.length === 0) {
-        setImportToast('Sin filas válidas en el archivo');
-        setTimeout(() => setImportToast(''), 3000);
-        return;
-      }
-
-      const res = await fetch('/api/flotas/corredores', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'upsertBatch', corredores: lote }),
-      });
-
-      if (!res.ok) {
-        setImportToast('Error al guardar en el servidor');
-        setTimeout(() => setImportToast(''), 3000);
-        return;
-      }
-
-      const data = await cargarCorredoresDelServidor();
-      setCorredores([...data].sort((a, b) => a.nombre.localeCompare(b.nombre)));
-      setImportToast(`${lote.length} corredor${lote.length !== 1 ? 'es' : ''} importado${lote.length !== 1 ? 's' : ''}`);
-      setTimeout(() => setImportToast(''), 3000);
-    } catch {
-      setImportToast('Error al leer el archivo');
-      setTimeout(() => setImportToast(''), 3000);
-    }
-    if (fileRef.current) fileRef.current.value = '';
   }, []);
 
   const cargar = useCallback(() => {
@@ -834,9 +725,29 @@ export default function CorredoresPage() {
   }, [cargar]);
 
   const flotasDe = useCallback((id: string) => carpetas.filter(c => c.corredor_id === id), [carpetas]);
-  const totalFlotas = useMemo(() => corredores.reduce((sum, c) => sum + carpetas.filter(ca => ca.corredor_id === c.id).length, 0), [corredores, carpetas]);
 
-  // Comerciales unicos para el filtro
+  const flotasCountMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const c of carpetas) {
+      if (c.corredor_id) map[c.corredor_id] = (map[c.corredor_id] ?? 0) + 1;
+    }
+    return map;
+  }, [carpetas]);
+
+  const totalFlotas = useMemo(() =>
+    corredores.reduce((sum, c) => sum + (flotasCountMap[c.id] ?? 0), 0),
+  [corredores, flotasCountMap]);
+
+  const comisionMedia = useMemo(() => {
+    const con = corredores.filter(c => (c.porcentajeComision ?? 0) > 0);
+    if (con.length === 0) return 0;
+    return con.reduce((s, c) => s + c.porcentajeComision, 0) / con.length;
+  }, [corredores]);
+
+  const countTitan = useMemo(() => corredores.filter(c => c.sucursal === 'TITAN').length, [corredores]);
+  const countMediacion = useMemo(() => corredores.filter(c => c.sucursal === 'MEDIACION').length, [corredores]);
+  const countConComision = useMemo(() => corredores.filter(c => (c.porcentajeComision ?? 0) > 0).length, [corredores]);
+
   const comercialesUnicos = useMemo(() => {
     const set = new Set(corredores.map(c => c.comercial).filter(Boolean) as string[]);
     return Array.from(set).sort();
@@ -892,139 +803,211 @@ export default function CorredoresPage() {
     });
   }, [corredores, search, filterSucursal, filterComercial]);
 
+  const sortedCorredores = useMemo(() => {
+    return [...filteredCorredores].sort((a, b) => {
+      let cmp = 0;
+      switch (sortCol) {
+        case 'nombre':            cmp = a.nombre.localeCompare(b.nombre, 'es'); break;
+        case 'sucursal':          cmp = (a.sucursal ?? '').localeCompare(b.sucursal ?? '', 'es'); break;
+        case 'comercial':         cmp = (a.comercial ?? '').localeCompare(b.comercial ?? '', 'es'); break;
+        case 'cif':               cmp = a.cif.localeCompare(b.cif, 'es'); break;
+        case 'porcentajeComision':cmp = (a.porcentajeComision ?? 0) - (b.porcentajeComision ?? 0); break;
+        case 'periodicidad':      cmp = a.periodicidad.localeCompare(b.periodicidad, 'es'); break;
+        case 'flotas':            cmp = (flotasCountMap[a.id] ?? 0) - (flotasCountMap[b.id] ?? 0); break;
+      }
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
+  }, [filteredCorredores, sortCol, sortDir, flotasCountMap]);
+
+  const handleSort = useCallback((col: SortKey) => {
+    if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    else { setSortCol(col); setSortDir('asc'); }
+  }, [sortCol]);
+
+  // ── Estilos compartidos controles ──────────────────────────────────────────
+
+  const btnStyle: React.CSSProperties = {
+    height: 36, padding: '0 14px', borderRadius: 8,
+    border: '1px solid var(--t-line)', background: 'transparent',
+    color: 'var(--t-text)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
+  };
+
+  const filterInputStyle: React.CSSProperties = {
+    height: 40, border: '1px solid var(--t-line)', borderRadius: 8,
+    background: 'var(--t-surface)', color: 'var(--t-text)', fontSize: 13,
+    fontFamily: 'inherit', outline: 'none',
+  };
+
   return (
-    <div className="animate-in fade-in duration-500" style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+    <div className="animate-in fade-in duration-500">
       {vista === 'lista' ? (
         <>
-          {/* Header */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
-              <div style={{
-                width: 4, height: 40, borderRadius: 2, marginTop: 2,
-                background: 'linear-gradient(180deg, #1240CC, #3366FF)',
-                boxShadow: '0 0 12px rgba(70,120,255,0.5)',
-              }} />
-              <div>
-                <h1 style={{
-                  margin: 0, fontSize: 22, color: '#FFFFFF',
-                  fontFamily: 'var(--font-display), Inter, sans-serif',
-                  fontWeight: 700, letterSpacing: '-0.01em',
-                }}>Corredores</h1>
-                <p style={{ margin: '4px 0 0', fontSize: 12, color: 'rgba(178,198,245,0.6)', letterSpacing: '0.04em' }}>
-                  {corredores.length} corredores · {totalFlotas} flotas asociadas
-                </p>
-              </div>
+          {/* ── page-head ──────────────────────────────────────────────── */}
+          <div style={{ marginTop: 28, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <h1 style={{ margin: 0, fontSize: 32, fontWeight: 650, letterSpacing: '-0.03em', color: 'var(--t-text)' }}>
+                Corredores
+              </h1>
+              <p style={{ margin: '6px 0 0', fontSize: 14, color: 'var(--t-text-2)' }}>
+                {corredores.length} corredor{corredores.length !== 1 ? 'es' : ''} · {totalFlotas} flotas asociadas
+              </p>
             </div>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
               {role === 'admin' && (confirmBorrarTodo ? (
                 <div style={{
                   display: 'flex', alignItems: 'center', gap: 8,
-                  background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.35)',
-                  borderRadius: 10, padding: '6px 14px', fontSize: 12,
+                  border: '1px solid var(--t-line)', borderRadius: 8, padding: '6px 14px', fontSize: 12,
                 }}>
-                  <span style={{ color: '#f87171', fontWeight: 600 }}>¿Borrar TODO? Esto elimina corredores y flotas.</span>
+                  <span style={{ color: 'var(--t-red)', fontWeight: 600 }}>¿Borrar TODO? Elimina corredores y flotas.</span>
                   <button onClick={handleBorrarTodo} style={{
-                    background: '#ef4444', border: 'none', borderRadius: 6,
+                    background: 'var(--t-red)', border: 'none', borderRadius: 6,
                     padding: '4px 12px', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer',
                   }}>Sí, borrar todo</button>
                   <button onClick={() => setConfirmBorrarTodo(false)} style={{
                     background: 'none', border: 'none', cursor: 'pointer',
-                    color: 'rgba(178,198,245,0.5)', fontSize: 12, padding: '4px 6px',
+                    color: 'var(--t-text-3)', fontSize: 12, padding: '4px 6px',
                   }}>Cancelar</button>
                 </div>
               ) : (
-                <button onClick={() => setConfirmBorrarTodo(true)} style={{
-                  background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)',
-                  borderRadius: 10, padding: '9px 16px',
-                  color: '#f87171', fontSize: 13, fontWeight: 500, cursor: 'pointer',
-                }}>Borrar todo</button>
+                <button onClick={() => setConfirmBorrarTodo(true)}
+                  style={{ ...btnStyle, color: 'var(--t-text-3)', border: 'none' }}>
+                  ··· Borrar todo
+                </button>
               ))}
-              <button onClick={handleDescargarPlantilla} style={{
-                background: 'rgba(6,14,50,0.5)', border: '1px solid rgba(61,112,255,0.22)',
-                borderRadius: 10, padding: '9px 16px',
-                color: 'rgba(178,198,245,0.8)', fontSize: 13, fontWeight: 500, cursor: 'pointer',
-              }}>Descargar plantilla</button>
-              <button onClick={() => fileRef.current?.click()} style={{
-                background: 'rgba(6,14,50,0.5)', border: '1px solid rgba(61,112,255,0.22)',
-                borderRadius: 10, padding: '9px 16px',
-                color: 'rgba(178,198,245,0.8)', fontSize: 13, fontWeight: 500, cursor: 'pointer',
-              }}>Importar Excel</button>
               <button onClick={() => abrirPanel(null)} style={{
-                background: 'linear-gradient(135deg, #1240CC, #3366FF)',
-                border: 'none', borderRadius: 10, padding: '9px 20px',
-                color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                boxShadow: '0 0 20px rgba(18,64,204,0.4)',
-              }}>+ Nuevo corredor</button>
+                ...btnStyle,
+                background: 'var(--t-blue)', border: 'none', color: '#fff', fontWeight: 600,
+              }}>
+                + Nuevo corredor
+              </button>
             </div>
           </div>
 
-          {/* Filtros */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          {/* ── metrics ────────────────────────────────────────────────── */}
+          {corredores.length > 0 && (
+            <>
+              <div style={{
+                marginTop: 28,
+                display: 'grid', gridTemplateColumns: '1fr 1.2fr 1fr',
+                alignItems: 'end',
+                paddingBottom: 28,
+                borderBottom: '1px solid var(--t-line)',
+              }}>
+                <div>
+                  <b style={{ fontSize: 52, fontWeight: 600, letterSpacing: '-0.04em', lineHeight: 1, color: 'var(--t-text)' }}>
+                    {corredores.length}
+                  </b>
+                  <span style={{ marginLeft: 8, color: 'var(--t-text-2)', fontSize: 14, letterSpacing: '0.06em' }}>
+                    CORREDORES
+                  </span>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <b style={{ fontSize: 52, fontWeight: 600, letterSpacing: '-0.04em', lineHeight: 1, color: 'var(--t-text)' }}>
+                    {totalFlotas}
+                  </b>
+                  <span style={{ marginLeft: 8, color: 'var(--t-text-2)', fontSize: 14, letterSpacing: '0.06em' }}>
+                    FLOTAS ASOCIADAS
+                  </span>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <b style={{ fontSize: 52, fontWeight: 600, letterSpacing: '-0.04em', lineHeight: 1, color: 'var(--t-green)' }}>
+                    {comisionMedia.toLocaleString('es-ES', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%
+                  </b>
+                  <span style={{ marginLeft: 8, color: 'var(--t-green)', fontSize: 14, letterSpacing: '0.06em' }}>
+                    COMISIÓN MEDIA
+                  </span>
+                </div>
+              </div>
+              <p style={{ marginTop: 14, color: 'var(--t-text-2)', fontSize: 14 }}>
+                {countTitan > 0 && `${countTitan} Titan`}
+                {countTitan > 0 && countMediacion > 0 && ' · '}
+                {countMediacion > 0 && `${countMediacion} Mediación`}
+                {(countTitan > 0 || countMediacion > 0) && countConComision > 0 && ' · '}
+                {countConComision > 0 && `${countConComision} con comisión`}
+              </p>
+            </>
+          )}
+
+          {/* ── filters ────────────────────────────────────────────────── */}
+          <div style={{ marginTop: 22, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             <div style={{
+              ...filterInputStyle,
               display: 'flex', alignItems: 'center', gap: 8,
-              background: 'rgba(6,14,50,0.5)', border: '1px solid rgba(61,112,255,0.22)',
-              borderRadius: 10, padding: '0 14px', flex: 1, maxWidth: 300,
+              padding: '0 14px', width: 280,
             }}>
-              <span style={{ color: 'rgba(70,120,255,0.5)' }}><SearchIcon /></span>
+              <span style={{ color: 'var(--t-text-3)', flexShrink: 0 }}><SearchIcon /></span>
               <input
-                placeholder="Buscar corredor, CIF, comercial..."
-                value={search} onChange={e => setSearch(e.target.value)}
+                placeholder="Buscar corredor, CIF o comercial…"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
                 style={{
                   background: 'none', border: 'none', outline: 'none',
-                  color: '#FFFFFF', fontSize: 12, padding: '9px 0', width: '100%',
+                  color: 'var(--t-text)', fontSize: 13, padding: 0, width: '100%',
+                  fontFamily: 'inherit',
                 }}
               />
+              {search && (
+                <button
+                  onClick={() => setSearch('')}
+                  aria-label="Limpiar búsqueda"
+                  style={{
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    color: 'var(--t-text-3)', padding: 0, fontSize: 18,
+                    lineHeight: 1, flexShrink: 0, display: 'flex', alignItems: 'center',
+                  }}
+                >×</button>
+              )}
             </div>
-
-            {/* Filtro Sucursal */}
             <select
               value={filterSucursal}
               onChange={e => setFilterSucursal(e.target.value as Sucursal | '')}
-              style={{
-                background: 'rgba(6,14,50,0.5)', border: '1px solid rgba(61,112,255,0.22)',
-                borderRadius: 10, padding: '9px 14px', color: filterSucursal ? '#FFFFFF' : 'rgba(178,198,245,0.5)',
-                fontSize: 12, cursor: 'pointer', outline: 'none',
-              }}
+              className="t-select"
+              style={{ height: 40, minWidth: 190, padding: '0 12px', borderRadius: 8 }}
             >
               <option value="">Todas las sucursales</option>
               {SUCURSALES.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
-
-            {/* Filtro Comercial */}
             <select
               value={filterComercial}
               onChange={e => setFilterComercial(e.target.value)}
-              style={{
-                background: 'rgba(6,14,50,0.5)', border: '1px solid rgba(61,112,255,0.22)',
-                borderRadius: 10, padding: '9px 14px', color: filterComercial ? '#FFFFFF' : 'rgba(178,198,245,0.5)',
-                fontSize: 12, cursor: 'pointer', outline: 'none',
-              }}
+              className="t-select"
+              style={{ height: 40, minWidth: 190, padding: '0 12px', borderRadius: 8 }}
             >
               <option value="">Todos los comerciales</option>
               {comercialesUnicos.map(com => <option key={com} value={com}>{com}</option>)}
             </select>
-
             <span style={{ flex: 1 }} />
-            <span style={{ fontSize: 11, color: 'rgba(178,198,245,0.5)' }}>
-              {filteredCorredores.length} {filteredCorredores.length === 1 ? 'resultado' : 'resultados'}
-            </span>
+            {(search || filterSucursal || filterComercial) && (
+              <span style={{ fontSize: 12, color: 'var(--t-text-3)', alignSelf: 'center' }}>
+                {filteredCorredores.length} de {corredores.length} corredores
+              </span>
+            )}
           </div>
 
-          {/* Tabla */}
-          {filteredCorredores.length === 0 ? (
-            <div style={{
-              ...glass, padding: '60px 40px', textAlign: 'center', borderStyle: 'dashed',
-            }}>
-              <p style={{ margin: 0, color: 'rgba(178,198,245,0.4)', fontSize: 13 }}>
-                {corredores.length === 0 ? 'Sin corredores. Crea el primero.' : 'Sin resultados.'}
+          {/* ── table ──────────────────────────────────────────────────── */}
+          {corredores.length === 0 ? (
+            <div style={{ marginTop: 28, textAlign: 'center', padding: '60px 0' }}>
+              <p style={{ margin: 0, color: 'var(--t-text-3)', fontSize: 13 }}>
+                Sin corredores. Crea el primero con el botón superior.
+              </p>
+            </div>
+          ) : filteredCorredores.length === 0 ? (
+            <div style={{ marginTop: 28, textAlign: 'center', padding: '60px 0' }}>
+              <p style={{ margin: 0, color: 'var(--t-text-3)', fontSize: 13 }}>
+                Sin resultados para la búsqueda actual.
               </p>
             </div>
           ) : (
-            <CorredoresTable
-              corredores={filteredCorredores}
-              carpetas={carpetas}
-              onVer={handleVerDetalle}
-            />
+            <div style={{ marginTop: 24 }}>
+              <CorredoresTable
+                corredores={sortedCorredores}
+                flotasCountMap={flotasCountMap}
+                sortCol={sortCol}
+                sortDir={sortDir}
+                onSort={handleSort}
+                onVer={handleVerDetalle}
+              />
+            </div>
           )}
         </>
       ) : (
@@ -1044,19 +1027,14 @@ export default function CorredoresPage() {
       )}
 
       {panelAbierto && (
-        <PanelCorredor corredor={corredorEditar} onClose={cerrarPanel} onSave={handleSave} />
+        <PanelCorredor
+          corredor={corredorEditar}
+          onClose={cerrarPanel}
+          onSave={handleSave}
+          comercialesUnicos={comercialesUnicos}
+        />
       )}
 
-      <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" hidden onChange={handleImportExcel} />
-
-      {importToast && (
-        <div style={{
-          position: 'fixed', bottom: 32, left: '50%', transform: 'translateX(-50%)',
-          background: importToast.startsWith('Error') ? 'rgba(220,38,38,0.9)' : 'rgba(16,185,129,0.9)',
-          color: '#fff', padding: '10px 24px', borderRadius: 12, fontSize: 13, fontWeight: 600,
-          zIndex: 999, boxShadow: '0 8px 30px rgba(0,0,0,0.4)',
-        }}>{importToast}</div>
-      )}
     </div>
   );
 }

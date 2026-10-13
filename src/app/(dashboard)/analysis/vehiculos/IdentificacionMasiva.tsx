@@ -111,8 +111,8 @@ async function exportExcel(vehicles: VehiculoExport[]) {
 // ─── SilverdatModal ───────────────────────────────────────────────────────────
 
 const FIELD: React.CSSProperties = {
-  background: 'rgba(6,14,50,0.6)', border: '1px solid rgba(61,112,255,0.2)',
-  borderRadius: 8, color: '#FFFFFF', fontSize: 13, padding: '9px 12px',
+  background: 'var(--t-surface)', border: '1px solid var(--t-line)',
+  borderRadius: 8, color: 'var(--t-text)', fontSize: 13, padding: '9px 12px',
   outline: 'none', width: '100%', fontFamily: 'inherit',
 };
 
@@ -159,7 +159,7 @@ function SilverdatModal({ onClose, onSuccess }: { onClose: () => void; onSuccess
             style={{ flex: 1, padding: '10px 0', borderRadius: 9, background: loading ? 'rgba(245,158,11,0.3)' : 'linear-gradient(135deg,#d97706,#f59e0b)', color: '#fff', border: 'none', fontWeight: 700, fontSize: 12, cursor: loading ? 'not-allowed' : 'pointer' }}>
             {loading ? 'Conectando...' : 'Iniciar sesión'}
           </button>
-          <button onClick={onClose} style={{ padding: '10px 14px', borderRadius: 9, background: 'rgba(6,14,50,0.5)', color: '#BDD4FF', border: '1px solid rgba(61,112,255,0.22)', fontSize: 12, cursor: 'pointer' }}>Cancelar</button>
+          <button onClick={onClose} style={{ padding: '10px 14px', borderRadius: 9, background: 'transparent', color: 'var(--t-text-2)', border: '1px solid var(--t-line)', fontSize: 12, cursor: 'pointer' }}>Cancelar</button>
         </div>
       </div>
     </div>
@@ -366,7 +366,7 @@ export default function IdentificacionMasiva() {
                 Introducir credenciales
               </button>
               <button onClick={() => { setSdPending(false); setRawRows([]); }}
-                style={{ padding: '9px 16px', borderRadius: 9, background: 'rgba(6,14,50,0.5)', color: 'rgba(178,198,245,0.6)', border: '1px solid rgba(61,112,255,0.2)', fontSize: 12, cursor: 'pointer' }}>
+                style={{ padding: '9px 16px', borderRadius: 9, background: 'transparent', color: 'var(--t-text-2)', border: '1px solid var(--t-line)', fontSize: 12, cursor: 'pointer' }}>
                 Cancelar
               </button>
             </div>
@@ -383,8 +383,8 @@ export default function IdentificacionMasiva() {
                 <span key={m} style={{ fontSize: 11, fontWeight: 800, fontFamily: 'monospace', color: '#ef4444', background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 5, padding: '2px 8px' }}>{m}</span>
               ))}
             </div>
-            <p style={{ margin: '0 0 14px', fontSize: 12, color: 'rgba(178,198,245,0.65)', lineHeight: 1.5 }}>
-              Se procesarán <strong style={{ color: '#FFFFFF' }}>{dupWarning.uniqueRows.length} vehículos únicos</strong>. Las duplicadas se eliminarán automáticamente para no consultar Silverdat más de una vez por matrícula.
+            <p style={{ margin: '0 0 14px', fontSize: 12, color: 'var(--t-text-2)', lineHeight: 1.5 }}>
+              Se procesarán <strong style={{ color: 'var(--t-text)' }}>{dupWarning.uniqueRows.length} vehículos únicos</strong>. Las duplicadas se eliminarán automáticamente para no consultar Silverdat más de una vez por matrícula.
             </p>
             <div style={{ display: 'flex', gap: 8 }}>
               <button
@@ -395,7 +395,7 @@ export default function IdentificacionMasiva() {
               </button>
               <button
                 onClick={() => setDupWarning(null)}
-                style={{ padding: '10px 16px', borderRadius: 9, background: 'rgba(6,14,50,0.5)', color: 'rgba(178,198,245,0.6)', border: '1px solid rgba(61,112,255,0.2)', fontSize: 12, cursor: 'pointer' }}
+                style={{ padding: '10px 16px', borderRadius: 9, background: 'transparent', color: 'var(--t-text-2)', border: '1px solid var(--t-line)', fontSize: 12, cursor: 'pointer' }}
               >
                 Cancelar
               </button>
@@ -406,14 +406,14 @@ export default function IdentificacionMasiva() {
         {!sdPending && !dupWarning && (
           <>
             <div style={{ textAlign: 'center', maxWidth: 480 }}>
-              <h2 style={{ margin: '0 0 8px', fontSize: 20, color: '#FFFFFF', fontWeight: 700 }}>Identificación masiva</h2>
-              <p style={{ margin: 0, fontSize: 13, color: 'rgba(178,198,245,0.6)', lineHeight: 1.6 }}>
+              <h2 style={{ margin: '0 0 8px', fontSize: 20, color: 'var(--t-text)', fontWeight: 700 }}>Identificación masiva</h2>
+              <p style={{ margin: 0, fontSize: 13, color: 'var(--t-text-2)', lineHeight: 1.6 }}>
                 Con solo la matrícula Silverdat obtiene la marca, modelo y datos del vehículo. Después el catálogo asigna el ID automáticamente.
               </p>
             </div>
 
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
-              <button onClick={handleDescargarPlantilla} style={{ background: 'rgba(6,14,50,0.5)', border: '1px solid rgba(61,112,255,0.3)', borderRadius: 12, padding: '12px 24px', color: '#BDD4FF', fontSize: 13, cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <button onClick={handleDescargarPlantilla} style={{ background: 'transparent', border: '1px solid var(--t-line)', borderRadius: 12, padding: '12px 24px', color: 'var(--t-text-2)', fontSize: 13, cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
                 Descargar plantilla
               </button>
@@ -430,8 +430,8 @@ export default function IdentificacionMasiva() {
               </p>
             )}
 
-            <div style={{ fontSize: 11, color: 'rgba(178,198,245,0.35)', textAlign: 'center', maxWidth: 360 }}>
-              Columna requerida: <span style={{ color: 'rgba(178,198,245,0.6)' }}>matricula</span><br />
+            <div style={{ fontSize: 11, color: 'var(--t-text-3)', textAlign: 'center', maxWidth: 360 }}>
+              Columna requerida: <span style={{ color: 'var(--t-text-2)' }}>matricula</span><br />
               Opcionales (mejoran precisión): marca, modelo, tipo_vehiculo, kw, cv, tn, anyo_fabricacion
             </div>
           </>
@@ -454,15 +454,15 @@ export default function IdentificacionMasiva() {
         <div style={{ width: '100%', maxWidth: 560 }}>
           <div style={{ textAlign: 'center', marginBottom: 24 }}>
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#f59e0b', marginBottom: 6 }}>Consultando Silverdat</div>
-            <h2 style={{ fontSize: 20, fontWeight: 800, color: '#FFFFFF', margin: '0 0 6px' }}>
+            <h2 style={{ fontSize: 20, fontWeight: 800, color: 'var(--t-text)', margin: '0 0 6px' }}>
               {progress.current} / {progress.total} vehículos
             </h2>
-            <p style={{ fontSize: 12, color: 'rgba(178,198,245,0.5)', margin: 0 }}>
+            <p style={{ fontSize: 12, color: 'var(--t-text-2)', margin: 0 }}>
               3 consultas en paralelo · aprox. {Math.max(0, Math.ceil((progress.total - progress.current) / 3 * 0.8))}s restantes
             </p>
           </div>
 
-          <div style={{ height: 8, background: 'rgba(255,255,255,0.08)', borderRadius: 4, overflow: 'hidden', marginBottom: 20 }}>
+          <div style={{ height: 8, background: 'var(--t-line)', borderRadius: 4, overflow: 'hidden', marginBottom: 20 }}>
             <div style={{ height: '100%', width: `${pct}%`, background: 'linear-gradient(90deg,#d97706,#f59e0b)', borderRadius: 4, transition: 'width 0.3s' }} />
           </div>
 
@@ -474,16 +474,16 @@ export default function IdentificacionMasiva() {
                 <span style={{ fontSize: 10, fontWeight: 800, color: entry.ok ? '#10b981' : '#f59e0b', width: 14, textAlign: 'center', flexShrink: 0 }}>
                   {entry.ok ? '✓' : '–'}
                 </span>
-                <span style={{ fontSize: 11, fontFamily: 'monospace', fontWeight: 700, color: '#FFFFFF', width: 90, flexShrink: 0 }}>{entry.matricula}</span>
+                <span style={{ fontSize: 11, fontFamily: 'monospace', fontWeight: 700, color: 'var(--t-text)', width: 90, flexShrink: 0 }}>{entry.matricula}</span>
                 {entry.ok && (
-                  <span style={{ fontSize: 11, color: 'rgba(178,198,245,0.6)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <span style={{ fontSize: 11, color: 'var(--t-text-2)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {entry.marca} {entry.modelo}
                   </span>
                 )}
               </div>
             ))}
             {progress.current < progress.total && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', color: 'rgba(178,198,245,0.35)', fontSize: 11 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', color: 'var(--t-text-3)', fontSize: 11 }}>
                 <svg style={{ animation: 'sdSpin 1s linear infinite', flexShrink: 0 }} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <circle cx="12" cy="12" r="10" opacity="0.2"/><path d="M12 2a10 10 0 0110 10"/>
                 </svg>

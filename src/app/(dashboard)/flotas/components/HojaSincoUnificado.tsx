@@ -32,25 +32,25 @@ const pillBase: React.CSSProperties = {
 };
 
 const sectionTitle: React.CSSProperties = {
-  fontSize: 10, fontWeight: 900, color: 'rgba(178,198,245,0.5)',
+  fontSize: 10, fontWeight: 900, color: 'var(--t-text-3)',
   textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14,
 };
 
 const kpiBox: React.CSSProperties = {
   borderRadius: 8, padding: '10px 14px',
-  background: 'rgba(6,14,50,0.4)', border: '1px solid rgba(61,112,255,0.16)',
+  background: 'var(--t-surface)', border: '1px solid var(--t-line)',
 };
 
 const thS: React.CSSProperties = {
   padding: '8px 10px', textAlign: 'left', fontSize: 11, fontWeight: 700,
-  borderBottom: '1px solid #d1d5db', whiteSpace: 'nowrap', userSelect: 'none',
+  borderBottom: '1px solid var(--t-line)', whiteSpace: 'nowrap', userSelect: 'none',
 };
 const tdS: React.CSSProperties = {
   padding: '6px 10px', fontSize: 12, whiteSpace: 'nowrap', fontFamily: 'monospace',
 };
 
 const fmt = (n: number) => isNaN(n) || !isFinite(n) ? '—' : n.toFixed(2);
-const fmtFreq = (n: number) => isNaN(n) || !isFinite(n) ? '—' : `${(n * 100).toFixed(1)}%`;
+const fmtFreq = (n: number | null) => n === null ? 'Sin exp.' : (isNaN(n) || !isFinite(n) ? '—' : `${(n * 100).toFixed(1)}%`);
 
 // ─── KPI Panel ──────────────────────────────────────────────────────────────
 
@@ -58,11 +58,18 @@ function KpiPanel({ label, kpis }: { label: string; kpis: { label: string; value
   return (
     <div style={{ marginBottom: 20 }}>
       <p style={{ ...sectionTitle, marginBottom: 10 }}>{label}</p>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: `repeat(${Math.min(kpis.length, 5)}, minmax(0, 1fr))`,
+        gap: 12,
+        borderTop: '1px solid var(--t-line)',
+        borderBottom: '1px solid var(--t-line)',
+        padding: '17px 0',
+      }}>
         {kpis.map(k => (
-          <div key={k.label} style={kpiBox}>
-            <div style={{ fontSize: 9, fontWeight: 800, color: 'rgba(178,198,245,0.6)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{k.label}</div>
-            <div style={{ fontSize: 18, fontWeight: 900, color: '#FFFFFF', fontFamily: 'monospace', marginTop: 2 }}>{k.value}</div>
+          <div key={k.label}>
+            <small style={{ fontSize: 10, color: 'var(--t-text-3)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 4 }}>{k.label}</small>
+            <strong style={{ fontSize: 27, display: 'block', letterSpacing: '-0.5px', color: 'var(--t-text)', fontWeight: 700 }}>{k.value}</strong>
           </div>
         ))}
       </div>
@@ -169,18 +176,21 @@ function AutomaticoContent({ header, trabajoRows, sincoResultRows, onSincoResult
     const aniosRaw = r['Num_Anios_Asegurado'] ?? r['num_anios_asegurado'] ?? '';
     if (aniosRaw.trim()) {
       const n = parseFloat(aniosRaw);
-      if (!isNaN(n) && n >= 0.08) return n;
+      if (!isNaN(n) && n > 0) return n;  // n=0 = sin historial, no cuenta como exposición
     }
     const fec = r['Fec_Ini_Cobertura'] ?? r['fec_ini_cobertura'] ?? '';
     if (fec.trim()) {
       const y = calcularAntiguedad(fec);
       if (y > 0) return y;
     }
-    return 0;
-  }).filter(n => n > 0);
-  const antiguedMedia = numAniosList.length > 0 ? numAniosList.reduce((a, b) => a + b, 0) / numAniosList.length : 0;
+    return null;
+  }).filter((n): n is number => n !== null);
+  const vehiculosConExposicion = numAniosList.length;
+  const antiguedMedia = vehiculosConExposicion > 0 ? numAniosList.reduce((a, b) => a + b, 0) / vehiculosConExposicion : 0;
   const sinAnio = calcularSiniestrosPorAnio(numSiniestros, antiguedMedia);
-  const freq = calcularFrecuencia(sinAnio, conSinco);
+  const freq: number | null = (conSinco > 0 && vehiculosConExposicion === 0)
+    ? null
+    : calcularFrecuencia(sinAnio, conSinco);
   const vehiculosSinco = trabajoRows.filter(r => r['matricula']?.trim()).length;
 
   return (
@@ -189,10 +199,10 @@ function AutomaticoContent({ header, trabajoRows, sincoResultRows, onSincoResult
         <p style={sectionTitle}>Generar consulta SINCO</p>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <button onClick={handleExport}
-            style={{ ...pillBase, background: 'rgba(22,163,74,0.1)', color: '#16a34a', border: '1px solid rgba(22,163,74,0.25)', fontSize: 11, padding: '8px 16px' }}>
+            style={{ ...pillBase, background: 'transparent', color: 'var(--t-text)', border: '1px solid var(--t-line)', fontSize: 11, padding: '8px 16px' }}>
             Descargar consulta SINCO (.xlsx)
           </button>
-          <span style={{ fontSize: 11, color: 'rgba(178,198,245,0.6)' }}>
+          <span style={{ fontSize: 11, color: 'var(--t-text-2)' }}>
             {vehiculosSinco} vehículos preparados
           </span>
         </div>
@@ -203,8 +213,8 @@ function AutomaticoContent({ header, trabajoRows, sincoResultRows, onSincoResult
         <div
           style={{
             padding: '16px 20px', borderRadius: 10,
-            border: dragCounter > 0 ? '2px dashed #3366FF' : '2px dashed transparent',
-            background: dragCounter > 0 ? 'rgba(61,112,255,0.10)' : 'transparent',
+            border: dragCounter > 0 ? '1px dashed var(--t-blue)' : '1px dashed transparent',
+            background: dragCounter > 0 ? 'var(--t-line-soft)' : 'transparent',
             transition: 'border 0.15s, background 0.15s',
           }}
           onDragEnter={e => { e.preventDefault(); e.stopPropagation(); if (e.dataTransfer.types.includes('Files')) setDragCounter(c => c + 1); }}
@@ -223,7 +233,7 @@ function AutomaticoContent({ header, trabajoRows, sincoResultRows, onSincoResult
         >
           <input ref={fileRef} type="file" accept=".xlsx,.xls" style={{ display: 'none' }} onChange={handleImport} />
           <button onClick={() => fileRef.current?.click()}
-            style={{ ...pillBase, background: 'rgba(124,58,237,0.1)', color: '#7c3aed', border: '1px solid rgba(124,58,237,0.25)', fontSize: 11, padding: '8px 16px' }}>
+            style={{ ...pillBase, background: 'transparent', color: 'var(--t-text)', border: '1px solid var(--t-line)', fontSize: 11, padding: '8px 16px' }}>
             {dragCounter > 0 ? 'Suelta el archivo aqui' : 'Importar resultado SINCO (.xlsx)'}
           </button>
         </div>
@@ -233,38 +243,39 @@ function AutomaticoContent({ header, trabajoRows, sincoResultRows, onSincoResult
         <>
           <KpiPanel label="Resultado SINCO automático" kpis={[
             { label: 'Vehículos', value: String(totalVeh) },
-            { label: 'Vehículos con SINCO', value: String(conSinco) },
+            { label: 'Con SINCO', value: String(conSinco) },
+            { label: 'Con exposición', value: String(vehiculosConExposicion) },
             { label: 'Siniestros', value: String(numSiniestros) },
-            { label: 'Años media', value: fmt(antiguedMedia) },
-            { label: 'Siniestros / año', value: fmt(sinAnio) },
+            { label: 'Antigüedad media', value: vehiculosConExposicion > 0 ? fmt(antiguedMedia) + 'a' : '—' },
+            { label: 'Siniestros / año', value: vehiculosConExposicion > 0 ? fmt(sinAnio) : '—' },
             { label: 'Frecuencia', value: fmtFreq(freq) },
           ]} />
 
           <div style={{ marginBottom: 16, display: 'flex', gap: 10 }}>
             <button onClick={handleMerge}
-              style={{ ...pillBase, background: 'rgba(18,64,204,0.15)', color: '#3366FF', border: '1px solid rgba(18,64,204,0.3)', fontSize: 11, padding: '8px 16px' }}>
+              style={{ ...pillBase, background: 'transparent', color: 'var(--t-blue)', border: '1px solid var(--t-line)', fontSize: 11, padding: '8px 16px' }}>
               Volcar a TRABAJO
             </button>
           </div>
 
-          <div style={{ borderRadius: 10, overflow: 'hidden', border: '1px solid #e5e7eb' }}>
-            <div style={{ overflowX: 'auto', maxHeight: 400, background: '#fff' }} className="custom-scrollbar">
+          <div style={{ borderRadius: 10, overflow: 'hidden', border: '1px solid var(--t-line)' }}>
+            <div style={{ overflowX: 'auto', maxHeight: 400, background: 'var(--t-bg)' }} className="custom-scrollbar">
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
                 <thead>
-                  <tr style={{ background: '#f3f4f6', position: 'sticky', top: 0, zIndex: 1 }}>
-                    <th style={{ ...thS, width: 44, color: '#9ca3af' }}>#</th>
+                  <tr style={{ background: 'var(--t-line-soft)', position: 'sticky', top: 0, zIndex: 1 }}>
+                    <th style={{ ...thS, width: 44, color: 'var(--t-text-3)' }}>#</th>
                     {SINCO_COL_NAMES.map((name, i) => (
-                      <th key={name} style={{ ...thS, background: i < 5 ? '#eff0ff' : '#f3f4f6', color: i < 5 ? '#4338ca' : '#374151' }}>{name}</th>
+                      <th key={name} style={{ ...thS, background: i < 5 ? 'var(--t-line-soft)' : 'var(--t-line-soft)', color: i < 5 ? 'var(--t-blue)' : 'var(--t-text-3)' }}>{name}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {sincoResultRows.map((row, ri) => (
-                    <tr key={ri} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                      <td style={{ ...tdS, color: '#9ca3af', textAlign: 'center' }}>{ri + 1}</td>
+                    <tr key={ri} style={{ borderBottom: '1px solid var(--t-line)' }}>
+                      <td style={{ ...tdS, color: 'var(--t-text-3)', textAlign: 'center' }}>{ri + 1}</td>
                       {SINCO_COL_NAMES.map((name, ci) => (
-                        <td key={ci} style={{ ...tdS, background: ci < 5 ? '#f8f8ff' : '#fff', color: ci < 5 ? '#374151' : '#111827' }}>
-                          {row[name] || <span style={{ color: '#d1d5db' }}>—</span>}
+                        <td key={ci} style={{ ...tdS, background: ci < 5 ? 'var(--t-line-soft)' : 'var(--t-bg)', color: ci < 5 ? 'var(--t-text-2)' : 'var(--t-text)' }}>
+                          {row[name] || <span style={{ color: 'var(--t-text-3)' }}>—</span>}
                         </td>
                       ))}
                     </tr>
@@ -303,12 +314,12 @@ function DanosPropiosSection({ carpetaActiva, trabajoRows, sincoResultRows, onCa
     const aniosRaw = r['Num_Anios_Asegurado'] ?? r['num_anios_asegurado'] ?? '';
     if (aniosRaw.trim()) {
       const n = parseFloat(aniosRaw);
-      if (!isNaN(n) && n >= 0.08) return n;
+      if (!isNaN(n) && n >= 0) return n;
     }
     const fec = r['Fec_Ini_Cobertura'] ?? r['fec_ini_cobertura'] ?? '';
     if (fec.trim()) { const y = calcularAntiguedad(fec); if (y > 0) return y; }
-    return 0;
-  }).filter(n => n > 0);
+    return null;
+  }).filter((n): n is number => n !== null);
   const antiguedMedia = numAniosList.length > 0 ? numAniosList.reduce((a, b) => a + b, 0) / numAniosList.length : 0;
   const sinAnio = calcularSiniestrosPorAnio(numSiniestros, antiguedMedia);
   const frecuencia = calcularFrecuencia(sinAnio, totalVeh > 0 ? totalVeh : 1);
@@ -327,7 +338,7 @@ function DanosPropiosSection({ carpetaActiva, trabajoRows, sincoResultRows, onCa
           />
           <span style={{
             fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em',
-            color: mostrarEnInforme ? '#3366FF' : 'rgba(178,198,245,0.45)',
+            color: mostrarEnInforme ? 'var(--t-blue)' : 'var(--t-text-3)',
           }}>Mostrar en el informe</span>
         </label>
       </div>
@@ -346,12 +357,12 @@ function DanosPropiosSection({ carpetaActiva, trabajoRows, sincoResultRows, onCa
           }}
           style={{
             width: 120, fontSize: 18, fontWeight: 900, padding: '10px 14px', borderRadius: 10,
-            background: 'rgba(6,14,50,0.55)', border: '1px solid rgba(61,112,255,0.3)',
-            color: numSiniestros > 0 ? '#f87171' : '#FFFFFF', outline: 'none',
+            background: 'var(--t-bg)', border: '1px solid var(--t-line)',
+            color: numSiniestros > 0 ? 'var(--t-red)' : 'var(--t-text)', outline: 'none',
             fontFamily: 'monospace', textAlign: 'center',
           }}
-          onFocus={e => (e.currentTarget.style.borderColor = 'rgba(18,64,204,0.7)')}
-          onBlur={e => (e.currentTarget.style.borderColor = 'rgba(61,112,255,0.3)')}
+          onFocus={e => (e.currentTarget.style.borderColor = 'var(--t-blue)')}
+          onBlur={e => (e.currentTarget.style.borderColor = 'var(--t-line)')}
         />
       </div>
 
@@ -402,7 +413,7 @@ export default function HojaSincoUnificado({
             onTrabajoChange={onTrabajoChange}
           />
 
-          <div style={{ height: 1, background: 'rgba(61,112,255,0.16)', margin: '32px 0' }} />
+          <div style={{ height: 1, background: 'var(--t-line)', margin: '32px 0' }} />
 
           <DanosPropiosSection
             carpetaActiva={carpetaActiva}
