@@ -281,11 +281,15 @@ export default function FlotasPage() {
   // Los setData en ref son no-op en ese momento. Este effect los ejecuta DESPUÉS del mount.
   useEffect(() => {
     if (showCarpetaScreen || !carpetaActiva) return;
-    if (trabajoRows.length > 0)  trabajoRef.current?.setData(trabajoRows);
-    if (originalData.length > 0) originalRef.current?.setData(originalData);
-    if (ofertaRows.length > 0)   ofertaRef.current?.setData(ofertaRows);
-  // Solo re-sincronizar cuando cambia qué carpeta está activa o cuándo se muestra el estudio.
-  // NO incluir trabajoRows/originalData/ofertaRows: el usuario edita esas y no queremos reset.
+    // Diferimos al siguiente tick: HojaTrabajos/HojaOriginal montan con display:flex
+    // pero su FlotaGrid interior puede necesitar un frame más para inicializar gridRef.
+    const id = setTimeout(() => {
+      if (trabajoRows.length > 0)  trabajoRef.current?.setData(trabajoRows);
+      if (originalData.length > 0) originalRef.current?.setData(originalData);
+      if (ofertaRows.length > 0)   ofertaRef.current?.setData(ofertaRows);
+    }, 0);
+    return () => clearTimeout(id);
+  // Solo cuando cambia la carpeta activa o el study view se hace visible.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showCarpetaScreen, carpetaActiva?.id]);
 

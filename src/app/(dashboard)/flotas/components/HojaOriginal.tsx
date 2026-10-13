@@ -30,10 +30,10 @@ const HojaOriginal = forwardRef<FlotaGridHandle, Props>(function HojaOriginal(
 ) {
   const gridRef = useRef<FlotaGridHandle>(null);
   useImperativeHandle(ref, () => ({
-    getData:    () => gridRef.current!.getData(),
-    setData:    (data) => gridRef.current!.setData(data),
-    toRows:     () => gridRef.current!.toRows(),
-    getColDefs: () => gridRef.current!.getColDefs(),
+    getData:    () => gridRef.current?.getData() ?? [],
+    setData:    (data) => gridRef.current?.setData(data),
+    toRows:     () => gridRef.current?.toRows() ?? [],
+    getColDefs: () => gridRef.current?.getColDefs() ?? [],
   }), []);
 
   const [modeSelected, setModeSelected] = useState(false);

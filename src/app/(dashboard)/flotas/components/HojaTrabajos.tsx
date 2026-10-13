@@ -373,10 +373,10 @@ const HojaTrabajos = forwardRef<FlotaGridHandle, Props>(function HojaTrabajos(
 
   // Forward ref
   React.useImperativeHandle(ref, () => ({
-    getData:    () => gridRef.current!.getData(),
-    setData:    (data) => gridRef.current!.setData(data),
-    toRows:     () => gridRef.current!.toRows(),
-    getColDefs: () => gridRef.current!.getColDefs(),
+    getData:    () => gridRef.current?.getData() ?? [],
+    setData:    (data) => gridRef.current?.setData(data),
+    toRows:     () => gridRef.current?.toRows() ?? [],
+    getColDefs: () => gridRef.current?.getColDefs() ?? [],
   }), []);
 
   const runClaveDetection = useCallback((data: Record<string, string>[]) => {
