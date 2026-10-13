@@ -30,14 +30,15 @@ function inferTipoDocumento(cif: string): string {
 }
 
 function buildSincoRows(header: FlotaHeader, trabajoRows: Record<string, string>[]): SincoRow[] {
-  const tipoDoc = inferTipoDocumento(header.cif);
   return trabajoRows
     .filter(r => r['matricula']?.trim())
     .map(r => {
+      // CIF por fila si hay múltiples tomadores; si no, CIF del header
+      const cif = r['cif_nif']?.trim() || header.cif || '';
       const row: string[] = Array(16).fill('');
       row[0] = 'MMT';
-      row[1] = tipoDoc;
-      row[2] = header.cif;
+      row[1] = inferTipoDocumento(cif);
+      row[2] = cif;
       // Use full póliza — SINCO truncates to last 5 automatically
       const polizaFull = r['num_poliza_actual']?.trim() || '';
       const polizaComp = r['poliza_sinco']?.trim() || '';
