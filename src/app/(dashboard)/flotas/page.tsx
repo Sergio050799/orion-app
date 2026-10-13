@@ -276,6 +276,19 @@ export default function FlotasPage() {
     };
   }, [carpetaActiva?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ─── Sync grids cuando el study view monta ──────────────────────────────────
+  // handleSelectCarpeta es llamado cuando showCarpetaScreen=true (HojaTrabajos no existe).
+  // Los setData en ref son no-op en ese momento. Este effect los ejecuta DESPUÉS del mount.
+  useEffect(() => {
+    if (showCarpetaScreen || !carpetaActiva) return;
+    if (trabajoRows.length > 0)  trabajoRef.current?.setData(trabajoRows);
+    if (originalData.length > 0) originalRef.current?.setData(originalData);
+    if (ofertaRows.length > 0)   ofertaRef.current?.setData(ofertaRows);
+  // Solo re-sincronizar cuando cambia qué carpeta está activa o cuándo se muestra el estudio.
+  // NO incluir trabajoRows/originalData/ofertaRows: el usuario edita esas y no queremos reset.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showCarpetaScreen, carpetaActiva?.id]);
+
   // ─── Handlers ─────────────────────────────────────────────────────────────
 
   const handleSelectCarpeta = useCallback((raw: FlotaCarpeta) => {
