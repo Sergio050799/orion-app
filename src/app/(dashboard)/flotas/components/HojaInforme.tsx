@@ -295,16 +295,11 @@ function buildPdfHtml(data: {
     ${economyHtml}
   </section>`;
 
-  // Coverage grid (page 2)
-  const coverageHtml = cobAnexo.length > 0 ? `<div class="coverage-grid">
-    ${cobAnexo.map(({ titulo, tipologias, garantias }) => `<section class="coverage">
-      <h3>${titulo}</h3>
-      ${tipologias && tipologias.length > 0 ? `<div class="type">${tipologias.join(' · ')}</div>` : ''}
-      <ul>${garantias.map(g => `<li>${g}</li>`).join('')}</ul>
-    </section>`).join('')}
-  </div>` : '';
-
-  const totalPages = cobAnexo.length > 0 ? '2' : '1';
+  // Coverage — páginas dinámicas (máx 4 secciones por página)
+  const CPCOV = 4;
+  const covChunks: typeof cobAnexo[] = [];
+  for (let i = 0; i < cobAnexo.length; i += CPCOV) covChunks.push(cobAnexo.slice(i, i + CPCOV));
+  const totalPages = 1 + covChunks.length;
 
   return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
 <title>Informe — ${fleetName || header?.tomador || 'ORION'}</title>
@@ -316,7 +311,7 @@ html,body,.page,.page *{-webkit-print-color-adjust:exact !important;print-color-
 html{background:#e8ebef}
 body{margin:0;font-family:Arial,Helvetica,sans-serif;color:var(--ink)}
 .pages{padding:20px}
-.page{width:210mm;height:297mm;background:white;margin:0 auto 20px;padding:11mm 12.5mm 11mm;box-shadow:0 7px 35px rgba(15,19,28,.15);position:relative;overflow:hidden;display:flex;flex-direction:column}
+.page{width:210mm;height:297mm;background:white;margin:0 auto 20px;padding:11mm 12.5mm 20mm;box-shadow:0 7px 35px rgba(15,19,28,.15);position:relative;overflow:hidden;display:flex;flex-direction:column}
 .brandrow{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #d1d6df;padding-bottom:7px;margin-bottom:8px}
 .brandname{font-size:17px;font-weight:800;letter-spacing:.115em;color:var(--ink)}
 .orion-mark{width:32px;height:32px;display:block;flex:none}
@@ -408,18 +403,24 @@ ${primasSection}
 </div>
 </article>
 
-${cobAnexo.length > 0 ? `<article class="page">
+${covChunks.map((chunk, ci) => `<article class="page">
 ${brandrow}
 <div class="kicker">ANEXO DE CONDICIONES</div>
 <h1 class="report-title">${fleetName || 'Coberturas del estudio'}</h1>
-<p class="subtitle">Relación de garantías declaradas según modalidad y tipología. Las condiciones definitivas corresponden a la póliza emitida.</p>
-${coverageHtml}
-<div class="note">Las coberturas mostradas proceden del informe de referencia aportado. Condiciones sujetas a la póliza definitiva emitida por MMT Seguros.</div>
+${ci === 0 ? `<p class="subtitle">Relación de garantías declaradas según modalidad y tipología. Las condiciones definitivas corresponden a la póliza emitida.</p>` : ''}
+<div class="coverage-grid">
+  ${chunk.map(({ titulo, tipologias, garantias }) => `<section class="coverage">
+    <h3>${titulo}</h3>
+    ${tipologias && tipologias.length > 0 ? `<div class="type">${tipologias.join(' · ')}</div>` : ''}
+    <ul>${garantias.map(g => `<li>${g}</li>`).join('')}</ul>
+  </section>`).join('')}
+</div>
+${ci === covChunks.length - 1 ? `<div class="note">Las coberturas mostradas proceden del informe de referencia aportado. Condiciones sujetas a la póliza definitiva emitida por MMT Seguros.</div>` : ''}
 <div class="footer">
   <span>ORION · Documento confidencial</span>
-  <span>${dateStr} · Página 2 de 2</span>
+  <span>${dateStr} · Página ${2 + ci} de ${totalPages}</span>
 </div>
-</article>` : ''}
+</article>`).join('\n')}
 
 </div>
 </body></html>`;
@@ -786,8 +787,15 @@ export default function HojaInforme({
     };
     buildEntries(cobMapSin, []);
     buildEntries(cobMapCon, ['Asistencia en Viaje']);
+    // Dedup: mismo título+tipologías puede aparecer de cobMapSin y cobMapCon; conservar el de más garantías
+    const dedupMap = new Map<string, typeof result[0]>();
+    for (const entry of result) {
+      const k = `${entry.titulo}||${[...entry.tipologias].sort().join(',')}`;
+      const prev = dedupMap.get(k);
+      if (!prev || entry.garantias.length > prev.garantias.length) dedupMap.set(k, entry);
+    }
     const titleOrder: Record<string, number> = { 'Terceros': 0, 'Terceros — Remolques': 1, 'Terceros Ampliado': 2, 'Terceros Ampliado — Remolques': 3, 'Todo Riesgo con Franquicia 1.800 €': 4, 'Todo Riesgo — Remolques': 5 };
-    return result.sort((a, b) => (titleOrder[a.titulo] ?? 9) - (titleOrder[b.titulo] ?? 9));
+    return [...dedupMap.values()].sort((a, b) => (titleOrder[a.titulo] ?? 9) - (titleOrder[b.titulo] ?? 9));
   }, [trabajoRows]);
 
   // ── Defaults tarifa ───────────────────────────────────────────────────────────
