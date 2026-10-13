@@ -173,7 +173,7 @@ function buildPdfHtml(data: {
   const fleetName = data.carpetaNombre?.trim() || header?.tomador?.trim() || data.tomadoresArr?.[0]?.trim() || '';
 
   const logoRight = data.logoSrc
-    ? `<img src="${data.logoSrc}" alt="ORION" style="width:32px;height:32px;object-fit:contain;display:block;">`
+    ? `<img src="${data.logoSrc}" alt="ORION" style="width:32px;height:32px;object-fit:contain;display:block;filter:brightness(0)">`
     : LOGO_SVG_FALLBACK;
 
   const brandrow = `<div class="brandrow">
