@@ -174,6 +174,40 @@ async function descargarTodo(carpeta: FlotaCarpeta, corredorNombre?: string) {
   saveAs(blob, zipName);
 }
 
+// Deriva trabajoRows desde los vehículos procesados guardados (automaticoVehicles)
+// cuando la carpeta tiene datos procesados pero el campo trabajo está vacío.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function vehiclesToTrabajoRows(vehicles: any[]): Record<string, string>[] {
+  return vehicles.map(v => ({
+    matricula:            v.matricula             || '',
+    marca:                v.marca                 || '',
+    modelo:               v.modelo                || '',
+    tipo_vehiculo:        v.tipo_vehiculo         || 'Turismo',
+    kw:                   v.kw > 0 ? String(v.kw) : '',
+    cv:                   v.cv > 0 ? String(v.cv) : '',
+    cif_nif:              v.cif_nif               || '',
+    tomador:              v.tomador               || '',
+    cia_actual:           v.cia_actual            || '',
+    num_poliza_actual:    (v.num_poliza_actual || '').replace(/[\s\-./]/g, ''),
+    fecha_vencimiento:    v.fecha_vencimiento     || '',
+    uso:                  v.uso                   || '',
+    adr:                  v.adr                   || '',
+    ambito:               v.ambito                || '',
+    coberturas_solicitadas: v.coberturas_solicitadas || '',
+    lunas:                v.lunas                 || '',
+    frq:                  v.frq                   || '',
+    asistencia:           v.asistencia            || '',
+    prima_referencia:     parseFloat(v.prima_referencia || '0') > 0 ? v.prima_referencia : '',
+    vin:                  v.vin                   || '',
+    fecha_matriculacion:  v.fecha_matriculacion   || '',
+    anyo_fabricacion:     v.anyo_fabricacion      || '',
+    combustible:          v.combustible           || '',
+    etiqueta_dgt:         v.etiqueta_dgt          || '',
+    euro:                 v.euro                  || '',
+    co2:                  v.co2                   || '',
+  }));
+}
+
 // ─── FlotasPage ─────────────────────────────────────────────────────────────
 
 export default function FlotasPage() {
@@ -246,11 +280,17 @@ export default function FlotasPage() {
 
   const handleSelectCarpeta = useCallback((raw: FlotaCarpeta) => {
     const carpeta = normalizarCarpeta(raw);
+    // Si trabajo está vacío pero hay vehículos procesados guardados, reconstruir filas
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const savedVehicles = (carpeta as any).automaticoVehicles;
+    const trabajo = carpeta.trabajo.length > 0
+      ? carpeta.trabajo
+      : (Array.isArray(savedVehicles) && savedVehicles.length > 0 ? vehiclesToTrabajoRows(savedVehicles) : []);
     // Pre-populate refs BEFORE state updates so the rebuild useEffect in HojaOferta
     // sees savedEditsRef already filled when it fires — prevents spurious auto-calc
     if (carpeta.oferta.length > 0) ofertaRef.current?.setData(carpeta.oferta);
     if (carpeta.original.length > 0) originalRef.current?.setData(carpeta.original);
-    if (carpeta.trabajo.length > 0) trabajoRef.current?.setData(carpeta.trabajo);
+    if (trabajo.length > 0) trabajoRef.current?.setData(trabajo);
     setOpenFlotas(prev => {
       const rest = prev.filter(f => f.id !== carpeta.id);
       return [carpeta, ...rest].slice(0, 3);
@@ -263,7 +303,7 @@ export default function FlotasPage() {
     setActiveTab('DATOS GENERALES');
     setShowCarpetaScreen(false);
     setFichaMode(carpeta.estado === 'CONTRATADA');
-    setTrabajoRows(carpeta.trabajo);
+    setTrabajoRows(trabajo);
   }, []);
 
   const handleOriginalChange = useCallback((data: Record<string, string>[]) => { setOriginalData(data); }, []);
@@ -287,9 +327,14 @@ export default function FlotasPage() {
     }
     // Load fresh from localStorage (autosave already persisted the target)
     const fresh = normalizarCarpeta(cargarCarpeta(target.id) ?? target);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const savedVehicles = (fresh as any).automaticoVehicles;
+    const trabajo = fresh.trabajo.length > 0
+      ? fresh.trabajo
+      : (Array.isArray(savedVehicles) && savedVehicles.length > 0 ? vehiclesToTrabajoRows(savedVehicles) : []);
     if (fresh.oferta.length > 0) ofertaRef.current?.setData(fresh.oferta);
     if (fresh.original.length > 0) originalRef.current?.setData(fresh.original);
-    if (fresh.trabajo.length > 0) trabajoRef.current?.setData(fresh.trabajo);
+    if (trabajo.length > 0) trabajoRef.current?.setData(trabajo);
     setCarpetaActiva(fresh);
     setFlotaHeader(fresh.header);
     setOriginalData(fresh.original);
@@ -298,7 +343,7 @@ export default function FlotasPage() {
     setActiveTab('DATOS GENERALES');
     setShowCarpetaScreen(false);
     setFichaMode(fresh.estado === 'CONTRATADA');
-    setTrabajoRows(fresh.trabajo);
+    setTrabajoRows(trabajo);
   }, [carpetaActiva, flotaHeader, originalData, trabajoRows, sincoResultRows, ofertaRows]);
 
   const handleConfirmarEstado = useCallback(() => {

@@ -105,24 +105,8 @@ const COB_NOMBRES: Record<string, string> = {
 
 // ─── PDF Generator ────────────────────────────────────────────────────────────
 
-let _logoCache: string | null = null;
-async function fetchLogoDataUrl(): Promise<string> {
-  if (_logoCache) return _logoCache;
-  try {
-    const res = await fetch('/ORION_LOGO.png');
-    const buf = await res.arrayBuffer();
-    const bytes = new Uint8Array(buf);
-    const CHUNK = 8192;
-    let bin = '';
-    for (let i = 0; i < bytes.length; i += CHUNK) {
-      bin += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
-    }
-    _logoCache = 'data:image/png;base64,' + btoa(bin);
-    return _logoCache;
-  } catch {
-    return '';
-  }
-}
+// SVG logo — always sharp, no fetch needed
+const LOGO_SVG = `<svg class="orion-mark" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg"><path d="M17.5 3.3 29.5 9.1 29.5 23.3 17.4 31.4 5.1 24.5 5.1 10.4Z" fill="none" stroke="#15171b" stroke-linejoin="round" stroke-width="3"/><path d="M8.3 23.2 22.2 15.1M23.2 3.9 32.9 8.8 32.9 16.7M19.5 29.8 29.4 24.1" fill="none" stroke="#15171b" stroke-linecap="round" stroke-width="3"/></svg>`;
 
 // Convierte serial de Excel a dd/mm/yyyy si el valor es un número puro de 5+ dígitos > 40000
 const fmtDateField = (v?: string): string => {
@@ -153,7 +137,6 @@ function buildPdfHtml(data: {
   cobAnexo: { titulo: string; tipologias?: string[]; garantias: string[] }[];
   sincoPorTipo?: { tipologia: string; resumen: ResumenSinco }[];
   fechaVctoDisplay?: string | null;
-  logoSrc?: string;
 }): string {
   const { header, pivot, totalVehiculos, ambitoLabel, numTomadores, adrActivo, sinco, danosPropiosPdf, primasSol, mmtRows, corredorLabel, cobAnexo, sincoPorTipo } = data;
   const totalSol = primasSol.reduce((a, r) => a + r.total, 0);
@@ -162,9 +145,7 @@ function buildPdfHtml(data: {
   const pctDif   = totalSol > 0 ? (dif / totalSol) * 100 : 0;
   const dateStr  = today();
 
-  const logoImg = data.logoSrc
-    ? `<img class="orion-mark" src="${data.logoSrc}" alt="ORION" style="filter:brightness(0);">`
-    : `<svg class="orion-mark" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg"><path d="M17.5 3.3 29.5 9.1 29.5 23.3 17.4 31.4 5.1 24.5 5.1 10.4Z" fill="none" stroke="#15171b" stroke-linejoin="round" stroke-width="3"/><path d="M8.3 23.2 22.2 15.1M23.2 3.9 32.9 8.8 32.9 16.7M19.5 29.8 29.4 24.1" fill="none" stroke="#15171b" stroke-linecap="round" stroke-width="3"/></svg>`;
+  const logoImg = LOGO_SVG;
 
   const reportHead = `<header class="report-head">
   <div>
@@ -377,10 +358,14 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
 .report-footer{border-top:1px solid #dfe3e8;padding-top:11px;margin-top:27px;display:flex;justify-content:space-between;gap:15px;color:#555D69;font-size:10px}
 @media print{
   body{background:white}
-  .report{box-shadow:none;width:210mm;height:297mm;min-height:297mm;page-break-after:always;break-after:page;padding:19mm 18mm 17mm;overflow:hidden;margin:0}
-  .report:last-of-type{page-break-after:auto;break-after:auto}
+  .report{box-shadow:none;width:210mm;padding:19mm 18mm 17mm;margin:0;display:block;break-after:page}
+  .report:last-of-type{break-after:auto}
+  .report-main{display:block}
+  .report-footer{margin-top:24px}
   .section{break-inside:avoid}
   tr{break-inside:avoid}
+  .capsule-metrics{break-inside:avoid}
+  .comparison{break-inside:avoid}
 }
 </style>
 </head><body>
@@ -898,7 +883,6 @@ export default function HojaInforme({
 
   // ── PDF ───────────────────────────────────────────────────────────────────────
   const handlePdf = useCallback(async () => {
-    const logoSrc = await fetchLogoDataUrl();
     const r = resumenAuto ?? resumenManual;
     const sincoValues: [string, string][] | null = (() => {
       if (r) return [
@@ -948,7 +932,6 @@ export default function HojaInforme({
       cobAnexo,
       sincoPorTipo,
       fechaVctoDisplay,
-      logoSrc,
     });
 
     const w = window.open('', '_blank', 'width=860,height=700');
