@@ -166,292 +166,262 @@ function buildPdfHtml(data: {
   const pctDif   = totalSol > 0 ? (dif / totalSol) * 100 : 0;
   const dateStr  = today();
 
-  const logoImg = data.logoSrc
-    ? `<img class="orion-mark" src="${data.logoSrc}" alt="ORION" style="filter:brightness(0) invert(0);">`
+  const fleetName = header?.tomador?.trim() || '';
+
+  const logoRight = data.logoSrc
+    ? `<img src="${data.logoSrc}" alt="ORION" style="width:32px;height:32px;object-fit:contain;display:block;">`
     : LOGO_SVG_FALLBACK;
 
-  const reportHead = `<header class="report-head">
-  <div>
-    <div class="report-wordmark">${logoImg} ORION</div>
-    <div class="docseries">REPORTS / ESTUDIO DE FLOTAS</div>
-  </div>
-  <div class="meta"><strong>${dateStr}</strong>Informe de estudio de flota</div>
-</header>`;
+  const brandrow = `<div class="brandrow">
+  <div class="brandname">MMT SEGUROS</div>
+  ${logoRight}
+</div>`;
 
   // Pivot rows
   const pivotRows = pivot.tipos.map(tipo => {
     const total = pivot.cobs.reduce((a, c) => a + (pivot.counts[tipo]?.[c] ?? 0), 0);
     return `<tr>
-      <td>${tipo}</td>
+      <td>${tipo} <b style="float:right">${total}</b></td>
       ${pivot.cobs.map(c => `<td class="num">${pivot.counts[tipo]?.[c] ?? 0}</td>`).join('')}
-      <td class="num"><strong>${total}</strong></td>
     </tr>`;
   }).join('');
   const pivotTotals = pivot.cobs.map(c =>
-    `<td class="num"><strong>${pivot.tipos.reduce((a, t) => a + (pivot.counts[t]?.[c] ?? 0), 0)}</strong></td>`
+    `<td class="num">${pivot.tipos.reduce((a, t) => a + (pivot.counts[t]?.[c] ?? 0), 0)}</td>`
   ).join('');
 
-  // Primas rows
+  // Primas rows — sin columna MMT/veh (simplificado para PDF)
   const primasRows = primasSol.map((r, i) => {
     const mmt    = mmtRows[i];
     const difRow = (mmt?.total ?? 0) - r.total;
-    const difCls = difRow < 0 ? ' red' : difRow > 0 ? ' green' : '';
+    const difCls = difRow < 0 ? ' neg' : difRow > 0 ? ' pos' : '';
     return `<tr>
-      <td>${r.tipo}<span class="subline">${r.cob}</span></td>
+      <td><strong>${r.tipo}</strong><span class="minor">${r.cob}</span></td>
       <td class="num">${r.count}</td>
       <td class="num">${r.media ? fmtEur2(r.media) : '—'}</td>
       <td class="num">${r.total ? fmtEur(r.total) : '—'}</td>
-      <td class="num">${mmt?.prima != null ? fmtEur2(mmt.prima) : '—'}</td>
       <td class="num">${mmt?.total != null ? fmtEur(mmt.total) : '—'}</td>
       <td class="num${difCls}">${mmt?.total != null ? (difRow >= 0 ? '+' : '') + fmtEur(difRow) : '—'}</td>
     </tr>`;
   }).join('');
 
-  // Section counter
-  let secN = 0;
-  const S = () => String(++secN).padStart(2, '0');
-
-  // Details grid
+  // Hero strip (vencimiento / ámbito / tomadores / observaciones)
   const obsLine = corredorLabel
     ? `${corredorLabel} · que ${adrActivo ? 'SÍ' : 'NO'} lleva ADR`
     : adrActivo ? 'ADR SÍ' : null;
-
-  const detailsHtml = `<div class="details">
-    ${header?.cif           ? `<div><div class="detail-label">CIF / NIF</div><div class="detail-value">${header.cif}</div></div>` : ''}
-    ${data.fechaVctoDisplay ? `<div><div class="detail-label">Vencimiento</div><div class="detail-value">${data.fechaVctoDisplay}</div></div>` : ''}
-    ${ambitoLabel           ? `<div><div class="detail-label">Ámbito</div><div class="detail-value">${ambitoLabel}</div></div>` : ''}
-    ${numTomadores > 1      ? `<div><div class="detail-label">Composición</div><div class="detail-value">${numTomadores} tomadores</div></div>` : ''}
-    ${obsLine               ? `<div><div class="detail-label">Observaciones del expediente</div><div class="detail-value">${obsLine}</div></div>` : ''}
+  const heroHtml = `<div class="hero">
+    ${data.fechaVctoDisplay ? `<div><small>Vencimiento</small><strong>${data.fechaVctoDisplay}</strong></div>` : ''}
+    ${ambitoLabel           ? `<div><small>Ámbito</small><strong>${ambitoLabel}</strong></div>` : ''}
+    ${header?.cif           ? `<div><small>CIF / NIF</small><strong>${header.cif}</strong></div>` : ''}
+    ${numTomadores > 1      ? `<div><small>Composición</small><strong>${numTomadores} tomadores</strong></div>` : ''}
+    ${obsLine               ? `<div style="flex:2"><small>Observaciones</small><strong>${obsLine}</strong></div>` : ''}
   </div>`;
 
-  // SINCO capsule metrics
+  // SINCO — metricstrip global + tabla tipología en una sola sección (igual que V4)
   const sincoSection = sinco ? (() => {
-    const n = S();
     const hasSinExp = sinco.values.some(([, v]) => v === 'Sin exp.');
-    const items = sinco.values.map(([l, v]) => {
-      const bStyle = v === 'Sin exp.' ? ' style="font-size:14px;padding-top:3px"' : '';
-      return `<div><b${bStyle}>${v}</b><span>${l}</span></div>`;
-    }).join('');
-    return `<section class="section">
-    <div class="section-head"><h3>${n} / Siniestralidad SINCO</h3><span class="section-kicker">Resumen global</span></div>
-    <div class="capsule-metrics">${items}</div>
-    ${hasSinExp ? `<p class="smallnote">Sin exposición válida: la frecuencia no puede interpretarse como 0 %.</p>` : ''}
-  </section>`;
-  })() : '';
-
-  // SINCO por tipología
-  const sincoPorTipoSection = (sincoPorTipo && sincoPorTipo.length > 1) ? (() => {
-    const n = S();
-    const rows = sincoPorTipo.map(({ tipologia, resumen: r }) => `<tr>
-      <td>${tipologia}</td>
-      <td class="num">${r.totalVehiculos}</td>
-      <td class="num">${r.vehiculosConSinco}</td>
-      <td class="num">${r.totalSiniestros}</td>
-      <td class="num">${fmt2(r.antiguedadMedia)} a</td>
-      <td class="num">${fmt2(r.siniestrosPorAnio)}</td>
-      <td class="num">${fmtFreq(r.frecuencia)}</td>
-    </tr>`).join('');
-    return `<section class="section">
-    <div class="section-head"><h3>${n} / SINCO por tipología</h3></div>
-    <table>
+    const items = sinco.values.map(([l, v]) =>
+      `<div class="metric"><b>${v}</b><small>${l}</small></div>`
+    ).join('');
+    const tipoRows = (sincoPorTipo && sincoPorTipo.length > 1)
+      ? sincoPorTipo.map(({ tipologia, resumen: r }) => `<tr>
+          <td>${tipologia}</td>
+          <td class="num">${r.totalVehiculos}</td>
+          <td class="num">${r.vehiculosConSinco}</td>
+          <td class="num">${r.totalSiniestros}</td>
+          <td class="num">${fmt2(r.antiguedadMedia)} a</td>
+          <td class="num">${fmt2(r.siniestrosPorAnio)}</td>
+          <td class="num">${fmtFreq(r.frecuencia)}</td>
+        </tr>`).join('')
+      : null;
+    return `<section class="report-section section-break">
+    <h2 class="sec-title">Siniestralidad SINCO <em>Resumen global</em></h2>
+    <div class="metricstrip">${items}</div>
+    ${hasSinExp ? `<p class="method">Sin exposición válida: la frecuencia no puede interpretarse como 0 %.</p>` : ''}
+    ${tipoRows ? `<table class="table">
       <thead><tr>
         <th>Tipología</th>
         <th class="num">Veh.</th><th class="num">SINCO</th><th class="num">Sin.</th>
         <th class="num">Antig.</th><th class="num">Sin./año</th><th class="num">Frec.</th>
       </tr></thead>
-      <tbody>${rows}</tbody>
-    </table>
+      <tbody>${tipoRows}</tbody>
+    </table>` : ''}
   </section>`;
   })() : '';
 
-  // Daños Propios capsule (same style as SINCO)
+  const sincoPorTipoSection = '';
+
+  // Daños Propios
   const danosPropiosSection = danosPropiosPdf ? (() => {
-    const n = S();
-    const items = danosPropiosPdf.values.map(([l, v]) => {
-      const bStyle = v === 'Sin exp.' ? ' style="font-size:14px;padding-top:3px"' : '';
-      return `<div><b${bStyle}>${v}</b><span>${l}</span></div>`;
-    }).join('');
-    return `<section class="section">
-    <div class="section-head"><h3>${n} / Siniestralidad Daños Propios</h3><span class="section-kicker">Resumen global</span></div>
-    <div class="capsule-metrics">${items}</div>
+    const items = danosPropiosPdf.values.map(([l, v]) =>
+      `<div class="metric"><b>${v}</b><small>${l}</small></div>`
+    ).join('');
+    return `<section class="report-section section-break">
+    <h2 class="sec-title">Siniestralidad Daños Propios <em>Resumen global</em></h2>
+    <div class="metricstrip">${items}</div>
   </section>`;
   })() : '';
 
   // Comparativa de primas
-  const primasSecN = S();
-  const comparisonHtml = (totalSol && totalMmt) ? `<div class="comparison">
-    <div><span>Prima solicitada</span><b>${fmtEur(totalSol)}</b></div>
-    <div><span>Prima MMT</span><b>${fmtEur(totalMmt)}</b></div>
-    <div><span>Diferencia</span><b class="${dif < 0 ? 'red' : 'green'}">${dif >= 0 ? '+' : ''}${fmtEur(dif)}</b></div>
-    <div><span>Variación</span><b class="${dif < 0 ? 'red' : 'green'}">${totalSol ? pctDif.toFixed(1) + ' %' : '—'}</b></div>
+  const economyHtml = (totalSol && totalMmt) ? `<div class="economy">
+    <div><small>Prima solicitada</small><strong>${fmtEur(totalSol)}</strong></div>
+    <div><small>Prima MMT</small><strong>${fmtEur(totalMmt)}</strong></div>
+    <div><small>Diferencia</small><strong class="${dif >= 0 ? 'pos' : 'neg'}">${dif >= 0 ? '+' : ''}${fmtEur(dif)}</strong></div>
+    <div><small>Variación</small><strong class="${dif >= 0 ? 'pos' : 'neg'}">${totalSol ? (dif >= 0 ? '+' : '') + pctDif.toFixed(1) + ' %' : '—'}</strong></div>
   </div>
-  <p class="smallnote">Diferencia representada como MMT menos solicitada. Variación ${pctDif >= 0 ? '+' : ''}${pctDif.toFixed(1)} %.</p>` : '';
+  <p class="method">Diferencia calculada como prima MMT menos prima solicitada.</p>` : '';
 
-  const primasSection = `<section class="section">
-    <div class="section-head"><h3>${primasSecN} / Comparativa de primas</h3><span class="section-kicker">Euros anuales</span></div>
-    <table>
+  const primasSection = `<section class="report-section section-break">
+    <h2 class="sec-title">Comparativa de primas <em>Importes anuales</em></h2>
+    <table class="table">
+      <colgroup><col style="width:33%"><col style="width:7%"><col style="width:14%"><col style="width:15%"><col style="width:15%"><col style="width:16%"></colgroup>
       <thead><tr>
-        <th style="width:30%">Tipo / Cobertura</th>
+        <th>Tipo y cobertura</th>
         <th class="num">Nº</th>
-        <th class="num">Sol./veh.</th><th class="num">Total sol.</th>
-        <th class="num">MMT/veh.</th><th class="num">Total MMT</th>
-        <th class="num">Dif.</th>
+        <th class="num">Sol./veh.</th>
+        <th class="num">Total sol.</th>
+        <th class="num">Total MMT</th>
+        <th class="num">Diferencia</th>
       </tr></thead>
       <tbody>${primasRows}</tbody>
-      <tbody class="sum-body">
-        <tr class="sum-row">
-          <td>TOTAL</td>
-          <td class="num">${primasSol.reduce((a, r) => a + r.count, 0)}</td>
-          <td class="num">—</td>
-          <td class="num">${totalSol ? fmtEur(totalSol) : '—'}</td>
-          <td class="num">—</td>
-          <td class="num">${totalMmt ? fmtEur(totalMmt) : '—'}</td>
-          <td class="num ${dif < 0 ? 'red' : dif > 0 ? 'green' : ''}">${totalMmt ? (dif >= 0 ? '+' : '') + fmtEur(dif) : '—'}</td>
-        </tr>
-      </tbody>
+      <tbody><tr class="total">
+        <td>TOTAL</td>
+        <td class="num">${primasSol.reduce((a, r) => a + r.count, 0)}</td>
+        <td class="num">—</td>
+        <td class="num">${totalSol ? fmtEur(totalSol) : '—'}</td>
+        <td class="num">${totalMmt ? fmtEur(totalMmt) : '—'}</td>
+        <td class="num ${dif < 0 ? 'neg' : dif > 0 ? 'pos' : ''}">${totalMmt ? (dif >= 0 ? '+' : '') + fmtEur(dif) : '—'}</td>
+      </tr></tbody>
     </table>
-    ${comparisonHtml}
+    ${economyHtml}
   </section>`;
 
-  // Coverage columns (page 2)
-  const coverageHtml = cobAnexo.length > 0 ? `<div class="coverage-columns">
-    ${cobAnexo.map(({ titulo, tipologias, garantias }) => `<div class="coverage">
-      <h4>${titulo}</h4>
+  // Coverage grid (page 2)
+  const coverageHtml = cobAnexo.length > 0 ? `<div class="coverage-grid">
+    ${cobAnexo.map(({ titulo, tipologias, garantias }) => `<section class="coverage">
+      <h3>${titulo}</h3>
       ${tipologias && tipologias.length > 0 ? `<div class="type">${tipologias.join(' · ')}</div>` : ''}
       <ul>${garantias.map(g => `<li>${g}</li>`).join('')}</ul>
-    </div>`).join('')}
+    </section>`).join('')}
   </div>` : '';
 
-  const totalPages = cobAnexo.length > 0 ? '02' : '01';
+  const totalPages = cobAnexo.length > 0 ? '2' : '1';
 
   return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
-<title>Informe de Estudio de Flota — ${header?.tomador || 'ORION'}</title>
+<title>Informe — ${fleetName || header?.tomador || 'ORION'}</title>
 <style>
 @page{size:A4;margin:0}
 *{box-sizing:border-box;margin:0;padding:0}
-html{font-family:Inter,'Segoe UI',Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-body{background:#e9edf1;color:#15171b;font-size:12px;line-height:1.45}
-.report{width:210mm;min-height:297mm;padding:19mm 18mm 17mm;background:#fff;display:flex;flex-direction:column;margin:0 auto 20px;box-shadow:0 2px 16px rgba(0,0,0,.12)}
-.report-main{flex:1}
-.report-head{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:17px;border-bottom:1.5px solid #15171b}
-.report-wordmark{display:flex;align-items:center;gap:11px;font-size:19px;letter-spacing:.115em;font-weight:780;color:#15171b}
+:root{--ink:#181d24;--muted:#5b6470;--line:#d9dde3;--soft:#f3f5f7;--blue:#1240cc;--green:#157858}
+html,body,.page,.page *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}
+html{background:#e8ebef}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;color:var(--ink)}
+.pages{padding:20px}
+.page{width:210mm;height:297mm;background:white;margin:0 auto 20px;padding:11mm 12.5mm 11mm;box-shadow:0 7px 35px rgba(15,19,28,.15);position:relative;overflow:hidden;display:flex;flex-direction:column}
+.brandrow{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #d1d6df;padding-bottom:7px;margin-bottom:8px}
+.brandname{font-size:17px;font-weight:800;letter-spacing:.115em;color:var(--ink)}
 .orion-mark{width:32px;height:32px;display:block;flex:none}
-.docseries{font-size:10px;margin:6px 0 0 43px;color:#555D69;text-transform:uppercase;letter-spacing:.13em}
-.meta{font-size:11px;line-height:1.65;text-align:right;color:#555D69}
-.meta strong{font-size:12px;color:#15171b;display:block}
-.report-title{margin:27px 0 20px}
-.eyebrow{font-size:10.5px;color:#1240cc;letter-spacing:.16em;font-weight:750;text-transform:uppercase;display:block}
-.report-title h2{font-size:31px;font-weight:730;letter-spacing:-.04em;margin:7px 0;line-height:1.13;color:#15171b}
-.report-title p{font-size:12.5px;line-height:1.55;color:#555D69}
-.report-title .entity{font-size:15px;font-weight:650;color:#15171b}
-.details{display:grid;grid-template-columns:1fr 1fr;gap:14px 30px;border-bottom:1px solid #dfe3e8;padding:12px 0 20px;margin-top:7px}
-.detail-label{text-transform:uppercase;color:#555D69;font-size:10px;letter-spacing:.08em}
-.detail-value{font-size:12px;font-weight:660;margin-top:6px;color:#15171b}
-.section{margin-top:28px}
-.section-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding-bottom:11px;border-bottom:1px solid #dfe3e8;margin-bottom:9px}
-.section-head h3{font-size:15px;letter-spacing:-.01em;font-weight:730;color:#15171b}
-.section-kicker{font-size:10px;color:#555D69}
-table{border-collapse:collapse;width:100%;table-layout:fixed;font-size:12px}
-th{font-size:9.5px;letter-spacing:.03em;color:#7d8590;font-weight:730;border-bottom:1px solid #dfe3e8;padding:10px 6px 10px 0;text-transform:uppercase}
-td{padding:12px 6px 12px 0;border-bottom:1px solid #edf0f3;vertical-align:middle;line-height:1.4;color:#15171b}
-td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
-.subline{display:block;font-size:10.5px;color:#555D69;margin-top:3px}
-.sum-row td{border-top:1.5px solid #b4bbc4;border-bottom:0;font-weight:730;color:#15171b}
-.red{color:#b84b56}.green{color:#21966b}
-.capsule-metrics{display:grid;grid-template-columns:repeat(6,1fr);border-bottom:1px solid #dfe3e8;padding:17px 0;gap:8px}
-.capsule-metrics>div{border-right:1px solid #dfe3e8;padding-right:6px}
-.capsule-metrics>div:last-child{border:0}
-.capsule-metrics b{display:block;font-size:20px;letter-spacing:-.025em;font-weight:720;color:#15171b}
-.capsule-metrics span{display:block;font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:#555D69;line-height:1.35;margin-top:5px}
-.comparison{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;border-top:1px solid #dfe3e8;margin-top:12px;padding-top:17px}
-.comparison span{font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:#555D69;display:block}
-.comparison b{display:block;font-size:20px;margin-top:7px;font-weight:720;color:#15171b}
-.comparison b.green{color:#21966b}
-.comparison b.red{color:#b84b56}
-.smallnote{font-size:11px;line-height:1.55;color:#555D69;margin-top:12px}
-.coverage-columns{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-top:14px}
-.coverage h4{font-size:15px;margin:0 0 4px;font-weight:700;color:#15171b}
-.coverage .type{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:#555D69;border-bottom:1px solid #dfe3e8;padding-bottom:12px}
-.coverage ul{padding:0;list-style:none;margin:0}
-.coverage li{font-size:12.5px;line-height:1.5;padding:12px 0;border-bottom:1px solid #edf0f3;color:#15171b}
-.coverage li:last-child{border-bottom:none}
-.coverage li::before{content:'—';color:#1240cc;margin-right:9px}
-.note-box{border-top:1px solid #dfe3e8;border-bottom:1px solid #dfe3e8;padding:11px 0;margin-top:21px;font-size:10.5px;line-height:1.55;color:#555D69}
-.color-line{width:22px;height:4px;border-radius:4px;background:#1240cc;display:inline-block;margin-right:8px;vertical-align:middle}
-.report-footer{border-top:1px solid #dfe3e8;padding-top:11px;margin-top:27px;display:flex;justify-content:space-between;gap:15px;color:#555D69;font-size:10px}
+.kicker{font-size:10px;letter-spacing:.18em;font-weight:750;color:var(--blue);margin:1px 0 5px}
+.report-title{font-size:23px;line-height:1.05;letter-spacing:-.045em;margin:0 0 5px;font-weight:800;color:var(--ink)}
+.subtitle{font-size:11px;color:var(--muted);margin:0}
+.hero{display:flex;justify-content:space-between;gap:10px;margin-top:8px;margin-bottom:9px;padding:8px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.hero div{flex:1}
+.hero small{display:block;text-transform:uppercase;color:var(--muted);font-size:9px;letter-spacing:.07em;font-weight:750;margin-bottom:5px}
+.hero strong{font-size:12px;line-height:1.3;font-weight:700;color:var(--ink)}
+.report-section{margin-top:6px}
+.section-break{margin-top:9px}
+.sec-title{font-size:14px;margin:0 0 7px;font-weight:780;letter-spacing:-.02em;display:flex;align-items:center;justify-content:space-between;color:var(--ink)}
+.sec-title em{font-style:normal;font-size:10px;color:var(--muted);font-weight:normal}
+.table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:11.2px;line-height:1.32}
+.table th{padding:8px 7px;background:#e8edf4;font-size:9.6px;color:#303948;font-weight:750;text-align:left;border-bottom:1px solid var(--line)}
+.table td{padding:8px 7px;border-bottom:1px solid #e4e7eb;vertical-align:top;line-height:1.4;color:var(--ink)}
+.table td.num,.table th.num{text-align:right;font-variant-numeric:tabular-nums}
+.table tbody tr:nth-child(even):not(.total) td{background:#f8fafd}
+.table .total td{font-weight:800;background:#e9edf3;border-top:1px solid #aeb8c8}
+.table td:first-child{font-weight:550}
+.table td:first-child b{font-size:11px}
+.minor{display:block;font-size:10px;color:var(--muted);margin-top:3px;line-height:1.35}
+.metricstrip{display:grid;grid-template-columns:repeat(6,1fr);border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin:7px 0 9px;background:#f8fafd}
+.metric{padding:8px 7px;border-right:1px solid var(--line)}
+.metric:first-child{padding-left:0}
+.metric:last-child{border:0}
+.metric b{font-size:15px;display:block;line-height:1.2;color:var(--ink)}
+.metric small{font-size:8.2px;text-transform:uppercase;letter-spacing:.035em;color:var(--muted);font-weight:740}
+.economy{display:grid;grid-template-columns:repeat(4,1fr);border-top:1.3px solid var(--line);border-bottom:1.3px solid var(--line);margin-top:9px;background:#f8fafd}
+.economy div{padding:9px 8px;border-right:1px solid var(--line)}
+.economy div:first-child{padding-left:0}
+.economy div:last-child{border:0}
+.economy small{display:block;color:var(--muted);font-size:8.8px;text-transform:uppercase;font-weight:bold;margin-bottom:4px}
+.economy strong{font-size:17px;font-variant-numeric:tabular-nums;color:var(--ink)}
+.pos{color:var(--green)}.neg{color:#b84b56}
+.method{font-size:9.2px;color:var(--muted);padding-top:6px}
+.coverage-grid{display:grid;grid-template-columns:1fr 1fr;gap:7mm;align-content:start;margin-top:14px}
+.coverage{border-top:2px solid #272d36;padding-top:7px;break-inside:avoid}
+.coverage h3{font-size:14px;margin:0 0 3px;font-weight:800;color:var(--ink)}
+.coverage .type{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:9px;border-bottom:1px solid var(--line);padding-bottom:6px}
+.coverage ul{padding:0;margin:0;list-style:none}
+.coverage li{display:flex;gap:9px;align-items:flex-start;border-bottom:1px solid #eceef1;padding:7px 0;font-size:11px;line-height:1.35;color:var(--ink)}
+.coverage li::before{content:"";width:9px;flex:none;height:2px;background:var(--blue);margin-top:5px}
+.note{border-left:3px solid var(--blue);background:#edf3fc;color:#485160;padding:9px 11px;font-size:10px;line-height:1.5;margin-top:13px}
+.footer{position:absolute;bottom:8mm;left:12.5mm;right:12.5mm;border-top:1px solid var(--line);padding-top:7px;display:flex;justify-content:space-between;color:var(--muted);font-size:9px}
 @media print{
   body{background:white}
-  .report{box-shadow:none;width:210mm;padding:19mm 18mm 17mm;margin:0;display:block;break-after:page}
-  .report:last-of-type{break-after:auto}
-  .report-main{display:block}
-  .report-footer{margin-top:24px}
-  .section{break-inside:avoid}
-  tr{break-inside:avoid}
-  .capsule-metrics{break-inside:avoid}
-  .comparison{break-inside:avoid}
+  .pages{padding:0}
+  .page{height:296mm;width:210mm;margin:0;box-shadow:none;break-after:page;page-break-after:always}
+  .page:last-child{break-after:auto;page-break-after:auto}
+  .table th{background:#e8edf4 !important}
+  .table .total td{background:#e9edf3 !important}
+  .metricstrip,.economy{background:#f8fafd !important}
+  .note{background:#edf3fc !important}
 }
 </style>
 </head><body>
+<div class="pages">
 
-<article class="report">
-<div class="report-main">
-${reportHead}
-<div class="report-title">
-  <span class="eyebrow">Flotas · Resumen del estudio</span>
-  <h2>Informe de flota</h2>
-  ${header?.tomador ? `<p class="entity">${header.tomador}</p>` : ''}
-  <p>Documentación de referencia del estudio de vehículos y siniestralidad.</p>
-</div>
-${detailsHtml}
-<section class="section">
-  <div class="section-head"><h3>01 / Composición de la flota</h3><span class="section-kicker">${totalVehiculos} vehículos</span></div>
-  <table>
+<article class="page">
+${brandrow}
+<div class="kicker">ANÁLISIS TÉCNICO DE FLOTAS</div>
+<h1 class="report-title">${fleetName || 'Informe de estudio de flota'}</h1>
+<p class="subtitle">Composición del riesgo, siniestralidad y comparativa económica</p>
+${heroHtml}
+<section class="report-section">
+  <h2 class="sec-title">Composición de la flota <em>${totalVehiculos} vehículos informados</em></h2>
+  <table class="table">
+    <colgroup><col style="width:40%">${pivot.cobs.map(() => `<col style="width:${Math.floor(45/pivot.cobs.length)}%">`).join('')}</colgroup>
     <thead><tr>
-      <th>Tipo de vehículo</th>
+      <th>Tipo</th>
       ${pivot.cobs.map(c => `<th class="num">${c || '—'}</th>`).join('')}
-      <th class="num">Total</th>
     </tr></thead>
     <tbody>${pivotRows}</tbody>
-    <tbody class="sum-body">
-      <tr class="sum-row">
-        <td>TOTAL</td>
-        ${pivotTotals}
-        <td class="num">${totalVehiculos}</td>
-      </tr>
-    </tbody>
+    <tbody><tr class="total">
+      <td>Total declarado: ${totalVehiculos}</td>
+      ${pivotTotals}
+    </tr></tbody>
   </table>
 </section>
 ${sincoSection}
 ${sincoPorTipoSection}
 ${danosPropiosSection}
 ${primasSection}
-</div>
-<footer class="report-footer">
+<div class="footer">
   <span>ORION · Documento confidencial</span>
-  <span>${dateStr} · 01 / ${totalPages}</span>
-</footer>
+  <span>${dateStr} · Página 1 de ${totalPages}</span>
+</div>
 </article>
 
-${cobAnexo.length > 0 ? `<article class="report">
-<div class="report-main">
-${reportHead}
-<div class="report-title">
-  <span class="eyebrow">Anexo · Condiciones del estudio</span>
-  <h2>Detalle de coberturas incluidas</h2>
-  <p>Condiciones informadas para cada tipología y modalidad.</p>
-</div>
-<section class="section">
-  <div class="section-head"><h3>Coberturas por modalidad</h3><span class="section-kicker">${cobAnexo.length} modalidades</span></div>
-  ${coverageHtml}
-</section>
-<div class="note-box"><span class="color-line"></span>Las coberturas mostradas son las declaradas para esta flota. Condiciones sujetas a la póliza definitiva emitida por MMT Seguros.</div>
-</div>
-<footer class="report-footer">
+${cobAnexo.length > 0 ? `<article class="page">
+${brandrow}
+<div class="kicker">ANEXO DE CONDICIONES</div>
+<h1 class="report-title">${fleetName || 'Coberturas del estudio'}</h1>
+<p class="subtitle">Relación de garantías declaradas según modalidad y tipología. Las condiciones definitivas corresponden a la póliza emitida.</p>
+${coverageHtml}
+<div class="note">Las coberturas mostradas proceden del informe de referencia aportado. Condiciones sujetas a la póliza definitiva emitida por MMT Seguros.</div>
+<div class="footer">
   <span>ORION · Documento confidencial</span>
-  <span>${dateStr} · 02 / 02</span>
-</footer>
+  <span>${dateStr} · Página 2 de 2</span>
+</div>
 </article>` : ''}
 
+</div>
 </body></html>`;
 }
 
@@ -1041,82 +1011,76 @@ export default function HojaInforme({
       {/* Contenido: columna única, scroll vertical; overflowX auto como fallback */}
       <div className="flex-1 custom-scrollbar" style={{ overflowY: 'auto', overflowX: 'auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 12, width: '100%', boxSizing: 'border-box' }}>
 
-        {/* ── Fila top: Ámbito + SINCO ────────────────────────────────────── */}
-        {(totalVehiculos > 0 || hasSincoData) && (
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', width: '100%', minWidth: 0, boxSizing: 'border-box', flexShrink: 0 }}>
-            {totalVehiculos > 0 && (
-              <div style={{ borderRadius: 6, border: '1px solid var(--t-line)', background: 'var(--t-surface)', display: 'flex', alignItems: 'center', gap: 8, padding: '6px 14px' }}>
-                <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: 'var(--t-text-3)', letterSpacing: '0.1em' }}>Ámbito</span>
-                <span style={{
-                  borderRadius: 4, padding: '3px 10px',
-                  background: 'transparent',
-                  border: `1px solid var(--t-line)`,
-                  color: 'var(--t-text)',
-                  fontSize: 12, fontWeight: 800,
-                }}>{ambito.label ?? 'Nacional'}</span>
-              </div>
-            )}
-            {fechaVctoDisplay && (
-              <div style={{ borderRadius: 6, border: '1px solid var(--t-line)', background: 'var(--t-surface)', display: 'flex', alignItems: 'center', gap: 8, padding: '6px 14px' }}>
-                <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: 'var(--t-text-3)', letterSpacing: '0.1em' }}>Vencimiento</span>
-                <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--t-text)' }}>{fechaVctoDisplay}</span>
-              </div>
-            )}
-            {hasSincoData && (() => {
-              const r = resumenAuto ?? resumenManual;
-              const items: [string, string][] = r ? [
-                ['Vehículos', String(r.totalVehiculos)],
-                ['Con SINCO', String(r.vehiculosConSinco)],
-                ['Siniestros', String(r.totalSiniestros)],
-                ['Antigüedad', fmt2(r.antiguedadMedia) + 'a'],
-                ['Sin./año', fmt2(r.siniestrosPorAnio)],
-                ['Frecuencia', fmtFreq(r.frecuencia)],
-              ] : sincoGlobal ? [
-                ['Siniestros', String(sincoGlobal.siniestrosTotales)],
-                ['Antigüedad', fmt2(sincoGlobal.anyosExperiencia) + 'a'],
-                ['Frecuencia', fmtFreq(sincoGlobal.frecuencia)],
-              ] : [];
-              if (!items.length) return null;
-              return (
-                <div style={{ flex: 1, minWidth: 0, borderRadius: 6, overflow: 'hidden', border: '1px solid var(--t-line)', background: 'var(--t-surface)' }}>
-                  <div style={{ padding: '6px 14px', borderBottom: '1px solid var(--t-line)', background: 'var(--t-line-soft)' }}>
-                    <span style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--t-text-2)' }}>Siniestralidad SINCO</span>
-                  </div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 1, background: 'var(--t-bg)' }}>
+        {/* ── Summary bar: Ámbito · Vencimiento · SINCO ───────────────── */}
+        <div style={{ display: 'grid', gridTemplateColumns: '148px 168px 1fr', gap: 0, border: '1px solid var(--t-line)', borderRadius: 8, overflow: 'hidden', background: 'var(--t-surface)', alignItems: 'stretch', flexShrink: 0 }}>
+          {/* Ámbito */}
+          <div style={{ padding: '18px 20px', borderRight: '1px solid var(--t-line)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}>
+            <small style={{ display: 'block', fontSize: 10.5, fontWeight: 700, letterSpacing: '0.05em', color: 'var(--t-text-2)', marginBottom: 10, textTransform: 'uppercase' }}>Ámbito</small>
+            <strong style={{ fontSize: 22, lineHeight: 1.1, color: 'var(--t-text)', fontWeight: 700 }}>{totalVehiculos > 0 ? (ambito.label ?? 'Nacional') : '—'}</strong>
+          </div>
+          {/* Vencimiento */}
+          <div style={{ padding: '18px 20px', borderRight: '1px solid var(--t-line)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}>
+            <small style={{ display: 'block', fontSize: 10.5, fontWeight: 700, letterSpacing: '0.05em', color: 'var(--t-text-2)', marginBottom: 10, textTransform: 'uppercase' }}>Vencimiento</small>
+            <strong style={{ fontSize: 22, lineHeight: 1.1, color: 'var(--t-text)', fontWeight: 700 }}>{fechaVctoDisplay ?? '—'}</strong>
+          </div>
+          {/* SINCO global */}
+          {(() => {
+            const r = resumenAuto ?? resumenManual;
+            const items: [string, string][] = r ? [
+              ['Vehículos', String(r.totalVehiculos)],
+              ['Con SINCO', String(r.vehiculosConSinco)],
+              ['Siniestros', String(r.totalSiniestros)],
+              ['Antigüedad', fmt2(r.antiguedadMedia) + 'a'],
+              ['Sin./año', fmt2(r.siniestrosPorAnio)],
+              ['Frecuencia', fmtFreq(r.frecuencia)],
+            ] : sincoGlobal ? [
+              ['Siniestros', String(sincoGlobal.siniestrosTotales)],
+              ['Años exp.', fmt2(sincoGlobal.anyosExperiencia) + 'a'],
+              ['Frecuencia', fmtFreq(sincoGlobal.frecuencia)],
+            ] : [];
+            return (
+              <div style={{ padding: '14px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <small style={{ display: 'block', fontSize: 10.5, letterSpacing: '0.07em', color: 'var(--t-text-2)', fontWeight: 700, marginBottom: 14, textTransform: 'uppercase' }}>
+                  Siniestralidad SINCO · Vista Global
+                </small>
+                {items.length > 0 ? (
+                  <div style={{ display: 'grid', gridTemplateColumns: `repeat(${items.length}, 1fr)`, gap: 14, alignItems: 'stretch' }}>
                     {items.map(([l, v]) => (
-                      <div key={l} style={{ background: 'var(--t-surface)', padding: '8px 14px', flex: '1 0 80px' }}>
-                        <div style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--t-text-3)' }}>{l}</div>
-                        <div style={{ fontSize: 16, fontWeight: 900, color: 'var(--t-text)', fontFamily: 'monospace' }}>{v}</div>
+                      <div key={l} style={{ textAlign: 'center' }}>
+                        <b style={{ display: 'block', fontSize: 22, lineHeight: 1.05, marginBottom: 5, color: 'var(--t-text)', fontWeight: 700 }}>{v}</b>
+                        <span style={{ fontSize: 10, color: 'var(--t-text-3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{l}</span>
                       </div>
                     ))}
                   </div>
-                </div>
-              );
-            })()}
-          </div>
-        )}
+                ) : (
+                  <span style={{ fontSize: 12, color: 'var(--t-text-3)' }}>Sin datos SINCO</span>
+                )}
+              </div>
+            );
+          })()}
+        </div>
 
         {/* ── Desglose SINCO por tipología ─────────────────────────────── */}
         {sincoPorTipo.length > 1 && (
-          <Card title="Siniestralidad SINCO por tipología">
-            <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', width: '100%', boxSizing: 'border-box' }}>
-              <table style={{ minWidth: 400, width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+          <Card title="Siniestralidad por tipología" desc="Histórico SINCO registrado">
+            <div style={tableWrapS}>
+              <table style={{ minWidth: 400, width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
-                  <tr style={{ background: 'var(--t-line-soft)' }}>
+                  <tr>
                     {['Tipología', 'Veh.', 'Con SINCO', 'Siniestros', 'Antigüedad', 'Sin./año', 'Frecuencia'].map(h =>
                       <th key={h} style={thS}>{h}</th>)}
                   </tr>
                 </thead>
                 <tbody>
                   {sincoPorTipo.map(({ tipologia, resumen: r }) => (
-                    <tr key={tipologia} style={{ borderBottom: '1px solid var(--t-line)' }}>
-                      <td style={{ ...tdS, fontWeight: 600 }}>{tipologia}</td>
+                    <tr key={tipologia}>
+                      <td style={{ ...tdS, fontWeight: 710 }}>{tipologia}</td>
                       <td style={{ ...tdS, textAlign: 'center' }}>{r.totalVehiculos}</td>
                       <td style={{ ...tdS, textAlign: 'center' }}>{r.vehiculosConSinco}</td>
                       <td style={{ ...tdS, textAlign: 'center' }}>{r.totalSiniestros}</td>
-                      <td style={{ ...tdS, textAlign: 'right', fontFamily: 'monospace' }}>{fmt2(r.antiguedadMedia)}a</td>
-                      <td style={{ ...tdS, textAlign: 'right', fontFamily: 'monospace' }}>{fmt2(r.siniestrosPorAnio)}</td>
-                      <td style={{ ...tdS, textAlign: 'right', fontFamily: 'monospace' }}>{fmtFreq(r.frecuencia)}</td>
+                      <td style={{ ...tdS, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{fmt2(r.antiguedadMedia)} a</td>
+                      <td style={{ ...tdS, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{fmt2(r.siniestrosPorAnio)}</td>
+                      <td style={{ ...tdS, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{fmtFreq(r.frecuencia)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -1127,15 +1091,16 @@ export default function HojaInforme({
 
         {/* ── Siniestralidad Daños Propios ──────────────────────────────── */}
         {danosPropiosItems && (
-          <div style={{ borderRadius: 6, overflow: 'hidden', border: '1px solid var(--t-line)', background: 'var(--t-surface)', flexShrink: 0 }}>
-            <div style={{ padding: '6px 14px', borderBottom: '1px solid var(--t-line)', background: 'var(--t-line-soft)' }}>
-              <span style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--t-text-2)' }}>Siniestralidad Daños Propios</span>
+          <div style={{ borderTop: '1px solid var(--t-line)', paddingTop: 14, flexShrink: 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 14, gap: 20 }}>
+              <h2 style={{ margin: 0, fontSize: 18, fontWeight: 720, letterSpacing: '-0.025em', color: 'var(--t-text)' }}>Siniestralidad Daños Propios</h2>
+              <span style={{ fontSize: 12.6, color: 'var(--t-text-2)' }}>Resumen global</span>
             </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 1, background: 'var(--t-bg)' }}>
-              {danosPropiosItems.map(([l, v]) => (
-                <div key={l} style={{ background: 'var(--t-surface)', padding: '8px 14px', flex: '1 0 80px' }}>
-                  <div style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--t-text-3)' }}>{l}</div>
-                  <div style={{ fontSize: 16, fontWeight: 900, color: 'var(--t-text)', fontFamily: 'monospace' }}>{v}</div>
+            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${danosPropiosItems.length}, 1fr)`, border: '1px solid var(--t-line)', borderRadius: 7, overflow: 'hidden', background: 'var(--t-surface)' }}>
+              {danosPropiosItems.map(([l, v], idx) => (
+                <div key={l} style={{ padding: '18px 16px', borderRight: idx < danosPropiosItems.length - 1 ? '1px solid var(--t-line)' : 'none', textAlign: 'center' }}>
+                  <div style={{ fontSize: 10.6, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--t-text-3)', marginBottom: 6 }}>{l}</div>
+                  <div style={{ fontSize: 22, fontWeight: 720, color: 'var(--t-text)', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.025em' }}>{v}</div>
                 </div>
               ))}
             </div>
@@ -1143,157 +1108,132 @@ export default function HojaInforme({
         )}
 
         {/* ── Composición de flota ─────────────────────────────────────────── */}
-        <Card title="Composición de flota">
-          <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', width: '100%', boxSizing: 'border-box' }}>
-            <table style={{ minWidth: 300, width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+        <Card title="Composición de la flota" desc="Distribución por modalidad">
+          <div style={tableWrapS}>
+            <table style={{ minWidth: 300, width: '100%', borderCollapse: 'collapse' }}>
               <thead>
-                <tr style={{ background: 'var(--t-line-soft)' }}>
-                  <th style={thS}>Tipo vehículo</th>
+                <tr>
+                  <th style={thS}>Tipo de vehículo</th>
                   {pivot.cobs.map(c => <th key={c} style={{ ...thS, textAlign: 'center' }}>{c || '—'}</th>)}
-                  <th style={{ ...thS, textAlign: 'center', fontWeight: 900 }}>Total</th>
+                  <th style={{ ...thS, textAlign: 'center' }}>Total informado</th>
                 </tr>
               </thead>
               <tbody>
                 {pivot.tipos.map(tipo => {
                   const total = pivot.cobs.reduce((a, c) => a + (pivot.counts[tipo]?.[c] ?? 0), 0);
                   return (
-                    <tr key={tipo} style={{ borderBottom: '1px solid var(--t-line)' }}>
-                      <td style={tdS}>{tipo}</td>
-                      {pivot.cobs.map(c => <td key={c} style={{ ...tdS, textAlign: 'center' }}>{pivot.counts[tipo]?.[c] ?? 0}</td>)}
-                      <td style={{ ...tdS, textAlign: 'center', fontWeight: 900 }}>{total}</td>
+                    <tr key={tipo}>
+                      <td style={{ ...tdS, fontWeight: 710 }}>{tipo}</td>
+                      {pivot.cobs.map(c => <td key={c} style={{ ...tdS, textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}>{pivot.counts[tipo]?.[c] ?? 0}</td>)}
+                      <td style={{ ...tdS, textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}>{total}</td>
                     </tr>
                   );
                 })}
-                <tr style={{ borderTop: '2px solid var(--t-line)', background: 'var(--t-line-soft)', fontWeight: 900 }}>
-                  <td style={tdS}>Total</td>
+                <tr style={{ background: 'var(--t-line-soft)', fontWeight: 760 }}>
+                  <td style={{ ...tdS, borderTop: '2px solid var(--t-line)' }}>Total declarado por expediente</td>
                   {pivot.cobs.map(c => {
                     const t = pivot.tipos.reduce((a, ti) => a + (pivot.counts[ti]?.[c] ?? 0), 0);
-                    return <td key={c} style={{ ...tdS, textAlign: 'center', fontWeight: 900 }}>{t}</td>;
+                    return <td key={c} style={{ ...tdS, textAlign: 'center', fontVariantNumeric: 'tabular-nums', borderTop: '2px solid var(--t-line)' }}>{t}</td>;
                   })}
-                  <td style={{ ...tdS, textAlign: 'center', fontWeight: 900 }}>{totalVehiculos}</td>
+                  <td style={{ ...tdS, textAlign: 'center', fontVariantNumeric: 'tabular-nums', borderTop: '2px solid var(--t-line)' }}>{totalVehiculos}</td>
                 </tr>
               </tbody>
             </table>
           </div>
         </Card>
 
-        {/* ── Primas solicitadas ───────────────────────────────────────────── */}
-        <Card title="Primas solicitadas">
-          <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', width: '100%', boxSizing: 'border-box' }}>
-            <table style={{ minWidth: 320, width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+        {/* ── Comparativa de primas ────────────────────────────────────────── */}
+        <Card title="Comparativa de primas" desc="Importes anuales · valores por vehículo y total">
+          <div style={tableWrapS}>
+            <table style={{ minWidth: 560, width: '100%', borderCollapse: 'collapse' }}>
               <thead>
-                <tr style={{ background: 'var(--t-line-soft)' }}>
-                  {['Tipo vehículo', 'Coberturas', 'Nº', 'Prima media/veh.', 'Total'].map(h =>
-                    <th key={h} style={thS}>{h}</th>)}
+                <tr>
+                  <th style={{ ...thS, width: '28%' }}>Tipología y coberturas</th>
+                  <th style={{ ...thS, textAlign: 'center' }}>Veh.</th>
+                  <th style={{ ...thS, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>Sol./veh.</th>
+                  <th style={{ ...thS, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>Prima solicitada</th>
+                  <th style={{ ...thS, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>MMT/veh.</th>
+                  <th style={{ ...thS, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>Prima MMT</th>
+                  <th style={{ ...thS, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>Diferencia</th>
                 </tr>
               </thead>
               <tbody>
                 {primasSol.length === 0
-                  ? <tr><td colSpan={5} style={{ textAlign: 'center', padding: '20px 0', color: '#9ca3af' }}>Sin datos</td></tr>
-                  : <>
-                      {primasSol.map(r => (
-                        <tr key={r.key} style={{ borderBottom: '1px solid var(--t-line)' }}>
-                          <td style={{ ...tdS, fontWeight: 600 }}>{r.tipo}</td>
-                          <td style={{ ...tdS, fontSize: 11 }}>{r.cob}</td>
-                          <td style={{ ...tdS, textAlign: 'center' }}>{r.count}</td>
-                          <td style={{ ...tdS, textAlign: 'right', fontFamily: 'monospace' }}>{r.media ? fmtEur2(r.media) : '—'}</td>
-                          <td style={{ ...tdS, textAlign: 'right', fontFamily: 'monospace', fontWeight: 700 }}>{r.total ? fmtEur(r.total) : '—'}</td>
-                        </tr>
-                      ))}
-                      <tr style={{ borderTop: '2px solid var(--t-line)', background: 'var(--t-line-soft)', fontWeight: 900 }}>
-                        <td colSpan={2} style={tdS}>Total</td>
-                        <td style={{ ...tdS, textAlign: 'center' }}>{primasSol.reduce((a, r) => a + r.count, 0)}</td>
-                        <td style={tdS} />
-                        <td style={{ ...tdS, textAlign: 'right', fontFamily: 'monospace' }}>{totalSol ? fmtEur(totalSol) : '—'}</td>
-                      </tr>
-                    </>
-                }
-              </tbody>
-            </table>
-          </div>
-        </Card>
-
-        {/* ── Primas MMT ──────────────────────────────────────────────────── */}
-        <Card title="Primas MMT">
-          <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', width: '100%', boxSizing: 'border-box' }}>
-            <table style={{ minWidth: 320, width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
-              <thead>
-                <tr style={{ background: 'var(--t-line-soft)' }}>
-                  {['Tipo vehículo', 'Coberturas', 'Nº', 'Prima/veh.', 'Total'].map(h =>
-                    <th key={h} style={thS}>{h}</th>)}
-                </tr>
-              </thead>
-              <tbody>
-                {mmtRows.length === 0
-                  ? <tr><td colSpan={5} style={{ textAlign: 'center', padding: '20px 0', color: '#9ca3af' }}>Sin datos</td></tr>
-                  : <>
-                      {mmtRows.map(r => (
-                        <tr key={r.key} style={{ borderBottom: '1px solid var(--t-line)' }}>
-                          <td style={{ ...tdS, fontWeight: 600 }}>{r.tipo}</td>
-                          <td style={{ ...tdS, fontSize: 11 }}>{r.cob}</td>
-                          <td style={{ ...tdS, textAlign: 'center' }}>{r.count}</td>
+                  ? <tr><td colSpan={7} style={{ textAlign: 'center', padding: '24px 0', color: 'var(--t-text-3)', fontSize: 13.8 }}>Sin datos</td></tr>
+                  : primasSol.map((r, i) => {
+                      const mmt = mmtRows[i];
+                      const difRow = (mmt?.total ?? 0) - r.total;
+                      const hasDif = mmt?.total != null;
+                      return (
+                        <tr key={r.key}>
+                          <td style={tdS}>
+                            <span style={{ fontWeight: 710 }}>{r.tipo}</span>
+                            <div style={{ fontSize: 12, color: 'var(--t-text-2)', marginTop: 4, lineHeight: 1.35 }}>{r.cob}</div>
+                          </td>
+                          <td style={{ ...tdS, textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}>{r.count}</td>
+                          <td style={{ ...tdS, textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}>{r.media ? fmtEur2(r.media) : '—'}</td>
+                          <td style={{ ...tdS, textAlign: 'center', fontVariantNumeric: 'tabular-nums', fontWeight: 700 }}>{r.total ? fmtEur(r.total) : '—'}</td>
                           <td style={{ ...tdS, textAlign: 'right' }}>
                             <input
                               inputMode="decimal"
-                              value={r.prima != null ? r.prima : ''}
+                              value={mmt?.prima != null ? mmt.prima : ''}
                               onChange={e => { const v = e.target.value; if (v === '' || /^\d*\.?\d*$/.test(v)) handleMmtChange(r.key, v); }}
                               placeholder="—"
                               style={{
-                                width: 90, textAlign: 'right', fontFamily: 'monospace', fontSize: 12,
-                                background: 'var(--t-bg)', border: '1px solid var(--t-line)',
-                                outline: 'none', padding: '4px 8px', borderRadius: 6, color: 'var(--t-text)',
+                                minWidth: 96, textAlign: 'center', fontVariantNumeric: 'tabular-nums', fontSize: 13,
+                                background: 'var(--t-surface)', border: '1px solid var(--t-line)',
+                                outline: 'none', padding: '9px 10px', borderRadius: 5, color: 'var(--t-text)',
                               }}
-                              onFocus={e => { e.currentTarget.style.borderColor = 'var(--t-blue)'; e.currentTarget.style.boxShadow = 'none'; }}
-                              onBlur={e => { e.currentTarget.style.borderColor = 'var(--t-line)'; e.currentTarget.style.boxShadow = 'none'; }}
+                              onFocus={e => { e.currentTarget.style.borderColor = 'var(--t-blue)'; }}
+                              onBlur={e => { e.currentTarget.style.borderColor = 'var(--t-line)'; }}
                             />
                           </td>
-                          <td style={{ ...tdS, textAlign: 'right', fontFamily: 'monospace', fontWeight: 700 }}>
-                            {r.total != null ? fmtEur(r.total) : '—'}
+                          <td style={{ ...tdS, textAlign: 'center', fontVariantNumeric: 'tabular-nums', fontWeight: 700 }}>{mmt?.total != null ? fmtEur(mmt.total) : '—'}</td>
+                          <td style={{ ...tdS, textAlign: 'center', fontVariantNumeric: 'tabular-nums', fontWeight: 700, color: hasDif ? difColor(difRow) : 'var(--t-text-3)' }}>
+                            {hasDif ? (difRow >= 0 ? '+' : '') + fmtEur(difRow) : '—'}
                           </td>
                         </tr>
-                      ))}
-                      <tr style={{ borderTop: '2px solid var(--t-line)', background: 'var(--t-line-soft)', fontWeight: 900 }}>
-                        <td colSpan={2} style={tdS}>Total</td>
-                        <td style={{ ...tdS, textAlign: 'center' }}>{mmtRows.reduce((a, r) => a + r.count, 0)}</td>
-                        <td style={tdS} />
-                        <td style={{ ...tdS, textAlign: 'right', fontFamily: 'monospace' }}>
-                          {mmtRows.some(r => r.total != null) ? fmtEur(totalMmt) : '—'}
-                        </td>
-                      </tr>
-                    </>
+                      );
+                    })
                 }
+                {primasSol.length > 0 && (
+                  <tr style={{ background: 'var(--t-line-soft)', fontWeight: 760 }}>
+                    <td style={{ ...tdS, borderTop: '2px solid var(--t-line)' }}>TOTAL</td>
+                    <td style={{ ...tdS, textAlign: 'center', fontVariantNumeric: 'tabular-nums', borderTop: '2px solid var(--t-line)' }}>{primasSol.reduce((a, r) => a + r.count, 0)}</td>
+                    <td style={{ ...tdS, borderTop: '2px solid var(--t-line)' }}>—</td>
+                    <td style={{ ...tdS, textAlign: 'right', fontVariantNumeric: 'tabular-nums', borderTop: '2px solid var(--t-line)' }}>{totalSol ? fmtEur(totalSol) : '—'}</td>
+                    <td style={{ ...tdS, borderTop: '2px solid var(--t-line)' }}>—</td>
+                    <td style={{ ...tdS, textAlign: 'right', fontVariantNumeric: 'tabular-nums', borderTop: '2px solid var(--t-line)' }}>{mmtRows.some(r => r.total != null) ? fmtEur(totalMmt) : '—'}</td>
+                    <td style={{ ...tdS, textAlign: 'right', fontVariantNumeric: 'tabular-nums', borderTop: '2px solid var(--t-line)', color: difColor(dif) }}>{totalMmt ? (dif >= 0 ? '+' : '') + fmtEur(dif) : '—'}</td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
+          {totalSol > 0 && totalMmt > 0 && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', borderTop: '1px solid var(--t-line)', borderBottom: '1px solid var(--t-line)', marginTop: 19 }}>
+              {[
+                { label: 'Prima solicitada total', value: fmtEur(totalSol), color: 'var(--t-text)' },
+                { label: 'Prima de referencia MMT', value: fmtEur(totalMmt), color: 'var(--t-text)' },
+                { label: 'Diferencia', value: (dif >= 0 ? '+' : '') + fmtEur(dif), color: dif > 0 ? '#54bc8d' : dif < 0 ? '#dc2626' : 'var(--t-text)' },
+                { label: 'Variación', value: (pctDif >= 0 ? '+' : '') + pctDif.toFixed(1) + ' %', color: dif > 0 ? '#54bc8d' : dif < 0 ? '#dc2626' : 'var(--t-text)' },
+              ].map(({ label, value, color }, idx) => (
+                <div key={label} style={{ padding: '22px 18px', borderRight: idx < 3 ? '1px solid var(--t-line)' : 'none', textAlign: 'center' }}>
+                  <label style={{ display: 'block', fontSize: 11.4, color: 'var(--t-text-2)', fontWeight: 650, marginBottom: 10 }}>{label}</label>
+                  <strong style={{ display: 'block', fontSize: 30, letterSpacing: '-0.04em', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums', color }}>{value}</strong>
+                </div>
+              ))}
+            </div>
+          )}
         </Card>
-
-        {/* ── Diferencia ───────────────────────────────────────────────────── */}
-        {totalSol > 0 && totalMmt > 0 && (
-          <div style={{
-            display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 10,
-            width: '100%', boxSizing: 'border-box', flexShrink: 0,
-          }}>
-            {[
-              { label: 'Prima sol. total', value: fmtEur(totalSol), color: 'var(--t-text)', bg: 'var(--t-surface)', border: 'var(--t-line)' },
-              { label: 'Prima MMT total', value: fmtEur(totalMmt), color: 'var(--t-blue)', bg: 'var(--t-surface)', border: 'var(--t-line)' },
-              { label: 'Diferencia (€)', value: (dif >= 0 ? '+' : '') + fmtEur(dif), color: difColor(dif), bg: 'var(--t-surface)', border: 'var(--t-line)' },
-              { label: 'Variación (%)', value: (pctDif >= 0 ? '+' : '') + pctDif.toFixed(1) + '%', color: difColor(dif), bg: 'var(--t-surface)', border: 'var(--t-line)' },
-            ].map(({ label, value, color, bg, border }) => (
-              <div key={label} style={{ background: bg, border: `1px solid ${border}`, borderRadius: 10, padding: '12px 16px' }}>
-                <div style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--t-text-3)', marginBottom: 4 }}>{label}</div>
-                <div style={{ fontSize: 18, fontWeight: 900, fontFamily: 'monospace', color }}>{value}</div>
-              </div>
-            ))}
-          </div>
-        )}
 
         {/* ── Coste estimado ORION ────────────────────────────────────────── */}
         {Object.keys(orionResults).length > 0 && (() => {
           const fotoUsada = Object.values(orionResults).find(r => r?.fecha_foto)?.fecha_foto ?? '—';
           return (
           <Card title="Análisis ORION — Coste y Primas">
-            <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', width: '100%', boxSizing: 'border-box' }}>
-              <table style={{ minWidth: 560, width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+            <div style={tableWrapS}>
+              <table style={{ minWidth: 560, width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ background: 'var(--t-line-soft)' }}>
                     {['Tipo vehículo', 'Coberturas', 'Nº', 'P.Sol./veh', 'P.MMT/veh', 'Coste ORION/veh', 'P.ORION/veh', 'Estado'].map(h =>
@@ -1671,16 +1611,18 @@ export default function HojaInforme({
 
 // ─── Card wrapper ─────────────────────────────────────────────────────────────
 
-function Card({ title, children, style }: { title: string; children: React.ReactNode; style?: React.CSSProperties }) {
+function Card({ title, desc, children, style }: { title: string; desc?: string; children: React.ReactNode; style?: React.CSSProperties }) {
   return (
-    <div style={{ borderRadius: 10, overflow: 'hidden', border: '1px solid var(--t-line)', background: 'var(--t-surface)', width: '100%', minWidth: 0, boxSizing: 'border-box', flexShrink: 0, ...style }}>
-      <div style={{ padding: '8px 14px', borderBottom: '1px solid var(--t-line)', background: 'var(--t-line-soft)' }}>
-        <span style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--t-text-2)' }}>{title}</span>
+    <div style={{ borderTop: '1px solid var(--t-line)', paddingTop: 14, width: '100%', minWidth: 0, boxSizing: 'border-box', flexShrink: 0, ...style }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 14, gap: 20 }}>
+        <h2 style={{ margin: 0, fontSize: 18, fontWeight: 720, letterSpacing: '-0.025em', color: 'var(--t-text)' }}>{title}</h2>
+        {desc && <span style={{ fontSize: 12.6, color: 'var(--t-text-2)', flexShrink: 0 }}>{desc}</span>}
       </div>
       {children}
     </div>
   );
 }
 
-const thS: React.CSSProperties = { padding: '7px 10px', textAlign: 'left', fontSize: 11, fontWeight: 700, borderBottom: '1px solid var(--t-line)', color: 'var(--t-text-3)' };
-const tdS: React.CSSProperties = { padding: '6px 10px', fontSize: 12, color: 'var(--t-text)' };
+const tableWrapS: React.CSSProperties = { overflowX: 'auto', WebkitOverflowScrolling: 'touch', width: '100%', boxSizing: 'border-box', border: '1px solid var(--t-line)', borderRadius: 7, background: 'var(--t-surface)' };
+const thS: React.CSSProperties = { padding: '13px 16px', textAlign: 'left', fontSize: 11.6, fontWeight: 680, borderBottom: '1px solid var(--t-line)', color: 'var(--t-text-3)', letterSpacing: '0.02em', background: 'var(--t-line-soft)', whiteSpace: 'nowrap' };
+const tdS: React.CSSProperties = { padding: '15px 16px', fontSize: 13.8, color: 'var(--t-text)', borderTop: '1px solid var(--t-line)', verticalAlign: 'middle' };
