@@ -947,52 +947,30 @@ export default function HojaInforme({
   return (
     <div className="flex flex-col h-full min-h-0" style={{ background: 'transparent', width: '100%', minWidth: 0, overflow: 'hidden' }}>
 
-      {/* Toolbar */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px', borderBottom: '1px solid var(--t-line)', background: 'transparent', flexShrink: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--t-text-2)' }}>
+      {/* report-actions — cabecera del informe */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid var(--t-line)', flexShrink: 0, gap: 20 }}>
+        <div>
+          <strong style={{ fontSize: 15, fontWeight: 700, color: 'var(--t-text)', display: 'block', lineHeight: 1.2 }}>
             Informe · {totalVehiculos} vehículos
-          </span>
-          <span style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-            background: adrActivo ? 'rgba(220,38,38,0.1)' : 'rgba(251,191,36,0.08)',
-            border: `1px solid ${adrActivo ? 'rgba(220,38,38,0.3)' : 'rgba(251,191,36,0.25)'}`,
-            borderRadius: 20, padding: '3px 12px',
-            fontSize: 10, fontWeight: 800, letterSpacing: '0.04em',
-          }}>
-            {corredorLabel && (
-              <span style={{ color: '#fbbf24' }}>★ {corredorLabel}</span>
-            )}
-            {corredorLabel && (
-              <span style={{ color: 'var(--t-line)', fontWeight: 400 }}>·</span>
-            )}
-            <span style={{ color: adrActivo ? '#ef4444' : 'var(--t-text-3)' }}>
-              {corredorLabel
-                ? `que ${adrActivo ? 'SÍ' : 'NO'} lleva ADR`
-                : `ADR ${adrActivo ? 'SÍ' : 'NO'}`}
-            </span>
-          </span>
-          {tomadores.size > 1 && (
-            <span style={{
-              display: 'inline-flex', alignItems: 'center', gap: 5,
-              background: 'transparent', border: '1px solid var(--t-line)',
-              borderRadius: 20, padding: '3px 12px',
-              fontSize: 10, fontWeight: 800, letterSpacing: '0.04em', color: 'var(--t-text-2)',
-            }}>
-              FLOTA COMPUESTA POR {tomadores.size} TOMADORES
-            </span>
-          )}
+          </strong>
+          <div style={{ fontSize: 12, color: 'var(--t-text-2)', marginTop: 5, lineHeight: 1.4 }}>
+            {[
+              tomadores.size > 1 ? `${tomadores.size} tomadores` : null,
+              totalVehiculos > 0 ? (ambito.label ?? 'Nacional') : null,
+              fechaVctoDisplay ? `vencimiento ${fechaVctoDisplay}` : null,
+              corredorLabel ? `${corredorLabel} · ${adrActivo ? 'SÍ lleva ADR' : 'NO lleva ADR'}` : (adrActivo ? 'ADR SÍ' : null),
+            ].filter(Boolean).join(' · ')}
+          </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexShrink: 0 }}>
           <button onClick={handleRecalcPrimas} style={{
-            display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 8,
+            display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 6,
             background: 'transparent', border: '1px solid var(--t-line)',
-            color: 'var(--t-blue)', fontSize: 11, fontWeight: 700, cursor: 'pointer',
-            textTransform: 'uppercase', letterSpacing: '0.08em',
+            color: 'var(--t-text)', fontSize: 12, fontWeight: 650, cursor: 'pointer',
           }}
             title="Recalcula las primas MMT desde los valores de la Oferta y la tarifa"
-            onMouseEnter={e => (e.currentTarget.style.background = 'var(--t-line-soft)')}
-            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+            onMouseEnter={e => (e.currentTarget.style.filter = 'brightness(1.13)')}
+            onMouseLeave={e => (e.currentTarget.style.filter = '')}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/>
               <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
@@ -1000,13 +978,12 @@ export default function HojaInforme({
             Recalcular primas
           </button>
           <button onClick={handlePdf} style={{
-            display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 8,
-            background: 'transparent', border: '1px solid var(--t-line)',
-            color: 'var(--t-text-2)', fontSize: 11, fontWeight: 700, cursor: 'pointer',
-            textTransform: 'uppercase', letterSpacing: '0.08em',
+            display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 6,
+            background: 'var(--t-blue)', border: '1px solid var(--t-blue)',
+            color: '#fff', fontSize: 12, fontWeight: 650, cursor: 'pointer',
           }}
-            onMouseEnter={e => (e.currentTarget.style.background = 'var(--t-line-soft)')}
-            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+            onMouseEnter={e => (e.currentTarget.style.filter = 'brightness(1.13)')}
+            onMouseLeave={e => (e.currentTarget.style.filter = '')}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" />
               <line x1="12" y1="18" x2="12" y2="12" /><line x1="9" y1="15" x2="15" y2="15" />
@@ -1016,20 +993,20 @@ export default function HojaInforme({
         </div>
       </div>
 
-      {/* Contenido: columna única, scroll vertical; overflowX auto como fallback */}
-      <div className="flex-1 custom-scrollbar" style={{ overflowY: 'auto', overflowX: 'auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 12, width: '100%', boxSizing: 'border-box' }}>
+      {/* Contenido: columna única, scroll vertical */}
+      <div className="flex-1 custom-scrollbar" style={{ overflowY: 'auto', overflowX: 'auto', padding: '24px 24px 40px', display: 'flex', flexDirection: 'column', gap: 20, width: '100%', boxSizing: 'border-box' }}>
 
         {/* ── Summary bar: Ámbito · Vencimiento · SINCO ───────────────── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '148px 168px 1fr', gap: 0, border: '1px solid var(--t-line)', borderRadius: 8, overflow: 'hidden', background: 'var(--t-surface)', alignItems: 'stretch', flexShrink: 0 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '160px 180px 1fr', gap: 0, border: '1px solid var(--t-line)', borderRadius: 8, overflow: 'hidden', background: 'var(--t-surface)', alignItems: 'stretch', flexShrink: 0 }}>
           {/* Ámbito */}
-          <div style={{ padding: '18px 20px', borderRight: '1px solid var(--t-line)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}>
-            <small style={{ display: 'block', fontSize: 10.5, fontWeight: 700, letterSpacing: '0.05em', color: 'var(--t-text-2)', marginBottom: 10, textTransform: 'uppercase' }}>Ámbito</small>
-            <strong style={{ fontSize: 22, lineHeight: 1.1, color: 'var(--t-text)', fontWeight: 700 }}>{totalVehiculos > 0 ? (ambito.label ?? 'Nacional') : '—'}</strong>
+          <div style={{ padding: '20px 22px', borderRight: '1px solid var(--t-line)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}>
+            <small style={{ display: 'block', fontSize: 11.4, fontWeight: 700, letterSpacing: '0.05em', color: 'var(--t-text-2)', marginBottom: 10, textTransform: 'uppercase' }}>Ámbito</small>
+            <strong style={{ fontSize: 23, lineHeight: 1.1, color: 'var(--t-text)', fontWeight: 700 }}>{totalVehiculos > 0 ? (ambito.label ?? 'Nacional') : '—'}</strong>
           </div>
           {/* Vencimiento */}
-          <div style={{ padding: '18px 20px', borderRight: '1px solid var(--t-line)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}>
-            <small style={{ display: 'block', fontSize: 10.5, fontWeight: 700, letterSpacing: '0.05em', color: 'var(--t-text-2)', marginBottom: 10, textTransform: 'uppercase' }}>Vencimiento</small>
-            <strong style={{ fontSize: 22, lineHeight: 1.1, color: 'var(--t-text)', fontWeight: 700 }}>{fechaVctoDisplay ?? '—'}</strong>
+          <div style={{ padding: '20px 22px', borderRight: '1px solid var(--t-line)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}>
+            <small style={{ display: 'block', fontSize: 11.4, fontWeight: 700, letterSpacing: '0.05em', color: 'var(--t-text-2)', marginBottom: 10, textTransform: 'uppercase' }}>Vencimiento</small>
+            <strong style={{ fontSize: 23, lineHeight: 1.1, color: 'var(--t-text)', fontWeight: 700 }}>{fechaVctoDisplay ?? '—'}</strong>
           </div>
           {/* SINCO global */}
           {(() => {
@@ -1047,8 +1024,8 @@ export default function HojaInforme({
               ['Frecuencia', fmtFreq(sincoGlobal.frecuencia)],
             ] : [];
             return (
-              <div style={{ padding: '14px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <small style={{ display: 'block', fontSize: 10.5, letterSpacing: '0.07em', color: 'var(--t-text-2)', fontWeight: 700, marginBottom: 14, textTransform: 'uppercase' }}>
+              <div style={{ padding: '16px 22px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <small style={{ display: 'block', fontSize: 11.4, letterSpacing: '0.07em', color: 'var(--t-text-2)', fontWeight: 700, marginBottom: 14, textTransform: 'uppercase' }}>
                   Siniestralidad SINCO · Vista Global
                 </small>
                 {items.length > 0 ? (
@@ -1056,7 +1033,7 @@ export default function HojaInforme({
                     {items.map(([l, v]) => (
                       <div key={l} style={{ textAlign: 'center' }}>
                         <b style={{ display: 'block', fontSize: 22, lineHeight: 1.05, marginBottom: 5, color: 'var(--t-text)', fontWeight: 700 }}>{v}</b>
-                        <span style={{ fontSize: 10, color: 'var(--t-text-3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{l}</span>
+                        <span style={{ fontSize: 10.6, color: 'var(--t-text-3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{l}</span>
                       </div>
                     ))}
                   </div>
@@ -1137,7 +1114,7 @@ export default function HojaInforme({
                     </tr>
                   );
                 })}
-                <tr style={{ background: 'var(--t-line-soft)', fontWeight: 760 }}>
+                <tr style={{ background: 'var(--t-head)', fontWeight: 760 }}>
                   <td style={{ ...tdS, borderTop: '2px solid var(--t-line)' }}>Total declarado por expediente</td>
                   {pivot.cobs.map(c => {
                     const t = pivot.tipos.reduce((a, ti) => a + (pivot.counts[ti]?.[c] ?? 0), 0);
@@ -1205,7 +1182,7 @@ export default function HojaInforme({
                     })
                 }
                 {primasSol.length > 0 && (
-                  <tr style={{ background: 'var(--t-line-soft)', fontWeight: 760 }}>
+                  <tr style={{ background: 'var(--t-head)', fontWeight: 760 }}>
                     <td style={{ ...tdS, borderTop: '2px solid var(--t-line)' }}>TOTAL</td>
                     <td style={{ ...tdS, textAlign: 'center', fontVariantNumeric: 'tabular-nums', borderTop: '2px solid var(--t-line)' }}>{primasSol.reduce((a, r) => a + r.count, 0)}</td>
                     <td style={{ ...tdS, borderTop: '2px solid var(--t-line)' }}>—</td>
@@ -1632,5 +1609,5 @@ function Card({ title, desc, children, style }: { title: string; desc?: string; 
 }
 
 const tableWrapS: React.CSSProperties = { overflowX: 'auto', WebkitOverflowScrolling: 'touch', width: '100%', boxSizing: 'border-box', border: '1px solid var(--t-line)', borderRadius: 7, background: 'var(--t-surface)' };
-const thS: React.CSSProperties = { padding: '13px 16px', textAlign: 'left', fontSize: 11.6, fontWeight: 680, borderBottom: '1px solid var(--t-line)', color: 'var(--t-text-3)', letterSpacing: '0.02em', background: 'var(--t-line-soft)', whiteSpace: 'nowrap' };
+const thS: React.CSSProperties = { padding: '13px 16px', textAlign: 'left', fontSize: 11.6, fontWeight: 680, borderBottom: '1px solid var(--t-line)', color: 'var(--t-text-2)', letterSpacing: '0.02em', background: 'var(--t-head)', whiteSpace: 'nowrap' };
 const tdS: React.CSSProperties = { padding: '15px 16px', fontSize: 13.8, color: 'var(--t-text)', borderTop: '1px solid var(--t-line)', verticalAlign: 'middle' };

@@ -486,6 +486,7 @@
   --t-amber:         #f0b94d;
   --t-amber-bg:      rgba(240, 185, 77, 0.12);
   --t-amber-border:  rgba(240, 185, 77, 0.38);
+  --t-head:          #13161a;
 }
 
 [data-theme="light"] {
@@ -508,6 +509,7 @@
   --t-amber:         #b7791f;
   --t-amber-bg:      rgba(183, 121, 31, 0.10);
   --t-amber-border:  rgba(183, 121, 31, 0.35);
+  --t-head:          #f0f2f4;
 }
 
 /* Light mode: selects and options use white bg + dark text */
