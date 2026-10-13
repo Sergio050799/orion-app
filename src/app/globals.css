@@ -489,6 +489,7 @@
 }
 
 [data-theme="light"] {
+  color-scheme: light;
   --t-bg:            #f5f6f7;
   --t-surface:       #ffffff;
   --t-line:          rgba(0, 0, 0, 0.09);

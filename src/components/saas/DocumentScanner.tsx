@@ -285,8 +285,10 @@ export default function DocumentScanner({ onConfirm, onCancel, initialImage }: D
     };
 
     const modalStyle: React.CSSProperties = {
-        background: 'rgba(2,6,23,0.97)',
+        background: '#020617',
         border: '1px solid rgba(255,255,255,0.1)',
+        color: '#f4f4f5',
+        colorScheme: 'dark',
     };
 
     const panelStyle: React.CSSProperties = {

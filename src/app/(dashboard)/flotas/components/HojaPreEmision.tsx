@@ -882,20 +882,17 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
                     const isActive = sortConfig?.col === col;
                     return (
                       <th key={col} style={{ ...thS, width: widths[ci], cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSortCol(col)}>
-                        {labels[ci]}{' '}
-                        <span style={{ fontSize: 8, opacity: isActive ? 0.9 : 0.2 }}>{isActive && sortConfig!.dir === 'desc' ? '▼' : '▲'}</span>
+                        {labels[ci]}
                       </th>
                     );
                   })}
                   <th style={{ ...thS, width: 52, cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSortCol('anyo_fabricacion')}>
-                    Año{' '}
-                    <span style={{ fontSize: 8, opacity: sortConfig?.col === 'anyo_fabricacion' ? 0.9 : 0.2 }}>{sortConfig?.col === 'anyo_fabricacion' && sortConfig.dir === 'desc' ? '▼' : '▲'}</span>
+                    Año
                   </th>
                   <th style={{ ...thS }}>Versión / Acabado</th>
                   <th style={{ ...thS, width: 120 }}>ID Catálogo</th>
                   <th style={{ ...thS, width: 110, cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSortCol('status')}>
-                    Estado{' '}
-                    <span style={{ fontSize: 8, opacity: sortConfig?.col === 'status' ? 0.9 : 0.2 }}>{sortConfig?.col === 'status' && sortConfig.dir === 'desc' ? '▼' : '▲'}</span>
+                    Estado
                   </th>
                 </tr>
               </thead>

@@ -78,9 +78,9 @@ function CellDropdown({ value, options, disabled, onChange }: {
   return (
     <div ref={ref} style={{ position: 'relative', display: 'inline-block', width: '100%' }}>
       <button type="button" onClick={() => setOpen(o => !o)}
-        style={{ display:'flex', alignItems:'center', justifyContent:'space-between', width:'100%', padding:'2px 6px', fontSize:12, background:'#ffffff', border:'1px solid #e5e7eb', borderRadius:4, cursor:'pointer', minWidth:80 }}>
-        <span style={{ color: value ? '#111827' : '#9ca3af', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', flex:1, textAlign:'left' }}>{value||'—'}</span>
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        style={{ display:'flex', alignItems:'center', justifyContent:'space-between', width:'100%', padding:'2px 6px', fontSize:12, background:'var(--t-surface)', border:'1px solid var(--t-line)', borderRadius:4, cursor:'pointer', minWidth:80, color:'var(--t-text)' }}>
+        <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', flex:1, textAlign:'left', opacity: value ? 1 : 0.4 }}>{value||'—'}</span>
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ opacity:0.4, flexShrink:0 }}><path d="M6 9l6 6 6-6"/></svg>
       </button>
       {open && createPortal(
         <div style={{
@@ -88,16 +88,17 @@ function CellDropdown({ value, options, disabled, onChange }: {
           top: (ref.current?.getBoundingClientRect().bottom ?? 0) + window.scrollY,
           left: (ref.current?.getBoundingClientRect().left ?? 0) + window.scrollX,
           width: Math.max(ref.current?.getBoundingClientRect().width ?? 0, 160),
-          zIndex: 9999, background:'#ffffff', border:'1px solid #e5e7eb', borderRadius:8,
-          boxShadow:'0 4px 16px rgba(0,0,0,0.12)', maxHeight:200, overflowY:'auto',
+          zIndex: 9999, background:'var(--t-surface)', border:'1px solid var(--t-line)', borderRadius:8,
+          boxShadow:'0 4px 16px rgba(0,0,0,0.18)', maxHeight:200, overflowY:'auto',
+          color: 'var(--t-text)',
         }} className="custom-scrollbar">
           {options.map(opt => (
             <button key={opt||'__empty__'} type="button"
-              style={{ display:'block', width:'100%', textAlign:'left', padding:'6px 10px', fontSize:12, background: value===opt?'#eff0ff':'transparent', color: value===opt?'#4338ca':'#374151', cursor:'pointer' }}
-              onMouseEnter={e=>{if(value!==opt)(e.currentTarget as HTMLElement).style.background='#f9fafb';}}
+              style={{ display:'block', width:'100%', textAlign:'left', padding:'6px 10px', fontSize:12, background: value===opt?'rgba(18,64,204,0.12)':'transparent', color: value===opt?'var(--t-blue)':'var(--t-text)', cursor:'pointer' }}
+              onMouseEnter={e=>{if(value!==opt)(e.currentTarget as HTMLElement).style.background='var(--t-line-soft)';}}
               onMouseLeave={e=>{if(value!==opt)(e.currentTarget as HTMLElement).style.background='transparent';}}
               onClick={()=>{ onChange(opt); setOpen(false); }}>
-              {opt||<span style={{color:'#9ca3af'}}>(vacío)</span>}
+              {opt||<span style={{opacity:0.4}}>(vacío)</span>}
             </button>
           ))}
         </div>,
