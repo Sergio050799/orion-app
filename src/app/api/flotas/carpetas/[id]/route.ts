@@ -4,9 +4,10 @@ import { notificarCambio } from '../../eventos/notificador';
 
 export const runtime = 'nodejs';
 
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const res = await apiGet(`/carpetas/${params.id}`);
+    const { id } = await params;
+    const res = await apiGet(`/carpetas/${id}`);
     const data = await res.json();
     if (!res.ok) return NextResponse.json(data, { status: res.status });
     return NextResponse.json(data);
@@ -16,10 +17,11 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   }
 }
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const body = await req.json();
-    const res = await apiPut(`/carpetas/${params.id}`, body);
+    const res = await apiPut(`/carpetas/${id}`, body);
     const data = await res.json();
     if (!res.ok) return NextResponse.json(data, { status: res.status });
     notificarCambio();
