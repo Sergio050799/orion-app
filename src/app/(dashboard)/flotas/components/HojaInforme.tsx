@@ -105,14 +105,20 @@ const COB_NOMBRES: Record<string, string> = {
 
 // ─── PDF Generator ────────────────────────────────────────────────────────────
 
+let _logoCache: string | null = null;
 async function fetchLogoDataUrl(): Promise<string> {
+  if (_logoCache) return _logoCache;
   try {
     const res = await fetch('/ORION_LOGO.png');
     const buf = await res.arrayBuffer();
     const bytes = new Uint8Array(buf);
+    const CHUNK = 8192;
     let bin = '';
-    bytes.forEach(b => { bin += String.fromCharCode(b); });
-    return 'data:image/png;base64,' + btoa(bin);
+    for (let i = 0; i < bytes.length; i += CHUNK) {
+      bin += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+    }
+    _logoCache = 'data:image/png;base64,' + btoa(bin);
+    return _logoCache;
   } catch {
     return '';
   }
@@ -155,7 +161,6 @@ function buildPdfHtml(data: {
   const dif      = totalMmt - totalSol;
   const pctDif   = totalSol > 0 ? (dif / totalSol) * 100 : 0;
   const dateStr  = today();
-  const refCode  = 'FLT-' + new Date().toISOString().slice(0, 10).replace(/-/g, '');
 
   const logoImg = data.logoSrc
     ? `<img class="orion-mark" src="${data.logoSrc}" alt="ORION" style="filter:brightness(0);">`
@@ -166,7 +171,7 @@ function buildPdfHtml(data: {
     <div class="report-wordmark">${logoImg} ORION</div>
     <div class="docseries">REPORTS / ESTUDIO DE FLOTAS</div>
   </div>
-  <div class="meta"><strong>${dateStr}</strong>Informe de estudio de flota<br>REF · ${refCode}</div>
+  <div class="meta"><strong>${dateStr}</strong>Informe de estudio de flota</div>
 </header>`;
 
   // Pivot rows
@@ -1187,7 +1192,7 @@ export default function HojaInforme({
                           <td style={{ ...tdS, textAlign: 'right', fontFamily: 'monospace', fontWeight: 700 }}>{r.total ? fmtEur(r.total) : '—'}</td>
                         </tr>
                       ))}
-                      <tr style={{ borderTop: '2px solid #d1d5db', background: '#f9fafb', fontWeight: 900 }}>
+                      <tr style={{ borderTop: '2px solid var(--t-line)', background: 'var(--t-line-soft)', fontWeight: 900 }}>
                         <td colSpan={2} style={tdS}>Total</td>
                         <td style={{ ...tdS, textAlign: 'center' }}>{primasSol.reduce((a, r) => a + r.count, 0)}</td>
                         <td style={tdS} />
@@ -1239,7 +1244,7 @@ export default function HojaInforme({
                           </td>
                         </tr>
                       ))}
-                      <tr style={{ borderTop: '2px solid #d1d5db', background: '#f9fafb', fontWeight: 900 }}>
+                      <tr style={{ borderTop: '2px solid var(--t-line)', background: 'var(--t-line-soft)', fontWeight: 900 }}>
                         <td colSpan={2} style={tdS}>Total</td>
                         <td style={{ ...tdS, textAlign: 'center' }}>{mmtRows.reduce((a, r) => a + r.count, 0)}</td>
                         <td style={tdS} />

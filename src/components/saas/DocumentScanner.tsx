@@ -290,12 +290,13 @@ export default function DocumentScanner({ onConfirm, onCancel, initialImage }: D
     };
 
     const panelStyle: React.CSSProperties = {
-        background: 'rgba(255,255,255,0.03)',
+        background: 'rgba(8,15,35,0.85)',
         border: '1px solid rgba(255,255,255,0.07)',
     };
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200"
+            data-theme="dark"
             style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)' }}>
             <div
                 ref={containerRef}
@@ -308,7 +309,7 @@ export default function DocumentScanner({ onConfirm, onCancel, initialImage }: D
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
                     <div>
-                        <h2 className="text-sm font-black text-white uppercase tracking-widest">Escáner de Documentos</h2>
+                        <h2 className="text-sm font-black uppercase tracking-widest" style={{ color: '#f4f4f5' }}>Escáner de Documentos</h2>
                         <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.3)' }}>
                             Corrige la perspectiva antes de procesar con OCR
                         </p>

@@ -263,7 +263,7 @@ export default function CarpetaScreen({ onSelect }: Props) {
         case 'sucursal':  cmp = sucA.localeCompare(sucB, 'es'); break;
         case 'vehiculos': cmp = vehA - vehB; break;
         case 'estado':    cmp = (a.estado ?? '').localeCompare(b.estado ?? '', 'es'); break;
-        case 'modificada':cmp = a.actualizadaEn.localeCompare(b.actualizadaEn); break;
+        case 'modificada':cmp = (a.actualizadaEn ?? '').localeCompare(b.actualizadaEn ?? ''); break;
       }
       return sortEstDir === 'asc' ? cmp : -cmp;
     });

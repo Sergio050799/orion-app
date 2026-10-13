@@ -611,10 +611,7 @@ const FlotaGrid = forwardRef<FlotaGridHandle, FlotaGridProps>(function FlotaGrid
                   <th key={col.id}
                     onClick={() => !col.isComputed && handleSort(col.id)}
                     style={{ minWidth: col.width, maxWidth: col.width, padding: '8px 6px', textAlign: 'left', color: isActive ? 'var(--t-text)' : 'var(--t-text-3)', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap', letterSpacing: '0.04em', textTransform: 'uppercase', cursor: col.isComputed ? 'default' : 'pointer', background: col.isComputed ? 'var(--t-line-soft)' : undefined, userSelect: 'none', borderRight: '1px solid var(--t-line)' }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-                      {col.name}
-                      {!col.isComputed && <span style={{ opacity: isActive ? 1 : 0.25, fontSize: 8 }}>{isActive && sortConfig!.dir === 'desc' ? '▼' : '▲'}</span>}
-                    </span>
+                    {col.name}
                   </th>
                 );
               })}
