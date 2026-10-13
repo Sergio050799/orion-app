@@ -20,3 +20,11 @@ export async function apiPost(path: string, body: unknown): Promise<Response> {
     body: JSON.stringify(body),
   });
 }
+
+export async function apiPut(path: string, body: unknown): Promise<Response> {
+  return fetch(`${BASE}${path}`, {
+    method: 'PUT',
+    headers: HEADERS,
+    body: JSON.stringify(body),
+  });
+}

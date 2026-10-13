@@ -186,7 +186,7 @@ function usePortfolio() {
     setLoading(true);
     try {
       const [rCarp, rCor] = await Promise.all([
-        fetch('/api/flotas/carpetas'),
+        fetch('/api/flotas/carpetas?summary=true'),
         fetch('/api/flotas/corredores'),
       ]);
       const [dCarp, dCor] = await Promise.all([rCarp.json(), rCor.json()]);
@@ -359,8 +359,26 @@ function FichaPoliza({ flota, corredores, onClose, onEdit, onDelete, onSaved }: 
 }) {
   const [editMode, setEditMode] = useState(false);
   const [saving,   setSaving]   = useState(false);
+  // fullCarpeta: versión completa (con original/trabajo/sinco) cargada al editar
+  const [fullCarpeta, setFullCarpeta] = useState<FlotaCarpeta | null>(null);
 
-  const carpeta = flota.raw_carpeta;
+  const carpeta = fullCarpeta ?? flota.raw_carpeta;
+
+  const enterEditMode = async () => {
+    // Carga la carpeta completa (con original/trabajo/sinco) antes de editar
+    // para evitar sobrescribir esos arrays con la versión summary
+    if (!fullCarpeta && flota.raw_carpeta) {
+      try {
+        const res = await fetch('/api/flotas/carpetas');
+        if (res.ok) {
+          const list: FlotaCarpeta[] = await res.json();
+          const found = list.find(c => c.id === flota.id);
+          if (found) setFullCarpeta(found);
+        }
+      } catch { /* usa raw_carpeta de summary si falla */ }
+    }
+    setEditMode(true);
+  };
 
   const [form, setForm] = useState({
     corredor_id:    carpeta?.corredor_id ?? '',
@@ -454,7 +472,7 @@ function FichaPoliza({ flota, corredores, onClose, onEdit, onDelete, onSaved }: 
               </a>
             )}
             {canEdit && !editMode && (
-              <button onClick={() => setEditMode(true)} style={{ fontSize: 11, fontWeight: 700, padding: '7px 16px', borderRadius: 10, background: 'var(--t-blue)', color: '#fff', border: 'none', cursor: 'pointer' }}>
+              <button onClick={enterEditMode} style={{ fontSize: 11, fontWeight: 700, padding: '7px 16px', borderRadius: 10, background: 'var(--t-blue)', color: '#fff', border: 'none', cursor: 'pointer' }}>
                 Editar datos
               </button>
             )}
@@ -619,14 +637,6 @@ function FichaPoliza({ flota, corredores, onClose, onEdit, onDelete, onSaved }: 
 
 type SortColFlotas = 'nombre' | 'corredor' | 'periodicidad' | 'fechaInicio' | 'fechaVcto' | 'comision' | 'estado';
 
-function SortIcon({ active, dir }: { active: boolean; dir: 'asc' | 'desc' }) {
-  return (
-    <span style={{ marginLeft: 4, color: active ? '#93b4e8' : 'rgba(140,155,175,0.45)', fontSize: 9, lineHeight: 1 }}>
-      {active ? (dir === 'asc' ? '↑' : '↓') : '⇅'}
-    </span>
-  );
-}
-
 // ─── Página principal ─────────────────────────────────────────────────────────
 
 export default function FlotasPage() {
@@ -766,7 +776,6 @@ export default function FlotasPage() {
                     display: 'inline-flex', alignItems: 'center', userSelect: 'none',
                   }}>
                     {label}
-                    {key && <SortIcon active={sortCol === key} dir={sortDir} />}
                   </span>
                 ))}
               </div>

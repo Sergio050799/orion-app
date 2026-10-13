@@ -4,11 +4,35 @@ import { notificarCambio } from '../eventos/notificador';
 
 export const runtime = 'nodejs';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     const res = await apiGet('/carpetas');
     const data = await res.json();
     if (!res.ok) return NextResponse.json(data, { status: res.status });
+
+    // ?summary=true — devuelve solo metadatos (sin original/trabajo/sinco)
+    // Reduce el payload de ~5MB a ~200KB para la vista portfolio
+    if (new URL(req.url).searchParams.get('summary') === 'true' && Array.isArray(data)) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const stripped = data.map((c: any) => ({
+        id: c.id, nombre: c.nombre, estado: c.estado,
+        creadaEn: c.creadaEn, actualizadaEn: c.actualizadaEn,
+        corredor_id: c.corredor_id, porcentajeComision: c.porcentajeComision,
+        primaClienteTotal: c.primaClienteTotal, descuentoOferta: c.descuentoOferta,
+        header: c.header, historico: c.historico, observaciones: c.observaciones,
+        tarifaFlota: c.tarifaFlota,
+        // oferta solo con los campos que necesita el portfolio (prima calc)
+        oferta: Array.isArray(c.oferta)
+          ? c.oferta.map((r: any) => ({
+              matricula: r.matricula,
+              coberturas: r.coberturas ?? r.coberturas_solicitadas,
+              oferta_prima_mmt: r.oferta_prima_mmt,
+            }))
+          : [],
+      }));
+      return NextResponse.json(stripped);
+    }
+
     return NextResponse.json(data);
   } catch (err) {
     console.error('[carpetas GET]', err);
