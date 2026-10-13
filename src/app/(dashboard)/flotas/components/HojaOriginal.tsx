@@ -22,10 +22,11 @@ interface Props {
   onHeaderChange: (h: FlotaHeader) => void;
   onDataChange?: (data: Record<string, string>[]) => void;
   carpetaOriginalEmpty?: boolean;
+  initialData?: Record<string, string>[];
 }
 
 const HojaOriginal = forwardRef<FlotaGridHandle, Props>(function HojaOriginal(
-  { header, onHeaderChange, onDataChange, carpetaOriginalEmpty = false },
+  { header, onHeaderChange, onDataChange, carpetaOriginalEmpty = false, initialData },
   ref,
 ) {
   const gridRef = useRef<FlotaGridHandle>(null);
@@ -141,6 +142,7 @@ const HojaOriginal = forwardRef<FlotaGridHandle, Props>(function HojaOriginal(
           <FlotaGrid
             ref={gridRef}
             initialColDefs={BASE_COL_DEFS}
+            initialData={initialData}
             onDataChange={onDataChange}
           />
         </Suspense>

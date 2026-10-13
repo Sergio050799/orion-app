@@ -296,7 +296,10 @@ export default function FlotasPage() {
   // ─── Handlers ─────────────────────────────────────────────────────────────
 
   const handleSelectCarpeta = useCallback((raw: FlotaCarpeta) => {
-    const carpeta = normalizarCarpeta(raw);
+    // Always read from memCache — it's updated synchronously by guardarCarpeta,
+    // so it's always newer than what CarpetaScreen's state might have (race condition).
+    const fromCache = cargarCarpeta(raw.id);
+    const carpeta = normalizarCarpeta(fromCache ?? raw);
     // Si trabajo está vacío pero hay vehículos procesados guardados, reconstruir filas
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const savedVehicles = (carpeta as any).automaticoVehicles;
@@ -769,10 +772,10 @@ export default function FlotasPage() {
                         />
                       )}
                       {tab === 'ORIGINAL' && (
-                        <HojaOriginal ref={originalRef} header={flotaHeader} onHeaderChange={setFlotaHeader} onDataChange={handleOriginalChange} carpetaOriginalEmpty={carpetaActiva ? carpetaActiva.original.length === 0 : false} />
+                        <HojaOriginal ref={originalRef} header={flotaHeader} onHeaderChange={setFlotaHeader} onDataChange={handleOriginalChange} carpetaOriginalEmpty={carpetaActiva ? carpetaActiva.original.length === 0 : false} initialData={originalData} />
                       )}
                       {tab === 'TRABAJO' && (
-                        <HojaTrabajos ref={trabajoRef} header={flotaHeader} onHeaderChange={setFlotaHeader} getOriginalSnapshot={getOriginalSnapshot} onDataChange={handleTrabajoChange} />
+                        <HojaTrabajos ref={trabajoRef} header={flotaHeader} onHeaderChange={setFlotaHeader} getOriginalSnapshot={getOriginalSnapshot} onDataChange={handleTrabajoChange} initialData={trabajoRows} />
                       )}
                       {tab === 'SINCO' && carpetaActiva && (
                         <HojaSincoUnificado header={flotaHeader} trabajoRows={trabajoRows} carpetaActiva={carpetaActiva} sincoResultRows={sincoResultRows} onSincoResultChange={setSincoResultRows} onTrabajoChange={setTrabajoRows} onCarpetaChange={handleCarpetaChange} />

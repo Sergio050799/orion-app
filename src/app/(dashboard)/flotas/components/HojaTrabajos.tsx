@@ -13,6 +13,7 @@ interface Props {
   onHeaderChange: (h: FlotaHeader) => void;
   getOriginalSnapshot: () => Record<string, string>[] | null;
   onDataChange?: (data: Record<string, string>[]) => void;
+  initialData?: Record<string, string>[];
 }
 
 const TRABAJO_COL_DEFS = makeTrabajoColDefs();
@@ -347,7 +348,7 @@ function SilverdatReport({ mismatches, enriched, noData, total, vehicles, onClos
 // ─── HojaTrabajos ───────────────────────────────────────────────────────────
 
 const HojaTrabajos = forwardRef<FlotaGridHandle, Props>(function HojaTrabajos(
-  { header, onHeaderChange, getOriginalSnapshot, onDataChange },
+  { header, onHeaderChange, getOriginalSnapshot, onDataChange, initialData },
   ref,
 ) {
   const [confirmPending, setConfirmPending] = useState(false);
@@ -762,6 +763,7 @@ if (key !== prevClaveKeyRef.current) {
         <FlotaGrid
           ref={gridRef}
           initialColDefs={TRABAJO_COL_DEFS}
+          initialData={initialData}
           onDataChange={handleDataChange}
         />
       </Suspense>
