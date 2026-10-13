@@ -58,13 +58,12 @@ async function descargarTodo(carpeta: FlotaCarpeta, corredorNombre?: string) {
   const XLSX = await import('xlsx');
   const zip = new JSZip();
 
+  // Un solo workbook con todas las hojas → un solo XLSX.write al final
+  const wb = XLSX.utils.book_new();
   const addSheet = (name: string, data: Record<string, string>[]) => {
     if (data.length === 0) return;
     const ws = XLSX.utils.json_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, name);
-    const buf = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
-    zip.file(`${name}.xlsx`, buf);
+    XLSX.utils.book_append_sheet(wb, ws, name.slice(0, 31));
   };
 
   // 1. Datos generales
@@ -131,37 +130,39 @@ async function descargarTodo(carpeta: FlotaCarpeta, corredorNombre?: string) {
   // 6. Oferta
   addSheet('OFERTA', carpeta.oferta);
 
-  // 7. Intentar descargar oferta con plantilla via API
-  try {
-    const vehiculos = carpeta.oferta.filter(r => r['matricula']?.trim()).map(r => ({
-      tomador: carpeta.header.tomador,
-      tipologia: r['tipo_vehiculo'] ?? '',
-      matricula: r['matricula'] ?? '',
-      marca: r['marca'] ?? '',
-      modelo: r['modelo'] ?? '',
-      coberturas: r['coberturas'] ?? r['coberturas_solicitadas'] ?? '',
-      prima_actual: parseFloat(r['prima_referencia'] ?? '0') || 0,
-      forma_pago: carpeta.header.formaPago,
-      fecha_vencimiento: r['fecha_vencimiento'] ?? carpeta.header.fechaVencimiento ?? '',
-      prima_ofertada: parseFloat(r['oferta_prima_mmt'] ?? '0') || 0,
-    }));
-    if (vehiculos.length > 0) {
-      const res = await fetch('/api/flotas/oferta/excel', {
+  // Lanzar la API de oferta plantilla en paralelo mientras construimos el XLSX local
+  const ofertaVehiculos = carpeta.oferta.filter(r => r['matricula']?.trim()).map(r => ({
+    tomador: carpeta.header.tomador,
+    tipologia: r['tipo_vehiculo'] ?? '',
+    matricula: r['matricula'] ?? '',
+    marca: r['marca'] ?? '',
+    modelo: r['modelo'] ?? '',
+    coberturas: r['coberturas'] ?? r['coberturas_solicitadas'] ?? '',
+    prima_actual: parseFloat(r['prima_referencia'] ?? '0') || 0,
+    forma_pago: carpeta.header.formaPago,
+    fecha_vencimiento: r['fecha_vencimiento'] ?? carpeta.header.fechaVencimiento ?? '',
+    prima_ofertada: parseFloat(r['oferta_prima_mmt'] ?? '0') || 0,
+  }));
+  const ofertaApiPromise = ofertaVehiculos.length > 0
+    ? fetch('/api/flotas/oferta/excel', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           flota_nombre: carpeta.nombre,
           empresa_nombre: carpeta.header.tomador,
           empresa_cif: carpeta.header.cif,
-          vehiculos,
+          vehiculos: ofertaVehiculos,
         }),
-      });
-      if (res.ok) {
-        const ofertaBlob = await res.arrayBuffer();
-        zip.file('OFERTA_PLANTILLA.xlsx', ofertaBlob);
-      }
-    }
-  } catch { /* si falla la plantilla, no pasa nada, ya tiene OFERTA.xlsx */ }
+      }).then(res => res.ok ? res.arrayBuffer() : null).catch(() => null)
+    : Promise.resolve(null);
+
+  // Generar el XLSX local una sola vez (5 hojas en 1 write)
+  const estudioxlsx = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
+  zip.file('ESTUDIO.xlsx', estudioxlsx);
+
+  // Esperar la oferta plantilla (ya lleva tiempo ejecutándose en paralelo)
+  const ofertaBlob = await ofertaApiPromise;
+  if (ofertaBlob) zip.file('OFERTA_PLANTILLA.xlsx', ofertaBlob);
 
   // Nombre: FLOTA - CORREDOR
   const fecha = new Date().toLocaleDateString('es-ES').replace(/\//g, '-');

@@ -65,6 +65,17 @@ function cellBorder(style: ExcelJS.BorderStyle = thin, color = 'FFD1D5DB'): Exce
   return { style, color: { argb: color } };
 }
 
+// ── Cache de logo ────────────────────────────────────────────────────────────
+let _cachedLogoBuffer: Buffer | null | undefined = undefined;
+function getLogoBuffer(): Buffer | null {
+  if (_cachedLogoBuffer !== undefined) return _cachedLogoBuffer;
+  try {
+    const logoPath = path.join(process.cwd(), 'public', 'LOGOMMT.jpg');
+    _cachedLogoBuffer = fs.existsSync(logoPath) ? fs.readFileSync(logoPath) : null;
+  } catch { _cachedLogoBuffer = null; }
+  return _cachedLogoBuffer;
+}
+
 // ── POST /api/flotas/oferta/excel ───────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
@@ -81,14 +92,13 @@ export async function POST(req: NextRequest) {
 
     // ── Logo ──────────────────────────────────────────────────────────────────
     let logoId: number | undefined;
-    try {
-      const logoPath = path.join(process.cwd(), 'public', 'LOGOMMT.jpg');
-      if (fs.existsSync(logoPath)) {
+    const logoBuffer = getLogoBuffer();
+    if (logoBuffer) {
+      try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const logoBuffer = fs.readFileSync(logoPath) as any;
-        logoId = wb.addImage({ buffer: logoBuffer, extension: 'jpeg' });
-      }
-    } catch { /* logo not found, continue without it */ }
+        logoId = wb.addImage({ buffer: logoBuffer as any, extension: 'jpeg' });
+      } catch { /* logo not valid */ }
+    }
 
     // ── Hoja 1: Oferta ────────────────────────────────────────────────────────
     const ws = wb.addWorksheet('Oferta', {

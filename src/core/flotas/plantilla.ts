@@ -1,5 +1,21 @@
-import ExcelJS from 'exceljs';
+import type ExcelJS from 'exceljs';
 import type { FlotaCarpeta } from './carpeta';
+
+let _logoMmtCache: string | null = null;
+async function fetchLogoMmt(): Promise<string | null> {
+  if (_logoMmtCache !== undefined && _logoMmtCache !== null) return _logoMmtCache;
+  try {
+    const res = await fetch('/LOGOMMT.jpg');
+    if (!res.ok) return null;
+    const buf = await res.arrayBuffer();
+    const bytes = new Uint8Array(buf);
+    const CHUNK = 8192;
+    let bin = '';
+    for (let i = 0; i < bytes.length; i += CHUNK) bin += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+    _logoMmtCache = btoa(bin);
+    return _logoMmtCache;
+  } catch { return null; }
+}
 
 // ─── Paleta MMT ────────────────────────────────────────────────────────────
 const C = {
@@ -59,6 +75,7 @@ function fillRow(ws: ExcelJS.Worksheet, row: number, fill: ExcelJS.Fill) {
 // ─── Funcion principal ────────────────────────────────────────────────────────
 
 export async function generarPlantillaExcel(carpeta?: Pick<FlotaCarpeta, 'nombre' | 'header'>, corredores?: string[]): Promise<Blob> {
+  const ExcelJS = (await import('exceljs')).default;
   const wb = new ExcelJS.Workbook();
   wb.creator = 'MMT Seguros';
   wb.created = new Date();
@@ -84,18 +101,15 @@ export async function generarPlantillaExcel(carpeta?: Pick<FlotaCarpeta, 'nombre
   }
 
   // ── Logo MMT en la cabecera (esquina izquierda) ──────────────────────────
-  try {
-    const res = await fetch('/LOGOMMT.jpg');
-    if (res.ok) {
-      const buf = await res.arrayBuffer();
+  const logoBase64 = await fetchLogoMmt();
+  if (logoBase64) {
+    try {
+      const bytes = Uint8Array.from(atob(logoBase64), c => c.charCodeAt(0));
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const logoId = wb.addImage({ buffer: Buffer.from(buf) as any, extension: 'jpeg' });
-      ws.addImage(logoId, {
-        tl: { col: 0, row: 0 },
-        ext: { width: 119, height: 53 },  // 3.15cm x 1.4cm
-      });
-    }
-  } catch { /* logo not found — continue without it */ }
+      const logoId = wb.addImage({ buffer: bytes.buffer as any, extension: 'jpeg' });
+      ws.addImage(logoId, { tl: { col: 0, row: 0 }, ext: { width: 119, height: 53 } });
+    } catch { /* logo not valid */ }
+  }
 
   // ── Fila 2: Info empresa ───────────────────────────────────────────────────
   const nombreEstudio = carpeta?.nombre ?? 'NUEVO ESTUDIO';
