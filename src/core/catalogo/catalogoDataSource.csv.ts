@@ -50,19 +50,20 @@ function normalize(s: string): string {
     return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
 }
 
-// Alias para normalizar variantes de marca antes de comparar
+// Alias para normalizar variantes de marca al nombre exacto del catálogo CSV
+// CRÍTICO: los valores deben coincidir con lo que hay en el CSV (col 3)
+// Catálogo usa: MERCEDES (no MERCEDES-BENZ), LAND ROVER (no LANDROVER), CITROEN (sin tilde)
 const MARCA_ALIAS: Record<string, string> = {
     'VW': 'VOLKSWAGEN',
-    'CITROËN': 'CITROEN',
-    'CITROEN': 'CITROEN',
-    'MERCEDES': 'MERCEDES-BENZ',
-    'MERCEDES BENZ': 'MERCEDES-BENZ',
-    'MB': 'MERCEDES-BENZ',
-    'MERC': 'MERCEDES-BENZ',
+    'CITROËN': 'CITROEN',          // tilde → sin tilde
+    'MERCEDES-BENZ': 'MERCEDES',   // Silverdat devuelve MERCEDES-BENZ; catálogo tiene MERCEDES
+    'MERCEDES BENZ': 'MERCEDES',
+    'MB': 'MERCEDES',
+    'MERC': 'MERCEDES',
     'KIA MOTORS': 'KIA',
     'HYUNDAI MOTOR': 'HYUNDAI',
-    'LAND ROVER': 'LANDROVER',
-    'RANGE ROVER': 'LANDROVER',
+    'LANDROVER': 'LAND ROVER',     // catálogo usa "LAND ROVER" (dos palabras)
+    'RANGE ROVER': 'LAND ROVER',   // Range Rover es modelo, marca es Land Rover
     'ALFA': 'ALFA ROMEO',
     'ALFA-ROMEO': 'ALFA ROMEO',
 };
