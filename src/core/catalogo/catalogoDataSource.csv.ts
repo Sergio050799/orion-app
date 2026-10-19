@@ -67,8 +67,12 @@ const MARCA_ALIAS: Record<string, string> = {
     'ALFA-ROMEO': 'ALFA ROMEO',
 };
 
+// Sufijos corporativos que Silverdat/DGT a veces a\u00f1aden a la marca real
+const MARCA_SUFFIX_RE = /\s+(COMMERCIAL VEHICLES?|TRUCKS? ?&? ?BUSES?|TRUCKS?|MOTORS?|MOTOR CO\.?|ESPANA|IBERICA|IBERIA|DE ESPANA|S\.?A\.?U?\.?)$/;
+
 function normalizeMarca(m: string): string {
-    const upper = m.toUpperCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    let upper = m.toUpperCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    upper = upper.replace(MARCA_SUFFIX_RE, '').trim();
     return MARCA_ALIAS[upper] ?? upper;
 }
 

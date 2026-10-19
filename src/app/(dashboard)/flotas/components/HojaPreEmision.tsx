@@ -71,6 +71,7 @@ export interface VehiculoExport {
 
 interface Props {
   trabajoRows: Record<string, string>[];
+  initialSeleccion?: Record<string, string>;
   onCatalogoChange?: (selecciones: Record<string, string>) => void;
   onVehiclesUpdate?: (exports: VehiculoExport[]) => void;
 }
@@ -132,11 +133,13 @@ function ManualSearchPanel({ vehicle, yearHint, onSelect, onClose }: {
   const [results, setResults]       = useState<CandidatoCatalogo[]>([]);
   const [loading, setLoading]       = useState(false);
   const [searched, setSearched]     = useState(false);
+  const [searchError, setSearchError] = useState('');
   const firstRef = useRef(true);
 
   const doSearch = useCallback(async () => {
     setLoading(true);
     setSearched(true);
+    setSearchError('');
     try {
       const body: Record<string, string | number> = {};
       if (marca)      body.marca      = marca;
@@ -145,21 +148,33 @@ function ManualSearchPanel({ vehicle, yearHint, onSelect, onClose }: {
       if (combustible) body.combustible = combustible;
       if (kw)         body.kw         = kw;
       if (anyo)       body.anyo       = parseInt(anyo);
-      // Si marca parece combinada (tiene espacio y no hay modelo), enviar rawText para que el servidor separe la marca real
       if (marca && marca.includes(' ') && !modelo) body.rawText = marca;
-      const res  = await fetch('/api/catalogo/search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      const json = await res.json();
-      setResults((json.candidates ?? json.candidatos ?? json.results ?? []).slice(0, 40));
-    } catch {
+
+      const apiFetch = async (b: Record<string, string | number>): Promise<CandidatoCatalogo[]> => {
+        const r = await fetch('/api/catalogo/search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(b),
+        });
+        if (!r.ok) throw new Error(`Catálogo no disponible (${r.status})`);
+        const j = await r.json();
+        return j.candidates ?? j.candidatos ?? j.results ?? [];
+      };
+
+      let found = await apiFetch(body);
+      // Fallback sin año si no encontró nada con año
+      if (found.length === 0 && body.anyo) {
+        const { anyo: _, ...sinAnyo } = body;
+        found = await apiFetch(sinAnyo);
+      }
+      setResults(found.slice(0, 40));
+    } catch (e: unknown) {
       setResults([]);
+      setSearchError(e instanceof Error ? e.message : 'Error de búsqueda');
     } finally {
       setLoading(false);
     }
-  }, [marca, modelo, combustible, kw, anyo]);
+  }, [marca, modelo, version, combustible, kw, anyo]);
 
   useEffect(() => {
     if (firstRef.current) { firstRef.current = false; doSearch(); }
@@ -207,6 +222,11 @@ function ManualSearchPanel({ vehicle, yearHint, onSelect, onClose }: {
         </button>
       </div>
 
+      {searchError && (
+        <div style={{ padding: '8px 12px', color: 'var(--t-red)', fontSize: 11, fontWeight: 600 }}>
+          {searchError}
+        </div>
+      )}
       {searched && (
         <div style={{ maxHeight: 220, overflowY: 'auto', border: '1px solid var(--t-line)', borderRadius: 8, background: 'var(--t-surface)' }}>
           {results.length === 0 ? (
@@ -339,7 +359,7 @@ function StatusChip({ status }: { status: EmisionStatus }) {
 
 // ─── HojaPreEmision ───────────────────────────────────────────────────────────
 
-export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehiclesUpdate }: Props) {
+export default function HojaPreEmision({ trabajoRows, initialSeleccion, onCatalogoChange, onVehiclesUpdate }: Props) {
   const initial = useMemo<VehicleEmision[]>(() =>
     trabajoRows.filter(r => r['matricula']?.trim()).map(r => ({
       matricula:           r['matricula'] ?? '',
@@ -366,7 +386,9 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
   const [checkedRows, setCheckedRows]   = useState<Set<number>>(new Set());
   const [sortConfig, setSortConfig]     = useState<{ col: string; dir: 'asc'|'desc' } | null>(null);
   const [lastCheckedDisplayIdx, setLastCheckedDisplayIdx] = useState<number | null>(null);
-  const searchedMatsRef                 = useRef<Set<string>>(new Set());
+  // Matrículas con ID ya conocido no se auto-buscan; se pre-cargan desde el catálogo
+  const searchedMatsRef                 = useRef<Set<string>>(new Set(initialSeleccion ? Object.keys(initialSeleccion) : []));
+  const preloadedRef                    = useRef<Set<string>>(new Set());
   const searchAbortRef                  = useRef<Map<number, AbortController>>(new Map());
   const pendingNotifyRef                = useRef(false);
 
@@ -387,6 +409,31 @@ export default function HojaPreEmision({ trabajoRows, onCatalogoChange, onVehicl
   const setV = useCallback((i: number, patch: Partial<VehicleEmision>) => {
     setVehicles(prev => { const n = [...prev]; n[i] = { ...n[i], ...patch }; return n; });
   }, []);
+
+  // Pre-cargar IDs del catálogo guardadas en sesiones anteriores
+  useEffect(() => {
+    if (!initialSeleccion) return;
+    const toLoad = Object.entries(initialSeleccion).filter(([mat]) => !preloadedRef.current.has(mat));
+    if (toLoad.length === 0) return;
+    toLoad.forEach(([mat, idVeh]) => {
+      preloadedRef.current.add(mat);
+      fetch(`/api/catalogo/${encodeURIComponent(idVeh)}`)
+        .then(r => r.json())
+        .then(json => {
+          if (!json.ok || !json.vehiculo) return;
+          setVehicles(prev => {
+            const idx = prev.findIndex(v => v.matricula === mat);
+            if (idx < 0 || prev[idx].seleccionado) return prev;
+            const n = [...prev];
+            n[idx] = { ...n[idx], seleccionado: json.vehiculo, status: 'listo', candidatos: [json.vehiculo] };
+            return n;
+          });
+          pendingNotifyRef.current = true;
+        })
+        .catch(() => {});
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialSeleccion]);
 
   const applyToMultiple = useCallback((indices: number[], cat: CandidatoCatalogo) => {
     setVehicles(prev => {

@@ -844,7 +844,7 @@ export default function FlotasPage() {
                         </Suspense>
                       )}
                       {tab === 'PRE-EMISIÓN' && (
-                        <HojaPreEmision trabajoRows={trabajoRows} onCatalogoChange={(selecciones) => { if (carpetaActiva) setCarpetaActiva({ ...carpetaActiva, catalogoSeleccion: selecciones }); }} />
+                        <HojaPreEmision trabajoRows={trabajoRows} initialSeleccion={carpetaActiva?.catalogoSeleccion} onCatalogoChange={(selecciones) => { if (carpetaActiva) setCarpetaActiva({ ...carpetaActiva, catalogoSeleccion: selecciones }); }} />
                       )}
                     </div>
                   ))}
