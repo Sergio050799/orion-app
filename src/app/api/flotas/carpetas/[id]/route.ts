@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { apiGet, apiPut } from '@/lib/orionApi';
 import { notificarCambio } from '../../eventos/notificador';
+import { invalidateCarpetasCache } from '@/lib/carpetasCache';
 
 export const runtime = 'nodejs';
 
@@ -24,6 +25,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     const res = await apiPut(`/carpetas/${id}`, body);
     const data = await res.json();
     if (!res.ok) return NextResponse.json(data, { status: res.status });
+    invalidateCarpetasCache();
     notificarCambio();
     return NextResponse.json(data);
   } catch (err) {

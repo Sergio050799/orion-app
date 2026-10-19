@@ -1,18 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { apiGet, apiPost } from '@/lib/orionApi';
 import { notificarCambio } from '../eventos/notificador';
+import { getCarpetasCache, setCarpetasCache, invalidateCarpetasCache } from '@/lib/carpetasCache';
 
 export const runtime = 'nodejs';
 
 export async function GET(req: NextRequest) {
   try {
+    const isSummary = new URL(req.url).searchParams.get('summary') === 'true';
+
+    const cached = getCarpetasCache(isSummary);
+    if (cached) return NextResponse.json(cached);
+
     const res = await apiGet('/carpetas');
     const data = await res.json();
     if (!res.ok) return NextResponse.json(data, { status: res.status });
 
     // ?summary=true — devuelve solo metadatos (sin original/trabajo/sinco)
     // Reduce el payload de ~5MB a ~200KB para la vista portfolio
-    if (new URL(req.url).searchParams.get('summary') === 'true' && Array.isArray(data)) {
+    if (isSummary && Array.isArray(data)) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const stripped = data.map((c: any) => ({
         id: c.id, nombre: c.nombre, estado: c.estado,
@@ -30,9 +36,11 @@ export async function GET(req: NextRequest) {
             }))
           : [],
       }));
+      setCarpetasCache(true, stripped);
       return NextResponse.json(stripped);
     }
 
+    setCarpetasCache(false, data);
     return NextResponse.json(data);
   } catch (err) {
     console.error('[carpetas GET]', err);
@@ -46,6 +54,7 @@ export async function POST(req: NextRequest) {
     const res  = await apiPost('/carpetas', body);
     const data = await res.json();
     if (!res.ok) return NextResponse.json(data, { status: res.status });
+    invalidateCarpetasCache();
     notificarCambio();
     return NextResponse.json(data);
   } catch (err) {

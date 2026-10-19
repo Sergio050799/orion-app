@@ -679,7 +679,7 @@ export default function HojaPreEmision({ trabajoRows, initialSeleccion, onCatalo
     }
   }, [vehicles, setV, extractYear, doSearch, handleSelect]);
 
-  // Auto-buscar al montar y cuando se añaden vehículos nuevos, máx 3 concurrentes
+  // Auto-buscar al montar y cuando se añaden vehículos nuevos, máx 8 concurrentes
   useEffect(() => {
     if (vehicles.length === 0) return;
     const pending = vehicles.map((v, i) => ({ v, i })).filter(({ v }) =>
@@ -689,7 +689,7 @@ export default function HojaPreEmision({ trabajoRows, initialSeleccion, onCatalo
     pending.forEach(({ v }) => searchedMatsRef.current.add(v.matricula));
     let active = 0, idx = 0;
     const runNext = () => {
-      while (active < 3 && idx < pending.length) {
+      while (active < 8 && idx < pending.length) {
         const { i } = pending[idx++]; active++;
         Promise.resolve(handleSearch(i)).finally(() => { active--; runNext(); });
       }
