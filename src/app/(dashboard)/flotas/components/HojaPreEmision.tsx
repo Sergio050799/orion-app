@@ -521,6 +521,11 @@ export default function HojaPreEmision({ trabajoRows, initialSeleccion, onCatalo
           if (!modeloClean) modeloClean = marcaSuffix;
         }
       }
+      // MERCEDES BENZ ACTROS → marcaClean='MERCEDES', modeloClean='BENZ ACTROS ...'
+      // Eliminar 'BENZ' residual del modelo cuando la marca ya es MERCEDES
+      if (marcaClean.toUpperCase() === 'MERCEDES' && modeloClean) {
+        modeloClean = modeloClean.replace(/^BENZ\s*/i, '').trim();
+      }
       // Actualizar estado con valores limpios para que el grid muestre Marca/Modelo correctos
       if (marcaClean !== v.marca || modeloClean !== v.modelo) {
         setV(i, { marca: marcaClean, modelo: modeloClean });
@@ -563,7 +568,9 @@ export default function HojaPreEmision({ trabajoRows, initialSeleccion, onCatalo
       if (isRem) {
         body.marca = 'REMOLQUE';
         const prefix = (v.tipo || '').toLowerCase() === 'semirremolque' ? 'SEMIRREMOLQUE' : 'REMOLQUE';
-        body.modelo = v.marca ? `${prefix} ${v.marca}` : prefix;
+        // Quitar "SEMIRREMOLQUE"/"REMOLQUE" redundante de v.marca (ej: "SCHMITZ SEMIRREMOLQUE")
+        const marcaRem = (v.marca || '').replace(/\b(SEMI-?REMOLQUE|REMOLQUE)\b/gi, '').trim();
+        body.modelo = marcaRem ? `${prefix} ${marcaRem}` : prefix;
         if (v.tn) { const n = parseFloat(v.tn); if (!isNaN(n) && n > 0) body.tara = n >= 100 ? n : n * 1000; }
       } else {
         if (marcaClean)     body.marca       = marcaClean;

@@ -155,10 +155,14 @@ function loadCsv(): CatalogoCache {
     const byMarca = new Map<string, CatalogoVehiculo[]>();
     const all: CatalogoVehiculo[] = [];
 
+    // Auto-detectar separador: nuevo catálogo usa coma, antiguo usa punto y coma
+    const firstLine = lines[0] ?? '';
+    const sep = firstLine.includes(';') ? ';' : ',';
+
     for (let i = 1; i < lines.length; i++) {
         const line = lines[i].trim();
         if (!line) continue;
-        const cols = line.split(';');
+        const cols = line.split(sep);
         const veh = parseRow(cols);
         if (!veh) continue;
 
