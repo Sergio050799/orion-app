@@ -44,6 +44,7 @@ interface Props {
   tarifaFlota?: TarifaEntry[];
   corredorLabel?: string;
   danosPropios?: DanosPropiosData;
+  observacion?: string;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -162,8 +163,10 @@ function buildPdfHtml(data: {
   logoSrc?: string;
   tomadoresArr?: string[];
   carpetaNombre?: string;
+  observacion?: string;
 }): string {
   const { header, pivot, totalVehiculos, ambitoLabel, numTomadores, adrActivo, sinco, danosPropiosPdf, primasSol, mmtRows, corredorLabel, cobAnexo, sincoPorTipo } = data;
+  const escObs = data.observacion ? data.observacion.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : '';
   const totalSol = primasSol.reduce((a, r) => a + r.total, 0);
   const totalMmt = mmtRows.reduce((a, r) => a + (r.total ?? 0), 0);
   const dif      = totalMmt - totalSol;
@@ -405,9 +408,12 @@ ${heroHtml}
 ${sincoSection}
 ${sincoPorTipoSection}
 ${danosPropiosSection}
-<div class="footer">
-  <span>ORION · Documento confidencial</span>
-  <span>${dateStr} · Página 1 de ${totalPages}</span>
+<div class="footer"${escObs ? ' style="flex-direction:column;gap:4px"' : ''}>
+  ${escObs ? `<div style="font-style:italic;color:#7a8594;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:9px">Obs.: ${escObs}</div>` : ''}
+  <div style="display:flex;justify-content:space-between;width:100%">
+    <span>ORION · Documento confidencial</span>
+    <span>${dateStr} · Página 1 de ${totalPages}</span>
+  </div>
 </div>
 </article>
 
@@ -451,7 +457,7 @@ ${ci === covChunks.length - 1 ? `<div class="note">Las coberturas mostradas proc
 export default function HojaInforme({
   header, carpetaNombre,
   trabajoRows, coberturas, sincoResultRows, sincoManual, sincoGlobal,
-  primasMmtValues, onPrimasMmtChange, tarifaFlota, corredorLabel, danosPropios,
+  primasMmtValues, onPrimasMmtChange, tarifaFlota, corredorLabel, danosPropios, observacion,
 }: Props) {
 
   // ── Pivot tipo × cobertura ──────────────────────────────────────────────────
@@ -958,6 +964,7 @@ export default function HojaInforme({
       logoSrc,
       tomadoresArr: [...tomadores],
       carpetaNombre,
+      observacion,
     });
 
     const w = window.open('', '_blank', 'width=860,height=700');

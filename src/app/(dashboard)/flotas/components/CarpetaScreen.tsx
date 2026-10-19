@@ -248,6 +248,25 @@ export default function CarpetaScreen({ onSelect }: Props) {
     });
   }, [carpetas, query, corredorFilter, sucursalFilter, comercialFilter, corredorMap]);
 
+  const filteredOtros = useMemo(() => {
+    return carpetas.filter(c => {
+      if (c.estado !== 'OFERTADA' && c.estado !== 'RECHAZADA') return false;
+      const corr = c.corredor_id ? corredorMap.get(c.corredor_id) : null;
+      const corrName = corr?.nombre ?? 'Sin corredor';
+      if (corredorFilter !== 'TODOS' && corrName !== corredorFilter) return false;
+      if (sucursalFilter && corr?.sucursal !== sucursalFilter) return false;
+      if (comercialFilter && (corr?.comercial ?? '').toLowerCase() !== comercialFilter.toLowerCase()) return false;
+      const q = query.trim().toLowerCase();
+      if (q) {
+        const cif     = (c.header?.cif     ?? '').toLowerCase();
+        const tomador = (c.header?.tomador ?? '').toLowerCase();
+        const nombre  = c.nombre.toLowerCase();
+        if (!nombre.includes(q) && !corrName.toLowerCase().includes(q) && !cif.includes(q) && !tomador.includes(q)) return false;
+      }
+      return true;
+    }).sort((a, b) => (b.actualizadaEn ?? '').localeCompare(a.actualizadaEn ?? ''));
+  }, [carpetas, query, corredorFilter, sucursalFilter, comercialFilter, corredorMap]);
+
   const sortedFiltered = useMemo(() => {
     return [...filtered].sort((a, b) => {
       const corrA = a.corredor_id ? (corredorMap.get(a.corredor_id)?.nombre ?? '') : '';
@@ -690,6 +709,95 @@ export default function CarpetaScreen({ onSelect }: Props) {
               })}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* ── Ofertadas / Rechazadas ───────────────────────────────────────── */}
+      {filteredOtros.length > 0 && (
+        <div style={{ marginTop: 36 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, paddingBottom: 12, borderBottom: '1px solid var(--t-line)' }}>
+            <h2 style={{ margin: 0, fontSize: 14, fontWeight: 700, letterSpacing: '-0.01em', color: 'var(--t-text)' }}>
+              Ofertadas / Rechazadas
+            </h2>
+            <span style={{ fontSize: 11, color: 'var(--t-text-3)' }}>{filteredOtros.length} expediente{filteredOtros.length !== 1 ? 's' : ''}</span>
+          </div>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 700 }}>
+              <colgroup>
+                <col style={{ width: '42%' }} />
+                <col style={{ width: '18%' }} />
+                <col style={{ width: '6%' }} />
+                <col style={{ width: '11%' }} />
+                <col style={{ width: '10%' }} />
+                <col style={{ width: '13%' }} />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th style={thStyle}><span style={{ fontSize: 11, fontWeight: 700, color: 'var(--t-text-3)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Nombre</span></th>
+                  <th style={thStyle}><span style={{ fontSize: 11, fontWeight: 700, color: 'var(--t-text-3)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Corredor</span></th>
+                  <th style={thStyle}><span style={{ fontSize: 11, fontWeight: 700, color: 'var(--t-text-3)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Veh.</span></th>
+                  <th style={thStyle}><span style={{ fontSize: 11, fontWeight: 700, color: 'var(--t-text-3)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Estado</span></th>
+                  <th style={thStyle}><span style={{ fontSize: 11, fontWeight: 700, color: 'var(--t-text-3)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Fecha</span></th>
+                  <th style={{ ...thStyle, textAlign: 'right' }} />
+                </tr>
+              </thead>
+              <tbody>
+                {filteredOtros.map(c => {
+                  const corr = c.corredor_id ? corredorMap.get(c.corredor_id) : null;
+                  const numVeh = (c.trabajo?.length > 0 ? c.trabajo : c.original)?.filter((r: Record<string, unknown>) => (r['matricula'] as string)?.trim()).length ?? 0;
+                  const lastMotivo = [...(c.historico ?? [])].reverse().find(h => h.estadoNuevo === c.estado && h.motivo)?.motivo;
+                  return (
+                    <tr key={c.id}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'var(--t-line-soft)')}
+                      onMouseLeave={e => (e.currentTarget.style.background = '')}
+                    >
+                      <td style={{ ...tdStyle, color: 'var(--t-text)' }}>
+                        <span style={{ fontWeight: 650, fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block', maxWidth: 300 }}>
+                          {c.nombre || '(sin nombre)'}
+                        </span>
+                        {(c.header?.cif || c.header?.tomador) && (
+                          <div style={{ fontSize: 12, color: 'var(--t-text-2)', marginTop: 3 }}>
+                            {c.header.cif && <span style={{ fontFamily: 'monospace' }}>{c.header.cif}</span>}
+                            {c.header.cif && c.header.tomador && <span style={{ margin: '0 4px', opacity: 0.4 }}>·</span>}
+                            {c.header.tomador && <span>{c.header.tomador}</span>}
+                          </div>
+                        )}
+                        {lastMotivo && (
+                          <div style={{ fontSize: 11, color: c.estado === 'RECHAZADA' ? 'var(--t-red)' : 'var(--t-amber)', fontStyle: 'italic', marginTop: 3 }}>
+                            {c.estado === 'RECHAZADA' ? '✕' : '→'} {lastMotivo}
+                          </div>
+                        )}
+                      </td>
+                      <td style={{ ...tdStyle, fontSize: 13, color: 'var(--t-text-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {corr?.nombre ?? <span style={{ color: 'var(--t-text-3)' }}>—</span>}
+                      </td>
+                      <td style={{ ...tdStyle, fontSize: 14, fontWeight: 600, color: 'var(--t-text)', fontVariantNumeric: 'tabular-nums' }}>
+                        {numVeh}
+                      </td>
+                      <td style={tdStyle}>
+                        <EstadoBadge estado={c.estado} />
+                      </td>
+                      <td style={{ ...tdStyle, fontSize: 13, color: 'var(--t-text-2)', fontVariantNumeric: 'tabular-nums' }}>
+                        {new Date(c.actualizadaEn).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: '2-digit' })}
+                      </td>
+                      <td style={{ ...tdStyle, textAlign: 'right' }}>
+                        <button
+                          onClick={() => onSelect(c)}
+                          style={{
+                            fontSize: 11, fontWeight: 650, padding: '5px 12px', borderRadius: 6,
+                            background: 'transparent', color: 'var(--t-blue)',
+                            border: '1px solid var(--t-blue)', cursor: 'pointer', whiteSpace: 'nowrap',
+                          }}
+                        >
+                          Abrir estudio
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 

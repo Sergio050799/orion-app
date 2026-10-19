@@ -226,6 +226,12 @@ export default function FlotasPage() {
   const [openFlotas, setOpenFlotas] = useState<FlotaCarpeta[]>([]);
   const [fichaMode, setFichaMode] = useState(false);
 
+  const motivoCarpeta = useMemo(() => {
+    if (!carpetaActiva) return undefined;
+    const hist = carpetaActiva.historico ?? [];
+    return [...hist].reverse().find(h => h.estadoNuevo === carpetaActiva.estado && h.motivo)?.motivo;
+  }, [carpetaActiva]);
+
   const originalRef = useRef<FlotaGridHandle>(null);
   const trabajoRef = useRef<FlotaGridHandle>(null);
   const ofertaRef = useRef<HojaOfertaHandle>(null);
@@ -657,6 +663,31 @@ export default function FlotasPage() {
                   </button>
                 </div>
               </div>
+
+              {/* Banner estado archivado */}
+              {(carpetaActiva.estado === 'RECHAZADA' || carpetaActiva.estado === 'OFERTADA') && (
+                <div style={{
+                  marginTop: 10,
+                  padding: '8px 14px',
+                  borderRadius: 6,
+                  background: carpetaActiva.estado === 'RECHAZADA' ? 'rgba(239,77,90,0.08)' : 'rgba(240,185,77,0.08)',
+                  border: `1px solid ${carpetaActiva.estado === 'RECHAZADA' ? 'rgba(239,77,90,0.35)' : 'rgba(240,185,77,0.35)'}`,
+                  display: 'flex', alignItems: 'center', gap: 10,
+                }}>
+                  <span style={{
+                    fontSize: 10, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase',
+                    color: carpetaActiva.estado === 'RECHAZADA' ? 'var(--t-red)' : 'var(--t-amber)',
+                    flexShrink: 0,
+                  }}>
+                    {carpetaActiva.estado}
+                  </span>
+                  {motivoCarpeta && (
+                    <span style={{ fontSize: 12, color: 'var(--t-text-2)', fontStyle: 'italic' }}>
+                      {motivoCarpeta}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* ── Tabstrip: open flotas ── */}
@@ -788,7 +819,7 @@ export default function FlotasPage() {
                           ? [corredor.comercial, corredor.nombre].filter(Boolean).join(' · ')
                           : undefined;
                         return (
-                          <HojaInforme header={flotaHeader} carpetaNombre={carpetaActiva?.nombre} trabajoRows={trabajoRows} coberturas={coberturas} sincoResultRows={sincoResultRows} sincoManual={carpetaActiva?.sincoManual ?? []} sincoGlobal={carpetaActiva?.sincoGlobal ?? null} primasMmtValues={carpetaActiva?.primasMmtInforme} onPrimasMmtChange={(primas) => { const cur = carpetaActivaRef.current; if (cur) { const updated = { ...cur, primasMmtInforme: primas }; setCarpetaActiva(updated); guardarCarpeta(updated); } }} tarifaFlota={carpetaActiva?.tarifaFlota} corredorLabel={corredorLabel} danosPropios={carpetaActiva?.danosPropios} />
+                          <HojaInforme header={flotaHeader} carpetaNombre={carpetaActiva?.nombre} trabajoRows={trabajoRows} coberturas={coberturas} sincoResultRows={sincoResultRows} sincoManual={carpetaActiva?.sincoManual ?? []} sincoGlobal={carpetaActiva?.sincoGlobal ?? null} primasMmtValues={carpetaActiva?.primasMmtInforme} onPrimasMmtChange={(primas) => { const cur = carpetaActivaRef.current; if (cur) { const updated = { ...cur, primasMmtInforme: primas }; setCarpetaActiva(updated); guardarCarpeta(updated); } }} tarifaFlota={carpetaActiva?.tarifaFlota} corredorLabel={corredorLabel} danosPropios={carpetaActiva?.danosPropios} observacion={motivoCarpeta} />
                         );
                       })()}
                       {tab === 'OFERTA' && (
