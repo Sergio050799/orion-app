@@ -304,7 +304,8 @@ function buildPdfHtml(data: {
   const CPCOV = 4;
   const covChunks: typeof cobAnexo[] = [];
   for (let i = 0; i < cobAnexo.length; i += CPCOV) covChunks.push(cobAnexo.slice(i, i + CPCOV));
-  const totalPages = 1 + covChunks.length;
+  const hasPrimasData = primasSol.length > 0;
+  const totalPages = 1 + (hasPrimasData ? 1 : 0) + covChunks.length;
 
   return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
 <title>Informe — ${fleetName || header?.tomador || 'ORION'}</title>
@@ -404,12 +405,23 @@ ${heroHtml}
 ${sincoSection}
 ${sincoPorTipoSection}
 ${danosPropiosSection}
-${primasSection}
 <div class="footer">
   <span>ORION · Documento confidencial</span>
   <span>${dateStr} · Página 1 de ${totalPages}</span>
 </div>
 </article>
+
+${hasPrimasData ? `<article class="page">
+${brandrow}
+<div class="kicker">ANÁLISIS ECONÓMICO</div>
+<h1 class="report-title">${fleetName || 'Comparativa de primas'}</h1>
+<p class="subtitle">Importes anuales — Prima solicitada vs Prima MMT de referencia</p>
+${primasSection}
+<div class="footer">
+  <span>ORION · Documento confidencial</span>
+  <span>${dateStr} · Página 2 de ${totalPages}</span>
+</div>
+</article>` : ''}
 
 ${covChunks.map((chunk, ci) => `<article class="page">
 ${brandrow}
@@ -426,7 +438,7 @@ ${ci === 0 ? `<p class="subtitle">Relación de garantías declaradas según moda
 ${ci === covChunks.length - 1 ? `<div class="note">Las coberturas mostradas proceden del informe de referencia aportado. Condiciones sujetas a la póliza definitiva emitida por MMT Seguros.</div>` : ''}
 <div class="footer">
   <span>ORION · Documento confidencial</span>
-  <span>${dateStr} · Página ${2 + ci} de ${totalPages}</span>
+  <span>${dateStr} · Página ${(hasPrimasData ? 3 : 2) + ci} de ${totalPages}</span>
 </div>
 </article>`).join('\n')}
 
