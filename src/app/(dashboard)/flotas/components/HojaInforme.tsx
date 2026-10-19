@@ -197,7 +197,6 @@ function buildPdfHtml(data: {
     `<td class="cnt">${pivot.tipos.reduce((a, t) => a + (pivot.counts[t]?.[c] ?? 0), 0)}</td>`
   ).join('');
 
-  // Primas rows — sin columna MMT/veh (simplificado para PDF)
   const primasRows = primasSol.map((r, i) => {
     const mmt    = mmtRows[i];
     const difRow = (mmt?.total ?? 0) - r.total;
@@ -207,6 +206,7 @@ function buildPdfHtml(data: {
       <td class="cnt">${r.count}</td>
       <td class="num">${r.media ? fmtEur2(r.media) : '—'}</td>
       <td class="num">${r.total ? fmtEur(r.total) : '—'}</td>
+      <td class="num">${mmt?.prima != null ? fmtEur2(mmt.prima) : '—'}</td>
       <td class="num">${mmt?.total != null ? fmtEur(mmt.total) : '—'}</td>
       <td class="num${difCls}">${mmt?.total != null ? (difRow >= 0 ? '+' : '') + fmtEur(difRow) : '—'}</td>
     </tr>`;
@@ -281,12 +281,13 @@ function buildPdfHtml(data: {
   const primasSection = `<section class="report-section section-break">
     <h2 class="sec-title">Comparativa de primas <em>Importes anuales</em></h2>
     <table class="table">
-      <colgroup><col style="width:33%"><col style="width:7%"><col style="width:14%"><col style="width:15%"><col style="width:15%"><col style="width:16%"></colgroup>
+      <colgroup><col style="width:28%"><col style="width:7%"><col style="width:12%"><col style="width:13%"><col style="width:12%"><col style="width:13%"><col style="width:15%"></colgroup>
       <thead><tr>
         <th>Tipo y cobertura</th>
         <th class="cnt">Nº</th>
         <th class="num">Sol./veh.</th>
         <th class="num">Total sol.</th>
+        <th class="num">MMT/veh.</th>
         <th class="num">Total MMT</th>
         <th class="num">Diferencia</th>
       </tr></thead>
@@ -296,6 +297,7 @@ function buildPdfHtml(data: {
         <td class="cnt">${primasSol.reduce((a, r) => a + r.count, 0)}</td>
         <td class="num">—</td>
         <td class="num">${totalSol ? fmtEur(totalSol) : '—'}</td>
+        <td class="num">—</td>
         <td class="num">${totalMmt ? fmtEur(totalMmt) : '—'}</td>
         <td class="num ${dif < 0 ? 'neg' : dif > 0 ? 'pos' : ''}">${totalMmt ? (dif >= 0 ? '+' : '') + fmtEur(dif) : '—'}</td>
       </tr></tbody>
