@@ -587,9 +587,10 @@ export default function HojaPreEmision({ trabajoRows, initialSeleccion, onCatalo
 
       const realYear = extractYear(v);
       const plateEst = estimateYear(v.matricula);
-      // Solo usar año como filtro si viene de datos reales (anyo_fabricacion/fecha_matriculacion).
-      // El año estimado por matrícula es demasiado impreciso para el filtro duro del catálogo.
+      // Prioridad: Silverdat/plantilla > algoritmo matrícula. Si hay año de cualquier fuente, usarlo.
+      const yearKnown = !!(realYear || plateEst);
       if (realYear) body.anyo = realYear;
+      else if (plateEst) body.anyo = plateEst.year;
 
       // Para camiones con patrón serie+potencia, intentar primero sin año (el catálogo
       // tiene modelos de la generación actual aunque la matrícula sea antigua)
@@ -617,8 +618,8 @@ export default function HojaPreEmision({ trabajoRows, initialSeleccion, onCatalo
         candidatos = await doSearch({ ...body, anyo: (body.anyo as number) + 1 }, ctrl.signal);
       }
       if (ctrl.signal.aborted) return;
-      // Fallback sin año
-      if (candidatos.length === 0 && body.anyo) {
+      // Fallback sin año — solo si el año es completamente desconocido (sin Silverdat, sin plantilla, sin algoritmo)
+      if (candidatos.length === 0 && body.anyo && !yearKnown) {
         const { anyo: _, ...sinAnyo } = body; candidatos = await doSearch(sinAnyo, ctrl.signal);
       }
       if (ctrl.signal.aborted) return;
@@ -626,14 +627,18 @@ export default function HojaPreEmision({ trabajoRows, initialSeleccion, onCatalo
         candidatos = await doSearch({ marca: body.marca, modelo: body.modelo }, ctrl.signal);
       }
       if (ctrl.signal.aborted) return;
-      // Extra fallbacks para remolques: prefijo alternativo y búsqueda por marca sola
+      // Extra fallbacks para remolques: prefijo alternativo y búsqueda por marca sola (manteniendo año si se conoce)
       if (isRem && candidatos.length === 0 && v.marca) {
         const altPrefix = (v.tipo || '').toLowerCase() === 'semirremolque' ? 'REMOLQUE' : 'SEMIRREMOLQUE';
-        candidatos = await doSearch({ marca: 'REMOLQUE', modelo: `${altPrefix} ${v.marca.toUpperCase()}` }, ctrl.signal);
+        const altBody1: Record<string, string | number> = { marca: 'REMOLQUE', modelo: `${altPrefix} ${v.marca.toUpperCase()}` };
+        if (body.anyo) altBody1.anyo = body.anyo;
+        candidatos = await doSearch(altBody1, ctrl.signal);
         if (ctrl.signal.aborted) return;
       }
       if (isRem && candidatos.length === 0 && v.marca) {
-        candidatos = await doSearch({ marca: 'REMOLQUE', modelo: v.marca.toUpperCase() }, ctrl.signal);
+        const altBody2: Record<string, string | number> = { marca: 'REMOLQUE', modelo: v.marca.toUpperCase() };
+        if (body.anyo) altBody2.anyo = body.anyo;
+        candidatos = await doSearch(altBody2, ctrl.signal);
         if (ctrl.signal.aborted) return;
       }
 
