@@ -786,7 +786,7 @@ export default function HojaPreEmision({ trabajoRows, initialSeleccion, onCatalo
         v.seleccionado!.modelo ?? v.modelo,
         v.tipo,
         v.seleccionado!.version,
-        v.seleccionado!.anyo || '',
+        (extractYear(v) ?? v.seleccionado!.anyo) || '',
         FUEL_LABEL[v.seleccionado!.combustible] ?? v.seleccionado!.combustible,
         v.seleccionado!.kw || '',
         v.seleccionado!.cv || '',
@@ -807,7 +807,7 @@ export default function HojaPreEmision({ trabajoRows, initialSeleccion, onCatalo
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a'); a.href = url; a.download = 'PRE-EMISION.xlsx'; a.click();
     URL.revokeObjectURL(url);
-  }, [vehicles]);
+  }, [vehicles, extractYear]);
 
   const handleClearSelection = useCallback((i: number) => {
     setVehicles(prev => {
