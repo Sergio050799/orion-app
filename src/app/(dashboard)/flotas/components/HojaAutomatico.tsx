@@ -302,7 +302,7 @@ function Step1({
             // Read headers from row 5 (0-indexed: row 4)
             for (let c = range.s.c; c <= range.e.c; c++) {
                 const cell = ws[XLSX.utils.encode_cell({ r: 4, c })] as XlsxCell | undefined;
-                headers.push(cell ? String(cell.v).toLowerCase().trim().replace(/ /g, '_') : `col_${c}`);
+                headers.push(cell ? String(cell.v).toLowerCase().trim().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') : `col_${c}`);
             }
 
             const rows: Record<string, string>[] = [];

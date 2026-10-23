@@ -253,6 +253,13 @@ function buildPdfHtml(data: {
       </tr></thead>
       <tbody>${tipoRows}</tbody>
     </table>` : ''}
+    <div class="note" style="margin-top:10px">
+      <strong>Metodología de cálculo</strong><br>
+      <strong>Antigüedad media</strong> = media de <em>Num_Anios_Asegurado</em> de los vehículos con consulta SINCO válida (código retorno vacío o 0) &nbsp;·&nbsp;
+      <strong>Sin./año</strong> = &Sigma; siniestros &divide; antigüedad media &nbsp;·&nbsp;
+      <strong>Frecuencia</strong> = (sin./año &divide; veh. con SINCO) &times; 100 %<br>
+      ${tipoRows ? 'Las frecuencias por tipología aplican las mismas fórmulas a cada subgrupo de forma independiente; no son aditivas respecto al global porque cada tipología tiene su propia antigüedad media.' : ''}
+    </div>
   </section>`;
   })() : '';
 
