@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { cargarCarpetasDelServidor, cargarCorredoresDelServidor, type FlotaCarpeta, type Corredor } from '@/core/flotas';
+import { cargarCarpetasDelServidor, cargarCorredoresDelServidor, listarCarpetas, listarCorredores, seedIfEmpty, type FlotaCarpeta, type Corredor } from '@/core/flotas';
 import type { CatStats } from './components/VehiculosCategorias';
 import VehiculosCategorias from './components/VehiculosCategorias';
 import { useAuth } from '@/context/AuthContext';
@@ -246,9 +246,17 @@ export default function DashboardPage() {
   const [carteraView, setCarteraView] = useState<'bar' | 'donut'>('bar');
 
   useEffect(() => {
+    seedIfEmpty();
+    const local = listarCarpetas();
+    if (local.length > 0) { setCarpetas(local); setCorredores(listarCorredores()); }
+
     const ac = new AbortController();
-    cargarCarpetasDelServidor(ac.signal).then(setCarpetas).catch(() => {});
-    cargarCorredoresDelServidor(ac.signal).then(setCorredores).catch(() => {});
+    cargarCarpetasDelServidor(ac.signal)
+      .then(data => { if (data.length > 0) setCarpetas(data); })
+      .catch(() => {});
+    cargarCorredoresDelServidor(ac.signal)
+      .then(data => { if (data.length > 0) setCorredores(data); })
+      .catch(() => {});
     return () => ac.abort();
   }, []);
 
@@ -333,7 +341,7 @@ export default function DashboardPage() {
   const fecha  = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
   return (
-    <div className="animate-in fade-in duration-500">
+    <div style={{ animation: 'slideUp 220ms var(--ease-smooth) both' }}>
       <style>{`
         .dash-metrics   { display: grid; grid-template-columns: 1fr 1.15fr 1fr; align-items: start; }
         .dash-workspace { display: grid; grid-template-columns: 300px 1fr; gap: 56px; }
@@ -363,11 +371,12 @@ export default function DashboardPage() {
       )}
 
       {/* Greeting */}
-      <section style={{ marginBottom: 36 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 650, letterSpacing: '-0.03em', lineHeight: 0.95, color: 'var(--t-text)', margin: 0 }}>
+      <section style={{ marginBottom: 32 }}>
+        <p className="orion-section-title" style={{ margin: '0 0 8px' }}>Dashboard</p>
+        <h1 style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1, color: 'var(--t-text)', margin: 0 }}>
           {saludo}, {displayName(user)}
         </h1>
-        <p style={{ marginTop: 6, color: 'var(--t-text-2)', fontSize: 14 }}>{fecha}</p>
+        <p style={{ marginTop: 5, color: 'var(--t-text-2)', fontSize: 13 }}>{fecha}</p>
       </section>
 
       {/* Metrics strip */}
@@ -378,33 +387,33 @@ export default function DashboardPage() {
       >
         {/* Renovaciones urgentes */}
         <div>
-          <b style={{ display: 'block', fontSize: 64, fontWeight: 560, letterSpacing: '-0.045em', lineHeight: 0.95, color: vencidasUrgentes.length > 0 ? 'var(--t-red)' : 'var(--t-text)' }}>
+          <b style={{ display: 'block', fontSize: 56, fontWeight: 700, letterSpacing: '-0.04em', lineHeight: 1, color: vencidasUrgentes.length > 0 ? 'var(--t-red)' : 'var(--t-text)', fontVariantNumeric: 'tabular-nums' }}>
             {vencidasUrgentes.length}
           </b>
-          <small style={{ display: 'block', marginTop: 12, color: 'var(--t-text-2)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+          <small style={{ display: 'block', marginTop: 10, color: 'var(--t-text-3)', fontSize: 10, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
             Renovaciones urgentes
           </small>
         </div>
 
         {/* Tasa de éxito */}
         <div style={{ textAlign: 'center' }}>
-          <b style={{ display: 'block', fontSize: 64, fontWeight: 560, letterSpacing: '-0.045em', lineHeight: 0.95, color: 'var(--t-text)' }}>
+          <b style={{ display: 'block', fontSize: 56, fontWeight: 700, letterSpacing: '-0.04em', lineHeight: 1, color: 'var(--t-text)', fontVariantNumeric: 'tabular-nums' }}>
             {tasaContratacion !== null ? `${tasaContratacion}%` : '—'}
           </b>
-          <small style={{ display: 'block', marginTop: 12, color: 'var(--t-text-2)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-            Tasa de éxito
+          <small style={{ display: 'block', marginTop: 10, color: 'var(--t-text-3)', fontSize: 10, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+            Tasa de contratación
           </small>
-          <em style={{ display: 'block', marginTop: 4, color: 'var(--t-text-3)', fontStyle: 'normal', fontSize: 13 }}>
-            {contratadas} contratadas / {totalPortfolio} portfolio
+          <em style={{ display: 'block', marginTop: 5, color: 'var(--t-text-2)', fontStyle: 'normal', fontSize: 12 }}>
+            {contratadas} contratadas / {totalPortfolio} total
           </em>
         </div>
 
         {/* Corredores activos */}
         <div style={{ textAlign: 'right' }}>
-          <b style={{ display: 'block', fontSize: 64, fontWeight: 560, letterSpacing: '-0.045em', lineHeight: 0.95, color: 'var(--t-text)' }}>
+          <b style={{ display: 'block', fontSize: 56, fontWeight: 700, letterSpacing: '-0.04em', lineHeight: 1, color: 'var(--t-text)', fontVariantNumeric: 'tabular-nums' }}>
             {corredores.length}
           </b>
-          <small style={{ display: 'block', marginTop: 12, color: 'var(--t-text-2)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+          <small style={{ display: 'block', marginTop: 10, color: 'var(--t-text-3)', fontSize: 10, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
             Corredores activos
           </small>
         </div>

@@ -777,7 +777,8 @@ export default function FlotasPage() {
               ) : (
                 <div style={{ position: 'relative', height: '100%' }}>
                   {TABS.map(tab => (
-                    <div key={tab} style={{ position: 'absolute', inset: 0, display: activeTab === tab ? 'flex' : 'none', flexDirection: 'column' }}>
+                    <div key={tab} style={{ position: 'absolute', inset: 0, display: activeTab === tab ? 'flex' : 'none', flexDirection: 'column' }}
+                      className={activeTab === tab ? 'orion-page-enter' : ''}>
                       {tab === 'DATOS GENERALES' && carpetaActiva && (
                         <HojaDatosGenerales carpetaActiva={carpetaActiva} header={flotaHeader} onHeaderChange={setFlotaHeader} onCarpetaChange={handleCarpetaChange} />
                       )}

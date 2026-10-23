@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   listarCarpetas, crearCarpeta, guardarCarpeta, eliminarCarpeta, generarPlantillaExcel,
   listarCorredores, crearCorredor, cambiarEstado,
-  cargarCarpetasDelServidor, cargarCorredoresDelServidor,
+  cargarCarpetasDelServidor, cargarCorredoresDelServidor, seedIfEmpty,
   type FlotaCarpeta, type Corredor, type EstadoFlota,
 } from '@/core/flotas';
 import { useAuth } from '@/context/AuthContext';
@@ -100,7 +100,10 @@ interface Props {
 
 export default function CarpetaScreen({ onSelect }: Props) {
   const { user } = useAuth();
-  const [carpetas, setCarpetas] = useState<FlotaCarpeta[]>(() => listarCarpetas().map(normalizarCarpeta));
+  const [carpetas, setCarpetas] = useState<FlotaCarpeta[]>(() => {
+    seedIfEmpty();
+    return listarCarpetas().map(normalizarCarpeta);
+  });
   const [nombre, setNombre] = useState('');
   const [confirmDel, setConfirmDel] = useState<string | null>(null);
   const [corredores, setCorredores] = useState<Corredor[]>([]);
@@ -360,69 +363,78 @@ export default function CarpetaScreen({ onSelect }: Props) {
         aria-sort={active ? (sortEstDir === 'asc' ? 'ascending' : 'descending') : 'none'}
         style={{
           background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-          font: 'inherit', fontSize: 11, letterSpacing: '0.07em', textTransform: 'uppercase',
-          color: active ? 'var(--t-text-2)' : 'var(--t-text-3)',
-          fontWeight: active ? 700 : 600,
-        }}>{label}</button>
+          font: 'inherit', fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase',
+          color: active ? 'var(--t-text)' : 'var(--t-text-3)',
+          fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: 4,
+          transition: 'color 120ms ease',
+        }}>
+        {label}
+        <span style={{ fontSize: 8, opacity: active ? 1 : 0, transition: 'opacity 120ms ease' }}>
+          {active && sortEstDir === 'asc' ? '▲' : '▼'}
+        </span>
+      </button>
     );
   };
 
   return (
-    <div className="animate-in fade-in duration-500" style={{ padding: '28px 32px 60px', height: '100%', overflowY: 'auto', flexShrink: 0 }}>
+    <div style={{ padding: '28px 32px 60px', height: '100%', overflowY: 'auto', flexShrink: 0, animation: 'slideUp 200ms var(--ease-smooth) both' }}>
 
       {/* ── Header ───────────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 25 }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: 34, fontWeight: 680, letterSpacing: '-0.04em', color: 'var(--t-text)' }}>
-            Estudio de Flotas
+          <p className="orion-section-title" style={{ margin: '0 0 8px' }}>Estudio de Flotas</p>
+          <h1 style={{ margin: 0, fontSize: 32, fontWeight: 700, letterSpacing: '-0.03em', color: 'var(--t-text)', lineHeight: 1.1 }}>
+            Carpetas activas
           </h1>
-          <p style={{ margin: '6px 0 0', fontSize: 14, color: 'var(--t-text-2)' }}>
-            Carpetas en estudio · Vista general
-          </p>
         </div>
-        <div style={{ display: 'flex', gap: 10, flexShrink: 0 }}>
+        <div style={{ display: 'flex', gap: 8, flexShrink: 0, alignItems: 'center' }}>
           <button onClick={handleDescargarPlantilla} style={{
-            height: 38, padding: '0 16px', borderRadius: 9,
+            height: 34, padding: '0 14px', borderRadius: 8,
             border: '1px solid var(--t-line)', background: 'transparent',
-            color: 'var(--t-text)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
-          }}>Plantilla</button>
+            color: 'var(--t-text-2)', fontSize: 12, fontWeight: 600,
+            cursor: 'pointer', fontFamily: 'inherit',
+            transition: 'border-color 120ms ease, color 120ms ease',
+          }}
+            onMouseEnter={e => { e.currentTarget.style.color = 'var(--t-text)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'; }}
+            onMouseLeave={e => { e.currentTarget.style.color = 'var(--t-text-2)'; e.currentTarget.style.borderColor = 'var(--t-line)'; }}
+          >Plantilla</button>
           <button onClick={() => setCreating(true)} style={{
-            height: 38, padding: '0 18px', borderRadius: 9,
+            height: 34, padding: '0 16px', borderRadius: 8,
             background: 'var(--t-blue)', border: 'none',
-            color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
-          }}>+ Nueva carpeta</button>
+            color: '#fff', fontSize: 12, fontWeight: 700,
+            cursor: 'pointer', fontFamily: 'inherit',
+            transition: 'background 120ms ease, transform 80ms ease',
+          }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#5a9aff'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'var(--t-blue)'; }}
+            onMouseDown={e => { e.currentTarget.style.transform = 'scale(0.96)'; }}
+            onMouseUp={e => { e.currentTarget.style.transform = ''; }}
+          >+ Nueva carpeta</button>
         </div>
       </div>
 
-      {/* ── Stats ────────────────────────────────────────────────────────── */}
+      {/* ── Stats KPI ────────────────────────────────────────────────────── */}
       <div style={{
-        display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
-        marginTop: 33, paddingBottom: 26, borderBottom: '1px solid var(--t-line)',
+        display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12,
+        marginTop: 28, paddingBottom: 28, borderBottom: '1px solid var(--t-line)',
       }}>
-        <div>
-          <strong style={{ display: 'block', fontSize: 47, fontWeight: 650, letterSpacing: '-0.05em', lineHeight: 1, color: 'var(--t-text)' }}>
-            {estudiadasTotal.length}
-          </strong>
-          <span style={{ fontSize: 11, letterSpacing: '0.09em', color: 'var(--t-text-2)', textTransform: 'uppercase' }}>
-            Carpetas en estudio
-          </span>
-        </div>
-        <div style={{ textAlign: 'center' }}>
-          <strong style={{ display: 'block', fontSize: 47, fontWeight: 650, letterSpacing: '-0.05em', lineHeight: 1, color: 'var(--t-text)' }}>
-            {totalVehiculos}
-          </strong>
-          <span style={{ fontSize: 11, letterSpacing: '0.09em', color: 'var(--t-text-2)', textTransform: 'uppercase' }}>
-            Vehículos registrados
-          </span>
-        </div>
-        <div style={{ textAlign: 'right' }}>
-          <strong style={{ display: 'block', fontSize: 47, fontWeight: 650, letterSpacing: '-0.05em', lineHeight: 1, color: 'var(--t-text)' }}>
-            {totalCorredores}
-          </strong>
-          <span style={{ fontSize: 11, letterSpacing: '0.09em', color: 'var(--t-text-2)', textTransform: 'uppercase' }}>
-            Corredores vinculados
-          </span>
-        </div>
+        {[
+          { value: estudiadasTotal.length, label: 'Carpetas en estudio' },
+          { value: totalVehiculos,         label: 'Vehículos registrados' },
+          { value: totalCorredores,        label: 'Corredores vinculados' },
+        ].map(({ value, label }) => (
+          <div key={label} style={{
+            padding: '10px 14px', borderRadius: 8,
+            background: 'var(--t-surface)', border: '1px solid var(--t-line)',
+          }}>
+            <strong style={{ display: 'block', fontSize: 28, fontWeight: 700, letterSpacing: '-0.04em', lineHeight: 1.1, color: 'var(--t-text)', fontVariantNumeric: 'tabular-nums' }}>
+              {value}
+            </strong>
+            <span style={{ display: 'block', marginTop: 4, fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--t-text-3)', textTransform: 'uppercase' }}>
+              {label}
+            </span>
+          </div>
+        ))}
       </div>
 
       {/* ── Filtros ───────────────────────────────────────────────────────── */}
