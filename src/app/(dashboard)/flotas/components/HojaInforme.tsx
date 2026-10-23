@@ -249,17 +249,10 @@ function buildPdfHtml(data: {
       <thead><tr>
         <th>Tipología</th>
         <th class="cnt">Veh.</th><th class="cnt">SINCO</th><th class="cnt">Sin.</th>
-        <th class="num">Antig.</th><th class="num">Sin./año</th><th class="num">Frec.</th>
+        <th class="num">Antig.*</th><th class="num">Sin./año*</th><th class="num">Frec.*</th>
       </tr></thead>
       <tbody>${tipoRows}</tbody>
     </table>` : ''}
-    <div class="note" style="margin-top:10px">
-      <strong>Metodología de cálculo</strong><br>
-      <strong>Antigüedad media</strong> = media de <em>Num_Anios_Asegurado</em> de los vehículos con consulta SINCO válida (código retorno vacío o 0) &nbsp;·&nbsp;
-      <strong>Sin./año</strong> = &Sigma; siniestros &divide; antigüedad media &nbsp;·&nbsp;
-      <strong>Frecuencia</strong> = (sin./año &divide; veh. con SINCO) &times; 100 %<br>
-      ${tipoRows ? 'Las frecuencias por tipología aplican las mismas fórmulas a cada subgrupo de forma independiente; no son aditivas respecto al global porque cada tipología tiene su propia antigüedad media.' : ''}
-    </div>
   </section>`;
   })() : '';
 
@@ -403,7 +396,7 @@ ${heroHtml}
     <colgroup><col style="width:35%"><col style="width:9%">${pivot.cobs.map(() => `<col style="width:${Math.floor(56/Math.max(pivot.cobs.length,1))}%">`).join('')}</colgroup>
     <thead><tr>
       <th>Tipo</th>
-      <th class="cnt">Nº</th>
+      <th class="cnt">Nº Veh.</th>
       ${pivot.cobs.map(c => `<th class="cnt">${c || '—'}</th>`).join('')}
     </tr></thead>
     <tbody>${pivotRows}</tbody>
@@ -417,6 +410,12 @@ ${heroHtml}
 ${sincoSection}
 ${sincoPorTipoSection}
 ${danosPropiosSection}
+${sinco ? `<div class="note" style="margin-bottom:9px;font-size:9px;line-height:1.7">
+  <strong style="display:block;margin-bottom:5px;font-size:9.5px">Metodología de cálculo</strong>
+  <strong>Antigüedad media*</strong> = media de <em>Num_Anios_Asegurado</em> de los vehículos con consulta SINCO válida (código retorno vacío o 0)<br>
+  <strong>Sin./año*</strong> = &Sigma; siniestros &divide; antigüedad media<br>
+  <strong>Frecuencia*</strong> = (sin./año &divide; veh. con SINCO) &times; 100 %${sincoPorTipo && sincoPorTipo.length > 1 ? '<br><em>Por tipología: mismas fórmulas aplicadas a cada subgrupo de forma independiente. Las frecuencias parciales no son aditivas respecto al global porque cada tipología tiene su propia antigüedad media.</em>' : ''}
+</div>` : ''}
 <div class="footer"${escObs ? ' style="flex-direction:column;gap:4px"' : ''}>
   ${escObs ? `<div style="font-style:italic;color:#7a8594;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:9px">Obs.: ${escObs}</div>` : ''}
   <div style="display:flex;justify-content:space-between;width:100%">
@@ -927,9 +926,9 @@ export default function HojaInforme({
         ['Vehículos', String(r.totalVehiculos)],
         ['Con SINCO',  String(r.vehiculosConSinco)],
         ['Siniestros', String(r.totalSiniestros)],
-        ['Antigüedad media', fmt2(r.antiguedadMedia) + ' años'],
-        ['Sin./año', fmt2(r.siniestrosPorAnio)],
-        ['Frecuencia', fmtFreq(r.frecuencia)],
+        ['Antigüedad media*', fmt2(r.antiguedadMedia) + ' años'],
+        ['Sin./año*', fmt2(r.siniestrosPorAnio)],
+        ['Frecuencia*', fmtFreq(r.frecuencia)],
       ];
       if (sincoGlobal) return [
         ['Siniestros', String(sincoGlobal.siniestrosTotales)],
@@ -1091,7 +1090,7 @@ export default function HojaInforme({
               <table style={{ minWidth: 400, width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr>
-                    {['Tipología', 'Veh.', 'Con SINCO', 'Siniestros', 'Antigüedad', 'Sin./año', 'Frecuencia'].map(h =>
+                    {['Tipología', 'Veh.', 'Con SINCO', 'Siniestros', 'Antigüedad*', 'Sin./año*', 'Frecuencia*'].map(h =>
                       <th key={h} style={thS}>{h}</th>)}
                   </tr>
                 </thead>
