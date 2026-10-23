@@ -341,6 +341,8 @@ export default function CarpetaScreen({ onSelect }: Props) {
 
   const thStyle: React.CSSProperties = {
     textAlign: 'left', padding: '0 12px 14px 0',
+    fontSize: 10, fontWeight: 800, color: 'var(--t-text-3)',
+    textTransform: 'uppercase', letterSpacing: '0.08em',
     borderBottom: '1px solid var(--t-line)',
     whiteSpace: 'nowrap',
   };
@@ -595,9 +597,7 @@ export default function CarpetaScreen({ onSelect }: Props) {
                 return (
                   <tr key={c.id}
                     onClick={() => onSelect(c)}
-                    style={{ cursor: 'pointer' }}
-                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--t-line-soft)')}
-                    onMouseLeave={e => (e.currentTarget.style.background = '')}
+                    className="orion-tr"
                   >
                     {/* Nombre */}
                     <td style={{ ...tdStyle, color: 'var(--t-text)' }}>
@@ -733,11 +733,11 @@ export default function CarpetaScreen({ onSelect }: Props) {
               </colgroup>
               <thead>
                 <tr>
-                  <th style={thStyle}><span style={{ fontSize: 11, fontWeight: 700, color: 'var(--t-text-3)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Nombre</span></th>
-                  <th style={thStyle}><span style={{ fontSize: 11, fontWeight: 700, color: 'var(--t-text-3)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Corredor</span></th>
-                  <th style={thStyle}><span style={{ fontSize: 11, fontWeight: 700, color: 'var(--t-text-3)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Veh.</span></th>
-                  <th style={thStyle}><span style={{ fontSize: 11, fontWeight: 700, color: 'var(--t-text-3)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Estado</span></th>
-                  <th style={thStyle}><span style={{ fontSize: 11, fontWeight: 700, color: 'var(--t-text-3)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Fecha</span></th>
+                  <th style={thStyle}>Nombre</th>
+                  <th style={thStyle}>Corredor</th>
+                  <th style={thStyle}>Veh.</th>
+                  <th style={thStyle}>Estado</th>
+                  <th style={thStyle}>Fecha</th>
                   <th style={{ ...thStyle, textAlign: 'right' }} />
                 </tr>
               </thead>
@@ -747,10 +747,7 @@ export default function CarpetaScreen({ onSelect }: Props) {
                   const numVeh = (c.trabajo?.length > 0 ? c.trabajo : c.original)?.filter((r: Record<string, unknown>) => (r['matricula'] as string)?.trim()).length ?? 0;
                   const lastMotivo = [...(c.historico ?? [])].reverse().find(h => h.estadoNuevo === c.estado && h.motivo)?.motivo;
                   return (
-                    <tr key={c.id}
-                      onMouseEnter={e => (e.currentTarget.style.background = 'var(--t-line-soft)')}
-                      onMouseLeave={e => (e.currentTarget.style.background = '')}
-                    >
+                    <tr key={c.id} className="orion-tr">
                       <td style={{ ...tdStyle, color: 'var(--t-text)' }}>
                         <span style={{ fontWeight: 650, fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block', maxWidth: 300 }}>
                           {c.nombre || '(sin nombre)'}

@@ -60,7 +60,7 @@ const iconBtn: React.CSSProperties = {
     display: 'grid', placeItems: 'center',
     background: 'transparent', border: 'none',
     color: '#c8ccd2', cursor: 'pointer',
-    transition: 'color 150ms',
+    transition: 'color 120ms ease, transform 80ms ease',
     flexShrink: 0,
 };
 
@@ -160,6 +160,7 @@ export default function Topbar() {
                         <div ref={bellRef} style={{ position: 'relative' }}>
                             <button
                                 onClick={() => setBellOpen(!bellOpen)}
+                                className="orion-icon-btn"
                                 style={{ ...iconBtn, color: bellOpen ? '#f4f4f5' : '#c8ccd2', position: 'relative' }}
                                 onMouseEnter={e => { e.currentTarget.style.color = '#f4f4f5'; }}
                                 onMouseLeave={e => { e.currentTarget.style.color = bellOpen ? '#f4f4f5' : '#c8ccd2'; }}
@@ -245,6 +246,7 @@ export default function Topbar() {
                         {mounted && (
                             <button
                                 onClick={toggle}
+                                className="orion-icon-btn"
                                 style={iconBtn}
                                 onMouseEnter={e => { e.currentTarget.style.color = '#f4f4f5'; }}
                                 onMouseLeave={e => { e.currentTarget.style.color = '#c8ccd2'; }}
@@ -282,6 +284,7 @@ export default function Topbar() {
                         {/* Logout */}
                         <button
                             onClick={logout}
+                            className="orion-icon-btn"
                             style={iconBtn}
                             onMouseEnter={e => { e.currentTarget.style.color = '#ef4d5a'; }}
                             onMouseLeave={e => { e.currentTarget.style.color = '#c8ccd2'; }}

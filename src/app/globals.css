@@ -59,6 +59,12 @@
     --t-fast: 60ms cubic-bezier(.4,.0,.2,1);
     --t-med:  120ms cubic-bezier(.4,.0,.2,1);
 
+    /* Easing curves */
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+    --ease-out:    cubic-bezier(0, 0, 0.2, 1);
+    --ease-snappy: cubic-bezier(0.2, 0, 0, 1);
+
     /* Legacy compat */
     --background:    var(--orion-void);
     --foreground:    var(--orion-text);
@@ -124,33 +130,37 @@
     pointer-events: none;
   }
 
-  /* Button primary — gradient */
+  /* Button primary */
   .btn-primary {
     @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm
-           text-white active:scale-[0.97]
+           text-white
            transition-all duration-150;
-    background: linear-gradient(135deg, #1240CC, #0a2472);
-    border: 1px solid rgba(51, 102, 255, 0.2);
-    box-shadow: 0 4px 16px rgba(18,64,204,0.25);
+    background: var(--t-blue);
+    border: none;
+    transition: background 120ms var(--ease-smooth), transform 80ms var(--ease-smooth);
   }
   .btn-primary:hover {
-    background: linear-gradient(135deg, #3366FF, #1240CC);
-    box-shadow: 0 4px 24px rgba(18,64,204,0.4);
-    transform: translateY(-1px);
+    background: #5a9aff;
+  }
+  .btn-primary:active {
+    transform: scale(0.96);
   }
 
   /* Button ghost */
   .btn-ghost {
     @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm
-           active:scale-[0.97]
            transition-all duration-150;
-    color: var(--orion-text-3);
-    border: 1px solid var(--glass-border);
+    color: var(--t-text-2);
+    border: 1px solid var(--t-line);
+    transition: background 120ms var(--ease-smooth), border-color 120ms var(--ease-smooth), transform 80ms var(--ease-smooth);
   }
   .btn-ghost:hover {
-    color: var(--orion-text);
-    background: rgba(61, 112, 255, 0.12);
-    border-color: var(--glass-border-strong);
+    color: var(--t-text);
+    background: var(--t-line-soft);
+    border-color: rgba(255,255,255,0.14);
+  }
+  .btn-ghost:active {
+    transform: scale(0.96);
   }
 
   /* Button danger */
@@ -225,7 +235,39 @@
   /* Table header */
   .th {
     @apply py-3 px-4 text-[10px] font-black uppercase tracking-widest;
-    color: rgba(70, 120, 255, 0.6);
+    color: var(--t-text-3);
+  }
+
+  /* Section title — consistent across all hojas */
+  .orion-section-title {
+    font-size: 10px;
+    font-weight: 900;
+    color: var(--t-text-3);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 14px;
+  }
+
+  /* Table row — smooth hover */
+  .orion-tr {
+    transition: background 80ms ease;
+    cursor: pointer;
+  }
+  .orion-tr:hover {
+    background: var(--t-line-soft);
+  }
+
+  /* Icon button — topbar and similar */
+  .orion-icon-btn:active {
+    transform: scale(0.88);
+  }
+
+  /* Skeleton shimmer */
+  .orion-skeleton {
+    border-radius: 4px;
+    background: linear-gradient(90deg, var(--t-line) 25%, var(--t-line-soft) 50%, var(--t-line) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.5s infinite;
   }
 
   /* Status dots */
@@ -366,7 +408,7 @@
   to   { opacity: 1; }
 }
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(12px); }
+  from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 @keyframes slideInRight {
@@ -403,6 +445,11 @@
 @keyframes pulse-outline {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.3; }
+}
+
+@keyframes skeleton-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
 /* ─────────────────────────────────────────
@@ -521,4 +568,14 @@
 
 body {
   transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* ─────────────────────────────────────────
+   REDUCED MOTION
+   ───────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

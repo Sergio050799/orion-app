@@ -520,7 +520,8 @@ export default function FlotasPage() {
           text-align: center;
           justify-content: center;
         }
-        .t-stage:hover { background: rgba(255,255,255,0.04); }
+        .t-stage:hover { background: var(--t-line-soft); }
+        .t-stage:active { transform: scale(0.97); }
         .t-stage-x:hover { color: #ef4444 !important; }
       `}</style>
 
