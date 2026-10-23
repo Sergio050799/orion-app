@@ -1,11 +1,10 @@
 // ─── SEED DATA — Datos ficticios para demostración ───────────────────────────
-// Se ejecuta una sola vez si localStorage está vacío.
+// Se ejecuta una sola vez si memCache está vacío (sin datos del servidor).
 
-import type { Corredor, Periodicidad } from './corredor';
-import type { FlotaCarpeta, EstadoFlota } from './carpeta';
+import type { Periodicidad } from './corredor';
+import { crearCorredor, type Corredor } from './corredor';
+import { initMemCache, listarCarpetas, type FlotaCarpeta, type EstadoFlota } from './carpeta';
 
-const CORREDORES_KEY = 'flotas_corredores_v1';
-const CARPETAS_KEY = 'flotas_carpetas_v1';
 
 // ─── Vehicle generators ─────────────────────────────────────────────────────
 
@@ -173,27 +172,16 @@ const SEED_FLOTAS: FlotaSeed[] = [
 
 export function seedIfEmpty(): void {
   if (typeof window === 'undefined') return;
+  if (listarCarpetas().length > 0) return;
 
-  // Seed whenever both stores are empty (no flag check — always re-seeds if data is missing)
-  const existingCorredores = JSON.parse(localStorage.getItem(CORREDORES_KEY) ?? '[]');
-  const existingCarpetas = JSON.parse(localStorage.getItem(CARPETAS_KEY) ?? '[]');
-  if (existingCorredores.length > 0 || existingCarpetas.length > 0) return;
+  // Populate corredor memCache via crearCorredor (sync to server fails silently in local)
+  const corredores: Corredor[] = SEED_CORREDORES.map((data, i) =>
+    crearCorredor({ ...data, codigo: `COR-${String(i + 1).padStart(3, '0')}` })
+  );
 
-  const now = new Date().toISOString();
-
-  // Create corredores
-  const corredores: Corredor[] = SEED_CORREDORES.map((data, i) => ({
-    ...data,
-    id: `corredor_seed_${i + 1}`,
-    codigo: `COR-${String(i + 1).padStart(3, '0')}`,
-    creadoEn: new Date(Date.now() - (30 - i * 5) * 86400000).toISOString(),
-    actualizadoEn: new Date(Date.now() - i * 86400000).toISOString(),
-  }));
-
-  // Create carpetas with vehicles
+  // Build carpetas and inject directly into memCache via initMemCache
   const carpetas: FlotaCarpeta[] = SEED_FLOTAS.map((data, i) => {
     const vehicles = generateVehicles(data.vehicleCount);
-    // Fill tomador/cif in vehicles
     vehicles.forEach(v => { v.tomador = data.tomador; v.cif = data.cif; });
 
     const createdAt = new Date(Date.now() - (60 - i * 5) * 86400000).toISOString();
@@ -218,12 +206,11 @@ export function seedIfEmpty(): void {
         periodicidad: corredores[data.corredorIdx].periodicidad,
       },
       original: vehicles,
-      trabajo: vehicles.map(v => ({ ...v })), // copy
+      trabajo: vehicles.map(v => ({ ...v })),
       sincoResultados: [],
       oferta: [],
     };
   });
 
-  localStorage.setItem(CORREDORES_KEY, JSON.stringify(corredores));
-  localStorage.setItem(CARPETAS_KEY, JSON.stringify(carpetas));
+  initMemCache(carpetas);
 }
