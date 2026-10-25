@@ -212,6 +212,7 @@ def get_corredores():
             'domicilio':      r.get('domicilio', ''),
             'comisionBase':   r.get('comision', 0),
             'comisionExtra':  r.get('comision_extra', 0),
+            'idPerceptor':    r.get('id_perceptor') or None,
             'periodicidad':   r.get('periodicidad', 'mensual'),
             'formaPago':      r.get('forma_pago', ''),
             'contacto':       r.get('contacto', ''),
@@ -246,14 +247,15 @@ def post_corredores():
                 return jsonify({'error': 'comisionExtra debe estar entre 0 y 100'}), 400
             conn.execute("""
                 INSERT INTO corredores
-                    (id, codigo, nombre, cif, domicilio, comision, comision_extra, periodicidad,
-                     forma_pago, contacto, email, telefono, observaciones,
+                    (id, codigo, nombre, cif, domicilio, comision, comision_extra, id_perceptor,
+                     periodicidad, forma_pago, contacto, email, telefono, observaciones,
                      sucursal, comercial, creado_por, updated_at)
-                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                 ON CONFLICT(id) DO UPDATE SET
                     codigo=excluded.codigo, nombre=excluded.nombre,
                     cif=excluded.cif, domicilio=excluded.domicilio,
                     comision=excluded.comision, comision_extra=excluded.comision_extra,
+                    id_perceptor=excluded.id_perceptor,
                     periodicidad=excluded.periodicidad,
                     forma_pago=excluded.forma_pago, contacto=excluded.contacto,
                     email=excluded.email, telefono=excluded.telefono,
@@ -261,7 +263,9 @@ def post_corredores():
                     comercial=excluded.comercial, updated_at=excluded.updated_at
             """, [
                 c['id'], c.get('codigo', ''), c.get('nombre', ''), c.get('cif', ''),
-                c.get('domicilio', ''), comision_base, comision_extra, c.get('periodicidad', 'mensual'),
+                c.get('domicilio', ''), comision_base, comision_extra,
+                c.get('idPerceptor') or None,
+                c.get('periodicidad', 'mensual'),
                 c.get('formaPago', ''), c.get('contacto', ''), c.get('email', ''),
                 c.get('telefono', ''), c.get('observaciones', ''),
                 c.get('sucursal') or '', c.get('comercial') or '',
@@ -288,14 +292,15 @@ def post_corredores():
                         return jsonify({'error': f'comisionExtra fuera de rango en corredor {c.get("nombre", c.get("id", "?"))}'}), 400
                     conn.execute("""
                         INSERT INTO corredores
-                            (id, codigo, nombre, cif, domicilio, comision, comision_extra, periodicidad,
-                             forma_pago, contacto, email, telefono, observaciones,
+                            (id, codigo, nombre, cif, domicilio, comision, comision_extra, id_perceptor,
+                             periodicidad, forma_pago, contacto, email, telefono, observaciones,
                              sucursal, comercial, creado_por, updated_at)
-                        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                         ON CONFLICT(id) DO UPDATE SET
                             codigo=excluded.codigo, nombre=excluded.nombre,
                             cif=excluded.cif, domicilio=excluded.domicilio,
                             comision=excluded.comision, comision_extra=excluded.comision_extra,
+                            id_perceptor=excluded.id_perceptor,
                             periodicidad=excluded.periodicidad,
                             forma_pago=excluded.forma_pago, contacto=excluded.contacto,
                             email=excluded.email, telefono=excluded.telefono,
@@ -303,7 +308,9 @@ def post_corredores():
                             comercial=excluded.comercial, updated_at=excluded.updated_at
                     """, [
                         c['id'], c.get('codigo', ''), c.get('nombre', ''), c.get('cif', ''),
-                        c.get('domicilio', ''), comision_base, comision_extra, c.get('periodicidad', 'mensual'),
+                        c.get('domicilio', ''), comision_base, comision_extra,
+                        c.get('idPerceptor') or None,
+                        c.get('periodicidad', 'mensual'),
                         c.get('formaPago', ''), c.get('contacto', ''), c.get('email', ''),
                         c.get('telefono', ''), c.get('observaciones', ''),
                         c.get('sucursal') or '', c.get('comercial') or '',
