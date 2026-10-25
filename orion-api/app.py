@@ -104,6 +104,8 @@ def get_carpetas():
         data['corredor_id']    = row['corredor_id'] or data.get('corredor_id')
         data['creado_por']     = row['creado_por'] or data.get('creado_por', '')
         data['estudiando_por'] = row['ep'].split(',') if row['ep'] else []
+        data['id']             = row['id']
+        data['actualizadaEn']  = row['updated_at'] or data.get('actualizadaEn', '')
         if 'header' not in data:
             data['header'] = {}
         data['header']['cif']       = row['cif'] or data['header'].get('cif', '')

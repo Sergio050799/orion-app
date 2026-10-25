@@ -2,7 +2,10 @@
 
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { cargarCarpetasDelServidor, cargarCorredoresDelServidor, type FlotaCarpeta, type Corredor } from '@/core/flotas';
+import {
+  cargarCarpetasDelServidor, cargarCorredoresDelServidor,
+  type FlotaCarpeta, type Corredor, type EstadoFlota,
+} from '@/core/flotas';
 import type { CatStats } from './components/VehiculosCategorias';
 import VehiculosCategorias from './components/VehiculosCategorias';
 import { useAuth } from '@/context/AuthContext';
@@ -33,30 +36,46 @@ function displayName(email: string | null): string {
   return first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
 }
 
+function tiempoRelativo(isoStr: string): string {
+  if (!isoStr) return '—';
+  const d = new Date(isoStr);
+  if (isNaN(d.getTime())) return '—';
+  const diffMs = Date.now() - d.getTime();
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return 'ahora';
+  if (mins < 60) return `hace ${mins} min`;
+  const hs = Math.floor(mins / 60);
+  if (hs < 24) return `hace ${hs} h`;
+  const ds = Math.floor(hs / 24);
+  if (ds < 7) return `hace ${ds} d`;
+  return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
+}
+
 const CURRENT_YEAR = new Date().getFullYear();
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function RenovPill({ dias, fecha }: { dias: number; fecha: Date }) {
   const base: React.CSSProperties = {
-    minWidth: 72, height: 26, padding: '0 10px', borderRadius: 999, border: '1px solid',
-    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, whiteSpace: 'nowrap',
+    minWidth: 68, height: 24, padding: '0 9px', borderRadius: 999, border: '1px solid',
+    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+    fontSize: 12, whiteSpace: 'nowrap',
   };
   if (dias < 0 && fecha.getFullYear() < CURRENT_YEAR) {
-    return <span style={{ ...base, borderColor: 'rgba(239,77,90,0.4)', background: 'rgba(239,77,90,0.10)', color: 'var(--t-red)' }}>Vencida {Math.abs(dias)}d</span>;
+    return <span style={{ ...base, borderColor: 'rgba(224,92,92,.3)', background: 'rgba(224,92,92,.07)', color: 'var(--danger)' }}>Vencida {Math.abs(dias)}d</span>;
   }
   if (dias < 0) {
-    return <span style={{ ...base, borderColor: 'var(--t-amber-border)', background: 'var(--t-amber-bg)', color: 'var(--t-amber)' }}>−{Math.abs(dias)}d</span>;
+    return <span style={{ ...base, borderColor: 'rgba(227,169,106,.3)', background: 'rgba(227,169,106,.07)', color: 'var(--warn)' }}>−{Math.abs(dias)}d</span>;
   }
-  if (dias <= 30) {
-    return <span style={{ ...base, borderColor: 'rgba(239,77,90,0.4)', background: 'rgba(239,77,90,0.10)', color: 'var(--t-red)' }}>{dias} Días</span>;
+  if (dias <= 15) {
+    return <span style={{ ...base, borderColor: 'rgba(224,92,92,.3)', background: 'rgba(224,92,92,.07)', color: 'var(--danger)' }}>{dias} días</span>;
   }
-  return <span style={{ ...base, borderColor: 'var(--t-amber-border)', background: 'var(--t-amber-bg)', color: 'var(--t-amber)' }}>{dias} Días</span>;
+  return <span style={{ ...base, borderColor: 'rgba(227,169,106,.3)', background: 'rgba(227,169,106,.07)', color: 'var(--warn)' }}>{dias} días</span>;
 }
 
 function SugerenciasSection({ user }: { user: string | null }) {
   const [titulo, setTitulo] = useState('');
-  const [desc,   setDesc]   = useState('');
+  const [desc, setDesc] = useState('');
   const [status, setStatus] = useState<'idle' | 'sending' | 'done'>('idle');
 
   const send = useCallback(async () => {
@@ -77,57 +96,46 @@ function SugerenciasSection({ user }: { user: string | null }) {
   }, [titulo, desc, user]);
 
   const iS: React.CSSProperties = {
-    width: '100%', padding: '9px 12px', borderRadius: 8, fontSize: 13,
-    background: 'var(--t-surface)', border: '1px solid var(--t-line)',
-    color: 'var(--t-text)', outline: 'none', fontFamily: 'inherit',
+    width: '100%', padding: '9px 12px', borderRadius: 5, fontSize: 13,
+    background: 'var(--soft)', border: '1px solid var(--line)',
+    color: 'var(--text)', outline: 'none', fontFamily: 'inherit',
   };
 
   return (
-    <div style={{ paddingTop: 28, borderTop: '1px solid var(--t-line)' }}>
-      <h2 style={{ fontSize: 16, fontWeight: 620, color: 'var(--t-text)', margin: '0 0 20px' }}>Sugerencias de mejora</h2>
-      <p style={{ fontSize: 12, color: 'var(--t-text-2)', marginBottom: 16 }}>
-        Cualquier idea que te parezca útil — se revisa en el panel de administración.
+    <div style={{ paddingTop: 28, borderTop: '1px solid var(--line)' }}>
+      <h2 style={{ fontSize: 16, fontWeight: 600, fontFamily: 'var(--font-display)', letterSpacing: '-0.02em', color: 'var(--text)', margin: '0 0 6px' }}>Sugerencias de mejora</h2>
+      <p style={{ fontSize: 13, color: 'var(--sub)', margin: '0 0 16px' }}>
+        Cualquier idea que te parezca útil. Se revisa en el panel de administración.
       </p>
       {status === 'done' ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', borderRadius: 8, background: 'rgba(32,201,130,0.08)', border: '1px solid rgba(32,201,130,0.25)' }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--t-green)" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-          <span style={{ fontSize: 13, color: 'var(--t-green)' }}>Sugerencia enviada — gracias.</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderRadius: 5, background: 'rgba(76,175,133,.07)', border: '1px solid rgba(76,175,133,.22)' }}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--ok)" strokeWidth="2.5"><polyline points="20 6 9 17 4 12" /></svg>
+          <span style={{ fontSize: 13, color: 'var(--ok)' }}>Sugerencia enviada — gracias.</span>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, alignItems: 'start' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <div>
-              <label style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--t-text-3)', marginBottom: 5 }}>Título</label>
-              <input type="text" value={titulo} maxLength={100} onChange={e => setTitulo(e.target.value)} placeholder="Resumen breve" style={iS} />
-            </div>
-            <button
-              onClick={send}
-              disabled={status === 'sending' || !titulo.trim() || !desc.trim()}
-              style={{
-                padding: '9px 18px', borderRadius: 8, fontSize: 12, fontWeight: 700,
-                textTransform: 'uppercase', letterSpacing: '0.08em', cursor: 'pointer',
-                background: titulo.trim() && desc.trim() ? 'var(--t-blue)' : 'transparent',
-                border: '1px solid var(--t-line)',
-                color: titulo.trim() && desc.trim() ? '#fff' : 'var(--t-text-3)',
-                transition: 'all 0.15s', alignSelf: 'flex-start',
-                opacity: status === 'sending' ? 0.6 : 1,
-              }}
-            >
-              {status === 'sending' ? 'Enviando…' : 'Enviar sugerencia'}
-            </button>
-          </div>
-          <div>
-            <label style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--t-text-3)', marginBottom: 5 }}>Descripción</label>
-            <textarea value={desc} maxLength={1000} rows={4} onChange={e => setDesc(e.target.value)} placeholder="Explica la mejora con detalle"
-              style={{ ...iS, resize: 'vertical', minHeight: 90 }} />
-          </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(150px,1fr) minmax(220px,2fr) auto', gap: 10, maxWidth: 920 }}>
+          <input type="text" value={titulo} maxLength={100} onChange={e => setTitulo(e.target.value)} placeholder="Título" style={iS} />
+          <input type="text" value={desc} maxLength={350} onChange={e => setDesc(e.target.value)} placeholder="Descripción" style={iS} />
+          <button
+            onClick={send}
+            disabled={status === 'sending' || !titulo.trim() || !desc.trim()}
+            style={{
+              padding: '9px 18px', borderRadius: 5, fontSize: 13, fontWeight: 600,
+              cursor: titulo.trim() && desc.trim() ? 'pointer' : 'default',
+              background: 'var(--soft)', border: '1px solid var(--line)',
+              color: titulo.trim() && desc.trim() ? 'var(--text)' : 'var(--quiet)',
+              transition: 'border-color .16s', opacity: status === 'sending' ? 0.6 : 1, whiteSpace: 'nowrap',
+            }}
+          >
+            {status === 'sending' ? 'Enviando…' : 'Enviar sugerencia'}
+          </button>
         </div>
       )}
     </div>
   );
 }
 
-// ─── Category classification ───────────────────────────────────────────────────
+// ─── Category classification ──────────────────────────────────────────────────
 
 const SUBTITULOS_CAT: Record<string, string> = {
   '1ª Categoría':   'Turismo · todoterreno · furgoneta',
@@ -174,22 +182,31 @@ function getTipologia(raw: string): string {
   return MAP[l] ?? (raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase());
 }
 
-// ─── Cartera segments ─────────────────────────────────────────────────────────
+// ─── SEGS ─────────────────────────────────────────────────────────────────────
 
-const SEGS = [
-  { key: 'CONTRATADA', label: 'Contratadas', color: '#20c982' },
-  { key: 'EN ESTUDIO',  label: 'En estudio',  color: '#4387ff' },
-  { key: 'OFERTADA',    label: 'Ofertadas',   color: '#7c5cfc' },
-  { key: 'RECHAZADA',   label: 'Rechazadas',  color: '#ef4d5a' },
+type SegDef = { key: EstadoFlota; label: string; color: string };
+const SEGS: SegDef[] = [
+  { key: 'CONTRATADA', label: 'Contratadas', color: 'var(--st-contratada)' },
+  { key: 'EN ESTUDIO', label: 'En estudio',  color: 'var(--st-estudio)'    },
+  { key: 'OFERTADA',   label: 'Ofertadas',   color: 'var(--st-ofertada)'   },
+  { key: 'RECHAZADA',  label: 'Rechazadas',  color: 'var(--st-rechazada)'  },
 ];
 
-// ─── Cartera donut ────────────────────────────────────────────────────────────
+const ESTADO_LABELS: Record<string, string> = {
+  'CONTRATADA': 'Contratada', 'EN ESTUDIO': 'En estudio',
+  'OFERTADA':   'Ofertada',   'RECHAZADA':  'Rechazada',
+};
+const ESTADO_COLORS: Record<string, string> = {
+  'CONTRATADA': 'var(--st-contratada)', 'EN ESTUDIO': 'var(--st-estudio)',
+  'OFERTADA':   'var(--st-ofertada)',   'RECHAZADA':  'var(--st-rechazada)',
+};
+
+// ─── CarteraDonut ─────────────────────────────────────────────────────────────
 
 function CarteraDonut({ counts, total }: { counts: Record<string, number>; total: number }) {
-  const r   = 88;
-  const C   = 2 * Math.PI * r;
+  const r = 82;
+  const C = 2 * Math.PI * r;
   const GAP = 1.5;
-
   let cumulative = 0;
   const segments = SEGS
     .map(s => {
@@ -203,20 +220,15 @@ function CarteraDonut({ counts, total }: { counts: Record<string, number>; total
 
   return (
     <div style={{ display: 'flex', justifyContent: 'center' }}>
-      <svg viewBox="0 0 220 220" width={200} height={200} aria-hidden="true">
-        {total === 0 ? (
-          <circle cx={110} cy={110} r={r} fill="none" stroke="rgba(128,128,128,0.12)" strokeWidth={16} />
-        ) : (
+      <svg viewBox="0 0 220 220" width={180} height={180} aria-hidden="true">
+        <circle cx={110} cy={110} r={r} fill="none" stroke="var(--soft)" strokeWidth={24} />
+        {total > 0 && (
           <g transform="rotate(-90 110 110)">
             {segments.map(s => {
               const fill = Math.max(0, s.arc - GAP);
               return (
-                <circle
-                  key={s.key}
-                  cx={110} cy={110} r={r}
-                  fill="none"
-                  stroke={s.color}
-                  strokeWidth={16}
+                <circle key={s.key} cx={110} cy={110} r={r} fill="none"
+                  stroke={s.color} strokeWidth={24}
                   strokeDasharray={`${fill} ${C - fill}`}
                   strokeDashoffset={C - s.startOffset}
                 />
@@ -224,12 +236,12 @@ function CarteraDonut({ counts, total }: { counts: Record<string, number>; total
             })}
           </g>
         )}
-        <text x={110} y={107} textAnchor="middle" dominantBaseline="middle"
-          style={{ fontSize: 36, fontWeight: 560, fill: 'var(--t-text)', letterSpacing: '-0.05em', fontFamily: 'inherit' }}>
+        <text x={110} y={108} textAnchor="middle" dominantBaseline="middle"
+          style={{ fontSize: 32, fontWeight: 600, fill: 'var(--text)', letterSpacing: '-0.05em', fontFamily: 'var(--font-display)', pointerEvents: 'none' }}>
           {total}
         </text>
-        <text x={110} y={126} textAnchor="middle" dominantBaseline="middle"
-          style={{ fontSize: 9, fill: 'var(--t-text-3)', letterSpacing: '0.12em', fontFamily: 'inherit' }}>
+        <text x={110} y={127} textAnchor="middle" dominantBaseline="middle"
+          style={{ fontSize: 9, fill: 'var(--quiet)', letterSpacing: '0.12em', fontFamily: 'inherit', pointerEvents: 'none' }}>
           FLOTAS
         </text>
       </svg>
@@ -239,11 +251,13 @@ function CarteraDonut({ counts, total }: { counts: Record<string, number>; total
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
+type ActEntry = { fecha: string; accion: string; carpeta: FlotaCarpeta; estadoNuevo?: EstadoFlota };
+
 export default function DashboardPage() {
   const { user } = useAuth();
   const [carpetas, setCarpetas]     = useState<FlotaCarpeta[]>([]);
   const [corredores, setCorredores] = useState<Corredor[]>([]);
-  const [carteraView, setCarteraView] = useState<'bar' | 'donut'>('bar');
+  const [scope, setScope]           = useState<string>('all');
 
   useEffect(() => {
     const ac = new AbortController();
@@ -258,19 +272,43 @@ export default function DashboardPage() {
     return map;
   }, [corredores]);
 
+  const scopedCarpetas = useMemo(
+    () => scope === 'all' ? carpetas : carpetas.filter(c => c.estado === (scope as EstadoFlota)),
+    [carpetas, scope],
+  );
+
   const flotasEstadoCounts = useMemo(() => {
-    const counts: Record<string, number> = { 'EN ESTUDIO': 0, 'OFERTADA': 0, 'CONTRATADA': 0, 'RECHAZADA': 0 };
+    const counts: Record<string, number> = {};
     carpetas.forEach(c => { counts[c.estado] = (counts[c.estado] ?? 0) + 1; });
     return counts;
   }, [carpetas]);
 
-  const totalPortfolio     = Object.values(flotasEstadoCounts).reduce((s, v) => s + v, 0);
-  const contratadas        = flotasEstadoCounts['CONTRATADA'] ?? 0;
-  const tasaContratacion   = totalPortfolio > 0 ? Math.round((contratadas / totalPortfolio) * 100) : null;
+  const totalCartera   = carpetas.length;
+  const totalPortfolio = scopedCarpetas.length;
+  const contratadas    = flotasEstadoCounts['CONTRATADA'] ?? 0;
+  const tasaContratacion = totalCartera > 0 ? Math.round((contratadas / totalCartera) * 100) : null;
+
+  const totalVehiculos = useMemo(() => {
+    let total = 0;
+    for (const c of scopedCarpetas) {
+      const rows = c.trabajo?.length > 0 ? c.trabajo : c.original;
+      total += (rows ?? []).length;
+    }
+    return total;
+  }, [scopedCarpetas]);
+
+  const corredoresActivos = useMemo(() => {
+    const ids = new Set<string>();
+    scopedCarpetas.forEach(c => { if (c.corredor_id) ids.add(c.corredor_id); });
+    return ids.size;
+  }, [scopedCarpetas]);
 
   const renovaciones = useMemo(() => {
-    return carpetas
-      .filter(c => c.estado === 'CONTRATADA' && c.header?.fechaVencimiento)
+    const source = (scope === 'all' || scope === 'CONTRATADA')
+      ? carpetas.filter(c => c.estado === 'CONTRATADA')
+      : [];
+    return source
+      .filter(c => c.header?.fechaVencimiento)
       .flatMap(c => {
         const fecha = parseFechaFlexible(c.header!.fechaVencimiento!);
         if (!fecha) return [];
@@ -279,19 +317,51 @@ export default function DashboardPage() {
         return [{ carpeta: c, corredor, fecha, dias }];
       })
       .sort((a, b) => a.dias - b.dias)
-      .filter(r => r.dias <= 90);
-  }, [carpetas, corredorMap]);
+      .filter(r => r.dias <= 60);
+  }, [carpetas, scope, corredorMap]);
 
-  const vencidasUrgentes = renovaciones.filter(
-    r => r.dias < 0 && r.fecha.getFullYear() < CURRENT_YEAR,
-  );
+  const vencidasUrgentes = renovaciones.filter(r => r.dias < 0 && r.fecha.getFullYear() < CURRENT_YEAR);
+  const renovacionesUrgentes = renovaciones.filter(r => r.dias >= 0 && r.dias <= 15);
+
+  const corredoresStats = useMemo(() => {
+    const counts = new Map<string, { nombre: string; total: number }>();
+    for (const c of scopedCarpetas) {
+      if (!c.corredor_id) continue;
+      const cor = corredorMap.get(c.corredor_id);
+      if (!cor) continue;
+      const ex = counts.get(c.corredor_id);
+      if (ex) ex.total++;
+      else counts.set(c.corredor_id, { nombre: cor.nombre, total: 1 });
+    }
+    return Array.from(counts.values()).sort((a, b) => b.total - a.total).slice(0, 7);
+  }, [scopedCarpetas, corredorMap]);
+
+  const actividadReciente = useMemo((): ActEntry[] => {
+    const entries: ActEntry[] = [];
+    for (const c of carpetas) {
+      for (const h of (c.historico ?? [])) {
+        entries.push({ fecha: h.fecha, accion: h.accion, carpeta: c, estadoNuevo: h.estadoNuevo });
+      }
+    }
+    if (entries.length < 3) {
+      const sorted = [...carpetas].sort((a, b) =>
+        new Date(b.actualizadaEn).getTime() - new Date(a.actualizadaEn).getTime()
+      );
+      for (const c of sorted.slice(0, 6)) {
+        if (!entries.find(e => e.carpeta.id === c.id)) {
+          entries.push({ fecha: c.actualizadaEn, accion: 'Actualizado', carpeta: c, estadoNuevo: c.estado });
+        }
+      }
+    }
+    return entries.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime()).slice(0, 6);
+  }, [carpetas]);
 
   const vehiculosCatStats = useMemo((): CatStats[] => {
     const acc: Record<string, Record<string, Record<string, number>>> = {
       '1ª Categoría': {}, '2ª Categoría': {}, '3ª Categoría': {}, 'Sin clasificar': {},
     };
-    for (const carpeta of carpetas) {
-      const rows  = carpeta.trabajo?.length > 0 ? carpeta.trabajo : carpeta.original;
+    for (const carpeta of scopedCarpetas) {
+      const rows   = carpeta.trabajo?.length > 0 ? carpeta.trabajo : carpeta.original;
       const estado = carpeta.estado;
       for (const row of (rows ?? [])) {
         const raw = row['tipo_vehiculo']?.trim();
@@ -305,7 +375,7 @@ export default function DashboardPage() {
     const ORDERED = ['1ª Categoría', '2ª Categoría', '3ª Categoría', 'Sin clasificar'];
     return ORDERED
       .map(cat => {
-        const tipMap    = acc[cat];
+        const tipMap     = acc[cat];
         const tipologias = Object.entries(tipMap)
           .map(([tip, estadoMap]) => ({
             tipologia:  tip,
@@ -326,232 +396,325 @@ export default function DashboardPage() {
         };
       })
       .filter(c => c.total > 0);
-  }, [carpetas]);
+  }, [scopedCarpetas]);
 
-  const hora   = new Date().getHours();
-  const saludo = hora < 14 ? 'Buenos días' : hora < 21 ? 'Buenas tardes' : 'Buenas noches';
-  const fecha  = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const hora     = new Date().getHours();
+  const saludo   = hora < 14 ? 'Buenos días' : hora < 21 ? 'Buenas tardes' : 'Buenas noches';
+  const fechaHoy = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+  const maxBroker = corredoresStats.length > 0 ? corredoresStats[0].total : 1;
+
+  const donutCounts = scope === 'all'
+    ? flotasEstadoCounts
+    : Object.fromEntries(SEGS.map(s => [s.key, s.key === (scope as EstadoFlota) ? totalPortfolio : 0]));
+
+  const thStyle = (left: boolean): React.CSSProperties => ({
+    textAlign: left ? 'left' : 'center',
+    fontSize: 11, fontWeight: 600, letterSpacing: '0.07em',
+    color: 'var(--quiet)', paddingBottom: 10, paddingRight: 0,
+    textTransform: 'uppercase',
+  });
 
   return (
     <div className="animate-in fade-in duration-500">
       <style>{`
-        .dash-metrics   { display: grid; grid-template-columns: 1fr 1.15fr 1fr; align-items: start; }
-        .dash-workspace { display: grid; grid-template-columns: 300px 1fr; gap: 56px; }
-        .dash-alert     { animation: orion-blink 2s ease-in-out infinite; }
-        .cartera-fade   { transition: opacity 0.25s ease; }
-        @keyframes orion-blink { 0%,100%{opacity:1} 50%{opacity:0.25} }
-        @media (prefers-reduced-motion: reduce) { .cartera-fade { transition: none !important; } }
-        @media (max-width: 960px) {
-          .dash-workspace { grid-template-columns: 1fr; }
-        }
-        @media (max-width: 680px) {
-          .dash-metrics { grid-template-columns: 1fr 1fr; }
-        }
-        @media (max-width: 420px) {
-          .dash-metrics { grid-template-columns: 1fr; }
-        }
+        .db-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+        .db-kpi{display:flex;flex-direction:column;justify-content:flex-start;padding:20px 14px 20px 0;min-width:0}
+        .db-kpi+.db-kpi{padding-left:clamp(12px,1.8cqw,20px);border-left:1px solid var(--line)}
+        .db-grid2{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);border-bottom:1px solid var(--line)}
+        .db-grid2.r40{grid-template-columns:minmax(0,2fr) minmax(0,3fr)}
+        .db-grid2>section{padding:26px 0 28px;min-width:0}
+        .db-grid2>section:first-child{padding-right:clamp(18px,3cqw,36px)}
+        .db-grid2>section+section{padding-left:clamp(18px,3cqw,36px);border-left:1px solid var(--line)}
+        .db-srow{display:grid;grid-template-columns:10px 1fr auto auto;gap:10px;align-items:center;padding:11px 4px;border-bottom:1px solid var(--line);font-size:14px}
+        .db-srow:last-child{border-bottom:0}
+        .db-bar{display:grid;grid-template-columns:minmax(80px,140px) 1fr 36px;gap:12px;align-items:center;padding:8px 4px;border-radius:3px}
+        .db-bar:hover{background:var(--hover)}
+        .dash-alert{animation:orion-blink 2s ease-in-out infinite}
+        @keyframes orion-blink{0%,100%{opacity:1}50%{opacity:.25}}
+        @media(prefers-reduced-motion:reduce){.dash-alert{animation:none!important}}
       `}</style>
 
-      {/* Alert banner — only when there are actually overdue policies */}
+      {/* Alert */}
       {vencidasUrgentes.length > 0 && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', marginBottom: 28, borderRadius: 6, background: 'rgba(239,77,90,0.07)', border: '1px solid rgba(239,77,90,0.22)', fontSize: 12, color: 'var(--t-red)' }}>
-          <div className="dash-alert" style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--t-red)', flexShrink: 0 }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 14px', marginBottom: 24, borderRadius: 5, background: 'rgba(224,92,92,.06)', border: '1px solid rgba(224,92,92,.2)', fontSize: 13, color: 'var(--danger)' }}>
+          <div className="dash-alert" style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--danger)', flexShrink: 0 }} />
           {vencidasUrgentes.length === 1
             ? `${vencidasUrgentes[0].carpeta.nombre} — póliza vencida, pendiente de renovación`
             : `${vencidasUrgentes.length} pólizas vencidas pendientes de renovación`}
         </div>
       )}
 
-      {/* Greeting */}
-      <section style={{ marginBottom: 36 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 650, letterSpacing: '-0.03em', lineHeight: 0.95, color: 'var(--t-text)', margin: 0 }}>
-          {saludo}, {displayName(user)}
-        </h1>
-        <p style={{ marginTop: 6, color: 'var(--t-text-2)', fontSize: 14 }}>{fecha}</p>
-      </section>
-
-      {/* Metrics strip */}
-      <section
-        className="dash-metrics"
-        aria-label="Resumen"
-        style={{ paddingBottom: 28, borderBottom: '1px solid var(--t-line)', marginBottom: 28 }}
-      >
-        {/* Renovaciones urgentes */}
+      {/* Intro */}
+      <section style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 20, flexWrap: 'wrap', marginBottom: 28 }}>
         <div>
-          <b style={{ display: 'block', fontSize: 64, fontWeight: 560, letterSpacing: '-0.045em', lineHeight: 0.95, color: vencidasUrgentes.length > 0 ? 'var(--t-red)' : 'var(--t-text)' }}>
-            {vencidasUrgentes.length}
-          </b>
-          <small style={{ display: 'block', marginTop: 12, color: 'var(--t-text-2)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-            Renovaciones urgentes
-          </small>
+          <h1 style={{ fontSize: 'clamp(22px,3cqw,36px)', fontWeight: 600, letterSpacing: '-0.04em', lineHeight: 1.1, margin: '0 0 7px', fontFamily: 'var(--font-display)' }}>
+            {saludo}, {displayName(user)}
+          </h1>
+          <p style={{ margin: 0, color: 'var(--sub)', fontSize: 14 }}>{fechaHoy}</p>
         </div>
-
-        {/* Tasa de éxito */}
-        <div style={{ textAlign: 'center' }}>
-          <b style={{ display: 'block', fontSize: 64, fontWeight: 560, letterSpacing: '-0.045em', lineHeight: 0.95, color: 'var(--t-text)' }}>
-            {tasaContratacion !== null ? `${tasaContratacion}%` : '—'}
-          </b>
-          <small style={{ display: 'block', marginTop: 12, color: 'var(--t-text-2)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-            Tasa de éxito
-          </small>
-          <em style={{ display: 'block', marginTop: 4, color: 'var(--t-text-3)', fontStyle: 'normal', fontSize: 13 }}>
-            {contratadas} contratadas / {totalPortfolio} portfolio
-          </em>
-        </div>
-
-        {/* Corredores activos */}
-        <div style={{ textAlign: 'right' }}>
-          <b style={{ display: 'block', fontSize: 64, fontWeight: 560, letterSpacing: '-0.045em', lineHeight: 0.95, color: 'var(--t-text)' }}>
-            {corredores.length}
-          </b>
-          <small style={{ display: 'block', marginTop: 12, color: 'var(--t-text-2)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-            Corredores activos
-          </small>
+        <div>
+          <select
+            value={scope}
+            onChange={e => setScope(e.target.value)}
+            aria-label="Filtrar dashboard por estado de la cartera"
+            style={{
+              appearance: 'none', WebkitAppearance: 'none',
+              background: 'var(--soft)', border: '1px solid var(--line)', borderRadius: 5,
+              padding: '10px 36px 10px 13px', fontSize: 13, color: 'var(--text)',
+              cursor: 'pointer', minWidth: 170, fontFamily: 'inherit',
+              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none' stroke='%23909db4' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M2 4h12M4 8h8M6.5 12h3'/%3E%3C/svg%3E")`,
+              backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center',
+            }}
+          >
+            <option value="all">Toda la cartera</option>
+            <option value="EN ESTUDIO">En estudio</option>
+            <option value="OFERTADA">Ofertadas</option>
+            <option value="CONTRATADA">Contratadas</option>
+            <option value="RECHAZADA">Rechazadas</option>
+          </select>
         </div>
       </section>
 
-      {/* Workspace */}
-      <section className="dash-workspace">
+      {/* KPIs */}
+      <section className="db-kpis" aria-label="Indicadores principales">
+        {([
+          {
+            label: scope === 'all' ? 'Flotas en cartera' : `Flotas · ${ESTADO_LABELS[scope] ?? scope}`,
+            value: totalPortfolio.toLocaleString('es-ES'),
+            note:  scope === 'all' ? 'Total de expedientes' : `${totalCartera.toLocaleString('es-ES')} en total`,
+          },
+          {
+            label: 'Vehículos',
+            value: totalVehiculos.toLocaleString('es-ES'),
+            note:  totalVehiculos > 0 ? 'Flotas con detalle cargado' : 'Sin vehículos asociados',
+          },
+          {
+            label: 'Tasa de contratación',
+            value: tasaContratacion !== null ? `${tasaContratacion} %` : '—',
+            note:  `${contratadas} contratadas de ${totalCartera.toLocaleString('es-ES')}`,
+          },
+          {
+            label: 'Corredores activos',
+            value: corredoresActivos.toLocaleString('es-ES'),
+            note:  scope === 'all' ? 'Con flotas asociadas' : 'En este ámbito',
+          },
+          {
+            label: 'Renovaciones · 60 días',
+            value: renovaciones.length.toLocaleString('es-ES'),
+            note:  renovacionesUrgentes.length > 0 ? `${renovacionesUrgentes.length} vencen en ≤ 15 días` : 'Solo flotas contratadas',
+            urgent: renovacionesUrgentes.length > 0,
+          },
+        ] as Array<{ label: string; value: string; note: string; urgent?: boolean }>).map((kpi, i) => (
+          <div key={i} className="db-kpi">
+            <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--sub)', textTransform: 'uppercase', letterSpacing: '0.07em', lineHeight: 1.4 }}>{kpi.label}</span>
+            <span style={{
+              fontSize: 'clamp(24px,3cqw,40px)', fontWeight: 600, letterSpacing: '-0.055em',
+              lineHeight: 1.05, margin: '10px 0 7px', fontVariantNumeric: 'tabular-nums',
+              fontFamily: 'var(--font-display)',
+              color: kpi.urgent ? 'var(--danger)' : 'var(--text)',
+            }}>
+              {kpi.value}
+            </span>
+            <span style={{ fontSize: 13, color: 'var(--quiet)', lineHeight: 1.5 }}>{kpi.note}</span>
+          </div>
+        ))}
+      </section>
 
-        {/* Left — Distribución cartera */}
-        <section aria-label="Distribución cartera">
-          <button
-            onClick={() => setCarteraView(v => v === 'bar' ? 'donut' : 'bar')}
-            aria-label={carteraView === 'bar' ? 'Cambiar a vista circular' : 'Cambiar a vista de barra'}
-            style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
-          >
-            <h2 style={{ fontSize: 16, fontWeight: 620, color: 'var(--t-text)', margin: 0, pointerEvents: 'none' }}>
-              Distribución cartera
-            </h2>
-            {carteraView === 'bar' ? (
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style={{ color: 'var(--t-text-3)', flexShrink: 0, opacity: 0.6 }}>
-                <circle cx="8" cy="8" r="5.5" stroke="currentColor" strokeWidth="1.8"/>
-                <circle cx="8" cy="8" r="2.5" stroke="currentColor" strokeWidth="1.8"/>
-              </svg>
-            ) : (
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" style={{ color: 'var(--t-text-3)', flexShrink: 0, opacity: 0.6 }}>
-                <rect x="1" y="6" width="3.5" height="7" rx="0.8"/>
-                <rect x="6.3" y="3" width="3.5" height="10" rx="0.8"/>
-                <rect x="11.5" y="8" width="3.5" height="5" rx="0.8"/>
-              </svg>
-            )}
-          </button>
-
-          {/* Views container — both rendered; inactive is absolute so only active controls height */}
-          <div style={{ position: 'relative', marginTop: 28, minHeight: 300 }}>
-
-            {/* Bar view */}
-            <div className="cartera-fade" style={{ position: 'absolute', top: 0, left: 0, right: 0, opacity: carteraView === 'bar' ? 1 : 0, pointerEvents: carteraView === 'bar' ? 'auto' : 'none' }}>
-              <div style={{ textAlign: 'center' }}>
-                <strong style={{ display: 'block', fontSize: 84, fontWeight: 560, letterSpacing: '-0.05em', lineHeight: 0.9, color: 'var(--t-text)' }}>
-                  {totalPortfolio}
-                </strong>
-                <span style={{ display: 'block', marginTop: 10, color: 'var(--t-text-2)', fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-                  Flotas en cartera
-                </span>
-              </div>
-
-              {totalPortfolio > 0 && (
-                <div aria-hidden="true" style={{ margin: '28px 8px 22px', height: 8, display: 'flex', gap: 3, borderRadius: 999, overflow: 'hidden' }}>
-                  {SEGS.map(({ key, color }) => {
-                    const count = flotasEstadoCounts[key] ?? 0;
-                    if (count === 0) return null;
-                    return <i key={key} style={{ display: 'block', height: '100%', flex: count, background: color }} />;
-                  })}
+      {/* Grid 1: Distribución | Donut */}
+      <div className="db-grid2">
+        <section aria-label="Distribución de cartera">
+          <h2 style={{ fontSize: 'clamp(16px,1.5cqw,20px)', fontWeight: 600, letterSpacing: '-0.03em', margin: '0 0 18px', fontFamily: 'var(--font-display)' }}>
+            Distribución de cartera
+          </h2>
+          <div style={{ marginBottom: 14 }}>
+            <strong style={{ display: 'block', fontSize: 'clamp(32px,4cqw,50px)', fontWeight: 600, letterSpacing: '-0.05em', lineHeight: 0.95, fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums' }}>
+              {totalPortfolio.toLocaleString('es-ES')}
+            </strong>
+            <span style={{ display: 'block', marginTop: 8, color: 'var(--sub)', fontSize: 13, letterSpacing: '0.07em', textTransform: 'uppercase' }}>
+              {scope === 'all' ? 'Flotas en cartera' : `Flotas ${ESTADO_LABELS[scope] ?? ''}`}
+            </span>
+          </div>
+          {totalPortfolio > 0 && (
+            <div aria-hidden="true" style={{ height: 6, display: 'flex', gap: 2, borderRadius: 999, overflow: 'hidden', margin: '18px 0 16px' }}>
+              {SEGS.map(({ key, color }) => {
+                const count = scope === 'all' ? (flotasEstadoCounts[key] ?? 0) : (key === scope ? totalPortfolio : 0);
+                if (count === 0) return null;
+                return <i key={key} style={{ display: 'block', height: '100%', flex: count, background: color }} />;
+              })}
+            </div>
+          )}
+          <div>
+            {SEGS.map(({ key, label, color }) => {
+              const count = scope === 'all' ? (flotasEstadoCounts[key] ?? 0) : (key === scope ? totalPortfolio : 0);
+              const pct   = totalCartera > 0 ? Math.round((count / totalCartera) * 100) : 0;
+              return (
+                <div key={key} className="db-srow" style={{ opacity: scope !== 'all' && key !== scope ? 0.3 : 1 }}>
+                  <i style={{ width: 8, height: 8, borderRadius: 2, background: color, display: 'block' }} />
+                  <span>{label}</span>
+                  <b style={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums', minWidth: 26, textAlign: 'right' }}>{count}</b>
+                  <span style={{ color: 'var(--quiet)', fontSize: 13, minWidth: 40, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{pct} %</span>
                 </div>
-              )}
-
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 14 }}>
-                {SEGS.map(({ key, label, color }) => {
-                  const count = flotasEstadoCounts[key] ?? 0;
-                  const pct   = totalPortfolio > 0 ? Math.round((count / totalPortfolio) * 100) : 0;
-                  return (
-                    <li key={key} style={{ display: 'grid', gridTemplateColumns: '14px 1fr auto auto', alignItems: 'center', gap: 10, fontSize: 14, color: 'var(--t-text)' }}>
-                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: color, display: 'inline-block' }} />
-                      {label}
-                      <b style={{ fontWeight: 600, minWidth: 28, textAlign: 'right' }}>{count}</b>
-                      <span style={{ color: 'var(--t-text-2)', minWidth: 36, textAlign: 'right', fontSize: 13 }}>{pct}%</span>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-
-            {/* Donut view */}
-            <div className="cartera-fade" style={{ position: 'absolute', top: 0, left: 0, right: 0, opacity: carteraView === 'donut' ? 1 : 0, pointerEvents: carteraView === 'donut' ? 'auto' : 'none' }}>
-              <CarteraDonut counts={flotasEstadoCounts} total={totalPortfolio} />
-
-              <ul style={{ listStyle: 'none', padding: 0, margin: '16px 0 0', display: 'flex', flexDirection: 'column', gap: 14 }}>
-                {SEGS.map(({ key, label, color }) => {
-                  const count = flotasEstadoCounts[key] ?? 0;
-                  const pct   = totalPortfolio > 0 ? Math.round((count / totalPortfolio) * 100) : 0;
-                  return (
-                    <li key={key} style={{ display: 'grid', gridTemplateColumns: '14px 1fr auto auto', alignItems: 'center', gap: 10, fontSize: 14, color: 'var(--t-text)' }}>
-                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: color, display: 'inline-block' }} />
-                      {label}
-                      <b style={{ fontWeight: 600, minWidth: 28, textAlign: 'right' }}>{count}</b>
-                      <span style={{ color: 'var(--t-text-2)', minWidth: 36, textAlign: 'right', fontSize: 13 }}>{pct}%</span>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-
+              );
+            })}
           </div>
         </section>
 
-        {/* Right — Renovaciones próximas */}
-        <section aria-label="Renovaciones próximas">
-          <h2 style={{ fontSize: 16, fontWeight: 620, color: 'var(--t-text)', margin: 0 }}>Renovaciones próximas</h2>
-
-          {/* Column headers */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 168px', gap: 16, marginTop: 22, color: 'var(--t-text-3)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-            <span>Flota</span>
-            <span style={{ textAlign: 'right' }}>Vencimiento</span>
+        <section aria-label="Situación de la cartera">
+          <div style={{ marginBottom: 14 }}>
+            <h2 style={{ fontSize: 'clamp(16px,1.5cqw,20px)', fontWeight: 600, letterSpacing: '-0.03em', margin: '0 0 4px', fontFamily: 'var(--font-display)' }}>
+              Situación de la cartera
+            </h2>
+            <p style={{ margin: 0, fontSize: 13, color: 'var(--sub)' }}>Estado actual de las flotas</p>
           </div>
+          <CarteraDonut counts={donutCounts} total={totalPortfolio} />
+          <p style={{ fontSize: 13, color: 'var(--quiet)', lineHeight: 1.6, marginTop: 12 }}>
+            Contratadas sin vehículos: flotas anteriores a la carga de detalle.
+          </p>
+        </section>
+      </div>
 
-          {renovaciones.length === 0 ? (
-            <p style={{ marginTop: 32, color: 'var(--t-text-3)', fontSize: 13 }}>
-              Sin flotas contratadas con fecha de vencimiento próxima.
+      {/* Grid 2: Vehículos cats | Corredores */}
+      <div className="db-grid2">
+        <section>
+          <VehiculosCategorias stats={vehiculosCatStats} noBorder />
+        </section>
+        <section aria-label="Flotas por corredor">
+          <div style={{ marginBottom: 18 }}>
+            <h2 style={{ fontSize: 'clamp(16px,1.5cqw,20px)', fontWeight: 600, letterSpacing: '-0.03em', margin: '0 0 4px', fontFamily: 'var(--font-display)' }}>
+              Flotas por corredor
+            </h2>
+            <p style={{ margin: 0, fontSize: 13, color: 'var(--sub)' }}>
+              {corredoresStats.length > 0
+                ? `${scope === 'all' ? 'Toda la cartera' : ESTADO_LABELS[scope] ?? scope} · ${corredoresStats.length} corredores`
+                : 'Intermediarios con más cartera'}
+            </p>
+          </div>
+          {corredoresStats.length === 0 ? (
+            <p style={{ fontSize: 13, color: 'var(--quiet)', padding: '20px 0', borderTop: '1px solid var(--line)' }}>
+              Sin corredores en este ámbito.
             </p>
           ) : (
-            renovaciones.map(({ carpeta, corredor, fecha: fVcto, dias }) => (
-              <article
-                key={carpeta.id}
-                style={{ display: 'grid', gridTemplateColumns: '1fr 168px', gap: 16, alignItems: 'center', minHeight: 62, borderTop: '1px solid var(--t-line-soft)', padding: '10px 0' }}
-              >
-                <div>
-                  <Link
-                    href={`/flotas?id=${carpeta.id}`}
-                    style={{ display: 'block', fontSize: 14, fontWeight: 650, letterSpacing: '0.01em', color: 'var(--t-text)', textDecoration: 'none' }}
-                    onMouseEnter={e => (e.currentTarget.style.color = 'var(--t-blue)')}
-                    onMouseLeave={e => (e.currentTarget.style.color = 'var(--t-text)')}
-                  >
-                    {carpeta.nombre}
-                  </Link>
-                  <span style={{ display: 'block', marginTop: 2, color: 'var(--t-text-2)', fontSize: 12 }}>
-                    {corredor?.nombre ?? 'Sin corredor'}
+            <div>
+              {corredoresStats.map((b, i) => (
+                <div key={b.nombre} className="db-bar">
+                  <span style={{ fontSize: 13, color: 'var(--sub)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.nombre}</span>
+                  <span style={{ display: 'block', height: 8, background: 'var(--soft)', borderRadius: 2, overflow: 'hidden' }}>
+                    <span style={{ display: 'block', height: '100%', width: `${(b.total / maxBroker) * 100}%`, background: 'var(--blue)', borderRadius: 2, opacity: i === 0 ? 1 : 0.55 }} />
                   </span>
+                  <span style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums', fontSize: 14 }}>{b.total}</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 14 }}>
-                  <span style={{ color: 'var(--t-text)', fontSize: 14, fontVariantNumeric: 'tabular-nums' }}>
-                    {fVcto.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                  </span>
-                  <RenovPill dias={dias} fecha={fVcto} />
-                </div>
-              </article>
-            ))
+              ))}
+              <p style={{ fontSize: 13, color: 'var(--quiet)', marginTop: 12 }}>Una flota se asigna a un único corredor.</p>
+            </div>
           )}
         </section>
-      </section>
+      </div>
 
-      {/* Vehículos por categoría */}
-      <div style={{ marginTop: 40 }}>
-        <VehiculosCategorias stats={vehiculosCatStats} />
+      {/* Grid 3: Renovaciones | Actividad */}
+      <div className="db-grid2 r40" style={{ borderBottom: 0 }}>
+        <section aria-label="Renovaciones próximas">
+          <div style={{ marginBottom: 18 }}>
+            <h2 style={{ fontSize: 'clamp(16px,1.5cqw,20px)', fontWeight: 600, letterSpacing: '-0.03em', margin: '0 0 4px', fontFamily: 'var(--font-display)' }}>
+              Renovaciones próximas
+            </h2>
+            <p style={{ margin: 0, fontSize: 13, color: 'var(--sub)' }}>Vencimientos en los siguientes 60 días</p>
+          </div>
+          {renovaciones.length === 0 ? (
+            <p style={{ fontSize: 13, color: 'var(--quiet)', padding: '16px 0', borderTop: '1px solid var(--line)' }}>
+              {scope !== 'all' && scope !== 'CONTRATADA'
+                ? `Las renovaciones son de flotas contratadas, no de «${ESTADO_LABELS[scope] ?? scope}».`
+                : 'Sin flotas contratadas con vencimiento en los próximos 60 días.'}
+            </p>
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead>
+                <tr>
+                  <th style={thStyle(true)}>Flota</th>
+                  <th style={{ ...thStyle(false), textAlign: 'center' }}>Vehículos</th>
+                  <th style={{ ...thStyle(false), textAlign: 'right' }}>Vence en</th>
+                </tr>
+              </thead>
+              <tbody>
+                {renovaciones.map(({ carpeta, corredor, fecha: fVcto, dias }) => (
+                  <tr key={carpeta.id}>
+                    <td style={{ padding: '12px 8px 12px 0', borderTop: '1px solid var(--line)', verticalAlign: 'top' }}>
+                      <Link href={`/flotas?id=${carpeta.id}`}
+                        style={{ display: 'block', fontSize: 14, fontWeight: 600, color: 'var(--text)', textDecoration: 'none' }}
+                        onMouseEnter={e => (e.currentTarget.style.color = 'var(--blue)')}
+                        onMouseLeave={e => (e.currentTarget.style.color = 'var(--text)')}>
+                        {carpeta.nombre}
+                      </Link>
+                      <span style={{ display: 'block', fontSize: 12, color: 'var(--sub)', marginTop: 1 }}>
+                        {corredor?.nombre ?? 'Sin corredor'}
+                      </span>
+                    </td>
+                    <td style={{ padding: '12px 8px', borderTop: '1px solid var(--line)', textAlign: 'center', fontVariantNumeric: 'tabular-nums', verticalAlign: 'middle' }}>
+                      {((carpeta.trabajo?.length ?? 0) > 0 ? carpeta.trabajo.length : (carpeta.original?.length ?? 0)).toLocaleString('es-ES')}
+                    </td>
+                    <td style={{ padding: '12px 0 12px 8px', borderTop: '1px solid var(--line)', textAlign: 'right', verticalAlign: 'middle' }}>
+                      <RenovPill dias={dias} fecha={fVcto} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </section>
+
+        <section aria-label="Actividad reciente">
+          <div style={{ marginBottom: 18 }}>
+            <h2 style={{ fontSize: 'clamp(16px,1.5cqw,20px)', fontWeight: 600, letterSpacing: '-0.03em', margin: '0 0 4px', fontFamily: 'var(--font-display)' }}>
+              Actividad reciente
+            </h2>
+            <p style={{ margin: 0, fontSize: 13, color: 'var(--sub)' }}>Últimas operaciones en ORION</p>
+          </div>
+          {actividadReciente.length === 0 ? (
+            <p style={{ fontSize: 13, color: 'var(--quiet)', padding: '16px 0', borderTop: '1px solid var(--line)' }}>
+              Sin actividad registrada.
+            </p>
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead>
+                <tr>
+                  <th style={thStyle(true)}>Operación</th>
+                  <th style={{ ...thStyle(false), textAlign: 'center' }}>Estado</th>
+                  <th style={{ ...thStyle(false), textAlign: 'right' }}>Hace</th>
+                </tr>
+              </thead>
+              <tbody>
+                {actividadReciente.map((a, i) => (
+                  <tr key={i}>
+                    <td style={{ padding: '11px 8px 11px 0', borderTop: '1px solid var(--line)', verticalAlign: 'top' }}>
+                      <span style={{ display: 'block', fontSize: 13, fontWeight: 500, color: 'var(--text)' }}>{a.accion}</span>
+                      <Link href={`/flotas?id=${a.carpeta.id}`}
+                        style={{ display: 'block', fontSize: 12, color: 'var(--sub)', marginTop: 1, textDecoration: 'none' }}
+                        onMouseEnter={e => (e.currentTarget.style.color = 'var(--blue)')}
+                        onMouseLeave={e => (e.currentTarget.style.color = 'var(--sub)')}>
+                        {a.carpeta.nombre}
+                      </Link>
+                    </td>
+                    <td style={{ padding: '11px 8px', borderTop: '1px solid var(--line)', textAlign: 'center', verticalAlign: 'middle' }}>
+                      {a.estadoNuevo ? (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12 }}>
+                          <i style={{ width: 6, height: 6, borderRadius: '50%', background: ESTADO_COLORS[a.estadoNuevo] ?? 'var(--sub)', display: 'inline-block', flexShrink: 0 }} />
+                          {ESTADO_LABELS[a.estadoNuevo] ?? a.estadoNuevo}
+                        </span>
+                      ) : '—'}
+                    </td>
+                    <td style={{ padding: '11px 0 11px 8px', borderTop: '1px solid var(--line)', textAlign: 'right', verticalAlign: 'middle', color: 'var(--quiet)', whiteSpace: 'nowrap' }}>
+                      {tiempoRelativo(a.fecha)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </section>
       </div>
 
       {/* Sugerencias */}
-      <div style={{ marginTop: 40 }}>
+      <div style={{ marginTop: 36 }}>
         <SugerenciasSection user={user} />
       </div>
     </div>

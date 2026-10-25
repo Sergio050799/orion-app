@@ -23,11 +23,10 @@ export type CatStats = {
 
 const sectionStyle: React.CSSProperties = {
   paddingTop: 28,
-  borderTop: '1px solid var(--t-line)',
+  borderTop: '1px solid var(--line)',
 };
 
-const CAT_COLORS = ['#4387ff', '#7c5cfc', '#20c982', '#ef4d5a'];
-const CAT_ACCENT = ['#1240cc', '#6366f1', '#10b981', '#6b7280'];
+const CAT_COLORS = ['var(--blue)', 'var(--st-ofertada)', 'var(--ok)', 'var(--st-rechazada)'];
 
 // ─── PDF logo helper ──────────────────────────────────────────────────────────
 
@@ -226,7 +225,7 @@ function SecTitle({ children }: { children: React.ReactNode }) {
 
 // ─── VehiculosCategorias ──────────────────────────────────────────────────────
 
-export default function VehiculosCategorias({ stats }: { stats: CatStats[] }) {
+export default function VehiculosCategorias({ stats, noBorder }: { stats: CatStats[]; noBorder?: boolean }) {
   const [open, setOpen] = useState(false);
 
   const handlePdf = useCallback(async () => {
@@ -262,7 +261,7 @@ export default function VehiculosCategorias({ stats }: { stats: CatStats[] }) {
   return (
     <>
       {/* ── Sección integrada ── */}
-      <div style={sectionStyle}>
+      <div style={noBorder ? {} : sectionStyle}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <button
             onClick={() => setOpen(true)}
@@ -312,7 +311,7 @@ export default function VehiculosCategorias({ stats }: { stats: CatStats[] }) {
                       onClick={() => setOpen(true)}
                       style={{ cursor: 'pointer' }}
                     >
-                      <td style={{ padding: '16px 0', borderBottom: '1px solid var(--t-line-soft)', verticalAlign: 'middle' }}>
+                      <td style={{ padding: '16px 0', borderBottom: '1px solid var(--line)', verticalAlign: 'middle' }}>
                         <div
                           style={{ fontSize: 14, fontWeight: 600, color: 'var(--t-text)' }}
                           onMouseEnter={e => { e.currentTarget.style.color = 'var(--t-blue)'; }}
@@ -322,7 +321,7 @@ export default function VehiculosCategorias({ stats }: { stats: CatStats[] }) {
                         </div>
                         <div style={{ fontSize: 11, color: 'var(--t-text-2)', marginTop: 2 }}>{c.subtitulo}</div>
                       </td>
-                      <td style={{ padding: '16px 0 16px 2px', borderBottom: '1px solid var(--t-line-soft)', textAlign: 'center', verticalAlign: 'middle' }}>
+                      <td style={{ padding: '16px 0 16px 2px', borderBottom: '1px solid var(--line)', textAlign: 'center', verticalAlign: 'middle' }}>
                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
                           <div style={{ width: 80, height: 4, background: 'var(--t-line)', borderRadius: 2, flexShrink: 0, overflow: 'hidden' }}>
                             <div style={{ width: `${pct}%`, height: '100%', background: CAT_COLORS[i] ?? '#4387ff' }} />
@@ -330,13 +329,13 @@ export default function VehiculosCategorias({ stats }: { stats: CatStats[] }) {
                           <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--t-text-2)', whiteSpace: 'nowrap' }}>{pct}%</span>
                         </div>
                       </td>
-                      <td style={{ padding: '16px 0', borderBottom: '1px solid var(--t-line-soft)', textAlign: 'center', verticalAlign: 'middle' }}>
+                      <td style={{ padding: '16px 0', borderBottom: '1px solid var(--line)', textAlign: 'center', verticalAlign: 'middle' }}>
                         <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--t-text)' }}>{c.estudio}</span>
                       </td>
-                      <td style={{ padding: '16px 0', borderBottom: '1px solid var(--t-line-soft)', textAlign: 'center', verticalAlign: 'middle' }}>
+                      <td style={{ padding: '16px 0', borderBottom: '1px solid var(--line)', textAlign: 'center', verticalAlign: 'middle' }}>
                         <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--t-text)' }}>{c.contratada}</span>
                       </td>
-                      <td style={{ padding: '16px 0', borderBottom: '1px solid var(--t-line-soft)', textAlign: 'center', verticalAlign: 'middle' }}>
+                      <td style={{ padding: '16px 0', borderBottom: '1px solid var(--line)', textAlign: 'center', verticalAlign: 'middle' }}>
                         <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--t-text-2)' }}>{c.total}</span>
                       </td>
                     </tr>
