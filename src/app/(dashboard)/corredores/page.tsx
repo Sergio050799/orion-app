@@ -18,10 +18,10 @@ const SUCURSALES: Sucursal[] = ['TITAN', 'MEDIACION'];
 type Vista = 'lista' | 'detalle';
 type FormData = Omit<Corredor, 'id' | 'creadoEn' | 'actualizadoEn'>;
 
-type SortKey = 'nombre' | 'sucursal' | 'comercial' | 'cif' | 'porcentajeComision' | 'periodicidad' | 'flotas';
+type SortKey = 'nombre' | 'sucursal' | 'comercial' | 'cif' | 'comisionBase' | 'periodicidad' | 'flotas';
 
 const FORM_VACIO: FormData = {
-  codigo: '', nombre: '', cif: '', domicilio: '', porcentajeComision: 0,
+  codigo: '', nombre: '', cif: '', domicilio: '', comisionBase: 0, comisionExtra: 0,
   periodicidad: 'mensual', formaPago: '', contacto: '',
   email: '', telefono: '', observaciones: '',
   sucursal: undefined, comercial: '', idPerceptor: '',
@@ -66,7 +66,7 @@ function FormField({ label, children }: { label: string; children: React.ReactNo
   );
 }
 
-// ─── SortTh — encabezado de columna ordenable sin icono ─────────────────────
+// ─── SortTh — encabezado de columna ordenable (sin flechas, subrayado activo) ─
 
 function SortTh({
   col, sortCol, sortDir, onSort, children, style,
@@ -80,13 +80,16 @@ function SortTh({
     <th style={style}>
       <button
         onClick={() => onSort(col)}
+        aria-pressed={active}
         aria-sort={active ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
         style={{
-          background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+          background: 'none', border: 'none', cursor: 'pointer', padding: '0 0 3px',
           font: 'inherit', letterSpacing: 'inherit', textTransform: 'uppercase',
-          color: active ? 'var(--t-text-2)' : 'var(--t-text-3)',
-          fontWeight: active ? 700 : 600,
-          display: 'block', width: '100%', textAlign: 'left',
+          color: active ? 'var(--blue-2, #9cc2ff)' : 'var(--head, #d6deed)',
+          fontWeight: 600,
+          display: 'inline-block',
+          borderBottom: active ? '2px solid var(--blue, #4989ff)' : '2px solid transparent',
+          transition: 'color .16s, border-color .16s',
         }}
       >
         {children}
@@ -108,7 +111,8 @@ function PanelCorredor({
   const [form, setForm] = useState<FormData>(corredor ? {
     codigo: corredor.codigo ?? '', nombre: corredor.nombre, cif: corredor.cif,
     domicilio: corredor.domicilio ?? '',
-    porcentajeComision: corredor.porcentajeComision,
+    comisionBase: corredor.comisionBase,
+    comisionExtra: corredor.comisionExtra ?? 0,
     periodicidad: corredor.periodicidad,
     formaPago: corredor.formaPago, contacto: corredor.contacto,
     email: corredor.email, telefono: corredor.telefono,
@@ -142,7 +146,7 @@ function PanelCorredor({
         backdropFilter: 'blur(4px)', zIndex: 40,
       }} />
       <aside style={{
-        position: 'fixed', top: 56, right: 0, bottom: 0, width: 440, zIndex: 50,
+        position: 'fixed', top: 72, right: 0, bottom: 0, width: 440, zIndex: 50,
         background: '#0c0d10',
         borderLeft: '1px solid rgba(255,255,255,0.08)',
         display: 'flex', flexDirection: 'column',
@@ -198,10 +202,15 @@ function PanelCorredor({
               <FormField label="CIF">
                 <input className="panel-input" value={form.cif} onChange={e => set('cif', e.target.value)} />
               </FormField>
-              <FormField label="% Comisión">
+              <FormField label="Com. base %">
                 <input className="panel-input" inputMode="decimal"
-                  value={form.porcentajeComision}
-                  onChange={e => { const v = e.target.value; if (v === '' || /^\d*\.?\d*$/.test(v)) set('porcentajeComision', v === '' ? 0 : parseFloat(v) || 0); }} />
+                  value={form.comisionBase}
+                  onChange={e => { const v = e.target.value; if (v === '' || /^\d*\.?\d*$/.test(v)) set('comisionBase', v === '' ? 0 : parseFloat(v) || 0); }} />
+              </FormField>
+              <FormField label="Com. extra %">
+                <input className="panel-input" inputMode="decimal"
+                  value={form.comisionExtra ?? 0}
+                  onChange={e => { const v = e.target.value; if (v === '' || /^\d*\.?\d*$/.test(v)) set('comisionExtra', v === '' ? 0 : parseFloat(v) || 0); }} />
               </FormField>
             </div>
 
@@ -304,7 +313,7 @@ function DetalleView({
         background: 'none', border: 'none', cursor: 'pointer',
         color: 'var(--t-blue)', fontSize: 13, padding: 0, marginBottom: 22,
         display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500,
-      }}>← Volver a corredores</button>
+      }}>Volver a corredores</button>
 
       {/* ── Encabezado ─────────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
@@ -329,9 +338,9 @@ function DetalleView({
                 {corredor.comercial}
               </span>
             )}
-            {(corredor.porcentajeComision ?? 0) > 0 && (
+            {(corredor.comisionBase ?? 0) > 0 && (
               <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--t-green)' }}>
-                {corredor.porcentajeComision}%
+                {corredor.comisionBase}%
               </span>
             )}
           </div>
@@ -412,7 +421,8 @@ function DetalleView({
         <InfoField label="CIF" value={corredor.cif} mono />
         <InfoField label="Sucursal" value={corredor.sucursal} />
         <InfoField label="Comercial" value={corredor.comercial} />
-        <InfoField label="% Comisión" value={(corredor.porcentajeComision ?? 0) > 0 ? `${corredor.porcentajeComision}%` : undefined} />
+        <InfoField label="Com. base" value={(corredor.comisionBase ?? 0) > 0 ? `${corredor.comisionBase}%` : undefined} />
+        <InfoField label="Com. extra" value={(corredor.comisionExtra ?? 0) > 0 ? `${corredor.comisionExtra}%` : undefined} />
         <InfoField label="Email" value={corredor.email} />
         <InfoField label="Teléfono" value={corredor.telefono} />
         {corredor.observaciones && (
@@ -627,16 +637,15 @@ function CorredoresTable({
             <SortTh col="sucursal" sortCol={sortCol} sortDir={sortDir} onSort={onSort} style={thStyle}>Sucursal</SortTh>
             <SortTh col="comercial" sortCol={sortCol} sortDir={sortDir} onSort={onSort} style={thStyle}>Comercial</SortTh>
             <SortTh col="cif" sortCol={sortCol} sortDir={sortDir} onSort={onSort} style={thStyle}>CIF</SortTh>
-            <SortTh col="porcentajeComision" sortCol={sortCol} sortDir={sortDir} onSort={onSort} style={thStyle}>Comisión %</SortTh>
+            <SortTh col="comisionBase" sortCol={sortCol} sortDir={sortDir} onSort={onSort} style={thStyle}>Comisión %</SortTh>
             <SortTh col="periodicidad" sortCol={sortCol} sortDir={sortDir} onSort={onSort} style={thStyle}>Periodicidad</SortTh>
             <SortTh col="flotas" sortCol={sortCol} sortDir={sortDir} onSort={onSort} style={thStyle}>Flotas</SortTh>
-            <th style={{ ...thStyle, textAlign: 'right' }}>Ver</th>
           </tr>
         </thead>
         <tbody>
           {corredores.map(c => {
             const nFlotas = flotasCountMap[c.id] ?? 0;
-            const comPos = (c.porcentajeComision ?? 0) > 0;
+            const comPos = (c.comisionBase ?? 0) > 0;
             return (
               <tr
                 key={c.id}
@@ -660,16 +669,13 @@ function CorredoresTable({
                   {c.cif || <span style={{ color: 'var(--t-text-3)' }}>—</span>}
                 </td>
                 <td style={{ ...tdStyle, color: comPos ? 'var(--t-green)' : 'var(--t-text-3)', fontWeight: comPos ? 650 : 400 }}>
-                  {(c.porcentajeComision ?? 0).toLocaleString('es-ES', { minimumFractionDigits: 1 })}%
+                  {(c.comisionBase ?? 0).toLocaleString('es-ES', { minimumFractionDigits: 1 })}%
                 </td>
                 <td style={{ ...tdStyle, textTransform: 'capitalize' }}>
                   {c.periodicidad}
                 </td>
                 <td style={{ ...tdStyle, fontWeight: 600, color: 'var(--t-text)' }}>
                   {nFlotas}
-                </td>
-                <td style={{ ...tdStyle, textAlign: 'right', color: 'var(--t-blue)', fontSize: 18 }}>
-                  →
                 </td>
               </tr>
             );
@@ -739,14 +745,14 @@ export default function CorredoresPage() {
   [corredores, flotasCountMap]);
 
   const comisionMedia = useMemo(() => {
-    const con = corredores.filter(c => (c.porcentajeComision ?? 0) > 0);
+    const con = corredores.filter(c => (c.comisionBase ?? 0) > 0);
     if (con.length === 0) return 0;
-    return con.reduce((s, c) => s + c.porcentajeComision, 0) / con.length;
+    return con.reduce((s, c) => s + c.comisionBase, 0) / con.length;
   }, [corredores]);
 
   const countTitan = useMemo(() => corredores.filter(c => c.sucursal === 'TITAN').length, [corredores]);
   const countMediacion = useMemo(() => corredores.filter(c => c.sucursal === 'MEDIACION').length, [corredores]);
-  const countConComision = useMemo(() => corredores.filter(c => (c.porcentajeComision ?? 0) > 0).length, [corredores]);
+  const countConComision = useMemo(() => corredores.filter(c => (c.comisionBase ?? 0) > 0).length, [corredores]);
 
   const comercialesUnicos = useMemo(() => {
     const set = new Set(corredores.map(c => c.comercial).filter(Boolean) as string[]);
@@ -811,7 +817,7 @@ export default function CorredoresPage() {
         case 'sucursal':          cmp = (a.sucursal ?? '').localeCompare(b.sucursal ?? '', 'es'); break;
         case 'comercial':         cmp = (a.comercial ?? '').localeCompare(b.comercial ?? '', 'es'); break;
         case 'cif':               cmp = a.cif.localeCompare(b.cif, 'es'); break;
-        case 'porcentajeComision':cmp = (a.porcentajeComision ?? 0) - (b.porcentajeComision ?? 0); break;
+        case 'comisionBase':       cmp = (a.comisionBase ?? 0) - (b.comisionBase ?? 0); break;
         case 'periodicidad':      cmp = a.periodicidad.localeCompare(b.periodicidad, 'es'); break;
         case 'flotas':            cmp = (flotasCountMap[a.id] ?? 0) - (flotasCountMap[b.id] ?? 0); break;
       }
@@ -930,72 +936,79 @@ export default function CorredoresPage() {
 
           {/* ── filters ────────────────────────────────────────────────── */}
           <div style={{ marginTop: 22, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-            <div style={{
-              ...filterInputStyle,
-              display: 'flex', alignItems: 'center', gap: 8,
-              padding: '0 14px', width: 280,
-            }}>
-              <span style={{ color: 'var(--t-text-3)', flexShrink: 0 }}><SearchIcon /></span>
-              <input
-                placeholder="Buscar corredor, CIF o comercial…"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                style={{
-                  background: 'none', border: 'none', outline: 'none',
-                  color: 'var(--t-text)', fontSize: 13, padding: 0, width: '100%',
-                  fontFamily: 'inherit',
-                }}
-              />
-              {search && (
-                <button
-                  onClick={() => setSearch('')}
-                  aria-label="Limpiar búsqueda"
-                  style={{
-                    background: 'none', border: 'none', cursor: 'pointer',
-                    color: 'var(--t-text-3)', padding: 0, fontSize: 18,
-                    lineHeight: 1, flexShrink: 0, display: 'flex', alignItems: 'center',
-                  }}
-                >×</button>
-              )}
-            </div>
             <select
               value={filterSucursal}
               onChange={e => setFilterSucursal(e.target.value as Sucursal | '')}
-              className="t-select"
-              style={{ height: 40, minWidth: 190, padding: '0 12px', borderRadius: 8 }}
+              style={{
+                appearance: 'none', WebkitAppearance: 'none',
+                background: `var(--t-surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none' stroke='%23909db4' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M2 4h12M4 8h8M6.5 12h3'/%3E%3C/svg%3E") no-repeat right 12px center`,
+                border: '1px solid var(--t-line)', borderRadius: 5,
+                padding: '10px 38px 10px 14px', fontSize: 14,
+                color: 'var(--t-text)', fontFamily: 'inherit', cursor: 'pointer',
+                minWidth: 190,
+              }}
             >
               <option value="">Todas las sucursales</option>
-              {SUCURSALES.map(s => <option key={s} value={s}>{s}</option>)}
+              {SUCURSALES.map(s => <option key={s} value={s}>{s === 'TITAN' ? 'Titán' : 'Mediación'}</option>)}
             </select>
-            <select
-              value={filterComercial}
-              onChange={e => setFilterComercial(e.target.value)}
-              className="t-select"
-              style={{ height: 40, minWidth: 190, padding: '0 12px', borderRadius: 8 }}
-            >
-              <option value="">Todos los comerciales</option>
-              {comercialesUnicos.map(com => <option key={com} value={com}>{com}</option>)}
-            </select>
-            <span style={{ flex: 1 }} />
-            {(search || filterSucursal || filterComercial) && (
-              <span style={{ fontSize: 12, color: 'var(--t-text-3)', alignSelf: 'center' }}>
-                {filteredCorredores.length} de {corredores.length} corredores
-              </span>
+
+            {comercialesUnicos.length > 0 && (
+              <select
+                value={filterComercial}
+                onChange={e => setFilterComercial(e.target.value)}
+                style={{
+                  appearance: 'none', WebkitAppearance: 'none',
+                  background: `var(--t-surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none' stroke='%23909db4' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M2 4h12M4 8h8M6.5 12h3'/%3E%3C/svg%3E") no-repeat right 12px center`,
+                  border: '1px solid var(--t-line)', borderRadius: 5,
+                  padding: '10px 38px 10px 14px', fontSize: 14,
+                  color: 'var(--t-text)', fontFamily: 'inherit', cursor: 'pointer',
+                  minWidth: 190,
+                }}
+              >
+                <option value="">Todos los comerciales</option>
+                {comercialesUnicos.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
             )}
+
+            <input
+              type="search"
+              placeholder="Buscar por nombre, CIF, comercial o código"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              style={{
+                flex: '1 1 360px', maxWidth: 640,
+                background: 'var(--t-surface)', border: '1px solid var(--t-line)',
+                borderRadius: 5, padding: '11px 16px', fontSize: 15,
+                color: 'var(--t-text)', fontFamily: 'inherit', outline: 'none',
+              }}
+            />
           </div>
 
           {/* ── table ──────────────────────────────────────────────────── */}
           {corredores.length === 0 ? (
-            <div style={{ marginTop: 28, textAlign: 'center', padding: '60px 0' }}>
+            <div style={{ marginTop: 28, textAlign: 'center', padding: '64px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--t-text-3)" strokeWidth="1.4" strokeLinecap="round">
+                <circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0116 0"/>
+              </svg>
               <p style={{ margin: 0, color: 'var(--t-text-3)', fontSize: 13 }}>
                 Sin corredores. Crea el primero con el botón superior.
               </p>
             </div>
           ) : filteredCorredores.length === 0 ? (
-            <div style={{ marginTop: 28, textAlign: 'center', padding: '60px 0' }}>
+            <div style={{ marginTop: 28, textAlign: 'center', padding: '64px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--t-text-3)" strokeWidth="1.4" strokeLinecap="round">
+                <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>
+                <path d="M8.5 8.5l5 5M13.5 8.5l-5 5"/>
+              </svg>
               <p style={{ margin: 0, color: 'var(--t-text-3)', fontSize: 13 }}>
-                Sin resultados para la búsqueda actual.
+                {search ? `Sin resultados para «${search}»` : 'Sin resultados para los filtros actuales.'}
               </p>
+              {(search || filterSucursal || filterComercial) && (
+                <button onClick={() => { setSearch(''); setFilterSucursal(''); setFilterComercial(''); }}
+                  style={{ background: 'none', border: '1px solid var(--t-line)', borderRadius: 6, padding: '5px 14px', fontSize: 12, color: 'var(--t-text-2)', cursor: 'pointer' }}>
+                  Limpiar filtros
+                </button>
+              )}
             </div>
           ) : (
             <div style={{ marginTop: 24 }}>

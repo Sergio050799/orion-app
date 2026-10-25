@@ -347,7 +347,7 @@ export default function FlotasContratadas({ onSelect }: Props) {
 
                 {/* Comisión */}
                 <span style={{ fontSize: 12, color: 'rgba(178,198,245,0.7)' }}>
-                  {corr ? `${corr.porcentajeComision}%` : c.porcentajeComision ? `${c.porcentajeComision}%` : '—'}
+                  {corr ? `${corr.comisionBase}%` : c.porcentajeComision ? `${c.porcentajeComision}%` : '—'}
                 </span>
 
                 {/* Estado */}

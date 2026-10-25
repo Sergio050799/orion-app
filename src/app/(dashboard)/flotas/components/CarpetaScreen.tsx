@@ -21,7 +21,7 @@ function normalizarCarpeta(c: FlotaCarpeta): FlotaCarpeta {
 
 // ─── Formulario crear corredor ──────────────────────────────────────────────
 
-const EMPTY_CORREDOR = { nombre: '', cif: '', porcentajeComision: '' };
+const EMPTY_CORREDOR = { nombre: '', cif: '', comisionBase: '' };
 
 function CrearCorredorForm({ onCreado, onCancelar }: {
   onCreado: (c: Corredor) => void; onCancelar: () => void;
@@ -33,7 +33,7 @@ function CrearCorredorForm({ onCreado, onCancelar }: {
     if (!form.nombre.trim()) return;
     const corredor = crearCorredor({
       nombre: form.nombre.trim(), cif: form.cif.trim(),
-      porcentajeComision: parseFloat(form.porcentajeComision) || 0,
+      comisionBase: parseFloat(form.comisionBase) || 0,
       periodicidad: 'mensual', formaPago: '',
       contacto: '', email: '', telefono: '', observaciones: '',
     });
@@ -50,7 +50,7 @@ function CrearCorredorForm({ onCreado, onCancelar }: {
           <input placeholder="Nombre *" value={form.nombre} onChange={e => set('nombre', e.target.value)} className="panel-input" style={{ fontSize: 12 }} />
         </div>
         <input placeholder="CIF" value={form.cif} onChange={e => set('cif', e.target.value)} className="panel-input" style={{ fontSize: 12 }} />
-        <input placeholder="% Comisión" inputMode="decimal" value={form.porcentajeComision} onChange={e => { const v = e.target.value; if (v === '' || /^\d*\.?\d*$/.test(v)) set('porcentajeComision', v); }} className="panel-input" style={{ fontSize: 12 }} />
+        <input placeholder="% Comisión" inputMode="decimal" value={form.comisionBase} onChange={e => { const v = e.target.value; if (v === '' || /^\d*\.?\d*$/.test(v)) set('comisionBase', v); }} className="panel-input" style={{ fontSize: 12 }} />
       </div>
       <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
         <button onClick={handleSubmit} disabled={!form.nombre.trim()} style={{
@@ -355,13 +355,20 @@ export default function CarpetaScreen({ onSelect }: Props) {
     const active = sortEstCol === col;
     return (
       <button onClick={() => handleEstSort(col)}
+        aria-pressed={active}
         aria-sort={active ? (sortEstDir === 'asc' ? 'ascending' : 'descending') : 'none'}
         style={{
-          background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+          background: 'none', border: 'none', cursor: 'pointer',
+          padding: '0 0 3px',
           font: 'inherit', fontSize: 11, letterSpacing: '0.07em', textTransform: 'uppercase',
-          color: active ? 'var(--t-text-2)' : 'var(--t-text-3)',
-          fontWeight: active ? 700 : 600,
-        }}>{label}</button>
+          color: active ? 'var(--blue-2, #9cc2ff)' : 'var(--head, #d6deed)',
+          fontWeight: 600,
+          display: 'inline-block',
+          borderBottom: active ? '2px solid var(--blue, #4989ff)' : '2px solid transparent',
+          transition: 'color .16s, border-color .16s',
+        }}>
+        {label}
+      </button>
     );
   };
 
@@ -559,10 +566,23 @@ export default function CarpetaScreen({ onSelect }: Props) {
 
       {/* ── Tabla ────────────────────────────────────────────────────────── */}
       {filtered.length === 0 ? (
-        <div style={{ marginTop: 24, textAlign: 'center', padding: '50px 0' }}>
+        <div style={{ marginTop: 24, textAlign: 'center', padding: '64px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--t-text-3)" strokeWidth="1.4" strokeLinecap="round">
+            <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>
+            {query.trim() && <path d="M8.5 8.5l5 5M13.5 8.5l-5 5" stroke="var(--t-text-3)" strokeWidth="1.4"/>}
+          </svg>
           <p style={{ margin: 0, color: 'var(--t-text-3)', fontSize: 13 }}>
-            {carpetas.length === 0 ? 'Sin carpetas. Crea la primera con el botón superior.' : 'Sin resultados para los filtros actuales.'}
+            {carpetas.length === 0
+              ? 'Sin carpetas. Crea la primera con el botón superior.'
+              : query.trim()
+                ? `Sin resultados para «${query.trim()}»`
+                : 'Sin resultados para los filtros actuales.'}
           </p>
+          {query.trim() && (
+            <button onClick={() => setQuery('')} style={{ background: 'none', border: '1px solid var(--t-line)', borderRadius: 6, padding: '5px 14px', fontSize: 12, color: 'var(--t-text-2)', cursor: 'pointer' }}>
+              Limpiar búsqueda
+            </button>
+          )}
         </div>
       ) : (
         <div style={{ overflowX: 'auto', marginTop: 24 }}>

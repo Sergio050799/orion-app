@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
     const parsed = parsearRecibosOriginal(rawRows);
     const porcentaje = porcentajeOverride
       ? parseFloat(porcentajeOverride)
-      : (corredor.porcentajeComision || 0);
+      : (corredor.comisionBase || 0);
     const rows = calcularComisiones(parsed, porcentaje);
     const resumen = generarResumen(rows);
     const grupos = agruparPorTomador(rows, porcentaje);

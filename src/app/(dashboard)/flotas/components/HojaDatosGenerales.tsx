@@ -345,7 +345,7 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
     const updated: FlotaCarpeta = {
       ...carpetaActiva,
       corredor_id: corredor_id || undefined,
-      porcentajeComision: carpetaActiva.porcentajeComision ?? corredor?.porcentajeComision,
+      porcentajeComision: carpetaActiva.porcentajeComision ?? corredor?.comisionBase,
     };
     guardarCarpeta(updated);
     onCarpetaChange(updated);
@@ -514,7 +514,7 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
               >
                 <option value="">Sin corredor</option>
                 {corredores.map(c => (
-                  <option key={c.id} value={c.id}>{c.nombre} · {c.porcentajeComision}%</option>
+                  <option key={c.id} value={c.id}>{c.nombre} · {c.comisionBase}%</option>
                 ))}
               </select>
               <small style={{ display: 'block', color: 'var(--t-muted)', fontSize: 11, marginTop: 7, lineHeight: 1.4 }}>
@@ -527,8 +527,8 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
                 % Comisión flota
                 {(() => {
                   const corredor = corredores.find(c => c.id === carpetaActiva.corredor_id);
-                  if (corredor && carpetaActiva.porcentajeComision != null && carpetaActiva.porcentajeComision !== corredor.porcentajeComision) {
-                    return <span style={{ marginLeft: 6, fontSize: 9, color: '#F59E0B', fontWeight: 600 }}>diferente al corredor ({corredor.porcentajeComision}%)</span>;
+                  if (corredor && carpetaActiva.porcentajeComision != null && carpetaActiva.porcentajeComision !== corredor.comisionBase) {
+                    return <span style={{ marginLeft: 6, fontSize: 9, color: '#F59E0B', fontWeight: 600 }}>diferente al corredor ({corredor.comisionBase}%)</span>;
                   }
                   return null;
                 })()}
@@ -540,7 +540,7 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
                 onChange={e => { const v = e.target.value; if (v === '' || /^\d*\.?\d*$/.test(v)) handleComisionChange(v); }}
                 placeholder={(() => {
                   const c = corredores.find(x => x.id === carpetaActiva.corredor_id);
-                  return c ? `${c.porcentajeComision}% (corredor)` : '0';
+                  return c ? `${c.comisionBase}% (corredor)` : '0';
                 })()}
                 onFocus={e => (e.currentTarget.style.borderColor = 'var(--t-blue)')}
                 onBlur={e => (e.currentTarget.style.borderColor = 'var(--t-line)')}

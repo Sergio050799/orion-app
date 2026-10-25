@@ -9,7 +9,8 @@ export interface Corredor {
   nombre: string;
   cif: string;
   domicilio?: string;
-  porcentajeComision: number;
+  comisionBase: number;
+  comisionExtra?: number;
   periodicidad: Periodicidad;
   formaPago: string;
   contacto: string;
@@ -19,7 +20,7 @@ export interface Corredor {
   sucursal?: Sucursal;
   comercial?: string;
   idPerceptor?: string;
-  creado_por?: string;   // username de quien lo creó
+  creado_por?: string;
   creadoEn: string;
   actualizadoEn: string;
 }
@@ -70,7 +71,7 @@ export function listarCorredores(): Corredor[] {
 }
 
 export function crearCorredor(
-  datos: Omit<Corredor, 'id' | 'codigo' | 'creadoEn' | 'actualizadoEn'> & { codigo?: string }
+  datos: Omit<Corredor, 'id' | 'codigo' | 'creadoEn' | 'actualizadoEn'> & { codigo?: string; comisionExtra?: number }
 ): Corredor {
   const now = new Date().toISOString();
   const all = loadAll();

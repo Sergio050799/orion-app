@@ -84,7 +84,7 @@ export default function FichaContratada({ carpeta, corredor, onAbrirEstudio }: P
             <>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px', gap: 14 }}>
                 <Field label="Corredor" value={[corredor.nombre, corredor.comercial].filter(Boolean).join(' · ')} />
-                <Field label="Comisión" value={`${carpeta.porcentajeComision ?? corredor.porcentajeComision}%`} />
+                <Field label="Comisión" value={`${carpeta.porcentajeComision ?? corredor.comisionBase}%`} />
               </div>
               {(corredor.email || corredor.telefono) && (
                 <p style={{ marginTop: 8, fontSize: 11, color: 'rgba(178,198,245,0.5)' }}>
