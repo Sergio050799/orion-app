@@ -42,18 +42,19 @@ CREATE TABLE IF NOT EXISTS corredores (
     nombre        TEXT NOT NULL DEFAULT '',
     cif           TEXT NOT NULL DEFAULT '',
     domicilio     TEXT NOT NULL DEFAULT '',
-    comision      REAL NOT NULL DEFAULT 0,
-    periodicidad  TEXT NOT NULL DEFAULT 'mensual',
-    forma_pago    TEXT NOT NULL DEFAULT '',
-    contacto      TEXT NOT NULL DEFAULT '',
-    email         TEXT NOT NULL DEFAULT '',
-    telefono      TEXT NOT NULL DEFAULT '',
-    observaciones TEXT NOT NULL DEFAULT '',
-    sucursal      TEXT NOT NULL DEFAULT '',
-    comercial     TEXT NOT NULL DEFAULT '',
-    creado_por    TEXT NOT NULL DEFAULT '',
-    created_at    TEXT NOT NULL DEFAULT (datetime('now')),
-    updated_at    TEXT NOT NULL DEFAULT (datetime('now'))
+    comision       REAL NOT NULL DEFAULT 0,
+    comision_extra REAL NOT NULL DEFAULT 0,
+    periodicidad   TEXT NOT NULL DEFAULT 'mensual',
+    forma_pago     TEXT NOT NULL DEFAULT '',
+    contacto       TEXT NOT NULL DEFAULT '',
+    email          TEXT NOT NULL DEFAULT '',
+    telefono       TEXT NOT NULL DEFAULT '',
+    observaciones  TEXT NOT NULL DEFAULT '',
+    sucursal       TEXT NOT NULL DEFAULT '',
+    comercial      TEXT NOT NULL DEFAULT '',
+    creado_por     TEXT NOT NULL DEFAULT '',
+    created_at     TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at     TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 CREATE TABLE IF NOT EXISTS carpetas (
@@ -151,19 +152,20 @@ def migrate_db():
         # ── corredores: add real columns, migrate from JSON blob ───────────────
         if _table_exists(conn, 'corredores'):
             new_cols = [
-                ('codigo',       "TEXT NOT NULL DEFAULT ''"),
-                ('cif',          "TEXT NOT NULL DEFAULT ''"),
-                ('domicilio',    "TEXT NOT NULL DEFAULT ''"),
-                ('comision',     "REAL NOT NULL DEFAULT 0"),
-                ('periodicidad', "TEXT NOT NULL DEFAULT 'mensual'"),
-                ('forma_pago',   "TEXT NOT NULL DEFAULT ''"),
-                ('contacto',     "TEXT NOT NULL DEFAULT ''"),
-                ('email',        "TEXT NOT NULL DEFAULT ''"),
-                ('telefono',     "TEXT NOT NULL DEFAULT ''"),
-                ('observaciones',"TEXT NOT NULL DEFAULT ''"),
-                ('sucursal',     "TEXT NOT NULL DEFAULT ''"),
-                ('comercial',    "TEXT NOT NULL DEFAULT ''"),
-                ('created_at',   "TEXT NOT NULL DEFAULT (datetime('now'))"),
+                ('codigo',        "TEXT NOT NULL DEFAULT ''"),
+                ('cif',           "TEXT NOT NULL DEFAULT ''"),
+                ('domicilio',     "TEXT NOT NULL DEFAULT ''"),
+                ('comision',      "REAL NOT NULL DEFAULT 0"),
+                ('comision_extra',"REAL NOT NULL DEFAULT 0"),
+                ('periodicidad',  "TEXT NOT NULL DEFAULT 'mensual'"),
+                ('forma_pago',    "TEXT NOT NULL DEFAULT ''"),
+                ('contacto',      "TEXT NOT NULL DEFAULT ''"),
+                ('email',         "TEXT NOT NULL DEFAULT ''"),
+                ('telefono',      "TEXT NOT NULL DEFAULT ''"),
+                ('observaciones', "TEXT NOT NULL DEFAULT ''"),
+                ('sucursal',      "TEXT NOT NULL DEFAULT ''"),
+                ('comercial',     "TEXT NOT NULL DEFAULT ''"),
+                ('created_at',    "TEXT NOT NULL DEFAULT (datetime('now'))"),
             ]
             for col, typedef in new_cols:
                 if not _column_exists(conn, 'corredores', col):
