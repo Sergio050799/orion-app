@@ -1,6 +1,7 @@
 "use client";
 
 import React, { lazy, Suspense, useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import {
@@ -33,6 +34,8 @@ import type { FlotaGridHandle, FlotaHeader, CoberturaRow } from './components/ty
 
 type TabName = 'DATOS GENERALES' | 'AUTOMÁTICO' | 'ORIGINAL' | 'TRABAJO' | 'SINCO' | 'INFORME' | 'OFERTA' | 'PRE-EMISIÓN';
 const TABS: TabName[] = ['DATOS GENERALES', 'AUTOMÁTICO', 'ORIGINAL', 'TRABAJO', 'SINCO', 'INFORME', 'OFERTA', 'PRE-EMISIÓN'];
+
+const MOTIVOS_RECHAZO = ['Precio', 'Siniestralidad', 'Actividad', 'ADR', 'Antigüedad de los vehículos', 'Tipología de vehículos', 'Falta de documentación', 'Prefiere seguir con su aseguradora', 'Sin respuesta del corredor', 'Otro'];
 
 const EMPTY_HEADER: FlotaHeader = { cif: '', tomador: '', actividad: '', formaPago: '', efecto: '' };
 
@@ -350,6 +353,9 @@ const ESTUDIO_CSS = `
 .sdchip[data-on=true]::before{background:var(--silver);box-shadow:0 0 0 3px color-mix(in srgb,var(--silver) 28%,transparent)}
 .sdchip:hover{border-color:var(--text)}
 .sdchip:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+/* ── Estado drawer extras ── */
+.es-drawer .hint{font-size:13px;color:var(--quiet);line-height:1.6;padding:8px 0 4px;margin:0}
+.es-drawer .ferr{font-size:12px;color:#ef4444;min-height:16px;margin-top:4px}
 `;
 
 // ─── FlotasPage ─────────────────────────────────────────────────────────────
@@ -366,7 +372,7 @@ export default function FlotasPage() {
   const [isDownloading, setIsDownloading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [saveFlash, setSaveFlash] = useState(false);
-  const [estadoPopover, setEstadoPopover] = useState<{ estado: EstadoFlota; motivo: string } | null>(null);
+  const [estadoPopover, setEstadoPopover] = useState<{ estado: EstadoFlota; motivo: string; fechaVencimiento: string; comentario: string } | null>(null);
   const [openFlotas, setOpenFlotas] = useState<FlotaCarpeta[]>([]);
   const [fichaMode, setFichaMode] = useState(false);
 
@@ -518,8 +524,19 @@ export default function FlotasPage() {
 
   const handleConfirmarEstado = useCallback(() => {
     if (!carpetaActiva || !estadoPopover) return;
-    const updated = cambiarEstado(carpetaActiva.id, estadoPopover.estado, estadoPopover.motivo || undefined);
-    if (updated) setCarpetaActiva(normalizarCarpeta(updated));
+    if (estadoPopover.estado === 'CONTRATADA' && !estadoPopover.fechaVencimiento.trim()) return;
+    const motivo = estadoPopover.estado === 'RECHAZADA' ? (estadoPopover.motivo || undefined) : undefined;
+    const obs    = estadoPopover.estado === 'RECHAZADA' && estadoPopover.comentario.trim() ? estadoPopover.comentario.trim() : undefined;
+    const updated = cambiarEstado(carpetaActiva.id, estadoPopover.estado, motivo, obs);
+    if (updated) {
+      let final = normalizarCarpeta(updated);
+      if (estadoPopover.estado === 'CONTRATADA' && estadoPopover.fechaVencimiento.trim()) {
+        final = { ...final, header: { ...final.header, fechaVencimiento: estadoPopover.fechaVencimiento.trim() } };
+        guardarCarpeta(final);
+      }
+      setCarpetaActiva(final);
+      if (estadoPopover.estado === 'CONTRATADA') setFichaMode(true);
+    }
     setEstadoPopover(null);
   }, [carpetaActiva, estadoPopover]);
 
@@ -636,6 +653,27 @@ export default function FlotasPage() {
     }
   }, [carpetaActiva, flotaHeader, originalData, trabajoRows, sincoResultRows, ofertaRows, openFlotas]);
 
+  // ─── Corredor activo ────────────────────────────────────────────────────────
+  const corrActivo = useMemo(() => {
+    if (!carpetaActiva?.corredor_id) return null;
+    return listarCorredores().find(c => c.id === carpetaActiva.corredor_id) ?? null;
+  }, [carpetaActiva?.corredor_id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const ofertadaDias = useMemo(() => {
+    if (!carpetaActiva || carpetaActiva.estado !== 'OFERTADA') return 0;
+    const last = [...(carpetaActiva.historico ?? [])].reverse().find(h => h.estadoNuevo === 'OFERTADA');
+    if (!last?.fecha) return 0;
+    return Math.floor((Date.now() - new Date(last.fecha).getTime()) / 86400000);
+  }, [carpetaActiva]);
+
+  // Escape key cierra el drawer de cambio de estado
+  useEffect(() => {
+    if (!estadoPopover) return;
+    const h = (e: KeyboardEvent) => { if (e.key === 'Escape') setEstadoPopover(null); };
+    document.addEventListener('keydown', h);
+    return () => document.removeEventListener('keydown', h);
+  }, [!!estadoPopover]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
@@ -664,6 +702,74 @@ export default function FlotasPage() {
         {/* ── Study view ── */}
         {!showCarpetaScreen && carpetaActiva && (
           <>
+            {/* ── Estado drawer (portal) ── */}
+            {estadoPopover && typeof document !== 'undefined' && createPortal(
+              <>
+                <div className="es-scrim open" onClick={() => setEstadoPopover(null)} />
+                <aside className="es-drawer open" role="dialog" aria-modal="true" tabIndex={-1}>
+                  <button className="x" onClick={() => setEstadoPopover(null)} aria-label="Cerrar">&times;</button>
+                  <div className="over">CAMBIAR ESTADO</div>
+                  <h3>{carpetaActiva?.nombre || 'Estudio'}</h3>
+                  <p className="desc">Estado actual: <EstadoBadge estado={carpetaActiva?.estado ?? ''} small />. El cambio se refleja en el Dashboard y en Flotas.</p>
+                  <form className="form" onSubmit={e => { e.preventDefault(); handleConfirmarEstado(); }} noValidate>
+                    <div className="fld">
+                      <label htmlFor="es_estado">Nuevo estado</label>
+                      <select id="es_estado" className="select"
+                        value={estadoPopover.estado}
+                        onChange={e => setEstadoPopover(p => p ? { ...p, estado: e.target.value as EstadoFlota, motivo: MOTIVOS_RECHAZO[0], fechaVencimiento: '', comentario: '' } : null)}>
+                        {(['EN ESTUDIO', 'ESTUDIADA', 'OFERTADA', 'CONTRATADA', 'RECHAZADA'] as EstadoFlota[])
+                          .filter(s => s !== carpetaActiva?.estado)
+                          .map(s => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                    </div>
+
+                    {estadoPopover.estado === 'ESTUDIADA' && (
+                      <p className="hint">El estudio está terminado y la oferta aún no se ha enviado.</p>
+                    )}
+
+                    {estadoPopover.estado === 'CONTRATADA' && (
+                      <div className="fld">
+                        <label htmlFor="es_vcto">Fecha de vencimiento (DD/MM/AAAA) <span className="req">*</span></label>
+                        <input id="es_vcto" className="inp" placeholder="31/12/2027"
+                          value={estadoPopover.fechaVencimiento}
+                          onChange={e => setEstadoPopover(p => p ? { ...p, fechaVencimiento: e.target.value } : null)} />
+                      </div>
+                    )}
+
+                    {estadoPopover.estado === 'RECHAZADA' && (
+                      <>
+                        <div className="fld">
+                          <label htmlFor="es_mot">Motivo del rechazo</label>
+                          <select id="es_mot" className="select"
+                            value={estadoPopover.motivo}
+                            onChange={e => setEstadoPopover(p => p ? { ...p, motivo: e.target.value } : null)}>
+                            {MOTIVOS_RECHAZO.map(m => <option key={m}>{m}</option>)}
+                          </select>
+                        </div>
+                        <div className="fld">
+                          <label htmlFor="es_com">Comentario (opcional)</label>
+                          <input id="es_com" className="inp" placeholder="Añade un detalle si hace falta"
+                            value={estadoPopover.comentario}
+                            onChange={e => setEstadoPopover(p => p ? { ...p, comentario: e.target.value } : null)} />
+                        </div>
+                      </>
+                    )}
+
+                    <div className="fact">
+                      <button type="submit"
+                        disabled={estadoPopover.estado === 'CONTRATADA' && !estadoPopover.fechaVencimiento.trim()}
+                        className="btn"
+                        style={{ opacity: (estadoPopover.estado === 'CONTRATADA' && !estadoPopover.fechaVencimiento.trim()) ? 0.5 : 1 }}>
+                        Confirmar
+                      </button>
+                      <button type="button" onClick={() => setEstadoPopover(null)} className="btn ghost">Cancelar</button>
+                    </div>
+                  </form>
+                </aside>
+              </>,
+              document.body
+            )}
+
             {/* ── wsbar: back + open chips + silverdat ── */}
             <div className="wsbar">
               <button onClick={() => setShowCarpetaScreen(true)} className="mini">Todas las flotas</button>
@@ -690,62 +796,37 @@ export default function FlotasPage() {
                 </p>
                 <h1>{carpetaActiva.nombre || '(sin nombre)'}</h1>
                 <div className="meta">
-                  {carpetaActiva.header?.tomador && <span>{carpetaActiva.header.tomador}</span>}
-                  {numVeh > 0 && <span>{numVeh} veh.</span>}
+                  {corrActivo?.nombre && <span>{corrActivo.nombre}</span>}
+                  {corrActivo?.sucursal && <span style={{ color: 'var(--quiet)' }}>{corrActivo.sucursal}</span>}
+                  <span>{numVeh} veh.</span>
                   <EstadoBadge estado={carpetaActiva.estado} />
                 </div>
-                {(carpetaActiva.estado === 'RECHAZADA' || carpetaActiva.estado === 'OFERTADA') && (
-                  <div className="banner" style={{ '--c': carpetaActiva.estado === 'RECHAZADA' ? 'rgba(239,77,90,0.9)' : 'rgba(240,185,77,0.9)' } as React.CSSProperties}>
-                    <b>{carpetaActiva.estado}</b>
-                    {motivoCarpeta && <span style={{ fontSize: 12, fontStyle: 'italic' }}>{motivoCarpeta}</span>}
+                {carpetaActiva.estado === 'ESTUDIADA' && (
+                  <div className="banner" style={{ '--c': 'var(--st-estudiada)' } as React.CSSProperties}>
+                    <b>Estudiada</b>
+                    <span>El estudio está terminado. Falta enviar la oferta al corredor.</span>
+                  </div>
+                )}
+                {carpetaActiva.estado === 'OFERTADA' && (
+                  <div className="banner" style={{ '--c': 'var(--st-ofertada)' } as React.CSSProperties}>
+                    <b>Ofertada</b>
+                    <span>Enviada hace {ofertadaDias} {ofertadaDias === 1 ? 'día' : 'días'}. A la espera de respuesta del corredor.</span>
+                  </div>
+                )}
+                {carpetaActiva.estado === 'RECHAZADA' && (
+                  <div className="banner" style={{ '--c': 'var(--st-rechazada)' } as React.CSSProperties}>
+                    <b>Rechazada</b>
+                    <span>{motivoCarpeta || 'Sin motivo indicado'}</span>
                   </div>
                 )}
               </div>
               <div className="acts">
-                <div style={{ position: 'relative' }}>
-                  <select
-                    value=""
-                    onChange={e => {
-                      const val = e.target.value as EstadoFlota;
-                      if (val && val !== carpetaActiva.estado) setEstadoPopover({ estado: val, motivo: '' });
-                    }}
-                    style={{
-                      border: '1px solid var(--line)', background: 'var(--soft)', color: 'var(--text)',
-                      padding: '7px 10px', borderRadius: 5, fontSize: 12, cursor: 'pointer', outline: 'none', font: 'inherit',
-                    }}
-                  >
-                    <option value="">Cambiar estado</option>
-                    {(['EN ESTUDIO', 'OFERTADA', 'CONTRATADA', 'RECHAZADA'] as EstadoFlota[])
-                      .filter(e => e !== carpetaActiva.estado)
-                      .map(e => <option key={e} value={e}>{e}</option>)}
-                  </select>
-
-                  {estadoPopover && (
-                    <div style={{
-                      position: 'absolute', top: '100%', right: 0, marginTop: 8, zIndex: 100,
-                      padding: 14, borderRadius: 8, minWidth: 220,
-                      background: 'var(--soft)', border: '1px solid var(--line)',
-                      boxShadow: '0 12px 40px rgba(0,0,0,0.3)',
-                    }}>
-                      <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--quiet)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>
-                        Cambiar a <EstadoBadge estado={estadoPopover.estado} small />
-                      </p>
-                      <input autoFocus placeholder="Motivo (opcional)"
-                        value={estadoPopover.motivo}
-                        onChange={e => setEstadoPopover(p => p ? { ...p, motivo: e.target.value } : null)}
-                        onKeyDown={e => { if (e.key === 'Enter') handleConfirmarEstado(); if (e.key === 'Escape') setEstadoPopover(null); }}
-                        style={{
-                          width: '100%', fontSize: 12, marginBottom: 10,
-                          border: '1px solid var(--line)', background: 'var(--soft)', color: 'var(--text)',
-                          padding: '7px 10px', borderRadius: 5, outline: 'none', boxSizing: 'border-box', font: 'inherit',
-                        }} />
-                      <div style={{ display: 'flex', gap: 6 }}>
-                        <button onClick={handleConfirmarEstado} className="mini pri" style={{ flex: 1, justifyContent: 'center' }}>Confirmar</button>
-                        <button onClick={() => setEstadoPopover(null)} className="mini">Cancelar</button>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                <button className="mini" onClick={() => {
+                  const first = (['EN ESTUDIO', 'ESTUDIADA', 'OFERTADA', 'CONTRATADA', 'RECHAZADA'] as EstadoFlota[]).find(s => s !== carpetaActiva.estado)!;
+                  setEstadoPopover({ estado: first, motivo: MOTIVOS_RECHAZO[0], fechaVencimiento: '', comentario: '' });
+                }}>
+                  Cambiar estado
+                </button>
 
                 <button onClick={handleRefresh} disabled={isRefreshing} className="mini" style={{ opacity: isRefreshing ? 0.5 : 1 }}>
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
