@@ -3,9 +3,10 @@
 import React, { lazy, Suspense, useState, useCallback, useRef, forwardRef } from 'react';
 const FlotaGrid = lazy(() => import('./FlotaGrid'));
 import { makeTrabajoColDefs } from './constants';
-import { contarVehiculos, filtrarFilasReales, detectarClaveFlota, normalizarPoliza, normalizarPolizaConClave } from '@/core/flotas';
+import { contarVehiculos, filtrarFilasReales, detectarClaveFlota, normalizarPoliza, normalizarPolizaConClave, parseExcelTemplate } from '@/core/flotas';
 import type { ClaveFlotaGrupo } from '@/core/flotas';
 import type { FlotaGridHandle } from './types';
+import { DetailDrawer } from '@/components/saas/DetailDrawer';
 
 interface Props {
   getOriginalSnapshot: () => Record<string, string>[] | null;
@@ -352,8 +353,11 @@ const HojaTrabajos = forwardRef<FlotaGridHandle, Props>(function HojaTrabajos(
   const [vehicleCount, setVehicleCount]   = useState(0);
   const [claveGrupos, setClaveGrupos]     = useState<ClaveFlotaGrupo[]>([]);
   const [polizaResolucion, setPolizaResolucion] = useState<'none' | 'ultimos5' | 'clave'>('none');
+  const [uploadDrawerOpen, setUploadDrawerOpen] = useState(false);
+  const [correctionParseError, setCorrectionParseError] = useState('');
   const prevClaveKeyRef = useRef('');
   const gridRef = useRef<FlotaGridHandle>(null);
+  const correctionFileRef = useRef<HTMLInputElement>(null);
 
   // Silverdat state
   const [showLogin, setShowLogin] = useState(false);
@@ -636,6 +640,23 @@ if (key !== prevClaveKeyRef.current) {
     }
   }, [runSilverdatEnrich]);
 
+  const handleCorrectionFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    setCorrectionParseError('');
+    try {
+      const result = await parseExcelTemplate(file);
+      if (result.rows.length > 0) {
+        const filtered = filtrarFilasReales(result.rows);
+        gridRef.current?.setData(filtered.length > 0 ? filtered : result.rows);
+        runClaveDetection(filtered.length > 0 ? filtered : result.rows);
+      }
+    } catch {
+      setCorrectionParseError('No se pudo leer el archivo. Asegúrate de que es un Excel válido (.xlsx / .xls).');
+    }
+  };
+
   return (
     <div className="flex flex-col h-full min-h-0">
       {/* ── Cabecera de paso ── */}
@@ -650,6 +671,12 @@ if (key !== prevClaveKeyRef.current) {
               <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
             </svg>
             Copiar de Original
+          </button>
+          <button className="mini" onClick={() => setUploadDrawerOpen(true)}>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            Subir corrección
           </button>
           {!silverdatLoading ? (
             <button className="mini sd" onClick={handleSilverdatClick}>Silverdat</button>
@@ -792,6 +819,16 @@ if (key !== prevClaveKeyRef.current) {
         />
       </Suspense>
 
+      {/* Input oculto para corrección de trabajo */}
+      <input ref={correctionFileRef} type="file" accept=".xlsx,.xls" style={{ display: 'none' }} onChange={handleCorrectionFile} />
+
+      {correctionParseError && (
+        <div style={{ flexShrink: 0, padding: '6px 16px', background: 'rgba(239,68,68,0.07)', borderTop: '1px solid rgba(239,68,68,0.2)' }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: '#f87171' }}>{correctionParseError}</span>
+          <button onClick={() => setCorrectionParseError('')} style={{ marginLeft: 10, background: 'none', border: 'none', cursor: 'pointer', color: '#f87171', fontSize: 14 }}>×</button>
+        </div>
+      )}
+
       {/* Silverdat modals */}
       {showLogin && (
         <SilverdatLoginModal
@@ -805,6 +842,66 @@ if (key !== prevClaveKeyRef.current) {
           onClose={() => setSilverdatReport(null)}
         />
       )}
+
+      {/* Drawer: impacto antes de subir corrección */}
+      <DetailDrawer
+        isOpen={uploadDrawerOpen}
+        onClose={() => setUploadDrawerOpen(false)}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--t-blue)', marginBottom: 8 }}>
+              TRABAJO · CORRECCIÓN
+            </div>
+            <h3 style={{ margin: '0 0 8px', fontSize: 20, fontWeight: 800, color: 'var(--t-text)', letterSpacing: '-.03em', textWrap: 'balance' as React.CSSProperties['textWrap'] }}>
+              Subir corrección de trabajo
+            </h3>
+            <p style={{ margin: 0, fontSize: 13, color: 'var(--t-text-2)', lineHeight: 1.65 }}>
+              Sube un Excel con los datos corregidos de TRABAJO. Original no se modifica. Usa la plantilla descargada desde ORIGINAL como base.
+            </p>
+          </div>
+
+          <div>
+            <p style={{ margin: '0 0 8px', fontSize: 10, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--t-text-3)' }}>Se mantiene sin cambios</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+              {['Original — intacto', 'Datos de carpeta y corredor', 'Resultados SINCO guardados'].map((item, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 6, background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.14)', fontSize: 13, color: 'var(--t-text-2)' }}>
+                  <span style={{ color: '#10b981', fontWeight: 800, flexShrink: 0 }}>✓</span>
+                  {item}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p style={{ margin: '0 0 8px', fontSize: 10, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--t-text-3)' }}>Cascada de recálculo</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              {[
+                { text: 'TRABAJO ← corrección del Excel', depth: 0 },
+                { text: 'Ejecutar SINCO → recálculo', depth: 1 },
+                { text: 'SINCO → Informe · Oferta · Pre-emisión', depth: 2 },
+              ].map((node, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, paddingLeft: node.depth * 18 }}>
+                  {node.depth > 0 && <span style={{ color: 'var(--t-text-3)', fontSize: 12, flexShrink: 0, lineHeight: '32px' }}>↓</span>}
+                  <span style={{ fontSize: 12, fontWeight: node.depth === 0 ? 600 : 400, color: node.depth === 0 ? 'var(--t-text)' : 'var(--t-text-2)', padding: '6px 10px', borderRadius: 6, background: 'var(--soft)', border: '1px solid var(--line)', flex: 1 }}>
+                    {node.text}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <button
+            onClick={() => {
+              setUploadDrawerOpen(false);
+              setTimeout(() => correctionFileRef.current?.click(), 60);
+            }}
+            style={{ padding: '13px 0', borderRadius: 8, background: 'linear-gradient(135deg,#1240CC,#3366FF)', color: '#fff', border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+          >
+            Seleccionar archivo Excel
+          </button>
+        </div>
+      </DetailDrawer>
     </div>
   );
 });

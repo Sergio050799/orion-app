@@ -5,6 +5,7 @@ const FlotaGrid = lazy(() => import('./FlotaGrid'));
 import { BASE_COL_DEFS } from './constants';
 import { parseExcelTemplate, generarPlantillaExcel, listarCorredores } from '@/core/flotas';
 import type { FlotaGridHandle } from './types';
+import { DetailDrawer } from '@/components/saas/DetailDrawer';
 
 async function descargarPlantilla() {
   const blob = await generarPlantillaExcel(undefined, listarCorredores().map(c => c.nombre));
@@ -37,6 +38,7 @@ const HojaOriginal = forwardRef<FlotaGridHandle, Props>(function HojaOriginal(
   const [modeSelected, setModeSelected] = useState(false);
   const [unmapped, setUnmapped]         = useState<string[]>([]);
   const [parseError, setParseError]     = useState<string | null>(null);
+  const [drawerAction, setDrawerAction] = useState<'closed' | 'resubir' | 'anadir'>('closed');
   const fileRef     = useRef<HTMLInputElement>(null);
   const reuploadRef = useRef<HTMLInputElement>(null);
   const appendRef   = useRef<HTMLInputElement>(null);
@@ -87,13 +89,13 @@ const HojaOriginal = forwardRef<FlotaGridHandle, Props>(function HojaOriginal(
             <p>Los datos tal como llegaron desde la plantilla. Solo lectura.</p>
           </div>
           <div className="acts">
-            <button className="mini" onClick={() => reuploadRef.current?.click()}>
+            <button className="mini" onClick={() => setDrawerAction('resubir')}>
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
               </svg>
               Re-subir
             </button>
-            <button className="mini" onClick={() => appendRef.current?.click()}>
+            <button className="mini" onClick={() => setDrawerAction('anadir')}>
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
               </svg>
@@ -195,6 +197,75 @@ const HojaOriginal = forwardRef<FlotaGridHandle, Props>(function HojaOriginal(
       {/* Inputs ocultos */}
       <input ref={reuploadRef} type="file" accept=".xlsx,.xls" style={{ display: 'none' }} onChange={handleFile} />
       <input ref={appendRef}   type="file" accept=".xlsx,.xls" style={{ display: 'none' }} onChange={handleAppendFile} />
+
+      {/* Drawer: impacto antes de subir Excel */}
+      <DetailDrawer
+        isOpen={drawerAction !== 'closed'}
+        onClose={() => setDrawerAction('closed')}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase', color: drawerAction === 'anadir' ? 'var(--t-blue)' : 'var(--t-amber)', marginBottom: 8 }}>
+              ORIGINAL · {drawerAction === 'anadir' ? 'AÑADIR' : 'RE-SUBIR'}
+            </div>
+            <h3 style={{ margin: '0 0 8px', fontSize: 20, fontWeight: 800, color: 'var(--t-text)', letterSpacing: '-.03em', textWrap: 'balance' as React.CSSProperties['textWrap'] }}>
+              {drawerAction === 'anadir' ? 'Añadir vehículos' : 'Re-subir plantilla original'}
+            </h3>
+            <p style={{ margin: 0, fontSize: 13, color: 'var(--t-text-2)', lineHeight: 1.65 }}>
+              {drawerAction === 'anadir'
+                ? 'Los vehículos del Excel se añaden al final del Original sin borrar los existentes.'
+                : 'Los datos del Excel reemplazarán el Original completo. Los cambios se propagan cuando copies a TRABAJO.'}
+            </p>
+          </div>
+
+          <div>
+            <p style={{ margin: '0 0 8px', fontSize: 10, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--t-text-3)' }}>Se mantiene sin cambios</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+              {(drawerAction === 'anadir'
+                ? ['Vehículos ya existentes — intactos', 'Datos de carpeta y corredor', 'Resultados SINCO guardados']
+                : ['Datos de carpeta y corredor', 'Resultados SINCO guardados']
+              ).map((item, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 6, background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.14)', fontSize: 13, color: 'var(--t-text-2)' }}>
+                  <span style={{ color: '#10b981', fontWeight: 800, flexShrink: 0 }}>✓</span>
+                  {item}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p style={{ margin: '0 0 8px', fontSize: 10, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--t-text-3)' }}>Cascada de recálculo</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              {[
+                { text: drawerAction === 'anadir' ? 'Original ← vehículos nuevos añadidos' : 'Original ← datos nuevos del Excel', depth: 0 },
+                { text: 'Copiar a TRABAJO → actualizado', depth: 1 },
+                { text: 'SINCO → Informe · Oferta · Pre-emisión', depth: 2 },
+              ].map((node, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, paddingLeft: node.depth * 18 }}>
+                  {node.depth > 0 && <span style={{ color: 'var(--t-text-3)', fontSize: 12, flexShrink: 0, lineHeight: '32px' }}>↓</span>}
+                  <span style={{ fontSize: 12, fontWeight: node.depth === 0 ? 600 : 400, color: node.depth === 0 ? 'var(--t-text)' : 'var(--t-text-2)', padding: '6px 10px', borderRadius: 6, background: 'var(--soft)', border: '1px solid var(--line)', flex: 1 }}>
+                    {node.text}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <button
+            onClick={() => {
+              const action = drawerAction;
+              setDrawerAction('closed');
+              setTimeout(() => {
+                if (action === 'anadir') appendRef.current?.click();
+                else reuploadRef.current?.click();
+              }, 60);
+            }}
+            style={{ padding: '13px 0', borderRadius: 8, background: 'linear-gradient(135deg,#1240CC,#3366FF)', color: '#fff', border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+          >
+            Seleccionar archivo Excel
+          </button>
+        </div>
+      </DetailDrawer>
     </div>
   );
 });
