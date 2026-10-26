@@ -345,7 +345,7 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
     const updated: FlotaCarpeta = {
       ...carpetaActiva,
       corredor_id: corredor_id || undefined,
-      porcentajeComision: carpetaActiva.porcentajeComision ?? corredor?.comisionBase,
+      comisionBase: carpetaActiva.comisionBase ?? corredor?.comisionBase,
     };
     guardarCarpeta(updated);
     onCarpetaChange(updated);
@@ -354,7 +354,7 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
   const handleComisionChange = (val: string) => {
     const updated: FlotaCarpeta = {
       ...carpetaActiva,
-      porcentajeComision: parseFloat(val) || 0,
+      comisionBase: parseFloat(val) || 0,
     };
     guardarCarpeta(updated);
     onCarpetaChange(updated);
@@ -365,7 +365,7 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
 
   // Comision base vs corredor
   const cmBaseOrig = corrActual?.comisionBase ?? 0;
-  const cmBase = carpetaActiva.porcentajeComision;
+  const cmBase = carpetaActiva.comisionBase;
   const cmBaseWarn = cmBase != null && cmBase !== cmBaseOrig
     ? `Distinta a la del corredor (base ${cmBaseOrig} %)` : '';
   const cmExtra = carpetaActiva.comisionExtra;
@@ -427,7 +427,14 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
             </div>
             <div className="dg-fld full">
               <label>Actividad</label>
-              <input className="dg-inp" value={header.actividad ?? ''} onChange={e => set('actividad', e.target.value)} placeholder="Ej. Transporte de mercancías" />
+              <select className="dg-sel" value={header.actividad ?? ''} onChange={e => set('actividad', e.target.value)}>
+                <option value="">Sin actividad</option>
+                <option value="Transporte de mercancías">Transporte de mercancías</option>
+                <option value="Transporte de viajeros">Transporte de viajeros</option>
+                <option value="Construcción">Construcción</option>
+                <option value="Distribución">Distribución</option>
+                <option value="Servicios">Servicios</option>
+              </select>
             </div>
             <div className="dg-fld">
               <label>Periodicidad</label>
@@ -499,7 +506,7 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
           <div className="pct2">
             <div className="dg-fld">
               <label>Comisión base %</label>
-              {fldNum(cmBase, n => { const u = { ...carpetaActiva, porcentajeComision: n }; guardarCarpeta(u); onCarpetaChange(u); }, `${cmBaseOrig} (corredor)`)}
+              {fldNum(cmBase, n => { const u = { ...carpetaActiva, comisionBase: n }; guardarCarpeta(u); onCarpetaChange(u); }, `${cmBaseOrig} (corredor)`)}
               {cmBaseWarn && <span className="warn">{cmBaseWarn}</span>}
             </div>
             <div className="dg-fld">

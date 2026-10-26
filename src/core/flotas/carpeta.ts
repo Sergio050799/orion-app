@@ -34,7 +34,7 @@ export interface FlotaCarpeta {
   estudiando_por?: string[];    // usernames con sesión activa (solo viene del servidor)
 
   corredor_id?: string;
-  porcentajeComision?: number;
+  comisionBase?: number;
   comisionExtra?: number;
   estado: EstadoFlota;
   historico: HistoricoEntry[];
@@ -156,7 +156,12 @@ export function sesionHeartbeat(carpeta_id: string): void {
 export async function cargarCarpetasDelServidor(signal?: AbortSignal): Promise<FlotaCarpeta[]> {
   const res = await fetch('/api/flotas/carpetas', { signal });
   if (!res.ok) throw new Error('Server error');
-  const data: FlotaCarpeta[] = await res.json();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const raw: any[] = await res.json();
+  const data: FlotaCarpeta[] = raw.map(c => ({
+    ...c,
+    comisionBase: c.comisionBase ?? c.porcentajeComision,
+  }));
   initMemCache(data);
   return data;
 }

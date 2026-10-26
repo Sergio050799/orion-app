@@ -74,7 +74,7 @@ function normalizarCarpeta(c: FlotaCarpeta, corredoresMap: Map<string, Corredor>
     tomador: c.header?.tomador ?? '', cif: c.header?.cif ?? '',
     actividad: c.header?.actividad ?? '',
     corredor_nombre: cor?.nombre ?? '',
-    comision: c.porcentajeComision ?? cor?.comision ?? 0,
+    comision: c.comisionBase ?? cor?.comision ?? 0,
     formaPago: c.header?.formaPago ?? '',
     coberturas: extractCoberturas(oferta),
     prima_total: primaFinal,
@@ -382,7 +382,7 @@ function FichaPoliza({ flota, corredores, onClose, onEdit, onDelete, onSaved }: 
 
   const [form, setForm] = useState({
     corredor_id:    carpeta?.corredor_id ?? '',
-    comision:       String(carpeta?.porcentajeComision ?? flota.comision ?? ''),
+    comision:       String(carpeta?.comisionBase ?? flota.comision ?? ''),
     compania:       carpeta?.header?.ciaActual ?? flota.compania ?? '',
     poliza:         carpeta?.header?.polizaActual ?? flota.num_poliza ?? '',
     periodicidad:   carpeta?.header?.periodicidad ?? flota.periodicidad ?? '',
@@ -406,7 +406,7 @@ function FichaPoliza({ flota, corredores, onClose, onEdit, onDelete, onSaved }: 
       const updated: FlotaCarpeta = {
         ...carpeta,
         corredor_id: form.corredor_id || undefined,
-        porcentajeComision: parseFloat(form.comision) || undefined,
+        comisionBase: parseFloat(form.comision) || undefined,
         header: {
           ...carpeta.header,
           ciaActual:        form.compania,
