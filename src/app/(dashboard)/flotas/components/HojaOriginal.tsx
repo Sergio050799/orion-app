@@ -2,10 +2,9 @@
 
 import React, { lazy, Suspense, useState, useRef, forwardRef, useImperativeHandle } from 'react';
 const FlotaGrid = lazy(() => import('./FlotaGrid'));
-import HeaderBlock from './HeaderBlock';
 import { BASE_COL_DEFS } from './constants';
 import { parseExcelTemplate, generarPlantillaExcel, listarCorredores } from '@/core/flotas';
-import type { FlotaGridHandle, FlotaHeader } from './types';
+import type { FlotaGridHandle } from './types';
 
 async function descargarPlantilla() {
   const blob = await generarPlantillaExcel(undefined, listarCorredores().map(c => c.nombre));
@@ -18,15 +17,13 @@ async function descargarPlantilla() {
 }
 
 interface Props {
-  header: FlotaHeader;
-  onHeaderChange: (h: FlotaHeader) => void;
   onDataChange?: (data: Record<string, string>[]) => void;
   carpetaOriginalEmpty?: boolean;
   initialData?: Record<string, string>[];
 }
 
 const HojaOriginal = forwardRef<FlotaGridHandle, Props>(function HojaOriginal(
-  { header, onHeaderChange, onDataChange, carpetaOriginalEmpty = false, initialData },
+  { onDataChange, carpetaOriginalEmpty = false, initialData },
   ref,
 ) {
   const gridRef = useRef<FlotaGridHandle>(null);
@@ -82,13 +79,28 @@ const HojaOriginal = forwardRef<FlotaGridHandle, Props>(function HojaOriginal(
 
   return (
     <div className="flex flex-col h-full min-h-0">
-      <HeaderBlock header={header} onChange={onHeaderChange} />
-
-      {/* Lock note */}
+      {/* ── Cabecera de paso ── */}
       {!showModeSelect && (
-        <div className="lock-bar">
-          <b>Solo lectura</b>
-          <span>Aquí está el dato tal como llegó. Para cambiar algo, descarga la plantilla rellena, edítala y súbela otra vez.</span>
+        <div className="sh" style={{ flexShrink: 0, padding: '20px 32px', borderBottom: '1px solid var(--line)' }}>
+          <div>
+            <h2><b>03</b>ORIGINAL</h2>
+            <p>Los datos tal como llegaron desde la plantilla. Solo lectura.</p>
+          </div>
+          <div className="acts">
+            <button className="mini" onClick={() => reuploadRef.current?.click()}>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+              Re-subir
+            </button>
+            <button className="mini" onClick={() => appendRef.current?.click()}>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              Añadir vehículos
+            </button>
+            <button className="mini pri" onClick={descargarPlantilla}>Descargar plantilla</button>
+          </div>
         </div>
       )}
 
@@ -111,39 +123,13 @@ const HojaOriginal = forwardRef<FlotaGridHandle, Props>(function HojaOriginal(
 
       {/* Grid (siempre montado) */}
       <div style={{ flex: 1, minHeight: 0, display: showModeSelect ? 'none' : 'flex', flexDirection: 'column' }}>
-        {/* Barra de re-subida — visible cuando el grid ya tiene datos */}
+        {/* Lock note */}
         {!showModeSelect && (
-          <div style={{
-            flexShrink: 0, display: 'flex', alignItems: 'center', gap: 10,
-            padding: '6px 16px',
-            background: 'transparent',
-            borderBottom: '1px solid var(--t-line)',
-          }}>
-            <button onClick={() => reuploadRef.current?.click()} style={{
-              background: 'transparent', border: '1px solid var(--t-line)',
-              borderRadius: 8, padding: '5px 14px',
-              color: 'var(--t-text-2)', fontSize: 11, fontWeight: 600, cursor: 'pointer',
-              display: 'flex', alignItems: 'center', gap: 6,
-            }}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
-              </svg>
-              Re-subir Excel
-            </button>
-            <button onClick={() => appendRef.current?.click()} style={{
-              background: 'transparent', border: '1px solid var(--t-line)',
-              borderRadius: 8, padding: '5px 14px',
-              color: 'var(--t-blue)', fontSize: 11, fontWeight: 600, cursor: 'pointer',
-              display: 'flex', alignItems: 'center', gap: 6,
-            }}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-              </svg>
-              Añadir vehículos
-            </button>
-            <span style={{ fontSize: 10, color: 'var(--t-text-3)' }}>
-              Re-subir reemplaza · Añadir agrega filas de otro tomador
-            </span>
+          <div style={{ flexShrink: 0, padding: '12px 32px 0' }}>
+            <div className="lock">
+              <b>Solo lectura</b>
+              <span>Aquí está el dato tal como llegó. Para cambiar algo, descarga la plantilla rellena, edítala y súbela otra vez.</span>
+            </div>
           </div>
         )}
         <Suspense fallback={<div className="flex-1 animate-pulse rounded-xl bg-white/5" />}>

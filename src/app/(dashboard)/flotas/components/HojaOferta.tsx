@@ -858,62 +858,40 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
 
   return (
     <div className="flex flex-col h-full min-h-0">
-      {/* Toolbar */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 16px', borderBottom: showAjustes ? 'none' : '1px solid #e5e7eb', background: '#f9fafb', flexShrink: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            <span style={{ color: '#002F82', fontWeight: 900 }}>{filledRows}</span> vehículos seleccionados
-          </span>
-          {primaTotal > 0 && (
-            <span style={{ fontSize: 12, fontWeight: 900, color: '#111827', fontFamily: 'monospace', background: 'rgba(178,198,245,0.28)', padding: '3px 10px', borderRadius: 6, border: '1px solid rgba(178,198,245,0.5)' }}>
-              TOTAL: {fmtEUR(primaTotal)}
-            </span>
-          )}
-          {primaNetaTotal > 0 && primaNetaTotal !== primaTotal && (
-            <span style={{ fontSize: 12, fontWeight: 900, color: '#16a34a', fontFamily: 'monospace', background: 'rgba(22,163,74,0.08)', padding: '3px 10px', borderRadius: 6, border: '1px solid rgba(22,163,74,0.2)' }}>
-              NETO: {fmtEUR(primaNetaTotal)}
-            </span>
-          )}
+      {/* ── Cabecera de paso ── */}
+      <div className="sh" style={{ flexShrink: 0, padding: '20px 32px', borderBottom: '1px solid var(--line)' }}>
+        <div>
+          <h2><b>07</b>OFERTA</h2>
+          <p>
+            {filledRows > 0
+              ? `${filledRows} vehículos${primaTotal > 0 ? ` · ${fmtEUR(primaTotal)}` : ''}${primaNetaTotal > 0 && primaNetaTotal !== primaTotal ? ` (neto ${fmtEUR(primaNetaTotal)})` : ''}`
+              : 'Prima orientativa por vehículo según la tarifa MMT.'}
+          </p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {/* Actualizar primas desde Informe */}
+        <div className="acts">
           {primasMmt && Object.keys(primasMmt).length > 0 && (
-            <button
-              onClick={handleActualizarDesdeInforme}
-              style={{ fontSize: 10, fontWeight: 800, padding: '4px 10px', borderRadius: 6, background: 'rgba(0,48,132,0.08)', color: '#002F82', border: '1px solid rgba(0,48,132,0.25)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            <button className="mini" onClick={handleActualizarDesdeInforme}>
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
               Actualizar primas
             </button>
           )}
-          {/* Ajustes toggle */}
-          <button
-            onClick={() => setShowAjustes(!showAjustes)}
-            style={{ fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 6, background: showAjustes ? 'rgba(0,48,132,0.12)' : 'rgba(0,0,0,0.04)', color: showAjustes ? '#002F82' : '#6b7280', border: '1px solid ' + (showAjustes ? 'rgba(0,48,132,0.3)' : '#e5e7eb'), cursor: 'pointer' }}>
+          <button className={showAjustes ? 'mini flash' : 'mini'} onClick={() => setShowAjustes(!showAjustes)}>
             Ajustes
           </button>
-          {/* Toggle preview/grid */}
-          <button
-            onClick={() => setShowPreview(!showPreview)}
-            style={{ fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 6, background: showPreview ? 'rgba(0,48,132,0.1)' : 'rgba(0,0,0,0.04)', color: showPreview ? '#002F82' : '#6b7280', border: '1px solid ' + (showPreview ? 'rgba(0,48,132,0.25)' : '#e5e7eb'), cursor: 'pointer' }}>
+          <button className="mini" onClick={() => setShowPreview(!showPreview)}>
             {showPreview ? 'Vista previa' : 'Editar datos'}
           </button>
           {rows.length > 0 && (
             <>
-              <button onClick={handleExportOferta}
-                disabled={exporting}
-                style={{ fontSize: 10, fontWeight: 800, padding: '4px 12px', borderRadius: 6, background: exporting ? 'rgba(22,163,74,0.05)' : 'rgba(22,163,74,0.1)', color: '#16a34a', border: '1px solid rgba(22,163,74,0.25)', cursor: exporting ? 'wait' : 'pointer', textTransform: 'uppercase', letterSpacing: '0.05em', opacity: exporting ? 0.6 : 1, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <button className="mini" onClick={handleExportOferta} disabled={exporting}>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                 {exporting ? 'Generando...' : 'Excel'}
               </button>
-              <button onClick={handleExportPdf}
-                style={{ fontSize: 10, fontWeight: 800, padding: '4px 12px', borderRadius: 6, background: 'rgba(220,38,38,0.08)', color: '#dc2626', border: '1px solid rgba(220,38,38,0.25)', cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <button className="mini pri" onClick={handleExportPdf}>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                 PDF
               </button>
             </>
-          )}
-          {rows.length === 0 && trabajoRows.length === 0 && (
-            <span style={{ fontSize: 10, color: '#9ca3af' }}>Completa TRABAJO para generar la oferta.</span>
           )}
         </div>
       </div>

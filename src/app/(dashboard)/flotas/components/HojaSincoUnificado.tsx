@@ -385,6 +385,16 @@ export default function HojaSincoUnificado({
 }: Props) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
+      {/* ── Cabecera de paso ── */}
+      <div className="sh" style={{ flexShrink: 0, padding: '20px 32px', borderBottom: '1px solid var(--line)' }}>
+        <div>
+          <h2><b>05</b>SINCO</h2>
+          <p>Descarga la consulta, procésala en el servidor SINCO e importa el resultado.</p>
+        </div>
+        <div className="acts">
+          {/* Acciones están dentro del contenido */}
+        </div>
+      </div>
       {/* Banner VPS */}
       <div style={{
         flexShrink: 0, display: 'flex', alignItems: 'center', gap: 10,

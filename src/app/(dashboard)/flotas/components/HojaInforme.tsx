@@ -572,6 +572,7 @@ export default function HojaInforme({
   const [orionResults, setOrionResults] = useState<Record<string, OrionResult | null>>({});
   const [orionLoading, setOrionLoading] = useState(false);
   const [orionExpanded, setOrionExpanded] = useState<Record<string, boolean>>({});
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   // ── Daños Propios ────────────────────────────────────────────────────────────
   const danosPropiosItems = useMemo((): [string, string][] | null => {
@@ -919,6 +920,8 @@ export default function HojaInforme({
 
   // ── PDF ───────────────────────────────────────────────────────────────────────
   const handlePdf = useCallback(async () => {
+    setPdfLoading(true);
+    try {
     const logoSrc = await fetchLogoDataUrl();
     const r = resumenAuto ?? resumenManual;
     const sincoValues: [string, string][] | null = (() => {
@@ -976,57 +979,54 @@ export default function HojaInforme({
     });
 
     const w = window.open('', '_blank', 'width=860,height=700');
-    if (!w) return;
+    if (!w) { setPdfLoading(false); return; }
     w.document.write(html);
     w.document.close();
+    } finally {
+      setPdfLoading(false);
+    }
   }, [header, pivot, totalVehiculos, ambito, adrActivo, primasSol, mmtRows, resumenAuto, resumenManual, sincoGlobal, danosPropios, cobAnexo, sincoPorTipo, fechaVctoDisplay]);
 
   // ── Render ────────────────────────────────────────────────────────────────────
   return (
     <div className="flex flex-col h-full min-h-0" style={{ background: 'transparent', width: '100%', minWidth: 0, overflow: 'hidden' }}>
 
-      {/* report-actions — cabecera del informe */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid var(--t-line)', flexShrink: 0, gap: 20 }}>
+      {/* ── Cabecera de paso ── */}
+      <div className="sh" style={{ flexShrink: 0, padding: '20px 32px', borderBottom: '1px solid var(--line)' }}>
         <div>
-          <strong style={{ fontSize: 15, fontWeight: 700, color: 'var(--t-text)', display: 'block', lineHeight: 1.2 }}>
-            Informe · {totalVehiculos} vehículos
-          </strong>
-          <div style={{ fontSize: 12, color: 'var(--t-text-2)', marginTop: 5, lineHeight: 1.4 }}>
+          <h2><b>06</b>INFORME</h2>
+          <p>
             {[
+              totalVehiculos > 0 ? `${totalVehiculos} vehículos` : null,
               tomadores.size > 1 ? `${tomadores.size} tomadores` : null,
               totalVehiculos > 0 ? (ambito.label ?? 'Nacional') : null,
               fechaVctoDisplay ? `vencimiento ${fechaVctoDisplay}` : null,
-              corredorLabel ? `${corredorLabel} · ${adrActivo ? 'SÍ lleva ADR' : 'NO lleva ADR'}` : (adrActivo ? 'ADR SÍ' : null),
+              corredorLabel || null,
             ].filter(Boolean).join(' · ')}
-          </div>
+          </p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexShrink: 0 }}>
-          <button onClick={handleRecalcPrimas} style={{
-            display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 6,
-            background: 'transparent', border: '1px solid var(--t-line)',
-            color: 'var(--t-text)', fontSize: 12, fontWeight: 650, cursor: 'pointer',
-          }}
-            title="Recalcula las primas MMT desde los valores de la Oferta y la tarifa"
-            onMouseEnter={e => (e.currentTarget.style.filter = 'brightness(1.13)')}
-            onMouseLeave={e => (e.currentTarget.style.filter = '')}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+        <div className="acts">
+          <button className="mini" onClick={handleRecalcPrimas}
+            title="Recalcula las primas MMT desde los valores de la Oferta y la tarifa">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/>
               <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
             </svg>
-            Recalcular primas
+            Recalcular
           </button>
-          <button onClick={handlePdf} style={{
-            display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 6,
-            background: 'var(--t-blue)', border: '1px solid var(--t-blue)',
-            color: '#fff', fontSize: 12, fontWeight: 650, cursor: 'pointer',
-          }}
-            onMouseEnter={e => (e.currentTarget.style.filter = 'brightness(1.13)')}
-            onMouseLeave={e => (e.currentTarget.style.filter = '')}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" />
-              <line x1="12" y1="18" x2="12" y2="12" /><line x1="9" y1="15" x2="15" y2="15" />
-            </svg>
-            Descargar PDF
+          <button className="mini pri" onClick={handlePdf} disabled={pdfLoading} style={{ opacity: pdfLoading ? 0.7 : 1 }}>
+            {pdfLoading ? (
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+                style={{ animation: 'spin 0.8s linear infinite' }}>
+                <path d="M21 12a9 9 0 11-6.219-8.56"/>
+              </svg>
+            ) : (
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" />
+                <line x1="12" y1="18" x2="12" y2="12" /><line x1="9" y1="15" x2="15" y2="15" />
+              </svg>
+            )}
+            {pdfLoading ? 'Generando…' : 'Descargar PDF'}
           </button>
         </div>
       </div>

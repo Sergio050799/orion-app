@@ -1260,53 +1260,62 @@ export default function HojaAutomatico({ header, carpetaActiva, onComplete, onVe
     }, [uploadedRows]);
 
     return (
-        <div style={{ flex: 1, overflowY: 'auto', padding: '0 8px' }} className="custom-scrollbar">
-            {/* Breadcrumb steps */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '20px 0 0', marginBottom: 8 }}>
-                {[1, 2, 3].map((s, i) => (
-                    <React.Fragment key={s}>
-                        <div style={{
-                            width: 28, height: 28, borderRadius: '50%',
-                            background: step === s ? 'var(--t-blue)' : step > s ? 'rgba(81,184,138,0.15)' : 'var(--t-line-soft)',
-                            border: step === s ? 'none' : step > s ? '1px solid rgba(81,184,138,0.4)' : '1px solid var(--t-line)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: 11, fontWeight: 800,
-                            color: step === s ? '#fff' : step > s ? 'var(--t-green)' : 'var(--t-text-3)',
-                        }}>
-                            {step > s ? '✓' : s}
-                        </div>
-                        {i < 2 && (
-                            <div style={{
-                                width: 40, height: 1, borderRadius: 1,
-                                background: step > s ? 'rgba(81,184,138,0.4)' : 'var(--t-line)',
-                            }} />
-                        )}
-                    </React.Fragment>
-                ))}
+        <div className="flex flex-col h-full min-h-0">
+            {/* ── Cabecera de paso ── */}
+            <div className="sh" style={{ flexShrink: 0, padding: '20px 32px', borderBottom: '1px solid var(--line)' }}>
+                <div>
+                    <h2><b>02</b>AUTOMÁTICO</h2>
+                    <p>Procesa los vehículos de la plantilla. Los datos técnicos se completan con Silverdat.</p>
+                </div>
+                <div className="acts">
+                    {/* Indicador de paso */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        {[1, 2, 3].map((s, i) => (
+                            <React.Fragment key={s}>
+                                <div style={{
+                                    width: 24, height: 24, borderRadius: '50%',
+                                    background: step === s ? 'var(--blue)' : step > s ? 'rgba(81,184,138,0.15)' : 'var(--soft)',
+                                    border: step === s ? 'none' : step > s ? '1px solid rgba(81,184,138,0.5)' : '1px solid var(--line)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    fontSize: 10, fontWeight: 800,
+                                    color: step === s ? '#fff' : step > s ? '#4ade80' : 'var(--quiet)',
+                                }}>
+                                    {step > s ? '✓' : s}
+                                </div>
+                                {i < 2 && (
+                                    <div style={{ width: 24, height: 1, background: step > s ? 'rgba(81,184,138,0.4)' : 'var(--line)' }} />
+                                )}
+                            </React.Fragment>
+                        ))}
+                    </div>
+                </div>
             </div>
 
-            {step === 1 && (
-                <Step1
-                    header={header}
-                    carpetaActiva={carpetaActiva}
-                    onNext={handleStep1Done}
-                />
-            )}
-            {step === 2 && (
-                <Step2
-                    uploadedRows={uploadedRows}
-                    carpetaActiva={carpetaActiva}
-                    onComplete={handleStep2Done}
-                />
-            )}
-            {step === 3 && (
-                <Step3
-                    vehicles={processedVehicles}
-                    onComplete={handleStep3Done}
-                    onBack={() => setStep(1)}
-                    polizaMap={polizaMap}
-                />
-            )}
+            {/* Contenido scrollable */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '24px 32px' }} className="custom-scrollbar">
+                {step === 1 && (
+                    <Step1
+                        header={header}
+                        carpetaActiva={carpetaActiva}
+                        onNext={handleStep1Done}
+                    />
+                )}
+                {step === 2 && (
+                    <Step2
+                        uploadedRows={uploadedRows}
+                        carpetaActiva={carpetaActiva}
+                        onComplete={handleStep2Done}
+                    />
+                )}
+                {step === 3 && (
+                    <Step3
+                        vehicles={processedVehicles}
+                        onComplete={handleStep3Done}
+                        onBack={() => setStep(1)}
+                        polizaMap={polizaMap}
+                    />
+                )}
+            </div>
         </div>
     );
 }

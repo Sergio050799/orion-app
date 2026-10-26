@@ -2,15 +2,12 @@
 
 import React, { lazy, Suspense, useState, useCallback, useRef, forwardRef } from 'react';
 const FlotaGrid = lazy(() => import('./FlotaGrid'));
-import HeaderBlock from './HeaderBlock';
 import { makeTrabajoColDefs } from './constants';
 import { contarVehiculos, filtrarFilasReales, detectarClaveFlota, normalizarPoliza, normalizarPolizaConClave } from '@/core/flotas';
 import type { ClaveFlotaGrupo } from '@/core/flotas';
-import type { FlotaGridHandle, FlotaHeader } from './types';
+import type { FlotaGridHandle } from './types';
 
 interface Props {
-  header: FlotaHeader;
-  onHeaderChange: (h: FlotaHeader) => void;
   getOriginalSnapshot: () => Record<string, string>[] | null;
   onDataChange?: (data: Record<string, string>[]) => void;
   initialData?: Record<string, string>[];
@@ -348,7 +345,7 @@ function SilverdatReport({ mismatches, enriched, noData, total, vehicles, onClos
 // ─── HojaTrabajos ───────────────────────────────────────────────────────────
 
 const HojaTrabajos = forwardRef<FlotaGridHandle, Props>(function HojaTrabajos(
-  { header, onHeaderChange, getOriginalSnapshot, onDataChange, initialData },
+  { getOriginalSnapshot, onDataChange, initialData },
   ref,
 ) {
   const [confirmPending, setConfirmPending] = useState(false);
@@ -641,12 +638,33 @@ if (key !== prevClaveKeyRef.current) {
 
   return (
     <div className="flex flex-col h-full min-h-0">
-      <HeaderBlock header={header} onChange={onHeaderChange} />
+      {/* ── Cabecera de paso ── */}
+      <div className="sh" style={{ flexShrink: 0, padding: '20px 32px', borderBottom: '1px solid var(--line)' }}>
+        <div>
+          <h2><b>04</b>TRABAJO</h2>
+          <p>Datos normalizados desde Original. Solo lectura: descarga, edita y sube para modificar.</p>
+        </div>
+        <div className="acts">
+          <button className="mini" onClick={handleCopy}>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+            </svg>
+            Copiar de Original
+          </button>
+          {!silverdatLoading ? (
+            <button className="mini sd" onClick={handleSilverdatClick}>Silverdat</button>
+          ) : (
+            <button className="mini" onClick={() => { silverdatStopRef.current = true; }} style={{ color: 'var(--warn)' }}>Detener</button>
+          )}
+        </div>
+      </div>
 
       {/* Lock note */}
-      <div className="lock-bar">
-        <b>Solo lectura</b>
-        <span>Se calcula desde Original. Para corregir algo, descarga la plantilla de trabajo, edítala y súbela: el cambio llega a SINCO, Informe, Oferta y Pre-emisión, pero Original no se toca.</span>
+      <div style={{ flexShrink: 0, padding: '10px 32px 0' }}>
+        <div className="lock">
+          <b>Solo lectura</b>
+          <span>Se calcula desde Original. Para corregir algo, descarga la plantilla de trabajo, edítala y súbela: el cambio llega a SINCO, Informe, Oferta y Pre-emisión, pero Original no se toca.</span>
+        </div>
       </div>
 
       {/* Toolbar de hoja */}

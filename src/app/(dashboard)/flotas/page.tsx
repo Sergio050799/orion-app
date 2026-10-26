@@ -383,9 +383,89 @@ const ESTUDIO_CSS = `
 .es .dg-kv .val{color:var(--sub)}.es .dg-kv .val.em{color:var(--quiet);font-style:italic}
 .es .pct2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
 .es .dg-note{font-size:12px;color:var(--quiet);line-height:1.6;padding:10px 0 0;border-top:1px solid var(--line);margin-top:12px}
-/* ── Lock bar (ORIGINAL / TRABAJO solo lectura) ── */
-.es .lock-bar{padding:10px 16px;border-bottom:1px solid var(--line);background:var(--soft);font-size:12px;color:var(--quiet);display:flex;gap:10px;align-items:center;flex-shrink:0}
-.es .lock-bar b{font-weight:700;color:var(--sub);white-space:nowrap;font-size:11px;letter-spacing:.05em;text-transform:uppercase;flex-shrink:0}
+/* ── Token bridge: components que aún usan --t-* funcionan dentro de .es ── */
+.es{--t-bg:#0d111b;--t-surface:var(--soft);--t-line:var(--line);--t-text:var(--text);--t-text-2:var(--sub);--t-text-3:var(--quiet);--t-blue:var(--blue);--t-blue-2:var(--blue-2);--t-warn:var(--warn)}
+[data-theme="light"] .es{--t-bg:#fff}
+/* ── Step body: padding del área de contenido de cada pestaña ── */
+.es .stepbody{padding:clamp(18px,2.4cqw,32px) clamp(18px,3cqw,48px) 40px;min-width:0;overflow-y:auto;flex:1}
+/* ── Cabecera de sección (.sh) ── */
+.es .sh{display:flex;justify-content:space-between;align-items:flex-end;gap:14px 24px;flex-wrap:wrap;margin-bottom:22px}
+.es .sh h2{font:600 clamp(19px,1.7cqw,24px)/1.25 var(--font-display);letter-spacing:-.03em;margin:0;color:var(--text)}
+.es .sh h2 b{opacity:.55;margin-right:8px;font-variant-numeric:tabular-nums}
+.es .sh p{margin:6px 0 0;color:var(--sub);font-size:14px;line-height:1.6;max-width:70ch}
+.es .sh .acts{display:flex;gap:10px;flex-wrap:wrap}
+/* ── Lock note (solo lectura) ── */
+.es .lock{display:flex;gap:6px 14px;flex-wrap:wrap;align-items:baseline;border:1px solid var(--line);border-left:3px solid var(--blue);border-radius:5px;background:var(--soft);padding:12px 16px;margin:0 0 20px;font-size:14px;line-height:1.6;color:var(--sub)}
+.es .lock b{color:var(--text);letter-spacing:.07em;text-transform:uppercase;font-size:11px;font-weight:700;flex-shrink:0}
+/* ── Tabla estilo Excel (.xwrap / .xg) ── */
+.es .xwrap{overflow:auto;border:1px solid var(--line);border-radius:6px;max-height:520px}
+.es .xg{border-collapse:separate;border-spacing:0;font-size:13.5px;min-width:100%;font-variant-numeric:tabular-nums}
+.es .xg th{position:sticky;top:0;z-index:2;background:var(--soft);text-align:left;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--head);padding:10px 12px;border-bottom:1px solid var(--line);border-right:1px solid var(--line);white-space:nowrap}
+.es .xg td{padding:9px 12px;border-bottom:1px solid var(--line);border-right:1px solid var(--line);white-space:nowrap;color:var(--sub)}
+.es .xg th:first-child,.es .xg td:first-child{position:sticky;left:0;z-index:1;background:var(--bg)}
+.es .xg th:first-child{z-index:3;background:var(--soft)}
+.es .xg td.n,.es .xg th.n{text-align:right}
+.es .xg tbody tr:hover td{background:var(--hover)}
+.es .xg th.fx{color:var(--blue-2)}
+.es .xg td.fx{color:var(--blue-2)}
+.es .xg td.raw{color:var(--sub)}.es .xg td.fix{box-shadow:inset 0 -2px var(--warn)}
+.es .xg tfoot td{position:sticky;bottom:0;background:var(--soft);font-weight:700;border-top:1px solid var(--line)}
+.es .xnote{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:12px;font-size:13px;color:var(--quiet)}
+/* ── KPI buttons (.stat3) ── */
+.es .stat3{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin:0 0 22px}
+.es .stat3 button{all:unset;box-sizing:border-box;cursor:pointer;padding:16px 14px 16px 0;min-width:0;display:block;text-align:left}
+.es .stat3 button+button{padding-left:16px;border-left:1px solid var(--line)}
+.es .stat3 button:focus-visible{outline:2px solid var(--blue);outline-offset:-2px}
+.es .stat3 label{display:block;font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--quiet);margin-bottom:6px;cursor:pointer}
+.es .stat3 strong{font:600 clamp(22px,2cqw,30px)/1.1 var(--font-display);letter-spacing:-.04em;font-variant-numeric:tabular-nums;color:var(--text)}
+.es .stat3 button:hover strong{color:var(--blue-2)}
+/* ── Tres columnas Automático (.tri) ── */
+.es .tri{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid var(--line)}
+.es .tri>div{padding:22px 22px 22px 0;min-width:0}.es .tri>div+div{padding-left:22px;border-left:1px solid var(--line)}
+.es .tri .no{font:600 12px var(--font-body);color:var(--blue-2);letter-spacing:.14em;text-transform:uppercase}
+.es .tri h3{font:600 16px/1.3 var(--font-display);letter-spacing:-.02em;margin:8px 0 6px;color:var(--text)}
+.es .tri p{margin:0 0 14px;color:var(--sub);font-size:13.5px;line-height:1.6}
+/* ── Drop zone (.drop) ── */
+.es .drop{border:1px dashed var(--line);border-radius:6px;padding:22px 14px;text-align:center;color:var(--quiet);font-size:14px}
+.es .drop.ok{border-style:solid;color:var(--text)}
+/* ── Modos (.modes / .mode) ── */
+.es .modes{display:grid;gap:8px}
+.es .mode{all:unset;box-sizing:border-box;cursor:pointer;display:block;border:1px solid var(--line);border-radius:6px;padding:12px 14px}
+.es .mode b{display:block;font-size:14px;color:var(--text)}.es .mode span{display:block;color:var(--quiet);font-size:13px;margin-top:2px}
+.es .mode[aria-checked=true]{border-color:var(--blue);background:color-mix(in srgb,var(--blue) 10%,transparent)}
+.es .mode.sd[aria-checked=true]{border-color:var(--silver);background:color-mix(in srgb,var(--silver) 10%,transparent)}
+/* ── Progress bar (.pbar) ── */
+.es .pbar{height:8px;background:var(--soft);border-radius:4px;overflow:hidden;margin:14px 0 6px}
+.es .pbar i{display:block;height:100%;width:0;background:var(--blue);transition:width .25s linear}
+/* ── Silverdat line (.sdline) ── */
+.es .sdline{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px;font-size:13px;color:var(--sub)}
+.es .sdline b.off{color:var(--sdoff)}.es .sdline b.on{color:var(--silver);letter-spacing:.05em;text-transform:uppercase;font-size:12px}
+.es .mini.sd{border-color:var(--silver);color:var(--silver)}.es .mini.sd:hover{background:color-mix(in srgb,var(--silver) 12%,transparent)}
+.es .mini.sdpri{background:var(--silver);border-color:var(--silver);color:#1b1004}
+/* ── Aviso / notice ── */
+.es .notice{margin:0 0 18px;padding:12px 16px;border:1px solid var(--line);border-radius:5px;font-size:14px;line-height:1.6;color:var(--sub)}
+/* ── Totals bar ── */
+.es .tot{display:flex;gap:6px 36px;flex-wrap:wrap;align-items:baseline;padding:16px 0;border-top:1px solid var(--line)}
+.es .tot span{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--quiet);display:block}
+.es .tot strong{font:600 26px/1.2 var(--font-display);letter-spacing:-.04em;font-variant-numeric:tabular-nums;color:var(--text)}
+/* ── Informe papel (.paper) ── */
+.es .paper{background:#fff;color:#18243a;border:1px solid var(--line);border-radius:4px;padding:clamp(22px,3cqw,44px);max-width:980px;margin:0 auto;box-shadow:0 20px 60px #0004}
+.es .paper .ph{display:flex;justify-content:space-between;gap:20px;border-bottom:2px solid #002F82;padding-bottom:14px;margin-bottom:22px;flex-wrap:wrap}
+.es .paper .cl{font:700 18px var(--font-display);letter-spacing:.04em;color:#002F82}
+.es .paper .ref{text-align:right;font-size:12px;color:#586780;line-height:1.6}
+.es .paper h4{font:700 11px var(--font-body);letter-spacing:.14em;text-transform:uppercase;color:#002F82;margin:24px 0 10px}
+.es .paper h3{font:600 clamp(18px,1.8cqw,24px)/1.2 var(--font-display);letter-spacing:-.03em;margin:0 0 4px;color:#18243a}
+.es .paper p{font-size:14px;line-height:1.7;margin:0 0 8px;color:#33425b}
+.es .paper table{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+.es .paper th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#586780;text-align:center;padding:0 6px 8px;border-bottom:1px solid #d8e0eb}
+.es .paper td{padding:8px 6px;border-bottom:1px solid #e6ebf3;text-align:center;color:#33425b}
+.es .paper th:first-child,.es .paper td:first-child{text-align:left}
+.es .paper tfoot td{font-weight:700;border-top:1px solid #18243a;border-bottom:0}
+.es .paper textarea{width:100%;min-height:90px;border:1px solid #d8e0eb;border-radius:4px;padding:10px 12px;font:14px/1.6 var(--font-body);color:#18243a;background:#f7f9fd;resize:vertical}
+.es .paper .pf{margin-top:20px;padding-top:10px;border-top:1px solid #d8e0eb;display:flex;justify-content:space-between;font-size:11px;color:#586780;gap:10px;flex-wrap:wrap}
+/* ── Responsive ── */
+@container es (max-width:900px){.es .tri{grid-template-columns:1fr}.es .tri>div{padding-right:0}.es .tri>div+div{padding-left:0;border-left:0;border-top:1px solid var(--line)}}
+@container es (max-width:640px){.es .stat3{grid-template-columns:repeat(2,1fr)}}
 `;
 
 // ─── FlotasPage ─────────────────────────────────────────────────────────────
@@ -940,10 +1020,10 @@ export default function FlotasPage() {
                         />
                       )}
                       {tab === 'ORIGINAL' && (
-                        <HojaOriginal ref={originalRef} header={flotaHeader} onHeaderChange={setFlotaHeader} onDataChange={handleOriginalChange} carpetaOriginalEmpty={carpetaActiva ? carpetaActiva.original.length === 0 : false} initialData={originalData} />
+                        <HojaOriginal ref={originalRef} onDataChange={handleOriginalChange} carpetaOriginalEmpty={carpetaActiva ? carpetaActiva.original.length === 0 : false} initialData={originalData} />
                       )}
                       {tab === 'TRABAJO' && (
-                        <HojaTrabajos ref={trabajoRef} header={flotaHeader} onHeaderChange={setFlotaHeader} getOriginalSnapshot={getOriginalSnapshot} onDataChange={handleTrabajoChange} initialData={trabajoRows} />
+                        <HojaTrabajos ref={trabajoRef} getOriginalSnapshot={getOriginalSnapshot} onDataChange={handleTrabajoChange} initialData={trabajoRows} />
                       )}
                       {tab === 'SINCO' && carpetaActiva && (
                         <HojaSincoUnificado header={flotaHeader} trabajoRows={trabajoRows} carpetaActiva={carpetaActiva} sincoResultRows={sincoResultRows} onSincoResultChange={setSincoResultRows} onTrabajoChange={setTrabajoRows} onCarpetaChange={handleCarpetaChange} />
