@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useMemo } from 'react';
 import {
   mergeSincoToTrabajo,
   contarVehiculos,
@@ -10,6 +10,8 @@ import {
 import type { FlotaCarpeta, DanosPropiosData } from '@/core/flotas';
 import type { FlotaHeader } from './types';
 import { SINCO_COL_NAMES } from './constants';
+import { DetailDrawer } from '@/components/saas/DetailDrawer';
+import type { DetailDrawerData } from '@/components/saas/DetailDrawer';
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
 
@@ -82,6 +84,7 @@ function KpiPanel({ label, kpis }: { label: string; kpis: { label: string; value
 function AutomaticoContent({ header, trabajoRows, sincoResultRows, onSincoResultChange, onTrabajoChange }: Pick<Props, 'header' | 'trabajoRows' | 'sincoResultRows' | 'onSincoResultChange' | 'onTrabajoChange'>) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [dragCounter, setDragCounter] = useState(0);
+  const [sincoDrawerKey, setSincoDrawerKey] = useState<string | null>(null);
 
   const handleExport = useCallback(async () => {
     const ExcelJS = (await import('exceljs')).default;
@@ -193,6 +196,124 @@ function AutomaticoContent({ header, trabajoRows, sincoResultRows, onSincoResult
     : calcularFrecuencia(sinAnio, conSinco);
   const vehiculosSinco = trabajoRows.filter(r => r['matricula']?.trim()).length;
 
+  // ── By-tipología helpers ──
+  const tipoMap = useMemo(() => {
+    const m = new Map<string, string>();
+    trabajoRows.forEach(r => {
+      const mat = (r['matricula'] ?? '').trim().toUpperCase();
+      if (mat) m.set(mat, r['tipo_vehiculo'] ?? '—');
+    });
+    return m;
+  }, [trabajoRows]);
+
+  const tipos = useMemo(() => {
+    const s = new Set<string>();
+    trabajoRows.filter(r => r['matricula']?.trim()).forEach(r => s.add(r['tipo_vehiculo'] ?? '—'));
+    return [...s];
+  }, [trabajoRows]);
+
+  function buildDetailData(key: string): DetailDrawerData {
+    const getSincoTipo = (r: Record<string, string>) => {
+      const mat = (r['Matrícula'] ?? r['matricula'] ?? '').trim().toUpperCase();
+      return tipoMap.get(mat) ?? '—';
+    };
+    const nf = (n: number) => String(n);
+    const dec = (n: number, d: number) => (isNaN(n) || !isFinite(n)) ? '—' : n.toFixed(d);
+    const pc = (n: number, d: number) => (isNaN(n) || !isFinite(n)) ? '—' : `${(n * 100).toFixed(d)}%`;
+
+    if (key === 'veh') {
+      const rows = tipos.map(t => [t, nf(trabajoRows.filter(r => (r['matricula'] ?? '').trim() && (r['tipo_vehiculo'] ?? '—') === t).length)] as [string, string]);
+      return {
+        over: 'Resultado · SINCO',
+        title: 'Vehículos',
+        desc: 'Matrículas incluidas en la consulta SINCO.',
+        stats: [['Vehículos', nf(totalVeh)]],
+        head: ['Tipología', 'Vehículos'],
+        rows,
+        fx: [['Total matrículas', `CONTARA(matrícula) = ${nf(totalVeh)}`]],
+      };
+    }
+    if (key === 'con') {
+      const rows = tipos.map(t => {
+        const ts = sincoResultRows.filter(r => getSincoTipo(r) === t);
+        const con = ts.filter(r => { const c = r['Codigo_Retorno'] ?? r['codigo_retorno'] ?? ''; return !c || c.trim() === '' || c.trim() === '0'; }).length;
+        return [t, nf(con), nf(ts.length - con)];
+      });
+      return {
+        over: 'Resultado · SINCO',
+        title: 'Vehículos con SINCO',
+        desc: 'Vehículos para los que SINCO devolvió resultado.',
+        stats: [['Con SINCO', nf(conSinco)], ['Sin resultado', nf(totalVeh - conSinco)]],
+        head: ['Tipología', 'Con SINCO', 'Sin resultado'],
+        rows,
+        fx: [['Vehículos con SINCO', `CONTARA(Codigo_Retorno) = ${nf(conSinco)}`]],
+      };
+    }
+    if (key === 'sin') {
+      const vecsConSin = sincoResultRows.filter(r => (parseInt(r['Num_Siniestros'] ?? '0') || 0) > 0).length;
+      const rows = tipos.map(t => {
+        const sins = sincoResultRows.filter(r => getSincoTipo(r) === t).reduce((acc, r) => acc + (parseInt(r['Num_Siniestros'] ?? r['num_siniestros'] ?? '0') || 0), 0);
+        return [t, nf(sins)];
+      });
+      return {
+        over: 'Resultado · SINCO',
+        title: 'Siniestros',
+        desc: 'Siniestros declarados en los últimos años por los vehículos con resultado.',
+        stats: [['Siniestros', nf(numSiniestros)], ['Vehículos con siniestros', nf(vecsConSin)]],
+        head: ['Tipología', 'Siniestros'],
+        rows,
+        fx: [['Total siniestros', `SUMA(Num_Siniestros) = ${nf(numSiniestros)}`]],
+      };
+    }
+    if (key === 'ant') {
+      const rows = tipos.map(t => {
+        const tipoExitosas = exitosas.filter(r => getSincoTipo(r) === t);
+        const aniosList = tipoExitosas.map(r => {
+          const aniosRaw = r['Num_Anios_Asegurado'] ?? r['num_anios_asegurado'] ?? '';
+          if (aniosRaw.trim()) { const n = parseFloat(aniosRaw); if (!isNaN(n) && n > 0) return n; }
+          const fec = r['Fec_Ini_Cobertura'] ?? r['fec_ini_cobertura'] ?? '';
+          if (fec.trim()) { const y = calcularAntiguedad(fec); if (y > 0) return y; }
+          return null;
+        }).filter((n): n is number => n !== null);
+        const media = aniosList.length > 0 ? aniosList.reduce((a, b) => a + b, 0) / aniosList.length : null;
+        return [t, media !== null ? `${dec(media, 1)} años` : '—'];
+      });
+      return {
+        over: 'Resultado · SINCO',
+        title: 'Antigüedad media',
+        desc: 'Años medios de permanencia de los vehículos asegurados.',
+        stats: [['Antigüedad media', `${dec(antiguedMedia, 2)} años`], ['Con exposición', nf(vehiculosConExposicion)]],
+        head: ['Tipología', 'Antigüedad media'],
+        rows,
+        fx: [
+          ['Antigüedad de un vehículo', '(HOY − Fec_Ini_Cobertura) ÷ 365,25'],
+          ['Antigüedad media', `PROMEDIO(antigüedad) = ${dec(antiguedMedia, 2)} años, sobre ${nf(vehiculosConExposicion)} vehículos con exposición`],
+        ],
+      };
+    }
+    // key === 'fr'
+    const freqDisplay = freq === null ? 'Sin exp.' : (isNaN(freq) || !isFinite(freq) ? '—' : `${(freq * 100).toFixed(2)}%`);
+    const sinAnioDisplay = dec(sinAnio, 2);
+    return {
+      over: 'Resultado · SINCO',
+      title: 'Frecuencia',
+      desc: 'Siniestros anuales por vehículo asegurado.',
+      stats: [['Siniestros / año', sinAnioDisplay], ['Frecuencia', freqDisplay]],
+      head: ['Concepto', 'Valor'],
+      rows: [
+        ['Total siniestros', nf(numSiniestros)],
+        ['Antigüedad media', `${dec(antiguedMedia, 2)} años`],
+        ['Siniestros por año', sinAnioDisplay],
+        ['Vehículos con SINCO', nf(conSinco)],
+        ['Frecuencia', freqDisplay],
+      ],
+      fx: [
+        ['Siniestros por año', `Total siniestros ÷ Antigüedad media = ${nf(numSiniestros)} ÷ ${dec(antiguedMedia, 2)} = ${sinAnioDisplay}`],
+        ['Frecuencia', `(Siniestros por año) ÷ Vehículos con SINCO × 100 = ${sinAnioDisplay} ÷ ${nf(conSinco)} × 100 = ${freqDisplay}`],
+      ],
+    };
+  }
+
   return (
     <>
       <section style={{ marginBottom: 28 }}>
@@ -241,15 +362,28 @@ function AutomaticoContent({ header, trabajoRows, sincoResultRows, onSincoResult
 
       {sincoResultRows.length > 0 && (
         <>
-          <KpiPanel label="Resultado SINCO automático" kpis={[
-            { label: 'Vehículos', value: String(totalVeh) },
-            { label: 'Con SINCO', value: String(conSinco) },
-            { label: 'Con exposición', value: String(vehiculosConExposicion) },
-            { label: 'Siniestros', value: String(numSiniestros) },
-            { label: 'Antigüedad media', value: vehiculosConExposicion > 0 ? fmt(antiguedMedia) + 'a' : '—' },
-            { label: 'Siniestros / año', value: vehiculosConExposicion > 0 ? fmt(sinAnio) : '—' },
-            { label: 'Frecuencia', value: fmtFreq(freq) },
-          ]} />
+          <div className="stat3" style={{ marginBottom: 20 }}>
+            <button onClick={() => setSincoDrawerKey('veh')}>
+              <label>Vehículos</label>
+              <strong>{String(totalVeh)}</strong>
+            </button>
+            <button onClick={() => setSincoDrawerKey('con')}>
+              <label>Con SINCO</label>
+              <strong>{String(conSinco)}</strong>
+            </button>
+            <button onClick={() => setSincoDrawerKey('sin')}>
+              <label>Siniestros</label>
+              <strong>{String(numSiniestros)}</strong>
+            </button>
+            <button onClick={() => setSincoDrawerKey('ant')}>
+              <label>Antigüedad media</label>
+              <strong>{vehiculosConExposicion > 0 ? fmt(antiguedMedia) + 'a' : '—'}</strong>
+            </button>
+            <button onClick={() => setSincoDrawerKey('fr')}>
+              <label>Frecuencia</label>
+              <strong>{fmtFreq(freq)}</strong>
+            </button>
+          </div>
 
           <div style={{ marginBottom: 16, display: 'flex', gap: 10 }}>
             <button onClick={handleMerge}
@@ -286,6 +420,12 @@ function AutomaticoContent({ header, trabajoRows, sincoResultRows, onSincoResult
           </div>
         </>
       )}
+
+      <DetailDrawer
+        isOpen={sincoDrawerKey !== null}
+        onClose={() => setSincoDrawerKey(null)}
+        data={sincoDrawerKey ? buildDetailData(sincoDrawerKey) : null}
+      />
     </>
   );
 }
