@@ -309,27 +309,28 @@ const ESTUDIO_CSS = `
 /* ── Panel lateral (drawer) ── */
 .es-scrim{position:fixed;inset:0;background:rgba(2,5,16,.6);z-index:9990;opacity:0;pointer-events:none;transition:opacity .22s}
 .es-scrim.open{opacity:1;pointer-events:auto}
-.es-drawer{position:fixed;top:0;right:0;bottom:0;width:min(560px,100%);z-index:9991;background:var(--bg);border-left:1px solid var(--line);transform:translateX(102%);transition:transform .35s cubic-bezier(.2,.8,.2,1);overflow-y:auto;padding:28px 40px 48px;font-family:var(--font-body);color:var(--text)}
+.es-drawer{position:fixed;top:0;right:0;bottom:0;width:min(680px,100%);z-index:9991;background:var(--bg);border-left:1px solid var(--line);transform:translateX(102%);transition:transform .35s cubic-bezier(.2,.8,.2,1);overflow-y:auto;padding:28px clamp(20px,3.6cqw,52px) 48px clamp(20px,3.6cqw,52px);font-family:var(--font-body);color:var(--text);container-type:inline-size}
 .es-drawer.open{transform:none;box-shadow:-25px 0 80px rgba(0,0,0,.35)}
 .es-drawer:focus{outline:none}
-.es-drawer .x{position:absolute;right:14px;top:14px;all:unset;cursor:pointer;font-size:26px;line-height:1;color:var(--quiet)}
-.es-drawer .x:hover{color:var(--text)}
-.es-drawer .over{margin-top:36px;font-size:11px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:var(--blue-2)}
-.es-drawer h3{font:600 clamp(26px,2.8cqw,34px)/1.12 var(--font-display);letter-spacing:-.04em;margin:10px 0 10px;color:var(--text)}
-.es-drawer .desc{color:var(--sub);font-size:14px;line-height:1.7;margin:0}
+.es-drawer .x{position:absolute;right:14px;top:14px;all:unset;cursor:pointer;font-size:24px;line-height:1;color:var(--quiet);width:36px;height:36px;display:grid;place-items:center;border-radius:6px;transition:background .16s}
+.es-drawer .x:hover{background:var(--hover);color:var(--text)}
+.es-drawer .over{margin-top:40px;font-size:12px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:var(--blue-2)}
+.es-drawer h3{font:600 clamp(26px,3cqw,34px)/1.12 var(--font-display);letter-spacing:-.045em;margin:10px 0 12px;color:var(--text);text-wrap:balance}
+.es-drawer .desc{color:var(--sub);font-size:14.5px;line-height:1.7;margin:0}
 .es-drawer h4{font-size:11px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:var(--quiet);margin:26px 0 10px;padding-bottom:10px;border-bottom:1px solid var(--line)}
-.es-drawer .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin:20px 0}
-.es-drawer .stats div{padding:16px 12px 16px 0}
-.es-drawer .stats div+div{padding-left:14px;border-left:1px solid var(--line)}
+.es-drawer .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin:24px 0}
+.es-drawer .stats div{padding:16px 14px 16px 0}
+.es-drawer .stats div+div{padding-left:16px;border-left:1px solid var(--line)}
 .es-drawer .stats label{display:block;font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--quiet);margin-bottom:6px;cursor:default}
-.es-drawer .stats strong{font:600 26px/1.1 var(--font-display);letter-spacing:-.04em;font-variant-numeric:tabular-nums;color:var(--text)}
+.es-drawer .stats strong{font:600 28px/1.1 var(--font-display);letter-spacing:-.04em;font-variant-numeric:tabular-nums;color:var(--text)}
 .es-drawer .tbl{width:100%;border-collapse:collapse;font-size:14px}
 .es-drawer .tbl th{text-align:left;font-size:11px;font-weight:600;letter-spacing:.07em;color:var(--head,#d6deed);padding:0 12px 10px 0;text-transform:uppercase;border-bottom:1px solid var(--line);white-space:nowrap}
 .es-drawer .tbl td{padding:10px 12px 10px 0;border-bottom:1px solid var(--line);vertical-align:middle;color:var(--sub)}
-.es-drawer .annex{display:grid;gap:8px;margin-top:12px}
-.es-drawer .annex .fx{display:flex;gap:10px;align-items:baseline}
-.es-drawer .annex .fx b{color:var(--text);font-weight:600;min-width:110px;flex-shrink:0;font-size:12.5px}
-.es-drawer .annex code{font-family:var(--font-mono);color:var(--sub);font-size:12px}
+.es-drawer .annex{background:var(--soft);border:1px solid var(--line);border-radius:6px;padding:6px 18px;margin-top:12px}
+.es-drawer .annex .fx{padding:14px 0;border-bottom:1px solid var(--line)}
+.es-drawer .annex .fx:last-child{border-bottom:0}
+.es-drawer .annex .fx b{display:block;font-size:14px;font-weight:600;margin-bottom:5px;color:var(--text)}
+.es-drawer .annex code{display:block;font-family:var(--font-mono);color:var(--sub);font-size:13.5px;line-height:1.7;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
 /* ── Nueva carpeta form ── */
 .es-drawer .form{display:grid;gap:16px;margin-top:20px}
 .es-drawer .frow{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
