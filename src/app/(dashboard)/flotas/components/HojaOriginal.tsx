@@ -84,6 +84,14 @@ const HojaOriginal = forwardRef<FlotaGridHandle, Props>(function HojaOriginal(
     <div className="flex flex-col h-full min-h-0">
       <HeaderBlock header={header} onChange={onHeaderChange} />
 
+      {/* Lock note */}
+      {!showModeSelect && (
+        <div className="lock-bar">
+          <b>Solo lectura</b>
+          <span>Aquí está el dato tal como llegó. Para cambiar algo, descarga la plantilla rellena, edítala y súbela otra vez.</span>
+        </div>
+      )}
+
       {/* Aviso de columnas no mapeadas */}
       {unmapped.length > 0 && (
         <div style={{ flexShrink: 0, padding: '6px 16px', background: 'rgba(234,179,8,0.07)', borderBottom: '1px solid rgba(234,179,8,0.2)', display: 'flex', alignItems: 'center', gap: 8 }}>

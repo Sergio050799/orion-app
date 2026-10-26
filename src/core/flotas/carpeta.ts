@@ -35,6 +35,7 @@ export interface FlotaCarpeta {
 
   corredor_id?: string;
   porcentajeComision?: number;
+  comisionExtra?: number;
   estado: EstadoFlota;
   historico: HistoricoEntry[];
 

@@ -356,6 +356,36 @@ const ESTUDIO_CSS = `
 /* ── Estado drawer extras ── */
 .es-drawer .hint{font-size:13px;color:var(--quiet);line-height:1.6;padding:8px 0 4px;margin:0}
 .es-drawer .ferr{font-size:12px;color:#ef4444;min-height:16px;margin-top:4px}
+/* ── Datos Generales two-col ── */
+.es .twocol{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0;overflow-y:auto;flex:1;min-height:0}
+.es .twocol>section{padding:26px 0 32px}
+.es .twocol>section:first-child{padding-right:clamp(18px,3cqw,44px)}
+.es .twocol>section+section{padding-left:clamp(18px,3cqw,44px);border-left:1px solid var(--line)}
+.es .dg-scroll{padding:24px 32px 48px;overflow-y:auto;flex:1;min-height:0}
+.es .dg-h3{font:600 15px/1.3 var(--font-display);letter-spacing:-.02em;color:var(--text);margin:0 0 3px}
+.es .dg-sub{font-size:12px;color:var(--quiet);margin:0 0 16px}
+.es .dg-h3+.dg-h3{margin-top:26px}
+.es .formgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px 16px}
+.es .formgrid .full{grid-column:1/-1}
+.es .dg-fld{display:flex;flex-direction:column;gap:5px}
+.es .dg-fld label{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--quiet)}
+.es .dg-fld .hint{font-size:12px;color:var(--quiet);line-height:1.5;margin-top:3px}
+.es .dg-fld .warn{font-size:11px;color:var(--warn);min-height:14px;margin-top:2px}
+.es .dg-fld .req{color:var(--blue-2)}
+.es .dg-inp{width:100%;background:var(--soft);border:1px solid var(--line);border-radius:6px;padding:0 13px;height:40px;font-size:14px;color:var(--text);font:inherit;box-sizing:border-box;outline:none}
+.es .dg-inp:focus{border-color:var(--blue)}
+.es .dg-inp::placeholder{color:var(--quiet)}
+.es .dg-sel{appearance:none;-webkit-appearance:none;width:100%;background:var(--soft) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none' stroke='%23909db4' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E") no-repeat right 12px center;border:1px solid var(--line);border-radius:6px;padding:0 38px 0 13px;height:40px;font-size:14px;color:var(--text);cursor:pointer;font:inherit;outline:none;box-sizing:border-box}
+.es .dg-sel:focus{border-color:var(--blue)}
+.es .dg-kv{display:grid;gap:5px;margin:10px 0}
+.es .dg-kv .krow{display:flex;gap:8px;font-size:13px;align-items:baseline}
+.es .dg-kv label{color:var(--quiet);font-size:11px;min-width:140px;flex-shrink:0}
+.es .dg-kv .val{color:var(--sub)}.es .dg-kv .val.em{color:var(--quiet);font-style:italic}
+.es .pct2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.es .dg-note{font-size:12px;color:var(--quiet);line-height:1.6;padding:10px 0 0;border-top:1px solid var(--line);margin-top:12px}
+/* ── Lock bar (ORIGINAL / TRABAJO solo lectura) ── */
+.es .lock-bar{padding:10px 16px;border-bottom:1px solid var(--line);background:var(--soft);font-size:12px;color:var(--quiet);display:flex;gap:10px;align-items:center;flex-shrink:0}
+.es .lock-bar b{font-weight:700;color:var(--sub);white-space:nowrap;font-size:11px;letter-spacing:.05em;text-transform:uppercase;flex-shrink:0}
 `;
 
 // ─── FlotasPage ─────────────────────────────────────────────────────────────

@@ -643,6 +643,12 @@ if (key !== prevClaveKeyRef.current) {
     <div className="flex flex-col h-full min-h-0">
       <HeaderBlock header={header} onChange={onHeaderChange} />
 
+      {/* Lock note */}
+      <div className="lock-bar">
+        <b>Solo lectura</b>
+        <span>Se calcula desde Original. Para corregir algo, descarga la plantilla de trabajo, edítala y súbela: el cambio llega a SINCO, Informe, Oferta y Pre-emisión, pero Original no se toca.</span>
+      </div>
+
       {/* Toolbar de hoja */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '6px 16px', borderBottom: '1px solid var(--t-line)', background: 'transparent', flexShrink: 0 }}>
         <span className="text-[12px] font-black uppercase tracking-widest px-2 py-1 rounded-md"
