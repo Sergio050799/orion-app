@@ -29,7 +29,9 @@
     --st-estudio:    #5f9bff;
     --st-ofertada:   #a3c7ff;
     --st-rechazada:  #66758f;
-    --st-estudiada:  #7ab8ff;
+    --st-estudiada:  #a99af5;
+    --silver:        #f08a3c;
+    --sdoff:         #e5756c;
 
     /* semánticos */
     --warn:   #e3a96a;
@@ -39,6 +41,10 @@
     /* series gráficas */
     --series-now:  var(--blue);
     --series-prev: #6c7a92;
+    --prev:        #7d8aa1;
+
+    /* cabeceras de tabla */
+    --head: #d6deed;
 
     /* tipografía — --font-display lo gestiona next/font (Space Grotesk) */
     --font-body: var(--font-inter, Inter, system-ui, -apple-system, sans-serif);
@@ -70,8 +76,8 @@
     --t-amber-bg:      rgba(227, 169, 106, .12);
     --t-amber-border:  rgba(227, 169, 106, .38);
     --t-head:          var(--soft);
-    --t-silver:        var(--sub);
-    --t-sdoff:         var(--quiet);
+    --t-silver:        var(--silver);
+    --t-sdoff:         var(--sdoff);
 
     /* compat */
     --background: var(--bg);
@@ -97,11 +103,14 @@
     --st-estudio:    #2f67cf;
     --st-ofertada:   #5f93dd;
     --st-rechazada:  #8793a8;
-    --st-estudiada:  #4a80d4;
+    --st-estudiada:  #6a55d8;
+    --silver:        #b85a0e;
+    --sdoff:         #c9483f;
     --warn:    #b36d1f;
     --ok:      #1e7a50;
     --danger:  #b83434;
     --series-prev: #8a97ab;
+    --head: #1b2a44;
 
     --t-bg:            var(--bg);
     --t-surface:       var(--surface);
@@ -122,8 +131,8 @@
     --t-amber-bg:      rgba(179, 109, 31, .10);
     --t-amber-border:  rgba(179, 109, 31, .35);
     --t-head:          var(--soft);
-    --t-silver:        var(--sub);
-    --t-sdoff:         var(--quiet);
+    --t-silver:        var(--silver);
+    --t-sdoff:         var(--sdoff);
   }
 
   * {
@@ -202,6 +211,36 @@
   .t-select option { background: var(--soft); color: var(--text); }
   [data-theme="light"] .t-select option,
   [data-theme="light"] select option { background: #fff; color: var(--text); }
+
+  /* ── Botones globales ORION ── */
+  .orion-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 0 14px; height: 32px;
+    background: var(--blue); color: #fff;
+    border: none; border-radius: 6px;
+    font-size: 12px; font-weight: 600; font-family: inherit;
+    cursor: pointer; white-space: nowrap;
+    transition: opacity 80ms ease, transform 80ms ease;
+  }
+  .orion-btn:hover  { opacity: .88; }
+  .orion-btn:active { transform: scale(.96); }
+
+  .orion-btn-ghost {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 0 14px; height: 32px;
+    background: transparent; color: var(--text);
+    border: 1px solid var(--line); border-radius: 6px;
+    font-size: 12px; font-weight: 500; font-family: inherit;
+    cursor: pointer; white-space: nowrap;
+    transition: background 80ms ease, transform 80ms ease;
+  }
+  .orion-btn-ghost:hover  { background: var(--hover); }
+  .orion-btn-ghost:active { transform: scale(.96); }
+
+  .orion-section-title {
+    font-size: 10px; font-weight: 900; text-transform: uppercase;
+    letter-spacing: .09em; color: var(--quiet); margin: 0 0 10px;
+  }
 
   /* Scrollbar — oculto pero funcional */
   .custom-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }

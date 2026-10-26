@@ -208,6 +208,150 @@ function vehiclesToTrabajoRows(vehicles: any[]): Record<string, string>[] {
   }));
 }
 
+// ─── CSS ─────────────────────────────────────────────────────────────────────
+
+const ESTUDIO_CSS = `
+.es{--soft:#121927;--hover:#172235;--line:#283247;--text:#f3f6fc;--sub:#b5bfd0;--quiet:#98a6bd;--blue:#4989ff;--blue-2:#9cc2ff;--warn:#e3a96a;--head:#d6deed;--st-contratada:#2f6df0;--st-estudio:#5f9bff;--st-estudiada:#a99af5;--st-ofertada:#a3c7ff;--st-rechazada:#66758f;--silver:#f08a3c;--sdoff:#e5756c;container-type:inline-size;container-name:es;display:flex;flex-direction:column;height:calc(100vh - 126px)}
+[data-theme="light"] .es{--soft:#f7f9fd;--hover:#f0f4fa;--line:#d8e0eb;--text:#18243a;--sub:#4b5b72;--quiet:#586780;--blue:#265fc9;--blue-2:#2a56b3;--warn:#b36d1f;--head:#1b2a44;--st-contratada:#17399a;--st-estudio:#2f67cf;--st-estudiada:#6a55d8;--st-ofertada:#5f93dd;--st-rechazada:#8793a8;--silver:#b85a0e;--sdoff:#c9483f}
+.es .cs-scroll{padding:28px 32px 60px;height:100%;overflow-y:auto;flex-shrink:0}
+.es .intro{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:28px}
+.es .intro h1{font:600 clamp(28px,3.2cqw,42px)/1.1 var(--font-display);letter-spacing:-.05em;margin:0 0 7px;color:var(--text)}
+.es .intro p{margin:0;color:var(--sub);font-size:14px}
+.es .actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.es .kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.es .kpi{all:unset;box-sizing:border-box;font:inherit;display:flex;flex-direction:column;justify-content:flex-start;padding:22px 18px 22px 0;min-width:0;cursor:pointer;text-align:left;transition:background .14s;border-radius:4px}
+.es .kpi:hover{background:var(--hover)}
+.es .kpi+.kpi{padding-left:clamp(14px,1.8cqw,24px);border-left:1px solid var(--line)}
+.es .kpi .l{font-size:11px;font-weight:600;color:var(--sub);text-transform:uppercase;letter-spacing:.09em}
+.es .kpi .v{font:600 clamp(32px,3.1cqw,48px)/1.05 var(--font-display);letter-spacing:-.055em;margin:8px 0 0;font-variant-numeric:tabular-nums;color:var(--text)}
+.es .kpi .v.mny{font-size:clamp(22px,2.2cqw,34px);white-space:nowrap}
+.es .kpi .n{font-size:12px;color:var(--quiet);margin-top:5px;line-height:1.4}
+.es .grid2>section{padding:28px 0 30px;min-width:0}
+.es .grid2>section:first-child{padding-right:clamp(20px,3cqw,44px)}
+.es .grid2>section+section{padding-left:clamp(20px,3cqw,44px);border-left:1px solid var(--line)}
+.es .shead{margin-bottom:16px}
+.es .shead h2{font:600 clamp(17px,1.5cqw,21px)/1.25 var(--font-display);letter-spacing:-.03em;margin:0}
+.es .shead .sub-note{font-size:13px;color:var(--sub);margin:5px 0 0}
+.es .pipe-bar{all:unset;box-sizing:border-box;font:inherit;display:grid;grid-template-columns:minmax(120px,190px) 1fr 40px;gap:12px;align-items:center;padding:9px 4px;font-size:14px;cursor:pointer;width:100%;transition:background .14s;border-radius:4px}
+.es .pipe-bar:hover{background:var(--hover)}
+.es .pipe-bar .pn{color:var(--sub)}.es .pipe-bar .pn .no{color:var(--quiet);font-size:13px;font-variant-numeric:tabular-nums;margin-right:8px}
+.es .pipe-bar .pt{height:10px;background:var(--soft);border-radius:2px;overflow:hidden}
+.es .pipe-bar .pf{height:100%;background:var(--blue);border-radius:2px;transition:width .85s cubic-bezier(.2,.8,.2,1)}
+.es .pipe-bar .pv{text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
+.es .seg8{display:inline-grid;grid-template-columns:repeat(8,8px);gap:2px;vertical-align:middle}
+.es .seg8 i{display:block;height:8px;border-radius:1px;background:var(--line)}
+.es .seg8 i.on{background:var(--blue)}
+.es .prog{display:inline-flex;align-items:center;gap:10px}
+.es .prog b{font-weight:600;font-variant-numeric:tabular-nums;font-size:12px;min-width:28px;color:var(--sub)}
+.es .dirhead{display:flex;justify-content:space-between;align-items:flex-end;gap:16px 28px;flex-wrap:wrap;margin-bottom:18px}
+.es .dirhead h2{font:600 clamp(17px,1.5cqw,21px)/1.25 var(--font-display);letter-spacing:-.03em;margin:0}
+.es .filterbar{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:24px;margin-bottom:20px}
+.es .grid2{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);margin-top:24px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.es .search{flex:1 1 360px;max-width:640px;background:var(--soft);border:1px solid var(--line);border-radius:5px;padding:12px 16px;font-size:15px;color:var(--text);font:inherit;outline:none;box-sizing:border-box}
+.es .search::placeholder{color:var(--quiet)}
+.es .search:focus{border-color:var(--blue)}
+.es .select{appearance:none;-webkit-appearance:none;height:42px;background:var(--soft) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none' stroke='%23909db4' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E") no-repeat right 12px center;border:1px solid var(--line);border-radius:9px;padding:0 38px 0 14px;font-size:13px;color:var(--text);cursor:pointer;min-width:190px;font:inherit}
+.es .select:focus{outline:none;border-color:var(--blue)}
+.es .dir{margin-top:24px;overflow-x:auto}
+.es .tbl{width:100%;border-collapse:collapse;font-size:14px}
+.es .tbl th{text-align:left;font-size:11px;font-weight:600;letter-spacing:.07em;color:var(--head);padding:0 12px 14px 0;text-transform:uppercase;border-bottom:1px solid var(--line);white-space:nowrap}
+.es .tbl td{padding:14px 12px 14px 0;border-bottom:1px solid var(--line);vertical-align:middle}
+.es .tbl tbody tr{cursor:pointer}
+.es .tbl tbody tr:hover td{background:var(--hover)}
+.es .th{all:unset;cursor:pointer;display:inline-block;padding-bottom:3px;border-bottom:2px solid transparent;font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--head);transition:color .16s}
+.es .th:hover{color:var(--text)}
+.es .th[aria-pressed=true]{color:var(--blue-2);border-bottom-color:var(--blue)}
+.es .tag{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:700;color:var(--text)}
+.es .tag::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--c,var(--blue))}
+.es .btn{border:0;background:var(--blue);color:#fff;border-radius:9px;padding:0 18px;height:38px;font-size:13px;font-weight:600;cursor:pointer;font:inherit;white-space:nowrap;display:inline-flex;align-items:center;gap:6px;transition:filter .16s}
+.es .btn:hover{filter:brightness(1.08)}
+.es .btn.ghost{background:none;border:1px solid var(--line);color:var(--text)}
+.es .btn.ghost:hover{border-color:var(--blue);filter:none}
+.es .mini{border:1px solid var(--line);background:transparent;border-radius:6px;padding:8px 12px;font-size:12px;font-weight:600;cursor:pointer;font:inherit;color:var(--text);white-space:nowrap;display:inline-flex;align-items:center;gap:5px;transition:border-color .16s,background .16s}
+.es .mini:hover{border-color:var(--blue);background:var(--hover)}
+.es .mini.pri{background:var(--blue);border-color:var(--blue);color:#fff}
+.es .mini.pri:hover{filter:brightness(1.08);background:var(--blue)}
+.es .mini[disabled]{opacity:.5;cursor:default}
+.es .mini.flash{border-color:rgba(34,197,94,0.4);color:#4ade80;background:rgba(34,197,94,0.1)}
+.es .inp{width:100%;min-width:0;background:var(--soft);border:1px solid var(--line);border-radius:9px;padding:0 14px;height:38px;font-size:13px;color:var(--text);font:inherit;box-sizing:border-box}
+.es .inp::placeholder{color:var(--quiet)}
+.es .inp:focus{outline:none;border-color:var(--blue)}
+.es .empty{padding:64px 0;color:var(--quiet);font-size:13px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px}
+.es .new-form{margin-top:16px;padding:20px 24px;border:1px solid var(--line);border-radius:12px;background:var(--soft)}
+.es .wsbar{display:flex;gap:10px;align-items:center;padding:8px 32px;border-bottom:1px solid var(--line);flex-shrink:0;min-width:0}
+.es .opens{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;min-width:0;align-items:center;flex:1}
+.es .opens .lb{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--quiet);white-space:nowrap;flex-shrink:0}
+.es .chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:5px;padding:5px 6px 5px 11px;font-size:12px;font-weight:650;color:var(--sub);white-space:nowrap}
+.es .chip[aria-current=true]{border-color:var(--text);color:var(--text)}
+.es .chip button{all:unset;cursor:pointer;max-width:160px;overflow:hidden;text-overflow:ellipsis}
+.es .chip button.x{padding:0 4px;font-size:16px;line-height:1;color:var(--quiet)}
+.es .chip button.x:hover{color:var(--text)}
+.es .steps{display:flex;border-top:1px solid var(--line);border-bottom:1px solid var(--line);flex-shrink:0;overflow-x:auto;scrollbar-width:thin}
+.es .stp8{all:unset;box-sizing:border-box;flex:1 0 auto;min-width:128px;cursor:pointer;padding:15px 14px 13px;text-align:center;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--quiet);border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .16s,border-color .16s;white-space:nowrap}
+.es .stp8:hover{color:var(--text)}
+.es .stp8[aria-current=step]{color:var(--text);border-bottom-color:var(--blue)}
+.es .stp8 b{margin-right:6px;opacity:.7;font-variant-numeric:tabular-nums}
+.es .stp8 .ok{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--blue);margin-left:7px;vertical-align:middle}
+.es .stp8 .op{margin-left:6px;font-size:10px;letter-spacing:.06em;color:var(--quiet);font-weight:600}
+.es .case{display:flex;justify-content:space-between;align-items:flex-end;gap:18px 24px;flex-wrap:wrap;padding:18px 32px 20px;border-bottom:1px solid var(--line);flex-shrink:0}
+.es .case h1{font-size:clamp(22px,2.4cqw,34px);font-weight:720;letter-spacing:-.04em;color:var(--text);margin:0 0 8px;line-height:1.1}
+.es .case .over{font-size:10px;font-weight:750;letter-spacing:.13em;text-transform:uppercase;color:var(--quiet);margin:0 0 5px}
+.es .case .meta{display:flex;gap:6px 18px;flex-wrap:wrap;color:var(--sub);font-size:14px;align-items:center}
+.es .case .acts{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.es .banner{margin:10px 0 0;padding:8px 14px;border:1px solid var(--line);border-left:3px solid var(--c,var(--blue));border-radius:5px;font-size:13px;color:var(--sub);display:flex;gap:10px;align-items:center}
+.es .banner b{letter-spacing:.06em;text-transform:uppercase;font-size:10px;font-weight:700;flex-shrink:0;color:var(--text)}
+.es .more{display:flex;justify-content:center;padding-top:20px}
+.es .more button{all:unset;box-sizing:border-box;font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--soft);border-radius:5px;padding:11px 24px;font-size:13px;font-weight:600;color:var(--text);transition:border-color .16s,background .16s}
+.es .more button:hover{border-color:var(--blue);background:var(--hover)}
+/* ── Panel lateral (drawer) ── */
+.es-scrim{position:fixed;inset:0;background:rgba(2,5,16,.6);z-index:9990;opacity:0;pointer-events:none;transition:opacity .22s}
+.es-scrim.open{opacity:1;pointer-events:auto}
+.es-drawer{position:fixed;top:0;right:0;bottom:0;width:min(560px,100%);z-index:9991;background:var(--bg);border-left:1px solid var(--line);transform:translateX(102%);transition:transform .35s cubic-bezier(.2,.8,.2,1);overflow-y:auto;padding:28px 40px 48px;font-family:var(--font-body);color:var(--text)}
+.es-drawer.open{transform:none;box-shadow:-25px 0 80px rgba(0,0,0,.35)}
+.es-drawer:focus{outline:none}
+.es-drawer .x{position:absolute;right:14px;top:14px;all:unset;cursor:pointer;font-size:26px;line-height:1;color:var(--quiet)}
+.es-drawer .x:hover{color:var(--text)}
+.es-drawer .over{margin-top:36px;font-size:11px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:var(--blue-2)}
+.es-drawer h3{font:600 clamp(26px,2.8cqw,34px)/1.12 var(--font-display);letter-spacing:-.04em;margin:10px 0 10px;color:var(--text)}
+.es-drawer .desc{color:var(--sub);font-size:14px;line-height:1.7;margin:0}
+.es-drawer h4{font-size:11px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:var(--quiet);margin:26px 0 10px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.es-drawer .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin:20px 0}
+.es-drawer .stats div{padding:16px 12px 16px 0}
+.es-drawer .stats div+div{padding-left:14px;border-left:1px solid var(--line)}
+.es-drawer .stats label{display:block;font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--quiet);margin-bottom:6px;cursor:default}
+.es-drawer .stats strong{font:600 26px/1.1 var(--font-display);letter-spacing:-.04em;font-variant-numeric:tabular-nums;color:var(--text)}
+.es-drawer .tbl{width:100%;border-collapse:collapse;font-size:14px}
+.es-drawer .tbl th{text-align:left;font-size:11px;font-weight:600;letter-spacing:.07em;color:var(--head,#d6deed);padding:0 12px 10px 0;text-transform:uppercase;border-bottom:1px solid var(--line);white-space:nowrap}
+.es-drawer .tbl td{padding:10px 12px 10px 0;border-bottom:1px solid var(--line);vertical-align:middle;color:var(--sub)}
+.es-drawer .annex{display:grid;gap:8px;margin-top:12px}
+.es-drawer .annex .fx{display:flex;gap:10px;align-items:baseline}
+.es-drawer .annex .fx b{color:var(--text);font-weight:600;min-width:110px;flex-shrink:0;font-size:12.5px}
+.es-drawer .annex code{font-family:var(--font-mono);color:var(--sub);font-size:12px}
+/* ── Nueva carpeta form ── */
+.es-drawer .form{display:grid;gap:16px;margin-top:20px}
+.es-drawer .frow{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.es-drawer .fld label{display:block;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--quiet);margin-bottom:6px}
+.es-drawer .req{color:var(--blue-2)}
+.es-drawer .fact{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+.es-drawer .inp{width:100%;min-width:0;background:var(--soft);border:1px solid var(--line);border-radius:5px;padding:11px 14px;font-size:15px;color:var(--text);font:inherit;box-sizing:border-box;outline:none}
+.es-drawer .inp:focus{border-color:var(--blue)}
+.es-drawer .inp::placeholder{color:var(--quiet)}
+.es-drawer .select{appearance:none;-webkit-appearance:none;width:100%;background:var(--soft);border:1px solid var(--line);border-radius:5px;padding:11px 14px;font-size:15px;color:var(--text);font:inherit;outline:none;cursor:pointer}
+.es-drawer .select:focus{border-color:var(--blue)}
+.es-drawer .btn{all:unset;box-sizing:border-box;font:inherit;background:var(--blue);color:#fff;border-radius:5px;padding:12px 22px;font-size:14px;font-weight:600;cursor:pointer;transition:filter .16s;white-space:nowrap}
+.es-drawer .btn:hover{filter:brightness(1.08)}
+.es-drawer .btn.ghost{background:none;border:1px solid var(--line);color:var(--text)}
+.es-drawer .btn.ghost:hover{border-color:var(--blue);filter:none}
+.es-drawer .btn[disabled]{opacity:.5;cursor:default}
+/* ── Silverdat chip ── */
+.sdchip{all:unset;box-sizing:border-box;cursor:pointer;margin-left:auto;display:inline-flex;align-items:center;gap:8px;border:1px solid;border-radius:5px;padding:6px 12px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--sdoff);border-color:color-mix(in srgb,var(--sdoff) 55%,var(--line));white-space:nowrap;flex-shrink:0}
+.sdchip::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--sdoff);flex-shrink:0}
+.sdchip[data-on=true]{border-color:var(--silver);color:var(--silver)}
+.sdchip[data-on=true]::before{background:var(--silver);box-shadow:0 0 0 3px color-mix(in srgb,var(--silver) 28%,transparent)}
+.sdchip:hover{border-color:var(--text)}
+.sdchip:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+`;
+
 // ─── FlotasPage ─────────────────────────────────────────────────────────────
 
 export default function FlotasPage() {
@@ -496,6 +640,7 @@ export default function FlotasPage() {
 
   return (
     <>
+      <style dangerouslySetInnerHTML={{ __html: ESTUDIO_CSS }} />
       <style>{`
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .rdg-light {
@@ -507,24 +652,11 @@ export default function FlotasPage() {
           --rdg-border-color: #e5e7eb;
           color: #111827;
         }
-        .rdg-light .rdg-cell {
-          border-right: 1px solid #e5e7eb;
-          border-bottom: 1px solid #e5e7eb;
-        }
-        .rdg-light .rdg-header-row .rdg-cell {
-          font-weight: 700;
-          font-size: 12px;
-          text-transform: uppercase;
-          letter-spacing: 0.03em;
-          color: #374151;
-          text-align: center;
-          justify-content: center;
-        }
-        .t-stage:hover { background: rgba(255,255,255,0.04); }
-        .t-stage-x:hover { color: #ef4444 !important; }
+        .rdg-light .rdg-cell { border-right: 1px solid #e5e7eb; border-bottom: 1px solid #e5e7eb; }
+        .rdg-light .rdg-header-row .rdg-cell { font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.03em; color: #374151; text-align: center; justify-content: center; }
       `}</style>
 
-      <div className="flex flex-col" style={{ height: 'calc(100vh - 126px)' }}>
+      <div className="es">
 
         {/* ── CarpetaScreen ── */}
         {showCarpetaScreen && <CarpetaScreen onSelect={handleSelectCarpeta} />}
@@ -532,78 +664,45 @@ export default function FlotasPage() {
         {/* ── Study view ── */}
         {!showCarpetaScreen && carpetaActiva && (
           <>
-            {/* ── Heading block ── */}
-            <div style={{ flexShrink: 0, borderBottom: '1px solid var(--t-line)', padding: '14px 28px 13px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 18, paddingBottom: 13, marginBottom: 12, borderBottom: '1px solid var(--t-line)' }}>
-                <div>
-                  <p style={{ margin: '0 0 5px', fontSize: 10, fontWeight: 750, letterSpacing: '0.13em', textTransform: 'uppercase', color: 'var(--t-muted)' }}>
-                    {fichaMode ? 'FICHA CONTRATADA' : `ESTUDIO · ${String(activeTabIndex + 1).padStart(2, '0')} / 08`}
-                  </p>
-                  <h1 style={{ margin: '0 0 4px', fontSize: 24, fontWeight: 720, letterSpacing: '-0.04em', color: 'var(--t-text)', lineHeight: 1.1 }}>
-                    Estudio de Flotas
-                  </h1>
-                  <p style={{ margin: 0, fontSize: 13, color: 'var(--t-muted)' }}>
-                    {fichaMode ? 'Datos del expediente contratado' : `${activeTab} · ${completedCount}/${TABS.length} pasos completados`}
-                  </p>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                  <SilverdatChip />
-
-                  {/* Actualizar estudio */}
-                  <button onClick={handleRefresh} disabled={isRefreshing} style={{
-                    border: '1px solid var(--t-line)', color: 'var(--t-text)', background: 'transparent',
-                    padding: '8px 12px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: isRefreshing ? 'not-allowed' : 'pointer',
-                    display: 'flex', alignItems: 'center', gap: 5, opacity: isRefreshing ? 0.5 : 1, whiteSpace: 'nowrap',
-                  }}>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
-                      style={{ animation: isRefreshing ? 'spin 0.8s linear infinite' : 'none' }}>
-                      <polyline points="23 4 23 10 17 10"/>
-                      <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
-                    </svg>
-                    {isRefreshing ? 'Actualizando...' : 'Actualizar estudio'}
-                  </button>
-
-                  {/* Guardar */}
-                  <button onClick={handleSave} style={{
-                    border: `1px solid ${saveFlash ? 'rgba(34,197,94,0.4)' : 'var(--t-line)'}`,
-                    color: saveFlash ? '#4ade80' : 'var(--t-text)',
-                    background: saveFlash ? 'rgba(34,197,94,0.1)' : 'transparent',
-                    padding: '8px 12px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap',
-                    transition: 'all 200ms',
-                  }}>
-                    {saveFlash ? (
-                      <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>Guardado</>
-                    ) : (
-                      <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Guardar</>
-                    )}
-                  </button>
-
-                  {/* Descargar todo */}
-                  <button onClick={handleDownload} disabled={isDownloading} style={{
-                    background: 'var(--t-blue)', border: '1px solid var(--t-blue)',
-                    color: '#fff', padding: '8px 14px', borderRadius: 6, fontSize: 12, fontWeight: 600,
-                    cursor: isDownloading ? 'not-allowed' : 'pointer', opacity: isDownloading ? 0.5 : 1,
-                    display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap',
-                  }}>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
-                    </svg>
-                    {isDownloading ? 'Generando...' : 'Descargar todo'}
-                  </button>
-                </div>
+            {/* ── wsbar: back + open chips + silverdat ── */}
+            <div className="wsbar">
+              <button onClick={() => setShowCarpetaScreen(true)} className="mini">Todas las flotas</button>
+              <div className="opens">
+                {openFlotas.length > 0 && <span className="lb">ABIERTAS</span>}
+                {openFlotas.map(f => {
+                  const isActiveTab = carpetaActiva?.id === f.id;
+                  return (
+                    <div key={f.id} className="chip" aria-current={isActiveTab ? 'true' : undefined}>
+                      <button onClick={() => handleSwitchFlota(f)}>{flotaLabel(f)}</button>
+                      <button className="x" onClick={() => handleCloseTab(f)} title={`Cerrar ${flotaLabel(f)}`}>×</button>
+                    </div>
+                  );
+                })}
               </div>
+              <SilverdatChip />
+            </div>
 
-              {/* Casebar */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 15 }}>
-                <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
-                  <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--t-muted)', marginRight: 2 }}>EXPEDIENTE</span>
-                  <strong style={{ fontSize: 15, color: 'var(--t-text)', fontWeight: 700 }}>{carpetaActiva.nombre}</strong>
-                  <span style={{ fontSize: 12, color: 'var(--t-muted)' }}>{numVeh} vehículos</span>
+            {/* ── case: carpeta heading ── */}
+            <div className="case">
+              <div>
+                <p className="over">
+                  {fichaMode ? 'FICHA CONTRATADA' : `ESTUDIO · ${String(activeTabIndex + 1).padStart(2, '0')} / 08`}
+                </p>
+                <h1>{carpetaActiva.nombre || '(sin nombre)'}</h1>
+                <div className="meta">
+                  {carpetaActiva.header?.tomador && <span>{carpetaActiva.header.tomador}</span>}
+                  {numVeh > 0 && <span>{numVeh} veh.</span>}
                   <EstadoBadge estado={carpetaActiva.estado} />
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 7, position: 'relative' }}>
-                  <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--t-muted)' }}>ESTADO</span>
+                {(carpetaActiva.estado === 'RECHAZADA' || carpetaActiva.estado === 'OFERTADA') && (
+                  <div className="banner" style={{ '--c': carpetaActiva.estado === 'RECHAZADA' ? 'rgba(239,77,90,0.9)' : 'rgba(240,185,77,0.9)' } as React.CSSProperties}>
+                    <b>{carpetaActiva.estado}</b>
+                    {motivoCarpeta && <span style={{ fontSize: 12, fontStyle: 'italic' }}>{motivoCarpeta}</span>}
+                  </div>
+                )}
+              </div>
+              <div className="acts">
+                <div style={{ position: 'relative' }}>
                   <select
                     value=""
                     onChange={e => {
@@ -611,8 +710,8 @@ export default function FlotasPage() {
                       if (val && val !== carpetaActiva.estado) setEstadoPopover({ estado: val, motivo: '' });
                     }}
                     style={{
-                      border: '1px solid var(--t-line)', background: 'var(--t-surface)', color: 'var(--t-text)',
-                      padding: '7px 10px', borderRadius: 5, fontSize: 12, cursor: 'pointer', outline: 'none',
+                      border: '1px solid var(--line)', background: 'var(--soft)', color: 'var(--text)',
+                      padding: '7px 10px', borderRadius: 5, fontSize: 12, cursor: 'pointer', outline: 'none', font: 'inherit',
                     }}
                   >
                     <option value="">Cambiar estado</option>
@@ -621,15 +720,14 @@ export default function FlotasPage() {
                       .map(e => <option key={e} value={e}>{e}</option>)}
                   </select>
 
-                  {/* Estado popover */}
                   {estadoPopover && (
                     <div style={{
                       position: 'absolute', top: '100%', right: 0, marginTop: 8, zIndex: 100,
                       padding: 14, borderRadius: 8, minWidth: 220,
-                      background: 'var(--t-surface)', border: '1px solid var(--t-line)',
+                      background: 'var(--soft)', border: '1px solid var(--line)',
                       boxShadow: '0 12px 40px rgba(0,0,0,0.3)',
                     }}>
-                      <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--t-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>
+                      <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--quiet)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>
                         Cambiar a <EstadoBadge estado={estadoPopover.estado} small />
                       </p>
                       <input autoFocus placeholder="Motivo (opcional)"
@@ -638,134 +736,62 @@ export default function FlotasPage() {
                         onKeyDown={e => { if (e.key === 'Enter') handleConfirmarEstado(); if (e.key === 'Escape') setEstadoPopover(null); }}
                         style={{
                           width: '100%', fontSize: 12, marginBottom: 10,
-                          border: '1px solid var(--t-line)', background: 'var(--t-surface)', color: 'var(--t-text)',
-                          padding: '7px 10px', borderRadius: 5, outline: 'none', boxSizing: 'border-box',
+                          border: '1px solid var(--line)', background: 'var(--soft)', color: 'var(--text)',
+                          padding: '7px 10px', borderRadius: 5, outline: 'none', boxSizing: 'border-box', font: 'inherit',
                         }} />
                       <div style={{ display: 'flex', gap: 6 }}>
-                        <button onClick={handleConfirmarEstado} style={{
-                          flex: 1, fontSize: 11, fontWeight: 600, padding: '6px 0', borderRadius: 6,
-                          background: 'var(--t-blue)', color: '#fff', border: 'none', cursor: 'pointer',
-                        }}>Confirmar</button>
-                        <button onClick={() => setEstadoPopover(null)} style={{
-                          fontSize: 11, padding: '6px 12px', borderRadius: 6,
-                          background: 'transparent', color: 'var(--t-muted)', border: '1px solid var(--t-line)', cursor: 'pointer',
-                        }}>Cancelar</button>
+                        <button onClick={handleConfirmarEstado} className="mini pri" style={{ flex: 1, justifyContent: 'center' }}>Confirmar</button>
+                        <button onClick={() => setEstadoPopover(null)} className="mini">Cancelar</button>
                       </div>
                     </div>
                   )}
-
-                  {/* Cambiar expediente */}
-                  <button onClick={() => setShowCarpetaScreen(true)} style={{
-                    border: '1px solid var(--t-line)', color: 'var(--t-muted)', background: 'transparent',
-                    padding: '7px 12px', borderRadius: 5, fontSize: 12, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',
-                  }}>
-                    Expedientes
-                  </button>
                 </div>
-              </div>
 
-              {/* Banner estado archivado */}
-              {(carpetaActiva.estado === 'RECHAZADA' || carpetaActiva.estado === 'OFERTADA') && (
-                <div style={{
-                  marginTop: 10,
-                  padding: '8px 14px',
-                  borderRadius: 6,
-                  background: carpetaActiva.estado === 'RECHAZADA' ? 'rgba(239,77,90,0.08)' : 'rgba(240,185,77,0.08)',
-                  border: `1px solid ${carpetaActiva.estado === 'RECHAZADA' ? 'rgba(239,77,90,0.35)' : 'rgba(240,185,77,0.35)'}`,
-                  display: 'flex', alignItems: 'center', gap: 10,
-                }}>
-                  <span style={{
-                    fontSize: 10, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase',
-                    color: carpetaActiva.estado === 'RECHAZADA' ? 'var(--t-red)' : 'var(--t-amber)',
-                    flexShrink: 0,
-                  }}>
-                    {carpetaActiva.estado}
-                  </span>
-                  {motivoCarpeta && (
-                    <span style={{ fontSize: 12, color: 'var(--t-text-2)', fontStyle: 'italic' }}>
-                      {motivoCarpeta}
-                    </span>
+                <button onClick={handleRefresh} disabled={isRefreshing} className="mini" style={{ opacity: isRefreshing ? 0.5 : 1 }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+                    style={{ animation: isRefreshing ? 'spin 0.8s linear infinite' : 'none' }}>
+                    <polyline points="23 4 23 10 17 10"/>
+                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                  </svg>
+                  {isRefreshing ? 'Actualizando...' : 'Actualizar'}
+                </button>
+
+                <button onClick={handleSave} className={`mini${saveFlash ? ' flash' : ''}`}>
+                  {saveFlash ? (
+                    <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>Guardado</>
+                  ) : (
+                    <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Guardar</>
                   )}
-                </div>
-              )}
+                </button>
+
+                <button onClick={handleDownload} disabled={isDownloading} className="mini pri" style={{ opacity: isDownloading ? 0.5 : 1 }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                  </svg>
+                  {isDownloading ? 'Generando...' : 'Descargar todo'}
+                </button>
+              </div>
             </div>
 
-            {/* ── Tabstrip: open flotas ── */}
-            {openFlotas.length > 0 && (
-              <div style={{
-                flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6,
-                padding: '6px 28px 6px', borderBottom: '1px solid var(--t-line)',
-                overflowX: 'auto', scrollbarWidth: 'none',
-              }}>
-                <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--t-muted)', marginRight: 6, flexShrink: 0, whiteSpace: 'nowrap' }}>
-                  ABIERTAS
-                </span>
-                {openFlotas.map(f => {
-                  const isActiveTab = carpetaActiva?.id === f.id;
-                  return (
-                    <div key={f.id} style={{
-                      display: 'flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap',
-                      border: `1px solid ${isActiveTab ? 'var(--t-text)' : 'var(--t-line)'}`,
-                      borderRadius: 5, padding: '5px 6px 5px 10px',
-                      background: isActiveTab ? 'rgba(255,255,255,0.04)' : 'transparent',
-                      fontSize: 11, fontWeight: 650,
-                      color: isActiveTab ? 'var(--t-text)' : 'var(--t-muted)',
-                    }}>
-                      <button
-                        onClick={() => handleSwitchFlota(f)}
-                        style={{ all: 'unset', cursor: 'pointer', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis' }}
-                      >
-                        {flotaLabel(f)}
-                      </button>
-                      <button
-                        onClick={() => handleCloseTab(f)}
-                        className="t-stage-x"
-                        title={`Cerrar ${flotaLabel(f)}`}
-                        style={{ border: 'none', background: 'transparent', color: 'var(--t-muted)', fontSize: 16, lineHeight: 1, padding: '0 2px', cursor: 'pointer' }}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* ── Stages: navegación de 8 hojas ── */}
+            {/* ── steps nav ── */}
             {!fichaMode && (
-              <div style={{
-                flexShrink: 0, display: 'flex', gap: 0,
-                borderBottom: '1px solid var(--t-line)',
-                overflowX: 'auto', scrollbarWidth: 'thin',
-              }}>
+              <nav className="steps">
                 {TABS.map((tab, idx) => {
                   const isActive = activeTab === tab;
                   const done = tabComplete[tab];
                   return (
-                    <button
-                      key={tab}
-                      onClick={() => setActiveTab(tab)}
-                      className="t-stage"
-                      style={{
-                        whiteSpace: 'nowrap', flex: '1', textAlign: 'center', minWidth: 120,
-                        border: 'none', borderBottom: `2px solid ${isActive ? 'var(--t-blue)' : 'transparent'}`,
-                        padding: '14px 9px 12px', background: 'none', cursor: 'pointer',
-                        color: isActive ? 'var(--t-text)' : 'var(--t-muted)',
-                        fontSize: 10, fontWeight: 750, letterSpacing: '0.025em',
-                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4,
-                        transition: 'color 150ms, border-color 150ms',
-                      }}
-                    >
-                      <b style={{ fontSize: 10, opacity: 0.65, marginRight: 3 }}>{String(idx + 1).padStart(2, '0')}</b>
-                      {tab.toUpperCase()}
-                      {done && <span style={{ color: '#10b981', fontSize: 20, lineHeight: 0, verticalAlign: 'middle', marginLeft: 3 }}>·</span>}
+                    <button key={tab} onClick={() => setActiveTab(tab)} className="stp8" aria-current={isActive ? 'step' : undefined}>
+                      <b>{String(idx + 1).padStart(2, '0')}</b>
+                      {tab}
+                      {tab === 'AUTOMÁTICO' && <span className="op">(OPT)</span>}
+                      {done && <span className="ok" />}
                     </button>
                   );
                 })}
-              </div>
+              </nav>
             )}
 
-            {/* ── Content ── */}
+            {/* ── content ── */}
             <div className="flex-1 min-h-0">
               {fichaMode ? (
                 <FichaContratada

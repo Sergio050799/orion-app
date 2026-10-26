@@ -2,7 +2,7 @@
 
 import type { Periodicidad } from './corredor';
 
-export type EstadoFlota = 'EN ESTUDIO' | 'OFERTADA' | 'CONTRATADA' | 'RECHAZADA';
+export type EstadoFlota = 'EN ESTUDIO' | 'ESTUDIADA' | 'OFERTADA' | 'CONTRATADA' | 'RECHAZADA';
 
 export interface HistoricoEntry {
   fecha: string;        // ISO

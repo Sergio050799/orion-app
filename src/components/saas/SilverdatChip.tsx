@@ -86,21 +86,15 @@ export default function SilverdatChip({ onSessionChange }: { onSessionChange?: (
       <style>{`@keyframes sdChipSpin { to { transform: rotate(360deg); } }`}</style>
 
       {sdSession === 'checking' ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'rgba(178,198,245,0.4)', padding: '6px 10px' }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--quiet,rgba(144,157,180,0.7))', padding: '6px 10px', flexShrink: 0 }}>
           <svg style={{ animation: 'sdChipSpin 1s linear infinite', flexShrink: 0 }} width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" strokeOpacity="0.2"/><path d="M21 12a9 9 0 00-9-9"/>
           </svg>
-          Silverdat...
-        </div>
-      ) : sdSession === 'ok' ? (
-        <button onClick={() => setShowModal(true)} style={{ padding: '6px 14px', borderRadius: 8, background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', color: '#10b981', fontSize: 11, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981', flexShrink: 0 }} />
-          Silverdat conectado
-        </button>
+          SD...
+        </span>
       ) : (
-        <button onClick={() => setShowModal(true)} style={{ padding: '7px 16px', borderRadius: 8, background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.45)', color: '#f59e0b', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#f59e0b', flexShrink: 0 }} />
-          Conectar Silverdat
+        <button onClick={() => setShowModal(true)} className="sdchip" data-on={sdSession === 'ok' ? 'true' : 'false'}>
+          Silverdat
         </button>
       )}
     </>
