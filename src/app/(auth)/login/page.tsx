@@ -632,9 +632,6 @@ export default function LoginPage() {
 
               </form>
 
-              <footer className="lp-cfoot">
-                <span>Demo · usuario <b>SERGIO</b> · contraseña <b>MMT2026</b></span>
-              </footer>
             </div>
           </div>
         </section>

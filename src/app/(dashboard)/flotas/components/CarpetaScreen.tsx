@@ -23,9 +23,9 @@ const pc  = (n: number, d = 1) => dec(n, d) + ' %';
 const ESTADOS: EstadoFlota[] = ['EN ESTUDIO', 'ESTUDIADA', 'OFERTADA', 'CONTRATADA', 'RECHAZADA'];
 
 const PIPE_STEP_IDX = [0, 2, 3, 4, 5, 6, 7];
-const PIPE_LABELS   = ['Datos gen.', 'Original', 'Trabajo', 'SINCO', 'Informe', 'Oferta', 'Pre-emisión'];
-const PIPE_KEYS     = ['datos', 'orig', 'trab', 'sinco', 'inf', 'of', 'pre'];
-const PIPE_NOS      = ['01', '03', '04', '05', '06', '07', '08'];
+const PIPE_LABELS   = ['Datos generales', 'Original', 'Trabajo', 'SINCO', 'Informe', 'Oferta', 'Pre-emisión', 'Completo'];
+const PIPE_KEYS     = ['datos', 'orig', 'trab', 'sinco', 'inf', 'of', 'pre', 'fin'];
+const PIPE_NOS      = ['01', '03', '04', '05', '06', '07', '08', '—'];
 const STEP_LABELS: Record<string, string> = {
   datos: 'Datos generales', orig: 'Original', trab: 'Trabajo',
   sinco: 'SINCO', inf: 'Informe', of: 'Oferta', pre: 'Pre-emisión', fin: 'Completo',
@@ -77,6 +77,14 @@ function parseFechaVcto(str: string): Date | null {
 }
 
 // ── EstadoBadge ────────────────────────────────────────────────────────────────
+export const capEstado = (e: string) => e ? e.charAt(0) + e.slice(1).toLowerCase() : e;
+const fmtModificada = (iso: string) => {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '—';
+  if (d.toDateString() === new Date().toDateString()) return 'Hoy';
+  return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+};
+
 export function EstadoBadge({ estado, small }: { estado: string; small?: boolean }) {
   const c: Record<string, string> = {
     'EN ESTUDIO': 'var(--st-estudio)',
@@ -87,7 +95,7 @@ export function EstadoBadge({ estado, small }: { estado: string; small?: boolean
   };
   return (
     <span className="tag" style={{ '--c': c[estado] ?? 'var(--blue)', fontSize: small ? 11 : 13 } as React.CSSProperties}>
-      {estado}
+      {capEstado(estado)}
     </span>
   );
 }
@@ -140,8 +148,8 @@ function DetailDrawer({ data, onClose }: { data: DrawerData; onClose: () => void
   if (typeof document === 'undefined') return null;
   return createPortal(
     <>
-      <div className="es-scrim open" onClick={onClose} />
-      <aside className="es-drawer open" role="dialog" aria-modal="true" tabIndex={-1}>
+      <div className="dr-scrim open" onClick={onClose} />
+      <aside className="dr-drawer open" role="dialog" aria-modal="true" tabIndex={-1}>
         <button className="x" onClick={onClose} aria-label="Cerrar">&times;</button>
         <div className="over">{data.over}</div>
         <h3>{data.title}</h3>
@@ -209,8 +217,8 @@ function NuevaDrawer({ corredores: initCors, onCrear, onClose }: {
   if (typeof document === 'undefined') return null;
   return createPortal(
     <>
-      <div className="es-scrim open" onClick={onClose} />
-      <aside className="es-drawer open" role="dialog" aria-modal="true" tabIndex={-1}>
+      <div className="dr-scrim open" onClick={onClose} />
+      <aside className="dr-drawer open" role="dialog" aria-modal="true" tabIndex={-1}>
         <button className="x" onClick={onClose} aria-label="Cerrar">&times;</button>
         <div className="over">NUEVA CARPETA</div>
         <h3>Nuevo estudio</h3>
@@ -386,14 +394,14 @@ export default function CarpetaScreen({ onSelect }: Props) {
 
   // ── Pipeline ────────────────────────────────────────────────────────────────
   const pipelineData = useMemo(() => {
-    const counts = new Array(7).fill(0);
+    const counts = new Array(8).fill(0);
     for (const c of scope) {
       const flags = stepFlags(c);
       let placed = false;
       for (let i = 0; i < PIPE_STEP_IDX.length; i++) {
         if (!flags[PIPE_STEP_IDX[i]]) { counts[i]++; placed = true; break; }
       }
-      if (!placed) counts[6]++;
+      if (!placed) counts[7]++;
     }
     const max = Math.max(...counts, 1);
     return PIPE_LABELS.map((label, i) => ({ label, key: PIPE_KEYS[i], no: PIPE_NOS[i], count: counts[i], pct: counts[i] / max }));
@@ -475,7 +483,7 @@ export default function CarpetaScreen({ onSelect }: Props) {
       };
     }
     if (mode === 'avance') {
-      const STEP_NAMES = ['Datos generales', 'Automático', 'Original', 'Trabajo', 'SINCO', 'Informe', 'Oferta', 'Pre-emisión'];
+      const STEP_NAMES = ['Datos generales', 'Automático', 'Original', 'Trabajo', 'SINCO', 'Informe', 'Oferta', 'Pre-emisión', 'Completo'];
       const avg = S.length ? S.reduce((s, c) => s + avanceCarpeta(c), 0) / S.length : 0;
       return {
         over: 'Resultado · ' + ctxLabel, title: 'Avance medio',
@@ -594,27 +602,25 @@ export default function CarpetaScreen({ onSelect }: Props) {
           <p>{new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
         </div>
         <div className="actions">
-          <button onClick={handleDescargarInforme} className="btn ghost">Descargar informe</button>
+          <button onClick={() => setDrawerMode('nueva')} className="btn">Nueva carpeta</button>
           <button onClick={handleDescargarPlantilla} className="btn ghost">Plantilla</button>
-          <button onClick={() => setDrawerMode('nueva')} className="btn">+ Nueva carpeta</button>
+          <button onClick={handleDescargarInforme} className="btn ghost">Descargar informe</button>
         </div>
       </section>
 
       {/* ── Filtros ─────────────────────────────────────────────────────── */}
       <section className="filterbar">
-        <select value={estadoFilter} onChange={e => setEstadoFilter(e.target.value)} className="select">
+        <select value={estadoFilter} onChange={e => setEstadoFilter(e.target.value)} className="select" aria-label="Estado">
           <option value="">Todos los estados</option>
-          {ESTADOS.map(e => <option key={e} value={e}>{e}</option>)}
+          {ESTADOS.map(e => <option key={e} value={e}>{capEstado(e)}</option>)}
         </select>
-        <select value={corredorFilter} onChange={e => setCorredorFilter(e.target.value)} className="select">
+        <select value={sucursalFilter} onChange={e => setSucursalFilter(e.target.value)} className="select" aria-label="Sucursal">
+          <option value="">Todas las sucursales</option>
+          {sucursalesUnicas.map(s => <option key={s} value={s}>{s}</option>)}
+        </select>
+        <select value={corredorFilter} onChange={e => setCorredorFilter(e.target.value)} className="select" aria-label="Corredor">
           {corredorNames.map(c => <option key={c} value={c}>{c === 'TODOS' ? 'Todos los corredores' : c}</option>)}
         </select>
-        {sucursalesUnicas.length > 0 && (
-          <select value={sucursalFilter} onChange={e => setSucursalFilter(e.target.value)} className="select" style={{ minWidth: 170 }}>
-            <option value="">Todas las sucursales</option>
-            {sucursalesUnicas.map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
-        )}
       </section>
 
       {/* ── KPIs ────────────────────────────────────────────────────────── */}
@@ -654,20 +660,23 @@ export default function CarpetaScreen({ onSelect }: Props) {
         <section>
           <div className="shead">
             <h2>Dónde está cada estudio</h2>
-            <p className="sub-note">{ctxLabel} &middot; {nf(scope.length)} carpetas</p>
+            <p className="sub-desc">{ctxLabel} &middot; {nf(scope.length)} carpetas</p>
           </div>
-          {pipelineData.map(item => (
-            <button key={item.key} className="pipe-bar" onClick={() => setDrawerMode({ pipe: item.key })}>
-              <span className="pn"><span className="no">{item.no}</span>{item.label}</span>
-              <div className="pt"><div className="pf" style={{ width: `${Math.round(item.pct * 100)}%` }} /></div>
-              <span className="pv">{nf(item.count)}</span>
-            </button>
-          ))}
+          <div className="bars">
+            {pipelineData.map(item => (
+              <button key={item.key} className="bar stp" onClick={() => setDrawerMode({ pipe: item.key })}>
+                <span className="bn"><span className="no">{item.no}</span>{item.label}</span>
+                <span className="bt"><span className="bf" style={{ width: `${Math.round(item.pct * 100)}%` }} /></span>
+                <span className="bv">{nf(item.count)}</span>
+              </button>
+            ))}
+          </div>
+          <p className="note">Cada flota cuenta en el primer paso que le falta por completar.</p>
         </section>
         <section>
           <div className="shead">
             <h2>Requieren atención</h2>
-            <p className="sub-note">
+            <p className="sub-desc">
               {nf(atencionData.length)} {atencionData.length === 1 ? 'aviso' : 'avisos'} &middot; vencimientos, ofertas sin respuesta y SINCO pendiente
             </p>
           </div>
@@ -739,12 +748,12 @@ export default function CarpetaScreen({ onSelect }: Props) {
         <div className="dirhead">
           <div>
             <h2>Carpetas</h2>
-            <p style={{ margin: '5px 0 0', fontSize: 13, color: 'var(--sub)' }}>
-              {filtered.length} resultado{filtered.length !== 1 ? 's' : ''} · {estadoFilter || 'todos los estados'}
+            <p className="sub-desc">
+              {filtered.length} resultado{filtered.length !== 1 ? 's' : ''} · {estadoFilter ? capEstado(estadoFilter).toLowerCase() : 'todos los estados'}
             </p>
           </div>
           <input
-            placeholder="Buscar nombre, CIF o tomador…"
+            placeholder="Buscar por nombre, CIF, tomador o corredor"
             value={query}
             onChange={e => setQuery(e.target.value)}
             className="search"
@@ -765,6 +774,7 @@ export default function CarpetaScreen({ onSelect }: Props) {
           </div>
         ) : (
           <>
+            <div style={{ overflowX: 'auto' }}>
             <table className="tbl" style={{ minWidth: 940 }}>
               <colgroup>
                 <col style={{ width: '28%' }} />
@@ -850,19 +860,16 @@ export default function CarpetaScreen({ onSelect }: Props) {
                       </td>
                       {/* Modificada */}
                       <td style={{ fontSize: 13, color: 'var(--sub)', fontVariantNumeric: 'tabular-nums' }}>
-                        {new Date(c.actualizadaEn).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: '2-digit' })}
+                        {fmtModificada(c.actualizadaEn)}
                       </td>
                       {/* Eliminar */}
-                      <td onClick={e => e.stopPropagation()}>
+                      <td className="rowact" onClick={e => e.stopPropagation()}>
                         {!isDelConfirm ? (
-                          <button onClick={() => setConfirmDel(c.id)}
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--quiet)', fontSize: 15, lineHeight: 1, padding: '4px 6px', borderRadius: 6 }}
-                            onMouseEnter={e => (e.currentTarget.style.color = 'var(--t-red)')}
-                            onMouseLeave={e => (e.currentTarget.style.color = 'var(--quiet)')}>×</button>
+                          <button onClick={() => setConfirmDel(c.id)} className="mini danger">Eliminar</button>
                         ) : (
-                          <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
-                            <button onClick={() => handleEliminar(c.id)} style={{ fontSize: 10, padding: '2px 7px', borderRadius: 4, background: 'var(--t-red)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700 }}>Sí</button>
-                            <button onClick={() => setConfirmDel(null)} className="mini" style={{ padding: '2px 7px', fontSize: 10 }}>No</button>
+                          <div className="rowconf">
+                            <button onClick={() => handleEliminar(c.id)} className="mini pri">Confirmar</button>
+                            <button onClick={() => setConfirmDel(null)} className="mini">Cancelar</button>
                           </div>
                         )}
                       </td>
@@ -871,6 +878,7 @@ export default function CarpetaScreen({ onSelect }: Props) {
                 })}
               </tbody>
             </table>
+            </div>
             {sortedFiltered.length > shown && (
               <div className="more">
                 <button onClick={() => setShown(s => s + PAGE_SIZE)}>

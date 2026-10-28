@@ -1,5 +1,6 @@
 "use client";
 
+import "@/styles/orion-ui.css";
 import Topbar from "@/components/saas/layout/Topbar";
 import { LayoutProvider } from "@/context/LayoutContext";
 import { ToastProvider } from "@/components/ui/Toast";
@@ -15,22 +16,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         style={{ background: 'var(--t-bg)', color: 'var(--t-text)' }}
                     >
                         <Topbar />
-                        <main
-                            className="custom-scrollbar"
-                            style={{
-                                position: 'relative',
-                                zIndex: 3,
-                                margin: '0 auto',
-                                padding: '78px 36px 40px',
-                                width: '100%',
-                                maxWidth: 1440,
-                                height: '100vh',
-                                overflowY: 'auto',
-                                overflowX: 'hidden',
-                                minWidth: 0,
-                            }}
-                        >
-                            {children}
+                        <main className="app-scroll custom-scrollbar">
+                            <div className="app-main">{children}</div>
                         </main>
                     </div>
                 </ToastProvider>

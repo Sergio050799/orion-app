@@ -10,6 +10,8 @@ export interface Corredor {
   cif: string;
   domicilio?: string;
   comisionBase: number;
+  /** @deprecated alias de comisionBase; usar comisionBase */
+  porcentajeComision?: number;
   comisionExtra?: number;
   periodicidad: Periodicidad;
   formaPago: string;

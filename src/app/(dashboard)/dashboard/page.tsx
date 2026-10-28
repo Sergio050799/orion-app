@@ -9,16 +9,10 @@ import {
 import type { CatStats } from './components/VehiculosCategorias';
 import { useAuth } from '@/context/AuthContext';
 import { DetailDrawer, type DetailDrawerData } from '@/components/saas/DetailDrawer';
+import { dec, nf, eur, pc } from '@/lib/fmt';
 
 // ─── Formatters ───────────────────────────────────────────────────────────────
 
-function dec(n: number, d = 1): string {
-  const [i, f] = Math.abs(n).toFixed(d).split('.');
-  return (n < 0 ? '−' : '') + i.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + (f ? ',' + f : '');
-}
-const nf  = (n: number) => dec(Math.round(n), 0);
-const eur = (n: number) => nf(n) + ' €';
-const pc  = (n: number, d = 1) => dec(n, d) + ' %';
 const sgn = (n: number) => (n >= 0 ? '+' : '−') + pc(Math.abs(n));
 const sum = (a: number[]) => a.reduce((s, x) => s + x, 0);
 
@@ -92,13 +86,37 @@ function niceStep(x: number): number {
 
 // ─── Chart data ───────────────────────────────────────────────────────────────
 
-const MONTHS = ['Nov', 'Dic', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct'];
+const MES_CORTO = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 const CHART_DATA = {
-  flotas:    { name: 'Flotas',    what: 'Flotas dadas de alta',  fmt: nf,  now: [3,5,1,6,4,2,7,3,2,5,3,3],  prev: [2,3,2,4,2,3,5,2,3,2,3,3]  },
-  vehiculos: { name: 'Vehículos', what: 'Vehículos incorporados', fmt: nf, now: [112,148,96,205,176,230,168,141,251,198,165,165], prev: [95,121,110,150,142,170,139,118,190,160,131,129], note: 'El año anterior se estima a partir de flotas históricas por tramos de tamaño.' },
-  primas:    { name: 'Primas',    what: 'Prima ofertada',         fmt: eur, now: [88000,96000,71000,118000,109000,142000,126000,98000,151000,132000,94000,91000], prev: [74000,82000,69000,98000,91000,118000,104000,86000,121000,103000,81000,79000] },
+  flotas:    { name: 'Flotas',    what: 'Flotas dadas de alta',  fmt: nf,  note: 'Cada flota se cuenta en el mes de su fecha de creación.' },
+  vehiculos: { name: 'Vehículos', what: 'Vehículos incorporados', fmt: nf, note: 'Cada flota aporta sus vehículos en el mes de su fecha de creación.' },
+  primas:    { name: 'Primas',    what: 'Prima ofertada',         fmt: eur, note: 'Cada flota aporta su prima ofertada en el mes de su fecha de creación.' },
 };
 type MetricKey = keyof typeof CHART_DATA;
+type SerieMes = { now: number[]; prev: number[] };
+type Series = { labels: string[]; data: Record<MetricKey, SerieMes> };
+
+/** Serie de 12 meses (mes en curso incluido) y del mismo periodo un año antes, calculada con las flotas reales. */
+function buildSeries(cs: FlotaCarpeta[]): Series {
+  const hoy = new Date();
+  const base = hoy.getFullYear() * 12 + hoy.getMonth();
+  const zero = () => Array.from({ length: 24 }, () => 0);
+  const acc: Record<MetricKey, number[]> = { flotas: zero(), vehiculos: zero(), primas: zero() };
+  for (const c of cs) {
+    const d = new Date(c.creadaEn);
+    if (isNaN(d.getTime())) continue;
+    const idx = 23 - (base - (d.getFullYear() * 12 + d.getMonth()));
+    if (idx < 0 || idx > 23) continue;
+    const rows = c.trabajo?.length > 0 ? c.trabajo : c.original;
+    const primaOferta = (c.oferta ?? []).reduce((t, r) => t + (parseFloat(r['oferta_prima_mmt']) || 0), 0);
+    acc.flotas[idx] += 1;
+    acc.vehiculos[idx] += (rows ?? []).length;
+    acc.primas[idx] += primaOferta > 0 ? primaOferta : (c.primaClienteTotal ?? 0);
+  }
+  const labels = Array.from({ length: 12 }, (_, j) => MES_CORTO[(((hoy.getMonth() - 11 + j) % 12) + 12) % 12]);
+  const cut = (arr: number[]): SerieMes => ({ prev: arr.slice(0, 12), now: arr.slice(12) });
+  return { labels, data: { flotas: cut(acc.flotas), vehiculos: cut(acc.vehiculos), primas: cut(acc.primas) } };
+}
 
 // ─── Category classification ──────────────────────────────────────────────────
 
@@ -206,7 +224,7 @@ function SugerenciasSection({ user }: { user: string | null }) {
           <span style={{ fontSize: 13, color: 'var(--ok)' }}>Sugerencia enviada — gracias.</span>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(150px,1fr) minmax(220px,2fr) auto', gap: 12, maxWidth: 1100 }}>
+        <div className="db-sug" style={{ display: 'grid', gridTemplateColumns: 'minmax(150px,1fr) minmax(220px,2fr) auto', gap: 12, maxWidth: 1100 }}>
           <input className="db-input" type="text" value={titulo} maxLength={100} onChange={e => setTitulo(e.target.value)} placeholder="Título" />
           <input className="db-input" type="text" value={desc}   maxLength={350} onChange={e => setDesc(e.target.value)}   placeholder="Descripción" />
           <button
@@ -225,10 +243,11 @@ function SugerenciasSection({ user }: { user: string | null }) {
 // ─── Evolution Chart ──────────────────────────────────────────────────────────
 
 function EvolutionChart({
-  metric, period, onDetailClick,
+  metric, period, series, onDetailClick,
 }: {
   metric: MetricKey;
   period: number;
+  series: Series;
   onDetailClick: () => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -252,9 +271,9 @@ function EvolutionChart({
   }, []);
 
   const S    = CHART_DATA[metric];
-  const now  = S.now.slice(-period);
-  const prev = S.prev.slice(-period);
-  const labels = MONTHS.slice(-period);
+  const now  = series.data[metric].now.slice(-period);
+  const prev = series.data[metric].prev.slice(-period);
+  const labels = series.labels.slice(-period);
 
   const { W, H } = dims;
   const L = W < 520 ? 40 : 52;
@@ -385,8 +404,8 @@ function EvolutionChart({
         <span><i className="db-ln" /> Periodo actual</span>
         <span><i className="db-ln db-ln-p" /> Mismo periodo del año anterior</span>
       </div>
-      {metric === 'vehiculos' && CHART_DATA.vehiculos.note && (
-        <p className="db-note">{CHART_DATA.vehiculos.note}</p>
+      {CHART_DATA[metric].note && (
+        <p className="db-note">{CHART_DATA[metric].note}</p>
       )}
     </div>
   );
@@ -405,15 +424,13 @@ function CarteraDonut({
   const r   = 84;
   const C   = 2 * Math.PI * r;
   const gap = 2.5;
-  let off   = 0;
-
+  const lens = SEGS.map(s => (total > 0 ? ((counts[s.key] ?? 0) / total) * C : 0));
   const segs = SEGS
-    .map(s => {
+    .map((s, i) => {
       const count  = counts[s.key] ?? 0;
-      const len    = total > 0 ? (count / total) * C : 0;
+      const len    = lens[i];
       const dash   = Math.max(len - gap, 0);
-      const segOff = -off;
-      off += len;
+      const segOff = -lens.slice(0, i).reduce((a, n) => a + n, 0);
       return { ...s, count, dash, segOff };
     })
     .filter(s => s.count > 0);
@@ -553,6 +570,8 @@ export default function DashboardPage() {
     () => scope === 'all' ? carpetas : carpetas.filter(c => c.estado === scope),
     [carpetas, scope],
   );
+
+  const series = useMemo(() => buildSeries(scopedCarpetas), [scopedCarpetas]);
 
   const flotasEstadoCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -787,10 +806,9 @@ export default function DashboardPage() {
 
     if (key === 'evolucion') {
       const S    = CHART_DATA[metric];
-      const D    = S;
-      const now  = D.now.slice(-period);
-      const prev = D.prev.slice(-period);
-      const labels = MONTHS.slice(-period);
+      const now  = series.data[metric].now.slice(-period);
+      const prev = series.data[metric].prev.slice(-period);
+      const labels = series.labels.slice(-period);
       const A    = sum(now);
       const B    = sum(prev);
       const dd   = B ? (A - B) / B * 100 : null;
@@ -920,7 +938,7 @@ export default function DashboardPage() {
     }
 
     return null;
-  }, [scope, metric, period, totalPortfolio, totalCartera, contratadas, totalVehiculos, corredoresActivos, corredoresStats, renovaciones, renovacionesUrgentes, actividadReciente, vehiculosCatStats, flotasEstadoCounts, sName, ctx]);
+  }, [scope, metric, period, series, totalPortfolio, totalCartera, contratadas, totalVehiculos, corredoresActivos, corredoresStats, renovaciones, renovacionesUrgentes, actividadReciente, vehiculosCatStats, flotasEstadoCounts, sName, ctx]);
 
   const handleDetail = useCallback((key: string) => {
     const data = buildDetail(key);
@@ -1075,6 +1093,18 @@ export default function DashboardPage() {
         /* Alert */
         .db-blink{animation:db-blink 2s ease-in-out infinite}
         @keyframes db-blink{0%,100%{opacity:1}50%{opacity:.22}}
+        @container app (max-width:640px){.db-sug{grid-template-columns:1fr!important}}
+        @container app (max-width:900px){
+          .db-grid2,.db-grid2.r40{grid-template-columns:1fr}
+          .db-grid2>section:first-child{padding-right:0}
+          .db-grid2>section+section{padding-left:0;border-left:0;border-top:1px solid var(--line)}
+          .db-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+          .db-kpis>*{border-left:0!important;border-bottom:1px solid var(--line);padding-left:0}
+          .db-kpis>*:nth-child(even){padding-left:16px;border-left:1px solid var(--line)!important}
+          .db-kpis>*:last-child{border-bottom:0}
+          .db-ctable{overflow-x:auto}
+          .db-crow,.db-chead{min-width:560px}
+        }
         @media(prefers-reduced-motion:reduce){.db-blink,.db-draw{animation:none!important}.db-draw{stroke-dashoffset:0}.db-stack span,.db-bar-f{transition:none!important}}
 
         /* Form inputs */
@@ -1192,7 +1222,7 @@ export default function DashboardPage() {
               ))}
             </div>
           </div>
-          <EvolutionChart metric={metric} period={period} onDetailClick={() => handleDetail('evolucion')} />
+          <EvolutionChart metric={metric} period={period} series={series} onDetailClick={() => handleDetail('evolucion')} />
         </section>
 
         <section>

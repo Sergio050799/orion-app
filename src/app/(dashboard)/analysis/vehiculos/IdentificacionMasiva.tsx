@@ -3,6 +3,9 @@
 import React, { useState, useRef, useCallback } from 'react';
 import * as XLSX from 'xlsx';
 import HojaPreEmision, { type VehiculoExport } from '@/app/(dashboard)/flotas/components/HojaPreEmision';
+import SilverdatModal from '@/components/saas/SilverdatModal';
+import { ESTUDIO_CSS } from '@/app/(dashboard)/flotas/estudio-css';
+import { nf } from '@/lib/fmt';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -106,64 +109,6 @@ async function exportExcel(vehicles: VehiculoExport[]) {
   const a = document.createElement('a');
   a.href = url; a.download = `identificacion_vehiculos_${new Date().toISOString().slice(0, 10)}.xlsx`; a.click();
   URL.revokeObjectURL(url);
-}
-
-// ─── SilverdatModal ───────────────────────────────────────────────────────────
-
-const FIELD: React.CSSProperties = {
-  background: 'var(--t-surface)', border: '1px solid var(--t-line)',
-  borderRadius: 8, color: 'var(--t-text)', fontSize: 13, padding: '9px 12px',
-  outline: 'none', width: '100%', fontFamily: 'inherit',
-};
-
-function SilverdatModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
-  const [datId, setDatId] = useState('');
-  const [user,  setUser]  = useState('');
-  const [pass,  setPass]  = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error,   setError]   = useState('');
-
-  const go = async () => {
-    if (!datId || !user || !pass) return;
-    setLoading(true); setError('');
-    try {
-      const r = await fetch('/api/silverdat/login', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ datId, user, pass }),
-        signal: AbortSignal.timeout(18000),
-      });
-      const d = await r.json();
-      if (d.ok) onSuccess(); else setError(d.error || 'Credenciales incorrectas');
-    } catch (e) { setError(e instanceof Error && e.name === 'TimeoutError' ? 'Silverdat no responde (timeout)' : 'Error de conexión'); }
-    finally { setLoading(false); }
-  };
-
-  return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)' }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{ width: 340, padding: 26, borderRadius: 18, background: 'rgba(6,16,60,0.97)', border: '1px solid rgba(245,158,11,0.3)', boxShadow: '0 30px 80px rgba(0,0,0,0.7)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
-          <div style={{ width: 34, height: 34, borderRadius: 9, background: 'linear-gradient(135deg,#f59e0b,#d97706)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: '#fff', fontSize: 16 }}>S</div>
-          <div>
-            <p style={{ margin: 0, fontSize: 15, color: '#fff', fontWeight: 700 }}>Silverdat</p>
-            <p style={{ margin: 0, fontSize: 11, color: 'rgba(178,198,245,0.55)' }}>DAT / fastVALUATE</p>
-          </div>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-          <input autoFocus placeholder="N. Cliente DAT" value={datId} onChange={e => setDatId(e.target.value)} style={FIELD} onKeyDown={e => e.key === 'Enter' && go()} />
-          <input placeholder="Usuario" value={user} onChange={e => setUser(e.target.value)} style={FIELD} onKeyDown={e => e.key === 'Enter' && go()} />
-          <input type="password" placeholder="Contraseña" value={pass} onChange={e => setPass(e.target.value)} style={FIELD} onKeyDown={e => e.key === 'Enter' && go()} />
-        </div>
-        {error && <p style={{ margin: '8px 0 0', fontSize: 11, color: '#ef4444', fontWeight: 600 }}>{error}</p>}
-        <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
-          <button onClick={go} disabled={loading || !datId || !user || !pass}
-            style={{ flex: 1, padding: '10px 0', borderRadius: 9, background: loading ? 'rgba(245,158,11,0.3)' : 'linear-gradient(135deg,#d97706,#f59e0b)', color: '#fff', border: 'none', fontWeight: 700, fontSize: 12, cursor: loading ? 'not-allowed' : 'pointer' }}>
-            {loading ? 'Conectando...' : 'Iniciar sesión'}
-          </button>
-          <button onClick={onClose} style={{ padding: '10px 14px', borderRadius: 9, background: 'transparent', color: 'var(--t-text-2)', border: '1px solid var(--t-line)', fontSize: 12, cursor: 'pointer' }}>Cancelar</button>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 // ─── IdentificacionMasiva ─────────────────────────────────────────────────────
@@ -347,7 +292,7 @@ export default function IdentificacionMasiva() {
   // ── Phase 1: upload ──────────────────────────────────────────────────────────
   if (phase === 'upload') {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 24, padding: 32 }}>
+      <div className="mas">
         {showSdModal && (
           <SilverdatModal
             onClose={() => setShowSdModal(false)}
@@ -356,85 +301,51 @@ export default function IdentificacionMasiva() {
         )}
 
         {sdPending && !showSdModal && (
-          <div style={{ textAlign: 'center', padding: '16px 24px', background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 12, maxWidth: 440 }}>
-            <p style={{ margin: '0 0 12px', fontSize: 13, color: '#fbbf24', fontWeight: 600 }}>
-              Archivo cargado — falta iniciar sesión en Silverdat
-            </p>
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
-              <button onClick={() => setShowSdModal(true)}
-                style={{ padding: '9px 22px', borderRadius: 9, background: 'linear-gradient(135deg,#d97706,#f59e0b)', color: '#fff', border: 'none', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
-                Introducir credenciales
-              </button>
-              <button onClick={() => { setSdPending(false); setRawRows([]); }}
-                style={{ padding: '9px 16px', borderRadius: 9, background: 'transparent', color: 'var(--t-text-2)', border: '1px solid var(--t-line)', fontSize: 12, cursor: 'pointer' }}>
-                Cancelar
-              </button>
+          <div className="chkbox" style={{ ['--c' as string]: 'var(--silver)' }}>
+            <h3>Archivo cargado: falta conectar con Silverdat</h3>
+            <p>ORION necesita Silverdat para completar marca, modelo y datos técnicos de cada matrícula.</p>
+            <div className="runrow">
+              <button className="mini sd" onClick={() => setShowSdModal(true)}>Introducir credenciales</button>
+              <button className="mini" onClick={() => { setSdPending(false); setRawRows([]); }}>Cancelar</button>
             </div>
           </div>
         )}
 
         {dupWarning && (
-          <div style={{ width: '100%', maxWidth: 520, padding: '18px 20px', background: 'rgba(239,68,68,0.08)', border: '1.5px solid rgba(239,68,68,0.35)', borderRadius: 14 }}>
-            <div style={{ fontSize: 13, fontWeight: 800, color: '#ef4444', marginBottom: 10 }}>
-              {dupWarning.plates.length} matrícula{dupWarning.plates.length !== 1 ? 's' : ''} duplicada{dupWarning.plates.length !== 1 ? 's' : ''} en el archivo
+          <div className="chkbox" style={{ ['--c' as string]: 'var(--warn)' }}>
+            <h3>{nf(dupWarning.plates.length)} matrícula{dupWarning.plates.length !== 1 ? 's' : ''} duplicada{dupWarning.plates.length !== 1 ? 's' : ''} en el archivo</h3>
+            <div className="vtags" style={{ margin: '10px 0 12px' }}>
+              {dupWarning.plates.map(m => <span key={m} className="chip mono">{m}</span>)}
             </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 12 }}>
-              {dupWarning.plates.map(m => (
-                <span key={m} style={{ fontSize: 11, fontWeight: 800, fontFamily: 'monospace', color: '#ef4444', background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 5, padding: '2px 8px' }}>{m}</span>
-              ))}
-            </div>
-            <p style={{ margin: '0 0 14px', fontSize: 12, color: 'var(--t-text-2)', lineHeight: 1.5 }}>
-              Se procesarán <strong style={{ color: 'var(--t-text)' }}>{dupWarning.uniqueRows.length} vehículos únicos</strong>. Las duplicadas se eliminarán automáticamente para no consultar Silverdat más de una vez por matrícula.
+            <p>
+              Se procesarán <b style={{ color: 'var(--text)' }}>{nf(dupWarning.uniqueRows.length)} vehículos únicos</b>. Las duplicadas se eliminan para no consultar Silverdat más de una vez por matrícula.
             </p>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button
-                onClick={() => proceedWithRows(dupWarning.uniqueRows)}
-                style={{ flex: 1, padding: '10px 0', borderRadius: 9, background: 'linear-gradient(135deg,#d97706,#f59e0b)', color: '#fff', border: 'none', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}
-              >
-                Continuar ({dupWarning.uniqueRows.length} únicos)
-              </button>
-              <button
-                onClick={() => setDupWarning(null)}
-                style={{ padding: '10px 16px', borderRadius: 9, background: 'transparent', color: 'var(--t-text-2)', border: '1px solid var(--t-line)', fontSize: 12, cursor: 'pointer' }}
-              >
-                Cancelar
-              </button>
+            <div className="runrow">
+              <button className="mini pri" onClick={() => proceedWithRows(dupWarning.uniqueRows)}>Continuar con {nf(dupWarning.uniqueRows.length)} únicos</button>
+              <button className="mini" onClick={() => setDupWarning(null)}>Cancelar</button>
             </div>
           </div>
         )}
 
         {!sdPending && !dupWarning && (
-          <>
-            <div style={{ textAlign: 'center', maxWidth: 480 }}>
-              <h2 style={{ margin: '0 0 8px', fontSize: 20, color: 'var(--t-text)', fontWeight: 700 }}>Identificación masiva</h2>
-              <p style={{ margin: 0, fontSize: 13, color: 'var(--t-text-2)', lineHeight: 1.6 }}>
-                Con solo la matrícula Silverdat obtiene la marca, modelo y datos del vehículo. Después el catálogo asigna el ID automáticamente.
-              </p>
+          <div className="vtri two">
+            <div>
+              <span className="no">Paso 1 de 2</span>
+              <h3>Preparar el Excel</h3>
+              <p>Columna obligatoria: <b style={{ color: 'var(--text)' }}>matricula</b>. Opcionales, que mejoran la precisión: marca, modelo, tipo_vehiculo, kw, cv, tn y anyo_fabricacion.</p>
+              <button className="mini" onClick={handleDescargarPlantilla}>Descargar plantilla</button>
             </div>
-
-            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
-              <button onClick={handleDescargarPlantilla} style={{ background: 'transparent', border: '1px solid var(--t-line)', borderRadius: 12, padding: '12px 24px', color: 'var(--t-text-2)', fontSize: 13, cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-                Descargar plantilla
-              </button>
-              <label style={{ background: 'linear-gradient(135deg, #1240CC, #3366FF)', border: 'none', borderRadius: 12, padding: '12px 24px', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, boxShadow: '0 0 24px rgba(18,64,204,0.4)' }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
-                Subir Excel
+            <div>
+              <span className="no">Paso 2 de 2</span>
+              <h3>Subir el Excel</h3>
+              <p>ORION consulta Silverdat para cada matrícula y después el catálogo asigna el ID automáticamente.</p>
+              <label className="mini pri filebtn">
+                Seleccionar archivo .xlsx
                 <input ref={fileRef} type="file" accept=".xlsx,.xls" style={{ display: 'none' }} onChange={handleFileUpload} />
               </label>
+              {parseError && <p className="note" style={{ color: 'var(--sdoff)' }} role="alert">{parseError}</p>}
             </div>
-
-            {parseError && (
-              <p style={{ color: '#f87171', fontSize: 12, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 8, padding: '8px 16px' }}>
-                {parseError}
-              </p>
-            )}
-
-            <div style={{ fontSize: 11, color: 'var(--t-text-3)', textAlign: 'center', maxWidth: 360 }}>
-              Columna requerida: <span style={{ color: 'var(--t-text-2)' }}>matricula</span><br />
-              Opcionales (mejoran precisión): marca, modelo, tipo_vehiculo, kw, cv, tn, anyo_fabricacion
-            </div>
-          </>
+          </div>
         )}
       </div>
     );
@@ -443,7 +354,7 @@ export default function IdentificacionMasiva() {
   // ── Phase 2: Silverdat enrichment ────────────────────────────────────────────
   if (phase === 'enrich') {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', padding: 32 }}>
+      <div className="mas">
         {showSdModal && (
           <SilverdatModal
             onClose={() => { setShowSdModal(false); setPhase('upload'); setRawRows([]); }}
@@ -451,83 +362,40 @@ export default function IdentificacionMasiva() {
           />
         )}
 
-        <div style={{ width: '100%', maxWidth: 560 }}>
-          <div style={{ textAlign: 'center', marginBottom: 24 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#f59e0b', marginBottom: 6 }}>Consultando Silverdat</div>
-            <h2 style={{ fontSize: 20, fontWeight: 800, color: 'var(--t-text)', margin: '0 0 6px' }}>
-              {progress.current} / {progress.total} vehículos
-            </h2>
-            <p style={{ fontSize: 12, color: 'var(--t-text-2)', margin: 0 }}>
-              3 consultas en paralelo · aprox. {Math.max(0, Math.ceil((progress.total - progress.current) / 3 * 0.8))}s restantes
-            </p>
-          </div>
-
-          <div style={{ height: 8, background: 'var(--t-line)', borderRadius: 4, overflow: 'hidden', marginBottom: 20 }}>
-            <div style={{ height: '100%', width: `${pct}%`, background: 'linear-gradient(90deg,#d97706,#f59e0b)', borderRadius: 4, transition: 'width 0.3s' }} />
-          </div>
-
-          <div style={{ height: 220, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 3, marginBottom: 20 }}>
-            {log.map((entry, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '4px 10px', borderRadius: 6,
-                background: entry.ok ? 'rgba(16,185,129,0.05)' : 'rgba(245,158,11,0.05)',
-                border: `1px solid ${entry.ok ? 'rgba(16,185,129,0.12)' : 'rgba(245,158,11,0.1)'}` }}>
-                <span style={{ fontSize: 10, fontWeight: 800, color: entry.ok ? '#10b981' : '#f59e0b', width: 14, textAlign: 'center', flexShrink: 0 }}>
-                  {entry.ok ? '✓' : '–'}
-                </span>
-                <span style={{ fontSize: 11, fontFamily: 'monospace', fontWeight: 700, color: 'var(--t-text)', width: 90, flexShrink: 0 }}>{entry.matricula}</span>
-                {entry.ok && (
-                  <span style={{ fontSize: 11, color: 'var(--t-text-2)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {entry.marca} {entry.modelo}
-                  </span>
-                )}
-              </div>
-            ))}
-            {progress.current < progress.total && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', color: 'var(--t-text-3)', fontSize: 11 }}>
-                <svg style={{ animation: 'sdSpin 1s linear infinite', flexShrink: 0 }} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <circle cx="12" cy="12" r="10" opacity="0.2"/><path d="M12 2a10 10 0 0110 10"/>
-                </svg>
-                Consultando...
-              </div>
-            )}
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'center' }}>
-            <button
-              onClick={() => { abortRef.current = true; setPhase('upload'); setRawRows([]); setLog([]); }}
-              style={{ padding: '10px 32px', borderRadius: 10, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-              Detener
-            </button>
+        <div className="vtri two" style={{ gridTemplateColumns: 'minmax(0,1fr)' }}>
+          <div style={{ paddingRight: 0 }}>
+            <span className="no" style={{ color: 'var(--silver)' }}>Consultando Silverdat</span>
+            <h3>{nf(progress.current)} de {nf(progress.total)} vehículos</h3>
+            <p>3 consultas en paralelo · quedan unos {nf(Math.max(0, Math.ceil((progress.total - progress.current) / 3 * 0.8)))} s</p>
+            <div className="pbar" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}><i style={{ width: `${pct}%` }} /></div>
+            <div className="elog">
+              {log.map((entry, i) => (
+                <div key={i} className={entry.ok ? 'ok' : ''}>
+                  <span className="mono">{entry.matricula}</span>
+                  <span>{entry.ok ? `${entry.marca ?? ''} ${entry.modelo ?? ''}`.trim() : 'Sin datos'}</span>
+                </div>
+              ))}
+              {progress.current < progress.total && <div><span>Consultando…</span></div>}
+            </div>
+            <div className="runrow">
+              <button className="mini danger" onClick={() => { abortRef.current = true; setPhase('upload'); setRawRows([]); setLog([]); }}>Detener</button>
+            </div>
           </div>
         </div>
-        <style>{`@keyframes sdSpin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }
 
   // ── Phase 3: grid ────────────────────────────────────────────────────────────
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 16px', borderBottom: '1px solid #e5e7eb', background: '#f9fafb', flexShrink: 0, flexWrap: 'wrap' }}>
-        <button onClick={() => { setPhase('upload'); setRawRows([]); setVehicles([]); setEnrichedRows([]); }}
-          style={{ fontSize: 11, fontWeight: 700, padding: '5px 12px', borderRadius: 7, background: 'rgba(6,14,50,0.08)', border: '1px solid rgba(61,112,255,0.2)', color: '#1240CC', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>
-          Nueva búsqueda
-        </button>
-        <span style={{ fontSize: 11, color: '#6b7280' }}>
-          {enrichedRows.length} vehículos · {sdHits} con datos Silverdat
-          {listos > 0 && <span style={{ color: '#059669', fontWeight: 700 }}> · {listos} identificados</span>}
-        </span>
-        <span style={{ flex: 1 }} />
-        {listos > 0 && (
-          <button onClick={() => exportExcel(vehicles)}
-            style={{ fontSize: 11, fontWeight: 700, padding: '6px 16px', borderRadius: 8, background: 'linear-gradient(135deg, #1240CC, #3366FF)', color: '#fff', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-            Exportar Excel ({listos})
-          </button>
-        )}
+    <div className="mas">
+      <div className="pcount" style={{ marginTop: 0, padding: '14px 20px', borderBottom: '1px solid var(--line)' }}>
+        <button className="mini" onClick={() => { setPhase('upload'); setRawRows([]); setVehicles([]); setEnrichedRows([]); }}>Nueva búsqueda</button>
+        <span><b>{nf(enrichedRows.length)}</b> vehículos · {nf(sdHits)} con datos de Silverdat{listos > 0 && <> · <b>{nf(listos)}</b> identificados</>}</span>
+        {listos > 0 && <button className="mini pri" style={{ marginLeft: 'auto' }} onClick={() => exportExcel(vehicles)}>Exportar Excel ({nf(listos)})</button>}
       </div>
-      <div style={{ flex: 1, minHeight: 0 }}>
+      <style dangerouslySetInnerHTML={{ __html: ESTUDIO_CSS }} />
+      <div className="es pg" style={{ padding: '4px 20px 20px' }}>
         <HojaPreEmision
           trabajoRows={enrichedRows}
           onCatalogoChange={() => {}}

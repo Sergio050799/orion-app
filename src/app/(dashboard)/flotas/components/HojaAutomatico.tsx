@@ -4,6 +4,9 @@ import React, { useState, useRef, useMemo } from 'react';
 import { generarPlantillaExcel } from '@/core/flotas/plantilla';
 import { normalizeTipoVehiculo, TIPO_VEHICULO_OPTS } from '@/core/flotas/normalizador';
 import type { FlotaHeader } from './types';
+import { EstadoBadge } from './CarpetaScreen';
+import SilverdatModal from '@/components/saas/SilverdatModal';
+import { nf, eur2, dec } from '@/lib/fmt';
 import { listarCarpetas, listarCorredores, type FlotaCarpeta } from '@/core/flotas';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -84,88 +87,8 @@ interface Props {
     onHeaderUpdate?: (header: Partial<FlotaHeader>) => void;
 }
 
-// ─── Design tokens ────────────────────────────────────────────────────────────
-
-const glass: React.CSSProperties = {
-    background: 'var(--t-surface)',
-    border: '1px solid var(--t-line)',
-    borderRadius: 12,
-};
-
-// ─── Silverdat login modal ────────────────────────────────────────────────────
-
-function SilverdatModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
-    const [datId, setDatId] = useState('');
-    const [user, setUser] = useState('');
-    const [pass, setPass] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
-
-    const handleLogin = async () => {
-        if (!datId.trim() || !user.trim() || !pass.trim()) return;
-        setLoading(true); setError('');
-        try {
-            const res = await fetch('/api/silverdat/login', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ datId: datId.trim(), user: user.trim(), pass: pass.trim() }),
-            });
-            const data = await res.json();
-            if (data.ok) { onSuccess(); }
-            else setError((data.error || 'Error de autenticación') + (data.debug ? `\n\nDEBUG: ${data.debug}` : ''));
-        } catch { setError('Error de conexión'); }
-        finally { setLoading(false); }
-    };
-
-    return (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }} onClick={onClose}>
-            <div onClick={e => e.stopPropagation()} style={{ width: 360, padding: 28, borderRadius: 18, background: 'rgba(8,22,72,0.97)', border: '1px solid rgba(245,158,11,0.25)', boxShadow: '0 30px 80px rgba(0,0,0,0.7)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-                    <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg, #f59e0b, #d97706)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 800, color: '#fff' }}>S</div>
-                    <div>
-                        <h2 style={{ margin: 0, fontSize: 16, color: 'var(--t-text)', fontWeight: 700 }}>Silverdat</h2>
-                        <p style={{ margin: 0, fontSize: 11, color: 'var(--t-text-2)' }}>Credenciales DAT / fastVALUATE</p>
-                    </div>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                    <input autoFocus placeholder="DAT N. Cliente" value={datId} onChange={e => setDatId(e.target.value)} className="orion-input" style={{ fontSize: 13 }} onKeyDown={e => { if (e.key === 'Enter') handleLogin(); }} />
-                    <input placeholder="Usuario" value={user} onChange={e => setUser(e.target.value)} className="orion-input" style={{ fontSize: 13 }} onKeyDown={e => { if (e.key === 'Enter') handleLogin(); }} />
-                    <input placeholder="Contraseña" type="password" value={pass} onChange={e => setPass(e.target.value)} className="orion-input" style={{ fontSize: 13 }} onKeyDown={e => { if (e.key === 'Enter') handleLogin(); }} />
-                </div>
-                {error && <pre style={{ margin: '10px 0 0', fontSize: 11, color: '#ef4444', whiteSpace: 'pre-wrap', wordBreak: 'break-all', maxHeight: 100, overflow: 'auto', background: 'rgba(239,68,68,0.06)', padding: 8, borderRadius: 8 }}>{error}</pre>}
-                <p style={{ margin: '12px 0', fontSize: 10, color: 'var(--t-text-3)', lineHeight: 1.4 }}>Las credenciales NO se guardan. Solo para esta sesión.</p>
-                <div style={{ display: 'flex', gap: 8 }}>
-                    <button onClick={handleLogin} disabled={loading || !datId.trim() || !user.trim() || !pass.trim()} style={{ flex: 1, fontSize: 12, fontWeight: 700, padding: '10px 0', borderRadius: 10, background: loading ? 'rgba(245,158,11,0.3)' : 'linear-gradient(135deg, #d97706, #f59e0b)', color: '#fff', border: 'none', cursor: loading ? 'not-allowed' : 'pointer' }}>
-                        {loading ? 'Conectando...' : 'Iniciar sesión'}
-                    </button>
-                    <button onClick={onClose} style={{ fontSize: 12, padding: '10px 16px', borderRadius: 10, background: 'transparent', color: 'var(--t-text-2)', border: '1px solid var(--t-line)', cursor: 'pointer' }}>Cancelar</button>
-                </div>
-            </div>
-        </div>
-    );
-}
-
 type ProcessMode = 'con' | 'sin';
 
-// ─── Estado helpers ───────────────────────────────────────────────────────────
-
-function estadoBg(estado: string) {
-    switch (estado) {
-        case 'CONTRATADA': return 'rgba(16,185,129,0.15)';
-        case 'OFERTADA':   return 'rgba(59,130,246,0.15)';
-        case 'EN ESTUDIO': return 'rgba(245,158,11,0.15)';
-        case 'RECHAZADA':  return 'rgba(239,68,68,0.15)';
-        default:           return 'rgba(61,112,255,0.15)';
-    }
-}
-function estadoColor(estado: string) {
-    switch (estado) {
-        case 'CONTRATADA': return '#10b981';
-        case 'OFERTADA':   return '#3b82f6';
-        case 'EN ESTUDIO': return '#f59e0b';
-        case 'RECHAZADA':  return '#ef4444';
-        default:           return '#BDD4FF';
-    }
-}
 
 // ─── Step 3: Offer builder ────────────────────────────────────────────────────
 
@@ -201,7 +124,6 @@ function Step3({
             result[key].vehList.push(v);
         }
         return result;
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [vehicles, tipoOverrides]);
 
     const cleanPoliza = (p: string) => p.replace(/[\s\-\.\/]/g, '');
@@ -249,77 +171,53 @@ function Step3({
     }, 0);
 
     const sdOkCount = vehicles.filter(v => v.sd_ok).length;
-    const sdOkPlates  = vehicles.filter(v => v.sd_ok).map(v => v.matricula);
-    const sdFailPlates = vehicles.filter(v => !v.sd_ok).map(v => v.matricula);
+
+    const sinTipo = vehicles.filter(v => !effectiveTipo(v)).length;
+    const presentTypes = Array.from(new Set(vehicles.map(v => effectiveTipo(v)))).sort();
+    const applyBulk = () => {
+        if (!bulkTo) return;
+        setTipoOverrides(prev => {
+            const next = { ...prev };
+            vehicles.forEach(v => {
+                const cur = tipoOverrides[v.matricula] || v.tipo_vehiculo || '';
+                if (bulkFrom === '' ? !cur : cur === bulkFrom) {
+                    next[v.matricula] = bulkTo;
+                }
+            });
+            return next;
+        });
+        setBulkFrom('');
+        setBulkTo('');
+    };
 
     return (
-        <div style={{ maxWidth: 800, margin: '0 auto', padding: '32px 24px' }}>
-            <div style={{ textAlign: 'center', marginBottom: 28 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--t-amber)', marginBottom: 8 }}>Paso 3 de 3</div>
-                <h2 style={{ fontSize: 22, fontWeight: 800, color: 'var(--t-text)', margin: '0 0 8px' }}>Confirmar oferta</h2>
-                <p style={{ fontSize: 13, color: 'var(--t-text-2)', margin: 0 }}>
-                    {vehicles.length} vehículos · primas y coberturas del Excel
-                </p>
+        <div className="s3">
+            <div className="sh" style={{ marginBottom: 8 }}>
+                <div>
+                    <h2 style={{ fontSize: 22 }}>Confirmar oferta</h2>
+                    <p>{nf(vehicles.length)} vehículos · primas y coberturas del Excel</p>
+                </div>
             </div>
 
-            {/* Cambio masivo de tipología */}
-            {(() => {
-                const presentTypes = Array.from(new Set(vehicles.map(v => effectiveTipo(v)))).sort();
-                const applyBulk = () => {
-                    if (!bulkTo) return;
-                    setTipoOverrides(prev => {
-                        const next = { ...prev };
-                        vehicles.forEach(v => {
-                            const cur = tipoOverrides[v.matricula] || v.tipo_vehiculo || '';
-                            if (bulkFrom === '' ? !cur : cur === bulkFrom) {
-                                next[v.matricula] = bulkTo;
-                            }
-                        });
-                        return next;
-                    });
-                    setBulkFrom('');
-                    setBulkTo('');
-                };
-                return (
-                    <div style={{ ...glass, padding: 16, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--t-text-3)', textTransform: 'uppercase', letterSpacing: '0.08em', flexShrink: 0 }}>Cambio masivo</span>
-                        <select value={bulkFrom} onChange={e => setBulkFrom(e.target.value)} style={{ background: 'var(--t-bg)', color: 'var(--t-text)', border: '1px solid var(--t-line)', borderRadius: 8, padding: '6px 10px', fontSize: 12, cursor: 'pointer', flex: '1 1 140px' }}>
-                            <option value="">— Sin tipo —</option>
-                            {presentTypes.filter(Boolean).map(t => <option key={t} value={t}>{t}</option>)}
-                        </select>
-                        <span style={{ fontSize: 11, color: 'var(--t-text-3)', flexShrink: 0 }}>→</span>
-                        <select value={bulkTo} onChange={e => setBulkTo(e.target.value)} style={{ background: 'var(--t-bg)', color: 'var(--t-text)', border: '1px solid var(--t-line)', borderRadius: 8, padding: '6px 10px', fontSize: 12, cursor: 'pointer', flex: '1 1 140px' }}>
-                            <option value="">— Tipo nuevo —</option>
-                            {TIPO_VEHICULO_OPTS.map(o => <option key={o} value={o}>{o}</option>)}
-                        </select>
-                        <button onClick={applyBulk} disabled={!bulkTo} style={{ padding: '7px 18px', borderRadius: 8, background: bulkTo ? 'linear-gradient(135deg,#1240CC,#3366FF)' : 'var(--t-line)', color: '#fff', border: 'none', fontSize: 12, fontWeight: 700, cursor: bulkTo ? 'pointer' : 'not-allowed', flexShrink: 0 }}>
-                            Aplicar
-                        </button>
-                        {bulkFrom === '' && <span style={{ fontSize: 10, color: 'var(--t-text-3)', flex: '100%' }}>Selecciona un tipo origen para cambiar todos los vehículos de ese tipo, o deja vacío para asignar a los que no tienen tipo.</span>}
-                    </div>
-                );
-            })()}
+            {/* Resumen */}
+            <div className="stat3">
+                <div><label>Vehículos</label><strong>{nf(vehicles.length)}</strong></div>
+                <div><label>Con Silverdat</label><strong>{nf(sdOkCount)}</strong></div>
+                <div><label>Sin tipo</label><strong>{nf(sinTipo)}</strong></div>
+                <div><label>Grupos</label><strong>{nf(Object.keys(groups).length)}</strong></div>
+            </div>
 
             {/* Tipos pendientes */}
-            {vehicles.some(v => !effectiveTipo(v)) && (
-                <div style={{ ...glass, padding: 16, marginBottom: 20, border: '1px solid rgba(245,158,11,0.35)', background: 'rgba(245,158,11,0.07)' }}>
-                    <p style={{ margin: '0 0 12px', fontSize: 12, fontWeight: 700, color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                        Tipos de vehículo pendientes — asigna antes de continuar
-                    </p>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {sinTipo > 0 && (
+                <div className="notice">
+                    <span className="ttl">Faltan tipos de vehículo: asígnalos antes de continuar</span>
+                    <div className="s3list">
                         {vehicles.filter(v => !effectiveTipo(v)).map(v => (
-                            <div key={v.matricula} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                <span style={{ fontFamily: 'monospace', fontSize: 13, fontWeight: 700, color: 'var(--t-text)', minWidth: 100 }}>{v.matricula}</span>
-                                {v.marca && <span style={{ fontSize: 12, color: 'var(--t-text-3)', flex: 1 }}>{v.marca} {v.modelo}</span>}
-                                <select
-                                    value={tipoOverrides[v.matricula] || ''}
-                                    onChange={e => setTipoOverrides(prev => ({ ...prev, [v.matricula]: e.target.value }))}
-                                    style={{
-                                        background: 'var(--t-bg)', color: 'var(--t-text)', border: '1px solid rgba(245,158,11,0.4)',
-                                        borderRadius: 8, padding: '6px 10px', fontSize: 12, fontWeight: 600, cursor: 'pointer', minWidth: 160,
-                                    }}
-                                >
-                                    <option value="">— Seleccionar tipo —</option>
+                            <div key={v.matricula} className="rowline between">
+                                <span><b className="strong" style={{ fontFamily: 'ui-monospace,Menlo,monospace' }}>{v.matricula}</b>{v.marca ? ` · ${v.marca} ${v.modelo}` : ''}</span>
+                                <select className="select" aria-label={`Tipo de ${v.matricula}`} value={tipoOverrides[v.matricula] || ''}
+                                    onChange={e => setTipoOverrides(prev => ({ ...prev, [v.matricula]: e.target.value }))}>
+                                    <option value="">Seleccionar tipo</option>
                                     {TIPO_VEHICULO_OPTS.map(o => <option key={o} value={o}>{o}</option>)}
                                 </select>
                             </div>
@@ -328,114 +226,82 @@ function Step3({
                 </div>
             )}
 
-            {/* Stats */}
-            <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
-                {[
-                    { label: 'Total vehículos', value: vehicles.length, color: '#3366FF' },
-                    { label: 'Con Silverdat', value: sdOkCount, color: '#10b981' },
-                    { label: 'Sin tipo', value: vehicles.filter(v => !effectiveTipo(v)).length, color: vehicles.some(v => !effectiveTipo(v)) ? 'var(--t-amber)' : 'var(--t-text-3)' },
-                    { label: 'Grupos', value: Object.keys(groups).length, color: 'var(--t-blue)' },
-                ].map(({ label, value, color }) => (
-                    <div key={label} style={{ flex: '1 1 120px', ...glass, padding: '12px 16px', textAlign: 'center' }}>
-                        <div style={{ fontSize: 22, fontWeight: 800, color }}>{value}</div>
-                        <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--t-text-3)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>{label}</div>
+            {/* Cambio masivo · descuento · total (misma rejilla de tres columnas que el inicio del paso) */}
+            <div className="tri s3tri">
+                <div>
+                    <h3>Cambio masivo de tipología</h3>
+                    <p>Cambia de golpe el tipo de todos los vehículos de un tipo, o asígnalo a los que no lo tienen.</p>
+                    <div className="adj">
+                        <div className="fld">
+                            <label htmlFor="bk_from">De</label>
+                            <select id="bk_from" className="select" value={bulkFrom} onChange={e => setBulkFrom(e.target.value)}>
+                                <option value="">Sin tipo</option>
+                                {presentTypes.filter(Boolean).map(t => <option key={t} value={t}>{t}</option>)}
+                            </select>
+                        </div>
+                        <div className="fld">
+                            <label htmlFor="bk_to">A</label>
+                            <select id="bk_to" className="select" value={bulkTo} onChange={e => setBulkTo(e.target.value)}>
+                                <option value="">Tipo nuevo</option>
+                                {TIPO_VEHICULO_OPTS.map(o => <option key={o} value={o}>{o}</option>)}
+                            </select>
+                        </div>
+                        <button className="mini pri" onClick={applyBulk} disabled={!bulkTo}>Aplicar</button>
                     </div>
-                ))}
+                </div>
+                <div>
+                    <h3>Descuento global</h3>
+                    <p>Se aplica a la prima de todos los grupos.</p>
+                    <div className="adj">
+                        <div className="fld">
+                            <label htmlFor="s3_desc">Descuento (%)</label>
+                            <input id="s3_desc" className="inp" type="number" min="0" max="100" step="0.5"
+                                value={globalDiscount} onChange={e => setGlobalDiscount(e.target.value)} />
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <h3>Prima total</h3>
+                    <p>{discount > 0 ? `Con un descuento del ${dec(discount, 1)} %.` : 'Sin descuento aplicado.'}</p>
+                    <div className="tot s3tot">
+                        <div><strong>{eur2(totalPrima)}</strong></div>
+                    </div>
+                </div>
             </div>
 
             {/* Resumen por grupo (tipo + cobertura del Excel) */}
-            <div style={{ ...glass, padding: 20, marginBottom: 20 }}>
-                <p style={{ margin: '0 0 14px', fontSize: 12, fontWeight: 700, color: 'var(--t-text-3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Resumen por tipología y cobertura</p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {Object.entries(groups).map(([key, g]) => {
-                        const groupPrimas = g.vehList.map(v => parseFloat(v.prima_referencia || '0') || 0);
-                        const avgPrima = groupPrimas.length > 0 ? groupPrimas.reduce((s, p) => s + p, 0) / groupPrimas.length : 0;
-                        const totalGrupo = groupPrimas.reduce((s, p) => s + p, 0) * (1 - discount / 100);
-                        return (
-                            <div key={key} style={{
-                                display: 'grid',
-                                gridTemplateColumns: '1fr auto 64px 130px 120px',
-                                alignItems: 'center', gap: 12,
-                                padding: '12px 16px', borderRadius: 10,
-                                background: 'var(--t-line-soft)',
-                                border: '1px solid var(--t-line)',
-                            }}>
-                                <div>
-                                    <span style={{ fontSize: 13, fontWeight: 700, color: g.tipo ? 'var(--t-text)' : 'var(--t-amber)' }}>
-                                        {g.tipo || 'Sin tipo'}
-                                    </span>
-                                    <div style={{ fontSize: 10, color: 'var(--t-text-3)', marginTop: 2 }}>
-                                        {g.vehList.map(v => v.matricula).slice(0, 3).join(', ')}{g.vehList.length > 3 ? ` +${g.vehList.length - 3}` : ''}
-                                    </div>
-                                </div>
-                                <div>
-                                    {g.cob
-                                        ? <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--t-blue)', background: 'rgba(18,64,204,0.08)', padding: '3px 9px', borderRadius: 20 }}>{g.cob}</span>
-                                        : <span style={{ fontSize: 11, color: 'var(--t-text-3)' }}>—</span>
-                                    }
-                                </div>
-                                <div style={{ textAlign: 'center' }}>
-                                    <span style={{ fontSize: 18, fontWeight: 800, color: 'var(--t-blue)' }}>{g.vehList.length}</span>
-                                    <div style={{ fontSize: 9, color: 'var(--t-text-3)', textTransform: 'uppercase' }}>veh.</div>
-                                </div>
-                                <div style={{ textAlign: 'right' }}>
-                                    <div style={{ fontSize: 13, fontWeight: 700, color: avgPrima > 0 ? 'var(--t-text)' : 'var(--t-text-3)' }}>
-                                        {avgPrima > 0 ? `€${avgPrima.toFixed(2)}` : '—'}
-                                    </div>
-                                    <div style={{ fontSize: 9, color: 'var(--t-text-3)', textTransform: 'uppercase' }}>media/veh</div>
-                                </div>
-                                <div style={{ textAlign: 'right' }}>
-                                    <div style={{ fontSize: 14, fontWeight: 800, color: totalGrupo > 0 ? 'var(--t-amber)' : 'var(--t-text-3)' }}>
-                                        {totalGrupo > 0 ? `€${totalGrupo.toFixed(0)}` : '—'}
-                                    </div>
-                                    <div style={{ fontSize: 9, color: 'var(--t-text-3)', textTransform: 'uppercase' }}>total grupo</div>
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-            </div>
-
-            {/* Global discount */}
-            <div style={{ ...glass, padding: 16, marginBottom: 24, display: 'flex', alignItems: 'center', gap: 20 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1 }}>
-                    <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--t-text-2)', flexShrink: 0 }}>Descuento global</label>
-                    <input
-                        type="number" min="0" max="100" step="0.5"
-                        value={globalDiscount}
-                        onChange={e => setGlobalDiscount(e.target.value)}
-                        className="orion-input"
-                        style={{ fontSize: 14, fontWeight: 700, width: 80, textAlign: 'center' }}
-                    />
-                    <span style={{ fontSize: 13, color: 'var(--t-text-3)' }}>%</span>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: 13, color: 'var(--t-text-3)' }}>Prima total</div>
-                    <div style={{ fontSize: 22, fontWeight: 800, color: '#f59e0b' }}>€{totalPrima.toFixed(0)}</div>
-                </div>
+            <h3 className="s3h">Resumen por tipología y cobertura</h3>
+            <div className="dg-scroll">
+                <table className="tbl">
+                    <thead>
+                        <tr><th>Tipología</th><th>Cobertura</th><th>Veh.</th><th>Prima media por vehículo</th><th>Total del grupo</th></tr>
+                    </thead>
+                    <tbody>
+                        {Object.entries(groups).map(([key, g]) => {
+                            const groupPrimas = g.vehList.map(v => parseFloat(v.prima_referencia || '0') || 0);
+                            const avgPrima = groupPrimas.length > 0 ? groupPrimas.reduce((s, p) => s + p, 0) / groupPrimas.length : 0;
+                            const totalGrupo = groupPrimas.reduce((s, p) => s + p, 0) * (1 - discount / 100);
+                            return (
+                                <tr key={key}>
+                                    <td style={{ textAlign: 'left' }}>
+                                        <div style={{ fontWeight: 600, color: g.tipo ? 'var(--text)' : 'var(--warn)' }}>{g.tipo || 'Sin tipo'}</div>
+                                        <div className="muted">{g.vehList.map(v => v.matricula).slice(0, 3).join(', ')}{g.vehList.length > 3 ? ` y ${nf(g.vehList.length - 3)} más` : ''}</div>
+                                    </td>
+                                    <td>{g.cob || '—'}</td>
+                                    <td>{nf(g.vehList.length)}</td>
+                                    <td>{avgPrima > 0 ? eur2(avgPrima) : '—'}</td>
+                                    <td>{totalGrupo > 0 ? eur2(totalGrupo) : '—'}</td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
             </div>
 
             {/* Actions */}
-            <div style={{ display: 'flex', gap: 12 }}>
-                <button onClick={onBack} style={{
-                    padding: '12px 24px', borderRadius: 10,
-                    background: 'transparent', color: 'var(--t-text-2)',
-                    border: '1px solid var(--t-line)', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', gap: 8,
-                }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
-                    Volver
-                </button>
-                <button onClick={handleApply} style={{
-                    flex: 1, padding: '14px 0', borderRadius: 12,
-                    background: 'linear-gradient(135deg, #1240CC, #3366FF)',
-                    color: '#fff', border: 'none', fontSize: 13, fontWeight: 800,
-                    letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-                }}>
-                    Aplicar a TRABAJO y continuar
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
-                </button>
+            <div className="s3act">
+                <button className="btn ghost" onClick={onBack}>Volver</button>
+                <button className="btn" onClick={handleApply}>Aplicar a Trabajo y continuar</button>
             </div>
         </div>
     );
@@ -746,12 +612,11 @@ export default function HojaAutomatico({ header, carpetaActiva, onComplete, onVe
         const processOne = async (row: Record<string, string>) => {
             if (abortRef.current) return;
             const matricula = row['matricula'].trim().replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-            let sd: SilverdatVehicle | undefined;
             let id_veh: string | undefined;
 
             const result = await querySilverdat(matricula);
             if (result.noSession) { setSdError('Sesión Silverdat expirada. Reinicia y vuelve a hacer login.'); abortRef.current = true; return; }
-            sd = result.vehicle;
+            const sd: SilverdatVehicle | undefined = result.vehicle;
             if (result.fromCache) setCacheCount(n => n + 1);
             if (abortRef.current) return;
 
@@ -869,26 +734,23 @@ export default function HojaAutomatico({ header, carpetaActiva, onComplete, onVe
             )}
 
             {/* ── Cabecera ── */}
-            <div className="sh" style={{ flexShrink: 0, padding: '20px 32px', borderBottom: '1px solid var(--line)' }}>
+            <div className="sh" style={{ flexShrink: 0 }}>
                 <div>
-                    <h2><b>02</b>AUTOMÁTICO</h2>
-                    <p>Descarga la plantilla, rellena los vehículos e importa el Excel.</p>
+                    <h2><b>02 ·</b>Automático</h2>
+                    <p>Camino rápido: de la plantilla a una oferta en un solo paso.</p>
                 </div>
                 <div className="acts">
-                    {phase === 'input' && uploadedRows && (
-                        <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--quiet)' }}>
-                            {uploadedRows.length} veh.
-                        </span>
-                    )}
-                    {phase === 'processing' && (
-                        <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--t-amber)' }}>
-                            {progress.current}/{progress.total}
-                        </span>
+                    {phase === 'input' && uploadedRows && <span className="muted">{uploadedRows.length} vehículos cargados</span>}
+                    {phase === 'processing' && <span className="muted">{progress.current}/{progress.total}</span>}
+                    {phase !== 'confirm' && (
+                        <button className="mini" onClick={handleDownload} disabled={downloadLoading}>
+                            {downloadLoading ? 'Generando…' : 'Descargar plantilla'}
+                        </button>
                     )}
                 </div>
             </div>
 
-            <div style={{ flex: 1, overflowY: 'auto', padding: '24px 32px' }} className="custom-scrollbar">
+            <div className="stepscroll custom-scrollbar">
                 {phase === 'confirm' ? (
                     <Step3
                         vehicles={processedVehicles}
@@ -898,74 +760,63 @@ export default function HojaAutomatico({ header, carpetaActiva, onComplete, onVe
                     />
                 ) : (
                     <>
-                        {/* Banner flota ya registrada */}
+                        {/* Aviso flota ya registrada */}
                         {flotasMatch.length > 0 && (
-                            <div style={{ padding: '13px 16px', background: 'rgba(245,158,11,0.07)', borderLeft: '2px solid var(--t-amber)', color: 'var(--t-amber)', fontSize: 12, marginBottom: 20 }}>
-                                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+                            <div className="notice">
+                                <div className="rowline">
                                     <div style={{ flex: 1 }}>
-                                        <div style={{ fontWeight: 800, marginBottom: 8 }}>Esta flota ya está registrada en Orion</div>
+                                        <b className="ttl">Esta flota ya está registrada</b>
                                         {flotasMatch.map(c => (
-                                            <div key={c.id} style={{ fontSize: 11, color: 'var(--t-text-2)', marginBottom: 5, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                                                <span style={{ fontWeight: 700 }}>{c.nombre}</span>
-                                                {c.header.tomador && <span style={{ color: 'var(--t-text-3)' }}>{c.header.tomador}</span>}
-                                                <span style={{ padding: '1px 8px', borderRadius: 20, fontSize: 10, fontWeight: 800, background: estadoBg(c.estado), color: estadoColor(c.estado) }}>{c.estado}</span>
+                                            <div key={c.id} className="rowline sm">
+                                                <span className="strong">{c.nombre}</span>
+                                                {c.header.tomador && <span className="muted">{c.header.tomador}</span>}
+                                                <EstadoBadge estado={c.estado} small />
                                             </div>
                                         ))}
                                     </div>
-                                    <button onClick={() => setFlotasMatch([])} style={{ background: 'none', border: 'none', color: 'var(--t-text-3)', cursor: 'pointer', padding: '2px 4px', flexShrink: 0, fontSize: 16, lineHeight: 1 }}>✕</button>
+                                    <button className="mini" onClick={() => setFlotasMatch([])}>Cerrar</button>
                                 </div>
                             </div>
                         )}
 
-                        {/* ── Tri layout ── */}
                         <div className="tri">
 
-                            {/* Col 1 — Descargar */}
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                                <div>
-                                    <p style={{ margin: '0 0 4px', fontSize: 10, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--t-text-3)' }}>01 · Descargar</p>
-                                    <h3 style={{ margin: '0 0 8px', fontSize: 14, fontWeight: 700, color: 'var(--t-text)' }}>Plantilla de vehículos</h3>
-                                    <p style={{ margin: 0, fontSize: 12, lineHeight: 1.6, color: 'var(--t-text-3)' }}>Plantilla MMT para 200 vehículos, con coberturas opcionales y formato corporativo.</p>
-                                </div>
-                                <button
-                                    onClick={handleDownload}
-                                    disabled={downloadLoading}
-                                    style={{ padding: '10px 14px', border: '1px solid var(--t-line)', borderRadius: 6, fontSize: 12, fontWeight: 600, background: 'transparent', color: 'var(--t-text)', cursor: downloadLoading ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}
-                                >
-                                    {downloadLoading ? 'Generando...' : 'Descargar plantilla'}
+                            {/* 1 · Descargar */}
+                            <div>
+                                <span className="no">PASO 1 DE 3</span>
+                                <h3>Plantilla de vehículos</h3>
+                                <p>Descarga, cumplimenta e importa el Excel del estudio. El formato se mantiene sin cambios.</p>
+                                <button className="mini" onClick={handleDownload} disabled={downloadLoading}>
+                                    {downloadLoading ? 'Generando…' : 'Descargar plantilla'}
                                 </button>
                             </div>
 
-                            {/* Col 2 — Subir */}
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                                <div>
-                                    <p style={{ margin: '0 0 4px', fontSize: 10, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--t-text-3)' }}>02 · Subir</p>
-                                    <h3 style={{ margin: '0 0 8px', fontSize: 14, fontWeight: 700, color: 'var(--t-text)' }}>Importar plantilla</h3>
-                                </div>
+                            {/* 2 · Subir */}
+                            <div>
+                                <span className="no">PASO 2 DE 3</span>
+                                <h3>Subir plantilla rellenada</h3>
+                                <p>Arrastra el archivo o selecciónalo desde tu equipo.</p>
                                 <div
+                                    className={`drop${uploadedRows ? ' ok' : ''}`}
+                                    role="button" tabIndex={0}
                                     onClick={() => fileInputRef.current?.click()}
+                                    onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') fileInputRef.current?.click(); }}
                                     onDragOver={e => e.preventDefault()}
                                     onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
-                                    style={{
-                                        border: `1px dashed ${uploadedRows ? 'var(--t-blue)' : 'var(--t-line)'}`,
-                                        borderRadius: 7, textAlign: 'center', padding: '22px 12px',
-                                        cursor: 'pointer', background: 'transparent',
-                                    }}
-                                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = 'var(--t-blue)'}
-                                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = uploadedRows ? 'var(--t-blue)' : 'var(--t-line)'}
                                 >
-                                    <strong style={{ display: 'block', fontSize: 13, color: uploadedRows ? 'var(--t-green)' : 'var(--t-text)', margin: '0 0 4px' }}>
-                                        {uploadedRows ? `✓ ${uploadedRows.length} vehículos` : 'Seleccionar o arrastrar'}
-                                    </strong>
-                                    {!uploadedRows && <span style={{ fontSize: 11, color: 'var(--t-text-3)' }}>.xlsx</span>}
+                                    {uploadedRows ? `${uploadedRows.length} vehículos cargados` : 'Suelta el archivo .xlsx aquí'}
                                     <input ref={fileInputRef} type="file" accept=".xlsx,.xls" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = ''; }} />
                                 </div>
-                                {parseError && <p style={{ margin: 0, fontSize: 12, color: 'var(--t-red)', fontWeight: 600 }}>{parseError}</p>}
+                                <div className="rowline" style={{ marginTop: 12 }}>
+                                    <button className="mini" onClick={() => fileInputRef.current?.click()}>Seleccionar archivo</button>
+                                </div>
+                                {parseError && <p className="warnTxt">{parseError}</p>}
                                 {uploadedRows && duplicadas.length > 0 && (
-                                    <div style={{ padding: '9px 12px', background: 'rgba(239,68,68,0.09)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 7 }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                                            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--t-red)' }}>{duplicadas.length} dup.</span>
+                                    <div className="notice" style={{ marginTop: 14 }}>
+                                        <div className="rowline">
+                                            <b className="ttl">{duplicadas.length} matrículas duplicadas</b>
                                             <button
+                                                className="mini"
                                                 onClick={() => {
                                                     const firstSeen = new Set<string>();
                                                     setUploadedRows(uploadedRows!.filter(r => {
@@ -975,142 +826,74 @@ export default function HojaAutomatico({ header, carpetaActiva, onComplete, onVe
                                                         firstSeen.add(mat); return true;
                                                     }));
                                                 }}
-                                                style={{ fontSize: 10, fontWeight: 700, color: '#fff', background: 'var(--t-red)', border: 'none', borderRadius: 4, padding: '3px 8px', cursor: 'pointer' }}
-                                            >Eliminar</button>
+                                            >Eliminar duplicadas</button>
                                         </div>
-                                        <div style={{ marginTop: 4, display: 'flex', flexWrap: 'wrap', gap: 3 }}>
-                                            {duplicadas.slice(0, 4).map(m => (
-                                                <span key={m} style={{ fontSize: 10, fontWeight: 800, color: 'var(--t-red)', fontFamily: 'monospace', background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 3, padding: '1px 5px' }}>
-                                                    {m} ×{seenCounts.get(m)}
-                                                </span>
-                                            ))}
-                                            {duplicadas.length > 4 && <span style={{ fontSize: 10, color: 'var(--t-text-3)' }}>+{duplicadas.length - 4}</span>}
+                                        <div className="plates">
+                                            {duplicadas.slice(0, 4).map(m => <span key={m}>{m} ×{seenCounts.get(m)}</span>)}
+                                            {duplicadas.length > 4 && <span className="muted">+{duplicadas.length - 4}</span>}
                                         </div>
                                     </div>
                                 )}
                                 {uploadedRows && (
-                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
-                                        {uploadedRows.slice(0, 6).map((r, i) => (
-                                            <span key={i} style={{ fontSize: 10, fontWeight: 700, color: 'var(--t-text-3)', background: 'var(--t-line-soft)', border: '1px solid var(--t-line)', borderRadius: 3, padding: '1px 6px', fontFamily: 'monospace' }}>
-                                                {r['matricula']}
-                                            </span>
-                                        ))}
-                                        {uploadedRows.length > 6 && <span style={{ fontSize: 10, color: 'var(--t-text-3)' }}>+{uploadedRows.length - 6} más</span>}
+                                    <div className="plates">
+                                        {uploadedRows.slice(0, 6).map((r, i) => <span key={i}>{r['matricula']}</span>)}
+                                        {uploadedRows.length > 6 && <span className="muted">+{uploadedRows.length - 6} más</span>}
                                     </div>
                                 )}
                             </div>
 
-                            {/* Col 3 — Modo / Progreso */}
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                            {/* 3 · Procesar */}
+                            <div>
                                 {phase === 'input' ? (
                                     <>
-                                        <div>
-                                            <p style={{ margin: '0 0 4px', fontSize: 10, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--t-text-3)' }}>03 · Procesar</p>
-                                            <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 700, color: 'var(--t-text)' }}>Modo de procesado</h3>
-                                        </div>
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                            {(['con', 'sin'] as const).map(m => (
-                                                <button key={m} onClick={() => setMode(m)} style={{
-                                                    padding: '12px 14px', textAlign: 'left', cursor: 'pointer',
-                                                    background: mode === m ? 'rgba(18,64,204,0.07)' : 'transparent',
-                                                    border: `1px solid ${mode === m ? 'var(--t-blue)' : 'var(--t-line)'}`,
-                                                    borderRadius: 8, color: 'var(--t-text)',
-                                                }}>
-                                                    <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 4, color: mode === m ? 'var(--t-text)' : 'var(--t-text-2)' }}>
-                                                        {m === 'con' ? 'Con Silverdat' : 'Solo plantilla'}
-                                                    </div>
-                                                    <div style={{ fontSize: 11, color: 'var(--t-text-3)', lineHeight: 1.5 }}>
-                                                        {m === 'con' ? 'Datos técnicos automáticos (marca, modelo, KW, año).' : 'Carga directa del Excel sin esperas.'}
-                                                    </div>
+                                        <span className="no">PASO 3 DE 3</span>
+                                        <h3>Modo de procesado</h3>
+                                        <div className="modes">
+                                            {(['sin', 'con'] as const).map(m => (
+                                                <button key={m} role="radio" aria-checked={mode === m} className={`mode${m === 'con' ? ' sd' : ''}`} onClick={() => setMode(m)}>
+                                                    <b>{m === 'con' ? 'Con Silverdat' : 'Solo plantilla'}</b>
+                                                    <span>{m === 'con' ? 'Completa cada vehículo con los datos técnicos de DAT. Es un servicio externo: hay que conectarlo.' : 'Carga los datos tal cual, sin consultas externas.'}</span>
                                                 </button>
                                             ))}
                                         </div>
-                                        <button
-                                            onClick={handleProcesar}
-                                            disabled={!uploadedRows}
-                                            style={{
-                                                marginTop: 4, padding: '12px 0', borderRadius: 8,
-                                                background: uploadedRows ? 'linear-gradient(135deg,#1240CC,#3366FF)' : 'transparent',
-                                                border: uploadedRows ? 'none' : '1px solid var(--t-line)',
-                                                color: uploadedRows ? '#fff' : 'var(--t-text-3)',
-                                                fontSize: 12, fontWeight: 700, cursor: uploadedRows ? 'pointer' : 'not-allowed',
-                                            }}
-                                        >
-                                            {mode === 'sin' ? 'Cargar vehículos' : 'Iniciar Silverdat'}
-                                        </button>
+                                        <div className="rowline" style={{ marginTop: 14 }}>
+                                            <button className="mini pri" onClick={handleProcesar} disabled={!uploadedRows}>
+                                                {mode === 'sin' ? 'Cargar vehículos' : 'Procesar con Silverdat'}
+                                            </button>
+                                        </div>
                                     </>
                                 ) : (
-                                    // processing phase
                                     <>
-                                        <div>
-                                            <p style={{ margin: '0 0 4px', fontSize: 10, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--t-amber)' }}>03 · Procesando</p>
-                                            <h3 style={{ margin: '0 0 2px', fontSize: 14, fontWeight: 700, color: 'var(--t-text)' }}>Silverdat</h3>
-                                            <p style={{ margin: '0 0 10px', fontSize: 11, color: 'var(--t-text-3)' }}>{progress.total} vehículos</p>
-                                        </div>
-                                        {/* Barra de progreso */}
-                                        <div>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                                                <span style={{ fontSize: 12, fontWeight: 700, color: sdFinished ? 'var(--t-green)' : 'var(--t-amber)' }}>{pct}%</span>
-                                                <span style={{ fontSize: 11, color: 'var(--t-text-3)' }}>{progress.current}/{progress.total}</span>
-                                            </div>
-                                            <div style={{ height: 3, borderRadius: 4, background: 'var(--t-line)', overflow: 'hidden' }}>
-                                                <div style={{ height: '100%', borderRadius: 4, transition: 'width 0.4s ease', width: `${pct}%`, background: sdFinished ? 'linear-gradient(90deg,#10b981,#34d399)' : 'linear-gradient(90deg,#d97706,#f59e0b)' }} />
-                                            </div>
-                                        </div>
-                                        {/* Log últimas entradas */}
-                                        <div style={{ overflowY: 'auto', maxHeight: 150, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                        <span className="no">PASO 3 DE 3 · PROCESANDO</span>
+                                        <h3>Silverdat</h3>
+                                        <p>{progress.total} vehículos</p>
+                                        <div className="rowline between"><b>{pct} %</b><span className="muted">{progress.current}/{progress.total}</span></div>
+                                        <div className="pbar"><i style={{ width: `${pct}%` }} /></div>
+                                        <div className="sdlog">
                                             {progress.log.slice(-10).map((entry, i) => (
-                                                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '2px 0', fontSize: 11 }}>
-                                                    <span style={{ color: entry.ok ? 'var(--t-green)' : 'var(--t-red)', flexShrink: 0 }}>{entry.ok ? '✓' : '✗'}</span>
-                                                    <span style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--t-text)', flexShrink: 0 }}>{entry.plate}</span>
-                                                    {entry.ok && <span style={{ color: 'var(--t-text-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{entry.marca}</span>}
-                                                    {entry.ok && entry.fromCache && <span style={{ fontSize: 9, color: '#6366f1', fontWeight: 700, flexShrink: 0 }}>hist.</span>}
+                                                <div key={i} className={entry.ok ? '' : 'bad'}>
+                                                    <span className="pl">{entry.plate}</span>
+                                                    <span className="muted">{entry.ok ? (entry.marca ?? '') : 'sin datos'}</span>
+                                                    {entry.ok && entry.fromCache && <span className="muted">histórico</span>}
                                                 </div>
                                             ))}
                                         </div>
-                                        {sdError && <p style={{ margin: 0, fontSize: 11, color: 'var(--t-red)', fontWeight: 600 }}>{sdError}</p>}
+                                        {sdError && <p className="warnTxt">{sdError}</p>}
                                         {!sdFinished ? (
-                                            <button onClick={() => { abortRef.current = true; }} style={{
-                                                fontSize: 11, fontWeight: 700, padding: '7px 0', borderRadius: 6,
-                                                background: 'rgba(239,68,68,0.10)', color: '#ef4444',
-                                                border: '1px solid rgba(239,68,68,0.25)', cursor: 'pointer',
-                                            }}>Detener</button>
+                                            <button className="mini" onClick={() => { abortRef.current = true; }}>Detener</button>
                                         ) : (
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                                                <div style={{ display: 'flex', gap: 6 }}>
-                                                    <div style={{ flex: 1, textAlign: 'center', padding: '8px 4px', borderRadius: 6, background: 'rgba(16,185,129,0.07)', border: '1px solid rgba(16,185,129,0.18)' }}>
-                                                        <div style={{ fontSize: 18, fontWeight: 800, color: '#10b981' }}>{okCount}</div>
-                                                        <div style={{ fontSize: 9, color: 'var(--t-text-3)', textTransform: 'uppercase' }}>SD ✓</div>
-                                                    </div>
-                                                    {cacheCount > 0 && (
-                                                        <div style={{ flex: 1, textAlign: 'center', padding: '8px 4px', borderRadius: 6, background: 'rgba(99,102,241,0.07)', border: '1px solid rgba(99,102,241,0.18)' }}>
-                                                            <div style={{ fontSize: 18, fontWeight: 800, color: '#818cf8' }}>{cacheCount}</div>
-                                                            <div style={{ fontSize: 9, color: 'var(--t-text-3)', textTransform: 'uppercase' }}>Caché</div>
-                                                        </div>
-                                                    )}
-                                                    <div style={{ flex: 1, textAlign: 'center', padding: '8px 4px', borderRadius: 6, background: failedCount > 0 ? 'rgba(245,158,11,0.07)' : 'rgba(16,185,129,0.07)', border: `1px solid ${failedCount > 0 ? 'rgba(245,158,11,0.18)' : 'rgba(16,185,129,0.18)'}` }}>
-                                                        <div style={{ fontSize: 18, fontWeight: 800, color: failedCount > 0 ? 'var(--t-amber)' : 'var(--t-green)' }}>{failedCount}</div>
-                                                        <div style={{ fontSize: 9, color: 'var(--t-text-3)', textTransform: 'uppercase' }}>Sin datos</div>
-                                                    </div>
+                                            <>
+                                                <div className="stat3 mini3">
+                                                    <button style={{ cursor: 'default' }}><label>Con datos</label><strong>{okCount}</strong></button>
+                                                    {cacheCount > 0 && <button style={{ cursor: 'default' }}><label>Caché</label><strong>{cacheCount}</strong></button>}
+                                                    <button style={{ cursor: 'default' }}><label>Sin datos</label><strong>{failedCount}</strong></button>
                                                 </div>
-                                                {failedCount > 0 && (
-                                                    <button onClick={handleRetry} style={{
-                                                        padding: '8px 0', borderRadius: 6,
-                                                        background: 'rgba(245,158,11,0.10)', border: '1px solid rgba(245,158,11,0.3)',
-                                                        color: '#f59e0b', fontSize: 11, fontWeight: 700, cursor: 'pointer',
-                                                    }}>Segunda barrida ({failedCount})</button>
-                                                )}
-                                                <button onClick={() => window.open('/api/silverdat/historial-txt', '_blank')} style={{
-                                                    padding: '7px 0', borderRadius: 6,
-                                                    background: 'rgba(99,102,241,0.10)', border: '1px solid rgba(99,102,241,0.3)',
-                                                    color: '#818cf8', fontSize: 11, fontWeight: 700, cursor: 'pointer',
-                                                }}>Historial TXT</button>
-                                                <button onClick={handleConfirmProcessed} style={{
-                                                    padding: '10px 0', borderRadius: 8,
-                                                    background: 'linear-gradient(135deg,#1240CC,#2563eb)',
-                                                    border: 'none', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer',
-                                                }}>Confirmar → Paso 3</button>
-                                            </div>
+                                                <div className="rowline wrap">
+                                                    {failedCount > 0 && <button className="mini" onClick={handleRetry}>Segunda barrida ({failedCount})</button>}
+                                                    <button className="mini" onClick={() => window.open('/api/silverdat/historial-txt', '_blank')}>Historial TXT</button>
+                                                    <button className="mini pri" onClick={handleConfirmProcessed}>Confirmar y continuar</button>
+                                                </div>
+                                            </>
                                         )}
                                     </>
                                 )}

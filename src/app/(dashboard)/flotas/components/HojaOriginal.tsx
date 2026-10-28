@@ -85,10 +85,10 @@ const HojaOriginal = forwardRef<FlotaGridHandle, Props>(function HojaOriginal(
 
       {/* ── Cabecera ── */}
       {visibleRows.length > 0 && (
-        <div className="sh" style={{ flexShrink: 0, padding: '20px 32px', borderBottom: '1px solid var(--line)' }}>
+        <div className="sh" style={{ flexShrink: 0 }}>
           <div>
-            <h2><b>03</b>ORIGINAL</h2>
-            <p>Los datos tal como llegaron desde la plantilla. Solo lectura.</p>
+            <h2><b>03 ·</b>Original</h2>
+            <p>Los datos tal como llegan del cliente o del corredor.</p>
           </div>
           <div className="acts">
             <button className="mini pri" onClick={() => descargarPlantillaRellena()}>
@@ -103,24 +103,22 @@ const HojaOriginal = forwardRef<FlotaGridHandle, Props>(function HojaOriginal(
 
       {/* ── Avisos ── */}
       {unmapped.length > 0 && (
-        <div style={{ flexShrink: 0, padding: '6px 16px', background: 'rgba(234,179,8,0.07)', borderBottom: '1px solid rgba(234,179,8,0.2)', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: '#fbbf24' }}>
-            {unmapped.length} columna{unmapped.length > 1 ? 's' : ''} no reconocida{unmapped.length > 1 ? 's' : ''}:
-          </span>
-          <span style={{ fontSize: 11, color: 'rgba(251,191,36,0.8)' }}>{unmapped.join(', ')}</span>
-          <button onClick={() => setUnmapped([])} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#fbbf24', fontSize: 15, lineHeight: 1 }}>×</button>
+        <div className="strip warn">
+          <b>{unmapped.length} columna{unmapped.length > 1 ? 's' : ''} no reconocida{unmapped.length > 1 ? 's' : ''}:</b>
+          <span>{unmapped.join(', ')}</span>
+          <button onClick={() => setUnmapped([])} className="mini sp">Cerrar</button>
         </div>
       )}
       {parseError && (
-        <div style={{ flexShrink: 0, padding: '6px 16px', background: 'rgba(239,68,68,0.07)', borderBottom: '1px solid rgba(239,68,68,0.2)', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: '#f87171' }}>{parseError}</span>
-          <button onClick={() => setParseError(null)} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#f87171', fontSize: 15 }}>×</button>
+        <div className="strip warn">
+          <b>{parseError}</b>
+          <button onClick={() => setParseError(null)} className="mini sp">Cerrar</button>
         </div>
       )}
 
       {/* ── Contenido principal ── */}
       {visibleRows.length > 0 ? (
-        <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: '20px 32px' }}>
+        <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: '0 0 20px' }}>
           <div className="lock">
             <b>Solo lectura</b>
             <span>Aquí está el dato tal como llegó. Para cambiar algo, descarga la plantilla rellena, edítala y súbela otra vez: es la única forma de modificar Original.</span>
@@ -172,9 +170,6 @@ const HojaOriginal = forwardRef<FlotaGridHandle, Props>(function HojaOriginal(
                 onClick={() => fileRef.current?.click()}
                 style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 24px', borderRadius: 8, background: 'var(--blue)', color: '#fff', border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
               >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
-                </svg>
                 Subir Excel
               </button>
               <button

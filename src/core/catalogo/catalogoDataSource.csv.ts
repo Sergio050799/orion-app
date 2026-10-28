@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import type { CatalogoVehiculo, CatalogoCandidato, CatalogoDataSource, SearchParams, ScoreDetail } from './catalogoDataSource';
 import { normalizeFuel, normalizeFuelForCatalog } from '../pipelines/_shared/formatUtils';
+import { clasificar, tipoPorClase, TIPOS, TIPO_INFO, esTipoKey, type TipoKey, type TipoInfo } from './tipologia';
 
 const DATA_DIR = process.env.ORION_CATALOGO_DIR
     || path.join(process.cwd(), 'data', 'catalogo');
@@ -108,12 +109,14 @@ function parseRow(cols: string[]): CatalogoVehiculo | null {
     const id_veh = cols[0]?.trim();
     if (!id_veh) return null;
     const kw = parseNum(cols[20]);
+    const id_clase = cols[5]?.trim() || '';
+    const pma = parseNum(cols[13]);
     return {
         id_veh,
         marca: cols[2]?.trim() || '',
         modelo: cols[3]?.trim() || '',
         version: cols[4]?.trim() || '',
-        id_clase: cols[5]?.trim() || '',
+        id_clase,
         cilindrada: parseNum(cols[6]),   // "motorizacion" = cc del motor
         combustible: cols[7]?.trim() || '',
         num_puertas: parseNum(cols[8]),
@@ -121,12 +124,13 @@ function parseRow(cols: string[]): CatalogoVehiculo | null {
         fec_fin_comerc: cols[10]?.trim() || '',
         pff: parseNum(cols[11]),         // Precio de fábrica
         pvp: parseNum(cols[12]),         // Precio de venta al público
-        pma: parseNum(cols[13]),         // Peso Máximo Autorizado
+        pma,                             // Peso Máximo Autorizado
         num_plazas_min: parseNum(cols[17]),
         num_plazas_max: parseNum(cols[18]),
         tara: parseNum(cols[19]),
         kw,
         cv: Math.round(kw * 1.36),
+        tipo: clasificar(id_clase, pma),
     };
 }
 
@@ -135,6 +139,10 @@ interface CatalogoCache {
     byId: Map<string, CatalogoVehiculo>;
     byMarca: Map<string, CatalogoVehiculo[]>;
     all: CatalogoVehiculo[];
+    /** Nº de vehículos por tipo (para ocultar tipos vacíos). */
+    tiposN: Map<TipoKey, number>;
+    /** Marcas (nombre del catálogo) con vehículos de cada tipo o categoría; se rellena bajo demanda. */
+    marcasTipo: Map<string, string[]>;
 }
 
 // Singleton en global para sobrevivir hot-reloads de Next.js dev
@@ -144,6 +152,10 @@ declare global {
 }
 
 function loadCsv(): CatalogoCache {
+    // Invalidar si el singleton fue construido con una versión anterior del código (sin tiposN/marcasTipo)
+    if (global._catalogoCache && (!global._catalogoCache.tiposN || !global._catalogoCache.marcasTipo)) {
+        global._catalogoCache = undefined;
+    }
     if (global._catalogoCache) return global._catalogoCache;
 
     const csvPath = resolvecsvPath();
@@ -175,7 +187,23 @@ function loadCsv(): CatalogoCache {
         else byMarca.set(key, [veh]);
     }
 
-    global._catalogoCache = { byId, byMarca, all };
+    // Tipología: recuento por tipo y aviso de clases que aún no están en la tabla (tipologia.ts)
+    const tiposN = new Map<TipoKey, number>();
+    const clasesNuevas = new Map<string, number>();
+    for (const v of all) {
+        const t = (v.tipo as TipoKey) || 'sin_clasificar';
+        tiposN.set(t, (tiposN.get(t) ?? 0) + 1);
+        if (t === 'sin_clasificar' && tipoPorClase(v.id_clase) === 'sin_clasificar') {
+            const c = v.id_clase || '(vacía)';
+            clasesNuevas.set(c, (clasesNuevas.get(c) ?? 0) + 1);
+        }
+    }
+    if (clasesNuevas.size) {
+        const lista = [...clasesNuevas.entries()].sort((a, b) => b[1] - a[1]).map(([c, n]) => `${c} (${n})`).join(', ');
+        console.warn(`[orion] Catálogo: ${clasesNuevas.size} id_clase sin tipología asignada, añadir a CLASE_TIPO en tipologia.ts: ${lista}`);
+    }
+
+    global._catalogoCache = { byId, byMarca, all, tiposN, marcasTipo: new Map() };
     return global._catalogoCache;
 }
 
@@ -354,6 +382,183 @@ export function getAllMarcas(): string[] {
         cache.byMarca.forEach(vehs => { if (vehs[0]?.marca) out.push(vehs[0].marca); });
         return out.sort();
     } catch { return []; }
+}
+
+// ─── Búsqueda en cascada (desplegables) ───────────────────────────────────────
+// Filtrado EXACTO (sin puntuación difusa): marca → modelo → año → versión,
+// más filtros opcionales de combustible, kW y plazas. Solo lectura.
+
+export interface CascadaParams {
+    /** Categoría 1, 2 o 3. Vacío = todas. */
+    categoria?: number;
+    /** Clave de tipo (tipologia.ts). Vacío = todos los tipos de la categoría. */
+    tipo?: string;
+    marca?: string;
+    modelo?: string;
+    anyo?: number;
+    combustible?: string;
+    kw?: number;
+    plazas?: number;
+}
+
+export interface CascadaVersion {
+    id_veh: string;
+    marca: string;
+    modelo: string;
+    version: string;
+    combustible: string;
+    kw: number;
+    cv: number;
+    cilindrada: number;
+    plazas: number;
+    plazasMin: number;
+    tara: number;
+    pma: number;
+    puertas: number;
+    tipo: string;        // clave de tipologia.ts
+    tipoLabel: string;
+    categoria: 0 | 1 | 2 | 3;
+    admitido: boolean;   // false = tipo que MMT no admite
+    anyo: number;        // año consultado (o de inicio de comercialización si no se indicó)
+    desde: number;       // año de inicio de comercialización (0 = desconocido)
+    hasta: number;       // año de fin (0 = sigue comercializándose o desconocido)
+    pvp?: number;
+}
+
+export interface TipoOpcion extends TipoInfo { n: number }
+
+export interface CascadaResultado {
+    /** Tipos con vehículos en el catálogo (para el primer desplegable). */
+    tipos: TipoOpcion[];
+    marcas: string[];
+    modelos: string[];
+    anyos: number[];
+    combustibles: string[];
+    kws: number[];
+    plazas: number[];
+    versiones: CascadaVersion[];
+    totalVersiones: number;
+    /** Marca tal cual está en el catálogo, tras aplicar alias (MERCEDES-BENZ → MERCEDES). Vacío si no existe. */
+    marcaCanonica: string;
+}
+
+const yearOf = (s: string): number => {
+    const y = parseInt((s || '').substring(0, 4));
+    return isNaN(y) ? 0 : y;
+};
+
+const naturalSort = (a: string, b: string) => a.localeCompare(b, 'es', { numeric: true, sensitivity: 'base' });
+
+export function consultarCascada(p: CascadaParams): CascadaResultado {
+    const cache = loadCsv();
+    const currentYear = new Date().getFullYear();
+
+    // Tipos presentes en el catálogo (solo los de la categoría elegida, si hay)
+    const cat = p.categoria === 1 || p.categoria === 2 || p.categoria === 3 ? p.categoria : 0;
+    const tipos: TipoOpcion[] = TIPOS
+        .filter(t => (cache.tiposN.get(t.key) ?? 0) > 0 && (!cat || t.categoria === cat))
+        .map(t => ({ ...t, n: cache.tiposN.get(t.key) ?? 0 }));
+    const tipoSolo: TipoKey | '' = esTipoKey(p.tipo) && (!cat || TIPO_INFO[p.tipo].categoria === cat) ? p.tipo : '';
+    // Conjunto de tipos que se consultan: el elegido, o todos los de la categoría, o todos
+    const filtro: Set<string> | null = tipoSolo ? new Set([tipoSolo]) : cat ? new Set(tipos.map(t => t.key)) : null;
+    const filtroKey = tipoSolo || (cat ? `cat${cat}` : '');
+
+    // Marcas únicas (nombre del catálogo tal cual), solo las que tienen vehículos del tipo elegido
+    let marcas: string[];
+    if (!filtro) {
+        marcas = [];
+        cache.byMarca.forEach(vehs => { if (vehs[0]?.marca) marcas.push(vehs[0].marca); });
+        marcas.sort(naturalSort);
+    } else {
+        let memo = cache.marcasTipo.get(filtroKey);
+        if (!memo) {
+            memo = [];
+            cache.byMarca.forEach(vehs => { if (vehs[0]?.marca && vehs.some(v => filtro.has(v.tipo ?? ''))) memo!.push(vehs[0].marca); });
+            memo.sort(naturalSort);
+            cache.marcasTipo.set(filtroKey, memo);
+        }
+        marcas = memo;
+    }
+
+    const empty: CascadaResultado = { tipos, marcas, modelos: [], anyos: [], combustibles: [], kws: [], plazas: [], versiones: [], totalVersiones: 0, marcaCanonica: '' };
+    if (!p.marca) return empty;
+
+    // Alias de marca (VW, MERCEDES-BENZ…) para que una marca de Silverdat/DGT localice la del catálogo
+    const poolMarcaTodos = cache.byMarca.get(normalize(p.marca)) ?? cache.byMarca.get(normalize(normalizeMarca(p.marca))) ?? [];
+    const marcaCanonica = poolMarcaTodos[0]?.marca ?? '';
+    empty.marcaCanonica = marcaCanonica;
+    const poolMarca = filtro ? poolMarcaTodos.filter(v => filtro.has(v.tipo ?? '')) : poolMarcaTodos;
+    const modelos = [...new Set(poolMarca.map(v => v.modelo).filter(Boolean))].sort(naturalSort);
+    if (!p.modelo) return { ...empty, modelos, marcaCanonica };
+
+    const modeloKey = normalize(p.modelo);
+    const poolModelo = poolMarca.filter(v => normalize(v.modelo) === modeloKey);
+
+    // Años en los que alguna versión se comercializó
+    const anyoSet = new Set<number>();
+    for (const v of poolModelo) {
+        const ini = yearOf(v.fec_ini_comerc);
+        if (!ini) continue;
+        const fin = yearOf(v.fec_fin_comerc) || currentYear;
+        for (let y = ini; y <= Math.max(ini, fin); y++) anyoSet.add(y);
+    }
+    const anyos = [...anyoSet].sort((a, b) => b - a);
+
+    // Ventana de comercialización (filtro duro, igual que la regla 22 C)
+    const poolAnyo = p.anyo
+        ? poolModelo.filter(v => {
+            const ini = yearOf(v.fec_ini_comerc);
+            if (!ini) return true;
+            const fin = yearOf(v.fec_fin_comerc) || 9999;
+            return p.anyo! >= ini && p.anyo! <= fin;
+        })
+        : poolModelo;
+
+    // Opciones de los filtros finales (a partir del conjunto marca+modelo+año)
+    const combustibles = [...new Set(poolAnyo.map(v => normalizeFuelForCatalog(v.combustible) || '').filter(Boolean))].sort();
+    const kws = [...new Set(poolAnyo.map(v => Math.round(v.kw)).filter(n => n > 0))].sort((a, b) => a - b);
+    const plazas = [...new Set(poolAnyo.map(v => v.num_plazas_max).filter(n => n > 0))].sort((a, b) => a - b);
+
+    const fuel = p.combustible ? p.combustible.toUpperCase() : '';
+    const filtered = poolAnyo.filter(v => {
+        if (fuel && (normalizeFuelForCatalog(v.combustible) || '') !== fuel) return false;
+        if (p.kw && Math.round(v.kw) !== Math.round(p.kw)) return false;
+        if (p.plazas) {
+            const min = v.num_plazas_min || v.num_plazas_max;
+            const max = v.num_plazas_max || v.num_plazas_min;
+            if (!(max > 0) || p.plazas < min || p.plazas > max) return false;
+        }
+        return true;
+    });
+
+    const versiones: CascadaVersion[] = filtered
+        .sort((a, b) => naturalSort(a.version, b.version) || naturalSort(a.id_veh, b.id_veh))
+        .slice(0, 300)
+        .map(v => ({
+            id_veh: v.id_veh,
+            marca: v.marca,
+            modelo: v.modelo,
+            version: v.version,
+            combustible: normalizeFuelForCatalog(v.combustible) || '',
+            kw: v.kw,
+            cv: v.cv,
+            cilindrada: v.cilindrada,
+            plazas: v.num_plazas_max,
+            plazasMin: v.num_plazas_min,
+            tara: v.tara,
+            pma: v.pma ?? 0,
+            puertas: v.num_puertas,
+            tipo: v.tipo || 'sin_clasificar',
+            tipoLabel: (TIPO_INFO[(v.tipo as TipoKey) || 'sin_clasificar'] ?? TIPO_INFO.sin_clasificar).label,
+            categoria: (TIPO_INFO[(v.tipo as TipoKey) || 'sin_clasificar'] ?? TIPO_INFO.sin_clasificar).categoria,
+            admitido: (TIPO_INFO[(v.tipo as TipoKey) || 'sin_clasificar'] ?? TIPO_INFO.sin_clasificar).admitido,
+            anyo: p.anyo || yearOf(v.fec_ini_comerc),
+            desde: yearOf(v.fec_ini_comerc),
+            hasta: yearOf(v.fec_fin_comerc),
+            pvp: v.pvp || undefined,
+        }));
+
+    return { tipos, marcas, modelos, anyos, combustibles, kws, plazas, versiones, totalVersiones: filtered.length, marcaCanonica };
 }
 
 /**

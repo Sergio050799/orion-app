@@ -1,6 +1,7 @@
 // ─── CARPETA — Workspace principal del estudio de flotas ─────────────────────
 
 import type { Periodicidad } from './corredor';
+import type { ConfigCobertura } from './catalogoCoberturas';
 
 export type EstadoFlota = 'EN ESTUDIO' | 'ESTUDIADA' | 'OFERTADA' | 'CONTRATADA' | 'RECHAZADA';
 
@@ -24,6 +25,16 @@ export interface DanosPropiosData {
   numSiniestros: number;
 }
 
+/** Datos de la emisión masiva que no se conocen al estudiar: se rellenan en el paso EMISIÓN. */
+export interface EmisionDatos {
+  idCliente?: string;      // ID_TOM
+  idFlota?: string;        // ID_FLOTA
+  idColectivo?: string;    // ID_COLECTIVO
+  fechaEfecto?: string;    // dd/mm/aaaa; si vacío se usa el efecto de DATOS GENERALES
+  /** Valores comunes a todos los vehículos (columna de la plantilla de emisión, valor). */
+  comunes?: Record<string, string>;
+}
+
 export interface FlotaCarpeta {
   id: string;
   nombre: string;
@@ -35,6 +46,8 @@ export interface FlotaCarpeta {
 
   corredor_id?: string;
   comisionBase?: number;
+  /** @deprecated alias de comisionBase; usar comisionBase */
+  porcentajeComision?: number;
   comisionExtra?: number;
   estado: EstadoFlota;
   historico: HistoricoEntry[];
@@ -71,6 +84,9 @@ export interface FlotaCarpeta {
   danosPropios?:   DanosPropiosData;
   oferta:          Record<string, string>[];
   primasMmtInforme?: Record<string, number>;
+  /** Cobertura elegida en INFORME por grupo (clave `TIPO||COBERTURA SOLICITADA`). La leen OFERTA y EMISIÓN. */
+  configCoberturas?: Record<string, ConfigCobertura>;
+  emision?: EmisionDatos;
   catalogoSeleccion?: Record<string, string>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   automaticoVehicles?: Record<string, any>[];

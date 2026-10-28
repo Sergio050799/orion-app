@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 
 export interface DetailDrawerData {
@@ -26,6 +26,8 @@ interface Props {
 
 export function DetailDrawer({ isOpen, onClose, data, children }: Props) {
   const ref = useRef<HTMLElement>(null);
+  // false en servidor e hidratación, true ya en cliente (evita desajuste del portal)
+  const mounted = useSyncExternalStore(() => () => {}, () => true, () => false);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -44,7 +46,7 @@ export function DetailDrawer({ isOpen, onClose, data, children }: Props) {
     return () => { document.body.style.overflow = ''; };
   }, [isOpen]);
 
-  if (typeof document === 'undefined') return null;
+  if (!mounted || typeof document === 'undefined') return null;
 
   const fx = data?.fx ?? [];
   const annexFx = data?.keep ? fx : fx.filter(calcF);
@@ -60,14 +62,14 @@ export function DetailDrawer({ isOpen, onClose, data, children }: Props) {
         aria-hidden={!isOpen}
         tabIndex={-1}
       >
-        <button className="dr-x" onClick={onClose} aria-label="Cerrar">×</button>
+        <button className="x" onClick={onClose} aria-label="Cerrar">×</button>
         {data ? (
           <>
-            {data.over && <div className="dr-over">{data.over}</div>}
+            {data.over && <div className="over">{data.over}</div>}
             <h3>{data.title}</h3>
-            {data.desc && <p className="dr-desc">{data.desc}</p>}
+            {data.desc && <p className="desc">{data.desc}</p>}
             {data.stats && data.stats.length > 0 && (
-              <div className="dr-stats">
+              <div className="stats">
                 {data.stats.map(([lbl, val], i) => (
                   <div key={i}><label>{lbl}</label><strong>{val}</strong></div>
                 ))}
@@ -76,8 +78,8 @@ export function DetailDrawer({ isOpen, onClose, data, children }: Props) {
             {data.head && data.rows && data.rows.length > 0 && (
               <>
                 <h4>Desglose</h4>
-                <div className="dr-scroll">
-                  <table className="dr-tbl">
+                <div className="scroll">
+                  <table className="dtbl">
                     <thead><tr>{data.head.map((h, i) => <th key={i}>{h}</th>)}</tr></thead>
                     <tbody>{data.rows.map((r, i) => (
                       <tr key={i}>{r.map((c, j) => <td key={j}>{c}</td>)}</tr>
@@ -89,14 +91,14 @@ export function DetailDrawer({ isOpen, onClose, data, children }: Props) {
             {annexFx.length > 0 && (
               <>
                 <h4>Anexo · cómo calcula ORION</h4>
-                <div className="dr-annex">
+                <div className="annex">
                   {annexFx.map(([lbl, code], i) => (
-                    <div className="dr-fx" key={i}><b>{lbl}</b><code>{code}</code></div>
+                    <div className="fx" key={i}><b>{lbl}</b><code>{code}</code></div>
                   ))}
                 </div>
               </>
             )}
-            {data.note && <p className="dr-note">{data.note}</p>}
+            {data.note && <p className="note">{data.note}</p>}
           </>
         ) : children}
       </aside>

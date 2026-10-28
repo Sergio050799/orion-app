@@ -39,6 +39,7 @@
   ],
   "exclude": [
     "node_modules",
-    "memorias_del_proyecto"
+    "memorias_del_proyecto",
+    "ORION_DEMO_FUNCIONAL"
   ]
 }

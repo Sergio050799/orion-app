@@ -1,5 +1,9 @@
 import type ExcelJS from 'exceljs';
 import type { FlotaCarpeta } from './carpeta';
+import {
+  FRANQUICIAS_CAT1, FRANQUICIAS_CAT2, FRANQUICIAS_MOTO, PRODUCTOS, grupoCob, productosPermitidos, tipoKeyDesdeEtiqueta,
+  type GrupoCob,
+} from './catalogoCoberturas';
 
 let _logoMmtCache: string | null = null;
 async function fetchLogoMmt(): Promise<string | null> {
@@ -178,19 +182,46 @@ export async function generarPlantillaExcel(carpeta?: Pick<FlotaCarpeta, 'nombre
   });
 
   // ── Filas de datos (100 filas) ───────────────────────────────────────────
-  const TIPO_OPTIONS   = '"Turismo,Furgoneta,Cabeza tractora,Camion rigido,Semirremolque,Industrial matriculado,Industrial no matriculado"';
+  // Tipo → Cobertura → Franquicia: tres desplegables encadenados que salen del catálogo único de coberturas
+  // (catalogoCoberturas.ts). La tipología limita la cobertura y la cobertura limita la franquicia.
+  const TIPOS_PLANTILLA = ['Turismo', 'Furgoneta', 'Cabeza tractora', 'Camion rigido', 'Semirremolque', 'Industrial matriculado', 'Industrial no matriculado', 'Motocicleta'];
+  const GRUPOS: GrupoCob[] = ['a1', 'a2', 'ind', 'a3'];
+  const NO_APLICA = 'No aplica';
+  const wsL = wb.addWorksheet('_LISTAS', { state: 'veryHidden' });
+  // A:B → tipo y grupo de coberturas (A1, A2, IND, A3)
+  TIPOS_PLANTILLA.forEach((t, i) => {
+    wsL.getCell(i + 1, 1).value = t;
+    wsL.getCell(i + 1, 2).value = (grupoCob(tipoKeyDesdeEtiqueta(t)) ?? 'a1').toUpperCase();
+  });
+  const addLista = (col: number, nombre: string, valores: (string | number)[]) => {
+    valores.forEach((v, i) => { wsL.getCell(i + 1, col).value = v; });
+    const L = colLetter(col);
+    wb.definedNames.add(`_LISTAS!$${L}$1:$${L}$${valores.length}`, nombre);
+  };
+  const tipoRep = (g: GrupoCob) => TIPOS_PLANTILLA.find(t => grupoCob(tipoKeyDesdeEtiqueta(t)) === g)!;
+  GRUPOS.forEach((g, i) => {
+    const prods = productosPermitidos(tipoKeyDesdeEtiqueta(tipoRep(g)));
+    addLista(4 + i, `COB_${g.toUpperCase()}`, prods.map(p => PRODUCTOS.find(x => x.key === p)!.etiquetaHoja));
+  });
+  addLista(8, 'FRQ_A1', [...FRANQUICIAS_CAT1]);
+  addLista(9, 'FRQ_A2', [...FRANQUICIAS_CAT2]);
+  addLista(10, 'FRQ_A3', [...FRANQUICIAS_MOTO]);
+  addLista(11, 'FRQ_NONE', [NO_APLICA]);
+  wb.definedNames.add('_LISTAS!$K$1:$K$1', 'FRQ_IND');
+  const COL_TIPO = colLetter(COLUMNS.findIndex(c => c.key === 'tipo_vehiculo') + 1);
+  const COL_COB  = colLetter(COLUMNS.findIndex(c => c.key === 'coberturas_solicitadas') + 1);
+  const grupoDe = (r: number) => `IFERROR(VLOOKUP($${COL_TIPO}${r},_LISTAS!$A$1:$B$${TIPOS_PLANTILLA.length},2,FALSE),"A1")`;
+  const grupoFrq = (r: number) => `IFERROR(VLOOKUP($${COL_TIPO}${r},_LISTAS!$A$1:$B$${TIPOS_PLANTILLA.length},2,FALSE),"A1")`;
+  const TIPO_OPTIONS   = `_LISTAS!$A$1:$A$${TIPOS_PLANTILLA.length}`;
   const USO_OPTIONS    = '"Particular,Servicio publico,Transportes propios"';
   const ADR_OPTIONS_DV = '"No,Si"';
   const AMBITO_OPTIONS = '"Nacional,Internacional"';
-  const COB_OPTIONS    = '"Terceros,Terceros Ampliado,Todo Riesgo con Franquicia"';
   const SI_NO_OPTIONS  = '"Si,No"';
 
   const dvMap: Record<string, string> = {
-    tipo_vehiculo:          TIPO_OPTIONS,
     uso:                    USO_OPTIONS,
     adr:                    ADR_OPTIONS_DV,
     ambito:                 AMBITO_OPTIONS,
-    coberturas_solicitadas: COB_OPTIONS,
     lunas:                  SI_NO_OPTIONS,
     animales:               SI_NO_OPTIONS,
     seguro_conductor:       SI_NO_OPTIONS,
@@ -214,8 +245,28 @@ export async function generarPlantillaExcel(carpeta?: Pick<FlotaCarpeta, 'nombre
         right:  { style: 'thin', color: { argb: 'FF' + C.border } },
       };
 
-      // Validaciones dropdown
-      if (dvMap[col.key]) {
+      // Validaciones encadenadas: tipo (lista cerrada) → cobertura (según tipo) → franquicia (según tipo y cobertura)
+      const rr = r;
+      if (col.key === 'tipo_vehiculo') {
+        cell.dataValidation = {
+          type: 'list', allowBlank: true, formulae: [TIPO_OPTIONS],
+          showErrorMessage: true, errorStyle: 'stop', errorTitle: 'Tipo de vehículo', error: 'Elige un tipo de la lista.',
+          showInputMessage: true, promptTitle: col.header, prompt: 'Elige primero el tipo: limita las coberturas y las franquicias.',
+        };
+      } else if (col.key === 'coberturas_solicitadas') {
+        cell.dataValidation = {
+          type: 'list', allowBlank: true, formulae: [`INDIRECT("COB_"&${grupoDe(rr)})`],
+          showErrorMessage: true, errorStyle: 'stop', errorTitle: 'Cobertura', error: 'Elige una cobertura de la lista (depende del tipo de vehículo).',
+          showInputMessage: true, promptTitle: col.header, prompt: 'Las coberturas disponibles dependen del tipo de vehículo.',
+        };
+      } else if (col.key === 'frq') {
+        cell.dataValidation = {
+          type: 'list', allowBlank: true,
+          formulae: [`INDIRECT("FRQ_"&IF(ISNUMBER(SEARCH("franquicia",$${COL_COB}${rr})),${grupoFrq(rr)},"NONE"))`],
+          showErrorMessage: true, errorStyle: 'stop', errorTitle: 'Franquicia', error: 'Elige una franquicia de la lista (depende del tipo y de la cobertura).',
+          showInputMessage: true, promptTitle: col.header, prompt: 'Solo las coberturas con franquicia admiten un importe.',
+        };
+      } else if (dvMap[col.key]) {
         cell.dataValidation = {
           type: 'list',
           allowBlank: true,

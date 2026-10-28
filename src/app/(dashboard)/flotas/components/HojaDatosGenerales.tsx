@@ -401,6 +401,13 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
       <input ref={datosFileRef}  type="file" accept=".xlsx,.xls,.csv" style={{ display: 'none' }} onChange={handleImportDatos} />
       <input ref={tarifaFileRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: 'none' }} onChange={handleImportTarifa} />
 
+      <div className="sh">
+        <div>
+          <h2><b>01 ·</b>Datos generales</h2>
+          <p>Quién es la flota, quién la media y cuándo vence.</p>
+        </div>
+      </div>
+
       <div className="twocol">
 
         {/* ══ Columna izquierda ══════════════════════════════════════════════ */}
@@ -427,7 +434,7 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
             </div>
             <div className="dg-fld full">
               <label>Actividad</label>
-              <select className="dg-sel" value={header.actividad ?? ''} onChange={e => set('actividad', e.target.value)}>
+              <select className="select dg-sel" value={header.actividad ?? ''} onChange={e => set('actividad', e.target.value)}>
                 <option value="">Sin actividad</option>
                 <option value="Transporte de mercancías">Transporte de mercancías</option>
                 <option value="Transporte de viajeros">Transporte de viajeros</option>
@@ -438,7 +445,7 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
             </div>
             <div className="dg-fld">
               <label>Periodicidad</label>
-              <select className="dg-sel" value={header.periodicidad ?? ''} onChange={e => set('periodicidad', e.target.value)}>
+              <select className="select dg-sel" value={header.periodicidad ?? ''} onChange={e => set('periodicidad', e.target.value)}>
                 <option value="">Sin periodicidad</option>
                 <option value="mensual">Mensual</option>
                 <option value="bimestral">Bimestral</option>
@@ -449,7 +456,7 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
             </div>
             <div className="dg-fld">
               <label>Forma de pago</label>
-              <select className="dg-sel" value={header.formaPago ?? ''} onChange={e => set('formaPago', e.target.value)}>
+              <select className="select dg-sel" value={header.formaPago ?? ''} onChange={e => set('formaPago', e.target.value)}>
                 <option value="">Sin especificar</option>
                 <option value="Interna">Interna</option>
                 <option value="Externa">Externa</option>
@@ -464,7 +471,7 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
           </div>
 
           {/* Tomadores */}
-          <p className="dg-h3" style={{ marginTop: 26 }}>Tomadores</p>
+          <p className="dg-h3 sp">Tomadores</p>
           <p className="dg-sub">El principal aparece en el informe y en la oferta.</p>
           <div className="formgrid">
             <div className="dg-fld">
@@ -488,7 +495,7 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
 
           <div className="dg-fld">
             <label>Corredor</label>
-            <select className="dg-sel" value={carpetaActiva.corredor_id ?? ''} onChange={e => handleCorredorChange(e.target.value)}>
+            <select className="select dg-sel" value={carpetaActiva.corredor_id ?? ''} onChange={e => handleCorredorChange(e.target.value)}>
               <option value="">Sin corredor</option>
               {corredores.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
             </select>
@@ -517,10 +524,10 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
           </div>
 
           {/* Fecha de efecto */}
-          <p className="dg-h3" style={{ marginTop: 26 }}>Fecha de efecto</p>
+          <p className="dg-h3 sp">Fecha de efecto</p>
           <p className="dg-sub">El vencimiento de la póliza actual, que es también el efecto de la nueva.</p>
 
-          <div className="dg-fld" style={{ maxWidth: 260 }}>
+          <div className="dg-fld narrow">
             <label>
               Fecha de efecto
               {venceProximo && <span className="tag" style={{ marginLeft: 8, '--c': 'var(--warn)' } as React.CSSProperties}>Próxima</span>}
@@ -531,7 +538,7 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
               onChange={e => set('fechaVencimiento', e.target.value)} />
           </div>
 
-          <div className="dg-kv" style={{ marginTop: 10 }}>
+          <div className="dg-kv">
             <div className="krow">
               <label>Próxima renovación</label>
               <span className="val" style={renovDias != null && renovDias <= 15 && renovDias >= 0 ? { color: 'var(--warn)', fontWeight: 600 } : undefined}>{renovTxt}</span>

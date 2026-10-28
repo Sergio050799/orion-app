@@ -3,6 +3,9 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { resolvePlateFromSeed } from "@/core/_source_of_truth/plates/resolver";
 import SilverdatChip from '@/components/saas/SilverdatChip';
+import SilverdatModal from '@/components/saas/SilverdatModal';
+import CatalogCascade, { type CascadaVersion } from '@/components/saas/CatalogCascade';
+import { nf, eur } from '@/lib/fmt';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -86,78 +89,10 @@ interface PlateCard {
     manualSelected?: CatalogMatch;
 }
 
-// ─── Design ───────────────────────────────────────────────────────────────────
+// ─── Helpers de formato ──────────────────────────────────────────────────────
 
-const GLASS: React.CSSProperties = {
-    background: 'var(--t-surface)',
-    border: '1px solid var(--t-line)',
-    borderRadius: 12,
-};
-
-const FIELD: React.CSSProperties = {
-    background: 'var(--t-surface)',
-    border: '1px solid var(--t-line)',
-    borderRadius: 8,
-    color: 'var(--t-text)',
-    fontSize: 13,
-    padding: '9px 12px',
-    outline: 'none',
-    width: '100%',
-    fontFamily: 'inherit',
-};
-
-// ─── Silverdat modal ──────────────────────────────────────────────────────────
-
-function SilverdatModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
-    const [datId, setDatId] = useState('');
-    const [user, setUser] = useState('');
-    const [pass, setPass] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
-
-    const go = async () => {
-        if (!datId || !user || !pass) return;
-        setLoading(true); setError('');
-        try {
-            const r = await fetch('/api/silverdat/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ datId, user, pass }),
-                signal: AbortSignal.timeout(18000),
-            });
-            const d = await r.json();
-            if (d.ok) onSuccess();
-            else setError(d.error || 'Credenciales incorrectas');
-        } catch (e) {
-            setError(e instanceof Error && e.name === 'TimeoutError' ? 'Silverdat no responde (timeout)' : 'Error de conexión');
-        }
-        finally { setLoading(false); }
-    };
-
-    return (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)' }} onClick={onClose}>
-            <div onClick={e => e.stopPropagation()} style={{ width: 340, padding: 26, borderRadius: 18, background: 'rgba(6,16,60,0.97)', border: '1px solid rgba(245,158,11,0.3)', boxShadow: '0 30px 80px rgba(0,0,0,0.7)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
-                    <div style={{ width: 34, height: 34, borderRadius: 9, background: 'linear-gradient(135deg,#f59e0b,#d97706)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: '#fff', fontSize: 16 }}>S</div>
-                    <div>
-                        <p style={{ margin: 0, fontSize: 15, color: '#fff', fontWeight: 700 }}>Silverdat</p>
-                        <p style={{ margin: 0, fontSize: 11, color: 'rgba(178,198,245,0.55)' }}>DAT / fastVALUATE</p>
-                    </div>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-                    <input autoFocus placeholder="N. Cliente DAT" value={datId} onChange={e => setDatId(e.target.value)} style={FIELD} onKeyDown={e => e.key === 'Enter' && go()} />
-                    <input placeholder="Usuario" value={user} onChange={e => setUser(e.target.value)} style={FIELD} onKeyDown={e => e.key === 'Enter' && go()} />
-                    <input type="password" placeholder="Contraseña" value={pass} onChange={e => setPass(e.target.value)} style={FIELD} onKeyDown={e => e.key === 'Enter' && go()} />
-                </div>
-                {error && <p style={{ margin: '8px 0 0', fontSize: 11, color: '#ef4444', fontWeight: 600 }}>{error}</p>}
-                <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
-                    <button onClick={go} disabled={loading || !datId || !user || !pass} style={{ flex: 1, padding: '10px 0', borderRadius: 9, background: loading ? 'rgba(245,158,11,0.3)' : 'linear-gradient(135deg,#d97706,#f59e0b)', color: '#fff', border: 'none', fontWeight: 700, fontSize: 12, cursor: loading ? 'not-allowed' : 'pointer' }}>{loading ? 'Conectando...' : 'Iniciar sesión'}</button>
-                    <button onClick={onClose} style={{ padding: '10px 14px', borderRadius: 9, background: 'transparent', color: 'var(--t-text-2)', border: '1px solid var(--t-line)', fontSize: 12, cursor: 'pointer' }}>Cancelar</button>
-                </div>
-            </div>
-        </div>
-    );
-}
+const ageTxt = (a: string) => a.replace(/^(\d+)a (\d+)m$/, (_, y, m) => `${nf(+y)} ${+y === 1 ? 'año' : 'años'} · ${nf(+m)} m`);
+const dateTxt = (d: string | null) => (d && /^\d{1,2}\/\d{4}$/.test(d) ? d.replace(/^(\d)\//, '0$1/') : d);
 
 // ─── Catalog match display ────────────────────────────────────────────────────
 
@@ -172,32 +107,25 @@ function CatalogResult({ matches, selected, onSelect }: {
     if (matches.length === 1 && matches[0].score >= 90) {
         const m = matches[0];
         return (
-            <div style={{ marginTop: 10, padding: '10px 14px', background: 'rgba(51,102,255,0.08)', border: '1px solid rgba(51,102,255,0.18)', borderRadius: 10 }}>
-                <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: 'var(--t-text)' }}>{m.marca} {m.modelo}</p>
-                <p style={{ margin: '2px 0 4px', fontSize: 11, color: 'var(--t-text-2)' }}>{m.version}</p>
-                <p style={{ margin: 0, fontSize: 10, fontFamily: 'monospace', color: 'var(--t-text-3)' }}>id: {m.id_veh}</p>
+            <div className="cres ok">
+                <b>{m.marca} {m.modelo}</b>
+                <span>{m.version}</span>
+                <span className="id">ID de catálogo {m.id_veh}</span>
             </div>
         );
     }
 
     // Multiple acabados or low-confidence — user picks
     return (
-        <div style={{ marginTop: 10 }}>
-            <p style={{ margin: '0 0 6px', fontSize: 10, fontWeight: 700, color: 'var(--t-text-3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Selecciona el acabado</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <div className="cres">
+            <div className="cl">Selecciona el acabado</div>
+            <div className="opts" role="radiogroup" aria-label="Acabado">
                 {matches.map(m => {
                     const isSelected = selected?.id_veh === m.id_veh;
                     return (
-                        <button key={m.id_veh} onClick={() => onSelect(m)} style={{
-                            padding: '8px 12px', borderRadius: 8, cursor: 'pointer', textAlign: 'left',
-                            background: isSelected ? 'rgba(67,135,255,0.12)' : 'var(--t-surface)',
-                            border: isSelected ? '1px solid var(--t-blue)' : '1px solid var(--t-line)',
-                            transition: 'all 150ms', width: '100%',
-                        }}>
-                            <p style={{ margin: 0, fontSize: 12, fontWeight: isSelected ? 700 : 500, color: isSelected ? 'var(--t-text)' : 'var(--t-text-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                {m.version || `${m.modelo} (sin versión)`}
-                            </p>
-                            {isSelected && <p style={{ margin: '2px 0 0', fontSize: 10, fontFamily: 'monospace', color: 'var(--t-text-3)' }}>id: {m.id_veh}</p>}
+                        <button key={m.id_veh} role="radio" aria-checked={isSelected} className="opt" onClick={() => onSelect(m)}>
+                            <b>{m.version || `${m.modelo} (sin versión)`}</b>
+                            <span>ID {m.id_veh} · {nf(m.score)} %</span>
                         </button>
                     );
                 })}
@@ -206,97 +134,42 @@ function CatalogResult({ matches, selected, onSelect }: {
     );
 }
 
-// ─── Manual fallback form ─────────────────────────────────────────────────────
+// ─── Manual fallback: desplegables en cascada ─────────────────────────────────
 
 function ManualForm({ card, onUpdate }: {
     card: PlateCard;
     onUpdate: (updates: Partial<PlateCard>) => void;
 }) {
-    const debounce = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-
-    const searchCatalog = useCallback(async (marca: string, modelo: string, kw: string, year: string) => {
-        if (!marca && !modelo) return;
-        onUpdate({ manualCatStatus: 'loading', manualMatches: [], manualSelected: undefined });
-        try {
-            const params = new URLSearchParams();
-            if (marca) params.set('marca', marca);
-            if (modelo) params.set('modelo', modelo.split(' ')[0]);
-            if (kw) params.set('kw', kw);
-            if (year) params.set('anyo', year);
-            const res = await fetch(`/api/catalogo/search?${params}`);
-            const data = await res.json();
-            if (data.ok && data.candidatos?.length > 0) {
-                const unique = deduplicateByVersion(data.candidatos, 5);
-                onUpdate({ manualCatStatus: 'done', manualMatches: unique });
-            } else {
-                onUpdate({ manualCatStatus: 'done', manualMatches: [] });
-            }
-        } catch {
-            onUpdate({ manualCatStatus: 'done', manualMatches: [] });
-        }
-    }, [onUpdate]);
-
-    const triggerSearch = (marca: string, modelo: string, kw: string, year: string) => {
-        clearTimeout(debounce.current);
-        debounce.current = setTimeout(() => searchCatalog(marca, modelo, kw, year), 400);
-    };
-
-    const set = (field: keyof PlateCard, val: string) => {
-        const updates: Partial<PlateCard> = { [field]: val };
-        onUpdate(updates);
-        // Trigger search with updated values
-        const marca = field === 'manualMarca' ? val : card.manualMarca;
-        const modelo = field === 'manualModelo' ? val : card.manualModelo;
-        const kw = field === 'manualKw' ? val : card.manualKw;
-        const year = field === 'manualYear' ? val : card.manualYear;
-        triggerSearch(marca, modelo, kw, year);
+    const pick = (v: CascadaVersion) => {
+        const m: CatalogMatch = {
+            id_veh: v.id_veh, marca: v.marca, modelo: v.modelo, version: v.version,
+            combustible: v.combustible, kw: v.kw, cv: v.cv, cilindrada: v.cilindrada,
+            plazas: v.plazas, tara: v.tara, puertas: v.puertas, anyo: v.anyo, pvp: v.pvp, score: 100,
+        };
+        onUpdate({
+            manualCatStatus: 'done', manualMatches: [m], manualSelected: m,
+            manualMarca: v.marca, manualModelo: v.modelo, manualKw: String(Math.round(v.kw)), manualYear: String(v.anyo || ''),
+        });
     };
 
     return (
-        <div style={{ marginTop: 10, padding: '14px 16px', background: 'var(--t-line-soft)', border: '1px solid var(--t-line)', borderRadius: 12 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 70px 70px', gap: 8 }}>
-                <input
-                    placeholder="Marca"
-                    value={card.manualMarca}
-                    onChange={e => set('manualMarca', e.target.value.toUpperCase())}
-                    style={{ ...FIELD, fontSize: 12, gridColumn: '1' }}
-                />
-                <input
-                    placeholder="Modelo"
-                    value={card.manualModelo}
-                    onChange={e => set('manualModelo', e.target.value.toUpperCase())}
-                    style={{ ...FIELD, fontSize: 12, gridColumn: '2' }}
-                />
-                <input
-                    placeholder="kW"
-                    value={card.manualKw}
-                    type="number"
-                    onChange={e => set('manualKw', e.target.value)}
-                    style={{ ...FIELD, fontSize: 12, gridColumn: '3' }}
-                />
-                <input
-                    placeholder="Año"
-                    value={card.manualYear}
-                    type="number"
-                    onChange={e => set('manualYear', e.target.value)}
-                    style={{ ...FIELD, fontSize: 12, gridColumn: '4' }}
-                />
-            </div>
-
-            {card.manualCatStatus === 'loading' && (
-                <p style={{ margin: '8px 0 0', fontSize: 11, color: 'var(--t-text-3)' }}>Buscando...</p>
-            )}
-
-            {card.manualCatStatus === 'done' && card.manualMatches.length === 0 && (
-                <p style={{ margin: '8px 0 0', fontSize: 11, color: 'rgba(239,68,68,0.7)' }}>Sin resultados — intenta con menos datos o revisa la marca</p>
-            )}
-
-            {card.manualMatches.length > 0 && (
-                <CatalogResult
-                    matches={card.manualMatches}
-                    selected={card.manualSelected}
-                    onSelect={m => onUpdate({ manualSelected: m })}
-                />
+        <div className="mf">
+            <CatalogCascade
+                idPrefix={`cc_${card.plate.replace(/\W/g, '')}`}
+                initial={{
+                    marca: card.manualMarca || card.sdVehicle?.marca,
+                    modelo: card.manualModelo || card.sdVehicle?.modelo,
+                    anyo: (card.sdVehicle?.fecha_matriculacion?.match(/(19|20)\d{2}/)?.[0]) || (card.sdVehicle?.anyo_fabricacion?.match(/(19|20)\d{2}/)?.[0]) || card.manualYear,
+                }}
+                selectLabel="Usar esta versión"
+                onSelect={pick}
+            />
+            {card.manualSelected && (
+                <div className="cres ok" style={{ marginTop: 14 }}>
+                    <b>{card.manualSelected.marca} {card.manualSelected.modelo}</b>
+                    <span>{card.manualSelected.version}</span>
+                    <span className="id">ID de catálogo {card.manualSelected.id_veh}</span>
+                </div>
             )}
         </div>
     );
@@ -639,201 +512,138 @@ export default function VehiculosPage() {
     const sdDone = cards.filter(c => c.sdStatus === 'ok').length;
     const sdFailed = cards.filter(c => c.sdStatus === 'error').length;
     const sdPending = cards.filter(c => c.sdStatus === 'loading' || c.sdStatus === 'idle' && globalLoading).length;
+    const today = new Intl.DateTimeFormat('es-ES', { dateStyle: 'full' }).format(new Date());
+    const canRun = !!input.trim() && !globalLoading;
+
+    const tabs = (
+        <div className="seg" role="tablist" aria-label="Tipo de consulta">
+            {([['identificar', 'Identificar'], ['masivo', 'Masivo']] as const).map(([t, l]) => (
+                <button key={t} role="tab" aria-selected={tab === t} className={tab === t ? 'on' : ''} onClick={() => setTab(t)}>{l}</button>
+            ))}
+        </div>
+    );
 
     return (
-        <div className="h-full w-full animate-in fade-in duration-500" style={{ maxWidth: 1240, margin: '0 auto', padding: '0 16px', display: 'flex', flexDirection: 'column' }}>
+        <div className="pg vh">
 
             {showSdModal && <SilverdatModal onClose={() => setShowSdModal(false)} onSuccess={handleSdSuccess} />}
 
-            {/* intro */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 20, marginBottom: 31 }}>
-                <div style={{ borderLeft: '3px solid var(--t-blue)', paddingLeft: 17 }}>
-                    <div style={{ color: 'var(--t-blue)', letterSpacing: '1.35px', fontSize: 11, fontWeight: 750, textTransform: 'uppercase' }}>Consulta</div>
-                    <h1 style={{ fontSize: 34, letterSpacing: '-1.2px', lineHeight: 1.05, margin: '6px 0 7px', fontWeight: 720, color: 'var(--t-text)' }}>Vehículos</h1>
-                    <p style={{ margin: 0, color: 'var(--t-text-3)', fontSize: 13 }}>Identificación individual y procesamiento por lotes</p>
+            <section className="intro">
+                <div>
+                    <h1>Vehículos</h1>
+                    <p>Identificación de vehículos · {today.charAt(0).toUpperCase() + today.slice(1)}</p>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+                <div className="actions">
                     <SilverdatChip onSessionChange={ok => setSdSession(ok ? 'ok' : 'none')} />
-                    <div style={{ display: 'flex', border: '1px solid var(--t-line)', padding: 3, borderRadius: 7 }}>
-                        {([
-                            ['identificar', 'Identificar'],
-                            ['masivo',      'Masivo'],
-                        ] as const).map(([t, l]) => (
-                            <button key={t} onClick={() => setTab(t)} style={{
-                                border: 0, background: tab === t ? 'var(--t-line-soft)' : 'transparent',
-                                color: tab === t ? 'var(--t-text)' : 'var(--t-text-3)',
-                                borderRadius: 4, padding: '9px 19px', fontWeight: 650, cursor: 'pointer', fontSize: 13,
-                            }}>{l}</button>
-                        ))}
-                    </div>
                 </div>
-            </div>
-            <div style={{ borderTop: '1px solid var(--t-line)', margin: '0 0 28px' }} />
+            </section>
 
-            {/* Tab: Masivo */}
-            {tab === 'masivo' && (
-                <div style={{ flex: 1, minHeight: 0, background: 'var(--t-surface)', border: '1px solid var(--t-line)', borderRadius: 12, overflow: 'hidden' }}>
-                    <IdentificacionMasiva />
-                </div>
-            )}
-
-            {/* Tab: Identificar (original) */}
-            {tab === 'identificar' && <div style={{ display: 'grid', gridTemplateColumns: '360px minmax(0,1fr)', gap: 43, alignItems: 'start' }}>
-
-                {/* ── LEFT PANEL ─────────────────────────────────────────── */}
-                <div style={{ position: 'sticky', top: 16 }}>
-                    <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4, color: 'var(--t-text)' }}>Consultar matrículas</div>
-                    <div style={{ fontSize: 13, color: 'var(--t-text-3)', marginBottom: 22 }}>Introduce una matrícula o varias, separadas por líneas.</div>
-                    <label style={{ fontSize: 11, letterSpacing: '1px', fontWeight: 750, color: 'var(--t-text-3)', margin: '0 0 9px', display: 'block' }}>
-                        MATRÍCULAS
-                    </label>
-                    <textarea
-                        ref={textareaRef}
-                        value={input}
-                        onChange={e => setInput(e.target.value)}
-                        onKeyDown={e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); handleConsultar(); } }}
-                        placeholder={"1234ABC\n5678DEF 9012GHI\no pega aquí la lista..."}
-                        spellCheck={false}
-                        style={{
-                            width: '100%', minHeight: 160,
-                            background: 'var(--t-bg)', border: '1px solid var(--t-line)',
-                            borderRadius: 10, color: 'var(--t-text)',
-                            fontFamily: '"JetBrains Mono", "Fira Code", monospace',
-                            fontSize: 14, fontWeight: 600, letterSpacing: '0.05em',
-                            padding: '12px 14px', outline: 'none', resize: 'vertical', lineHeight: 1.8,
-                            caretColor: '#3366FF',
-                        }}
-                    />
-                    <p style={{ fontSize: 10, color: 'var(--t-text-3)', margin: '6px 0 10px', lineHeight: 1.4 }}>
-                        Una o varias. Ctrl+Enter para consultar.
-                    </p>
-
-                    {/* Mode selector */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, margin: '20px 0' }}>
-                        {([['year', 'Solo año', 'Rápido — solo fecha matriculación'], ['full', 'Info completa', 'Todos los datos + catálogo']] as const).map(([mode, label, title]) => (
-                            <button key={mode} title={title} onClick={() => setQueryMode(mode)}
-                                style={{
-                                    padding: 12, borderRadius: 6, fontSize: 12, fontWeight: 600,
-                                    cursor: 'pointer',
-                                    background: queryMode === mode ? 'rgba(18,64,204,0.09)' : 'var(--t-surface)',
-                                    color: queryMode === mode ? 'var(--t-text)' : 'var(--t-text-3)',
-                                    border: queryMode === mode ? '1px solid var(--t-blue)' : '1px solid var(--t-line)',
-                                }}>
-                                {label}
-                            </button>
-                        ))}
+            <section className="vzone" aria-labelledby="vzT">
+                <div className="vzhead">
+                    <div>
+                        <h2 id="vzT">{tab === 'masivo' ? 'Identificación masiva' : 'Identificar vehículos'}</h2>
+                        <p className="sub-desc">
+                            {tab === 'masivo'
+                                ? 'Sube un Excel con las matrículas y ORION identifica el lote completo.'
+                                : 'Escribe o pega matrículas. ORION calcula el año, completa los datos y busca el ID del catálogo.'}
+                        </p>
                     </div>
+                    {tabs}
+                </div>
 
-                    {globalLoading && (
-                        <button
-                            onClick={() => { stopEnrichRef.current = true; enrichingRef.current = false; setGlobalLoading(false); }}
-                            style={{
-                                width: '100%', padding: '10px 0', borderRadius: 10, marginBottom: 8,
-                                background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
-                                color: '#f87171', fontSize: 12, fontWeight: 700, cursor: 'pointer',
-                            }}>
-                            Detener
-                        </button>
-                    )}
-                    <button
-                        onClick={handleConsultar}
-                        disabled={!input.trim() || globalLoading}
-                        style={{
-                            width: '100%', padding: '11px 15px', minHeight: 40, borderRadius: 6,
-                            background: (!input.trim() || globalLoading) ? 'var(--t-line-soft)' : 'var(--t-blue)',
-                            border: (!input.trim() || globalLoading) ? '1px solid var(--t-line)' : '1px solid var(--t-blue)',
-                            color: (!input.trim() || globalLoading) ? 'var(--t-text-3)' : '#fff', fontSize: 13, fontWeight: 600,
-                            cursor: (!input.trim() || globalLoading) ? 'not-allowed' : 'pointer',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                        }}
-                    >
-                        {globalLoading ? (
-                            <>
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ animation: 'sdSpin 1s linear infinite' }}>
-                                    <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" strokeOpacity="0.2" /><path d="M21 12a9 9 0 00-9-9" />
-                                </svg>
-                                <style>{`@keyframes sdSpin{to{transform:rotate(360deg)}}`}</style>
-                                Consultando...
-                            </>
-                        ) : 'Consultar'}
-                    </button>
+                {/* Tab: Masivo */}
+                {tab === 'masivo' && (
+                    <div className="mwrap">
+                        <IdentificacionMasiva />
+                    </div>
+                )}
 
-                    {/* Stats */}
-                    {hasQueried && cards.length > 0 && (
-                        <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 5 }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
-                                <span style={{ color: 'var(--t-text-3)' }}>Total</span>
-                                <span style={{ color: 'var(--t-text)', fontWeight: 700 }}>{cards.length} matrículas</span>
+                {/* Tab: Identificar */}
+                {tab === 'identificar' && (
+                    <div className="vtri two">
+                        <div>
+                            <span className="no">Paso 1 de 2</span>
+                            <h3>Añadir matrículas</h3>
+                            <p>Escribe o pega una lista. ORION detecta las matrículas aunque lleven espacios o guiones.</p>
+                            <textarea
+                                ref={textareaRef}
+                                className="plates"
+                                value={input}
+                                onChange={e => setInput(e.target.value)}
+                                onKeyDown={e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); handleConsultar(); } }}
+                                placeholder={"1234 BCD\n5678 DFG\nR-1234-BCD"}
+                                aria-label="Matrículas"
+                                spellCheck={false}
+                            />
+                            <div className="hint">Una o varias. Ctrl + Enter para consultar.</div>
+                        </div>
+                        <div>
+                            <span className="no">Paso 2 de 2</span>
+                            <h3>Modo de identificación</h3>
+                            <div className="modes" role="radiogroup" aria-label="Modo de identificación">
+                                {([
+                                    ['year', 'Solo año', 'Rápido: la fecha de matriculación según Silverdat, junto al año que calcula ORION.'],
+                                    ['full', 'Info completa', 'Todos los datos técnicos y búsqueda del ID en el catálogo.'],
+                                ] as const).map(([mode, label, desc]) => (
+                                    <button key={mode} className="mode" role="radio" aria-checked={queryMode === mode} onClick={() => setQueryMode(mode)}>
+                                        <b>{label}</b><span>{desc}</span>
+                                    </button>
+                                ))}
                             </div>
-                            {sdDone > 0 && (
-                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
-                                    <span style={{ color: 'var(--t-text-3)' }}>Con datos</span>
-                                    <span style={{ color: '#10b981', fontWeight: 700 }}>{sdDone}</span>
-                                </div>
-                            )}
-                            {sdFailed > 0 && (
-                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
-                                    <span style={{ color: 'var(--t-text-3)' }}>Sin Silverdat</span>
-                                    <span style={{ color: '#f59e0b', fontWeight: 700 }}>{sdFailed}</span>
-                                </div>
-                            )}
-                            {sdPending > 0 && (
-                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
-                                    <span style={{ color: 'var(--t-text-3)' }}>Pendientes</span>
-                                    <span style={{ color: 'var(--t-blue)', fontWeight: 700 }}>{sdPending}</span>
-                                </div>
-                            )}
+                            <div className="sdline">
+                                {sdSession === 'ok'
+                                    ? <><b className="on">Silverdat conectado</b></>
+                                    : <><b className="off">Silverdat desconectado</b><span>Conéctalo para consultar.</span><button className="mini sd" onClick={() => setShowSdModal(true)}>Conectar</button></>}
+                            </div>
+                            <div className="runrow">
+                                <button className="mini pri" onClick={handleConsultar} disabled={!canRun}>{globalLoading ? 'Consultando…' : 'Consultar'}</button>
+                                {globalLoading && (
+                                    <button className="mini danger" onClick={() => { stopEnrichRef.current = true; enrichingRef.current = false; setGlobalLoading(false); }}>Detener</button>
+                                )}
+                            </div>
                         </div>
-                    )}
+                    </div>
+                )}
 
-                    {/* Export */}
-                    {cards.length > 0 && !globalLoading && (
-                        <button onClick={handleExport} style={{
-                            width: '100%', marginTop: 12, padding: '10px 0', borderRadius: 10,
-                            background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)',
-                            color: '#10b981', fontSize: 12, fontWeight: 700, letterSpacing: '0.06em',
-                            textTransform: 'uppercase', cursor: 'pointer',
-                        }}>
-                            Exportar XLSX
-                        </button>
-                    )}
-                </div>
+                {tab === 'identificar' && hasQueried && cards.length > 0 && (
+                    <div className="pcount">
+                        <span><b>{nf(cards.length)}</b> matrícula{cards.length > 1 ? 's' : ''}</span>
+                        {sdDone > 0 && <span>· <b>{nf(sdDone)}</b> con datos</span>}
+                        {sdFailed > 0 && <span className="w">· {nf(sdFailed)} sin Silverdat</span>}
+                        {sdPending > 0 && <span>· {nf(sdPending)} pendientes</span>}
+                        {!globalLoading && <button className="mini" onClick={handleExport} style={{ marginLeft: 'auto' }}>Exportar Excel</button>}
+                    </div>
+                )}
+            </section>
 
-                {/* ── RESULTS ────────────────────────────────────────────── */}
-                <div style={{ borderLeft: '1px solid var(--t-line)', paddingLeft: 42, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {tab === 'identificar' && (
+                <section className="vres" aria-live="polite">
                     {!hasQueried && (
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 385, textAlign: 'center', gap: 10 }}>
-                            <div style={{ fontSize: 35, color: 'var(--t-text-3)', fontWeight: 250, marginBottom: 14 }}>▱</div>
-                            <h2 style={{ fontSize: 18, margin: 0, color: 'var(--t-text)', fontWeight: 700 }}>Resultados de la consulta</h2>
-                            <p style={{ fontSize: 13, maxWidth: 420, color: 'var(--t-text-3)', margin: 0 }}>Introduce las matrículas a la izquierda. Los resultados aparecerán aquí, sin cambiar de pantalla.</p>
-                        </div>
+                        <div className="empty">Los resultados aparecerán aquí, sin cambiar de pantalla.</div>
                     )}
 
                     {/* ── Compact year-only table ─────────────────────────── */}
                     {hasQueried && activeModeRef.current === 'year' && cards.length > 0 && (
-                        <div style={{ ...GLASS, borderRadius: 14, overflow: 'hidden' }}>
-                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                        <div className="tscroll">
+                            <table className="tbl static">
                                 <thead>
-                                    <tr style={{ background: 'var(--t-surface)', borderBottom: '1px solid var(--t-line)' }}>
-                                        {['#', 'Matrícula', 'Fecha Matric. (SD)', 'Año Fab. (SD)', 'Fecha Local', 'Estado'].map(h => (
-                                            <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontSize: 10, fontWeight: 800, color: 'var(--t-text-3)', textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>{h}</th>
+                                    <tr>
+                                        {['Matrícula', 'Fecha matric. (Silverdat)', 'Año fab. (Silverdat)', 'Fecha calculada', 'Estado'].map(h => (
+                                            <th key={h}>{h}</th>
                                         ))}
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {cards.map((card, i) => {
                                         const sd = card.sdVehicle;
-                                        const stripe = i % 2 === 1 ? 'var(--t-line-soft)' : 'transparent';
-                                        const statusColor = card.sdStatus === 'ok' ? '#10b981' : card.sdStatus === 'error' ? '#f59e0b' : card.sdStatus === 'loading' ? 'var(--t-blue)' : 'var(--t-text-3)';
-                                        const statusLabel = card.sdStatus === 'ok' ? '✓' : card.sdStatus === 'error' ? card.sdError || 'Sin datos' : card.sdStatus === 'loading' ? '…' : '—';
+                                        const st = card.sdStatus === 'ok' ? 'Con datos' : card.sdStatus === 'error' ? (card.sdError || 'Sin datos') : card.sdStatus === 'loading' ? 'Consultando…' : '—';
                                         return (
-                                            <tr key={i} style={{ background: stripe, borderBottom: '1px solid rgba(61,112,255,0.07)' }}>
-                                                <td style={{ padding: '9px 14px', color: 'var(--t-text-3)', fontSize: 11, fontWeight: 700 }}>{i + 1}</td>
-                                                <td style={{ padding: '9px 14px', fontFamily: '"JetBrains Mono",monospace', fontWeight: 800, color: 'var(--t-text)', letterSpacing: '0.06em' }}>{card.plate}</td>
-                                                <td style={{ padding: '9px 14px', fontWeight: 700, color: sd?.fecha_matriculacion ? '#10b981' : 'var(--t-text-3)', fontFamily: 'monospace' }}>{sd?.fecha_matriculacion || '—'}</td>
-                                                <td style={{ padding: '9px 14px', fontWeight: 700, color: sd?.anyo_fabricacion ? 'var(--t-blue)' : 'var(--t-text-3)', fontFamily: 'monospace' }}>{sd?.anyo_fabricacion || '—'}</td>
-                                                <td style={{ padding: '9px 14px', color: 'var(--t-text-2)', fontFamily: 'monospace' }}>{card.date || '—'}</td>
-                                                <td style={{ padding: '9px 14px', fontSize: 11, fontWeight: 700, color: statusColor, maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={statusLabel}>{statusLabel}</td>
+                                            <tr key={i}>
+                                                <td className="mono">{card.plate}</td>
+                                                <td>{sd?.fecha_matriculacion || '—'}</td>
+                                                <td>{sd?.anyo_fabricacion || '—'}</td>
+                                                <td>{dateTxt(card.date) || '—'}</td>
+                                                <td><span className="tag" style={{ ['--c' as string]: card.sdStatus === 'ok' ? 'var(--blue)' : card.sdStatus === 'error' ? 'var(--sdoff)' : 'var(--quiet)' }}>{st}</span></td>
                                             </tr>
                                         );
                                     })}
@@ -846,102 +656,59 @@ export default function VehiculosPage() {
                     {hasQueried && activeModeRef.current === 'full' && cards.map((card, i) => {
                         const sd = card.sdVehicle;
                         const hasCat = card.catMatches.length > 0;
+                        const modelo = sd?.modelo && sd.marca && sd.modelo.toUpperCase().startsWith(sd.marca.toUpperCase()) ? sd.modelo.slice(sd.marca.length).trim() : sd?.modelo;
+                        const rows = sd ? ([
+                            ['Combustible', sd.combustible],
+                            ['kW / CV', sd.kw != null ? `${nf(sd.kw)} kW / ${sd.cv != null ? nf(sd.cv) : '—'} CV` : null],
+                            ['Cilindrada', sd.cilindrada != null ? `${nf(sd.cilindrada)} cc` : null],
+                            ['Plazas / puertas', (sd.plazas || sd.puertas) ? `${sd.plazas ?? '—'} / ${sd.puertas ?? '—'}` : null],
+                            ['Tipo', sd.tipo_vehiculo],
+                            ['Etiqueta DGT', sd.etiqueta_dgt],
+                            ['CO₂', sd.co2 != null ? `${nf(sd.co2)} g/km` : null],
+                            ['Normativa', sd.euro],
+                            ['Tara', sd.tara != null ? `${nf(sd.tara)} kg` : null],
+                            ['Kilometraje', sd.kilometraje != null ? `${nf(sd.kilometraje)} km` : null],
+                            ['Titulares', sd.num_titulares != null ? nf(sd.num_titulares) : null],
+                            ['Servicio', sd.servicio],
+                        ] as [string, string | null | undefined][]).filter(([, v]) => v) : [];
+                        const prices = sd ? ([['Precio nuevo', sd.precio_nuevo], ['Valor de venta', sd.valor_venta], ['Valor de compra', sd.valor_compra]] as [string, number | undefined][]).filter(([, v]) => v) : [];
                         return (
-                            <div key={i} style={{ ...GLASS, borderRadius: 14, overflow: 'hidden' }}>
-
-                                {/* ── Header row ─────────────────────────── */}
-                                <div style={{ padding: '13px 18px', display: 'flex', alignItems: 'center', gap: 14 }}>
-                                    {/* Plate badge */}
-                                    <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-                                        <div style={{ width: 20, height: 34, background: 'linear-gradient(180deg,#003DA5,#002D7A)', borderRadius: '4px 0 0 4px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1, border: '1px solid rgba(51,102,255,0.3)', borderRight: 'none' }}>
-                                            <svg width="9" height="9" viewBox="0 0 18 18" fill="none">{[...Array(12)].map((_, j) => { const a = (j * 30 - 90) * Math.PI / 180; return <circle key={j} cx={9 + 6 * Math.cos(a)} cy={9 + 6 * Math.sin(a)} r="0.8" fill="#FFD700" />; })}</svg>
-                                            <span style={{ color: '#FFF', fontSize: 5, fontWeight: 800 }}>E</span>
-                                        </div>
-                                        <div style={{ height: 34, background: 'var(--t-line-soft)', borderRadius: '0 4px 4px 0', border: '1px solid var(--t-line)', borderLeft: 'none', display: 'flex', alignItems: 'center', padding: '0 10px' }}>
-                                            <span style={{ fontFamily: '"JetBrains Mono",monospace', fontSize: 15, fontWeight: 800, color: 'var(--t-text)', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>{card.plate}</span>
-                                        </div>
+                            <article key={i} className="vcard">
+                                <header className="vhead">
+                                    <span className="plate">{card.plate}</span>
+                                    <div className="vsum">
+                                        <div className="d">{card.date ? dateTxt(card.date) : <span className="dim0">Sin fecha</span>}</div>
+                                        {sd?.marca && <div className="m">{sd.marca} {modelo}</div>}
                                     </div>
-
-                                    {/* Date / vehicle summary */}
-                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                        {card.date
-                                            ? <span style={{ fontSize: 17, fontWeight: 800, color: 'var(--t-text)' }}>{card.date}</span>
-                                            : <span style={{ fontSize: 13, color: 'var(--t-text-3)', fontStyle: 'italic' }}>Sin fecha</span>
-                                        }
-                                        {sd?.marca && (
-                                            <div style={{ fontSize: 12, color: 'var(--t-text-2)', marginTop: 2, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                {sd.marca} {sd.modelo?.toUpperCase().startsWith(sd.marca.toUpperCase()) ? sd.modelo.slice(sd.marca.length).trim() : sd.modelo}
-                                            </div>
-                                        )}
+                                    {card.date && <span className={`age${card.isClassic ? ' cl' : ''}`}>{ageTxt(card.age)}</span>}
+                                    <div className="vtags">
+                                        {card.isClassic && card.date && <span className="chip">Clásico</span>}
+                                        {card.type === 'Semirremolque' && <span className="chip">Semirremolque</span>}
+                                        {card.confidence > 0 && card.confidence < 1 && <span className="chip" title="Fecha estimada">Fecha estimada</span>}
+                                        {card.sdStatus === 'loading' && <span className="chip sd">Consultando…</span>}
+                                        {card.sdStatus === 'ok' && <span className="chip sd">Silverdat</span>}
+                                        {card.sdStatus === 'error' && <span className="chip err" title={card.sdError}>Sin datos</span>}
                                     </div>
+                                </header>
 
-                                    {/* Age */}
-                                    {card.date && (
-                                        <span style={{ fontSize: 13, fontWeight: 700, color: card.isClassic ? '#F59E0B' : '#10B981', flexShrink: 0 }}>{card.age}</span>
-                                    )}
-
-                                    {/* Status badges */}
-                                    <div style={{ flexShrink: 0, display: 'flex', gap: 5, alignItems: 'center' }}>
-                                        {card.isClassic && card.date && <span style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', color: '#F59E0B', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: 5, padding: '3px 7px' }}>Clásico</span>}
-                                        {card.type === 'Semirremolque' && <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', color: '#a78bfa', background: 'rgba(167,139,250,0.1)', border: '1px solid rgba(167,139,250,0.25)', borderRadius: 5, padding: '3px 7px' }}>Semi</span>}
-                                        {card.confidence > 0 && card.confidence < 1 && <span style={{ fontSize: 9, fontWeight: 700, color: '#F59E0B', background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: 5, padding: '3px 7px' }} title="Fecha estimada">~</span>}
-                                        {/* Silverdat status indicator */}
-                                        {card.sdStatus === 'loading' && (
-                                            <span style={{ fontSize: 9, fontWeight: 700, color: '#f59e0b', background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: 5, padding: '3px 7px' }}>SD...</span>
-                                        )}
-                                        {card.sdStatus === 'ok' && (
-                                            <span style={{ fontSize: 9, fontWeight: 800, color: '#f59e0b', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: 5, padding: '3px 7px' }}>SD</span>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {/* ── Silverdat data ──────────────────────── */}
                                 {sd && (
-                                    <div style={{ borderTop: '1px solid rgba(245,158,11,0.12)', background: 'rgba(245,158,11,0.03)', padding: '12px 18px' }}>
+                                    <div className="vsd">
                                         {sd.version && (
-                                            <p style={{ margin: '0 0 8px', fontSize: 11, color: 'var(--t-text-2)', fontStyle: 'italic' }}>
-                                                {sd.version}
-                                                {sd.vin && <span style={{ marginLeft: 12, fontFamily: 'monospace', fontSize: 10 }}>VIN: {sd.vin}</span>}
-                                            </p>
+                                            <p className="ver">{sd.version}{sd.vin && <span className="vin">Bastidor {sd.vin}</span>}</p>
                                         )}
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(140px,1fr))', gap: '5px 16px' }}>
-                                            {([
-                                                ['Combustible', sd.combustible],
-                                                ['kW / CV', sd.kw != null ? `${sd.kw}kW / ${sd.cv ?? '—'}CV` : null],
-                                                ['Cilindrada', sd.cilindrada != null ? `${sd.cilindrada}cc` : null],
-                                                ['Plazas / Puertas', (sd.plazas || sd.puertas) ? `${sd.plazas ?? '—'} / ${sd.puertas ?? '—'}` : null],
-                                                ['Tipo', sd.tipo_vehiculo],
-                                                ['Etiqueta DGT', sd.etiqueta_dgt],
-                                                ['CO2', sd.co2 != null ? `${sd.co2}g/km` : null],
-                                                ['Euro', sd.euro],
-                                                ['Tara', sd.tara != null ? `${sd.tara}kg` : null],
-                                                ['Km', sd.kilometraje != null ? sd.kilometraje.toLocaleString('es-ES') + 'km' : null],
-                                                ['Titulares', sd.num_titulares != null ? String(sd.num_titulares) : null],
-                                                ['Servicio', sd.servicio],
-                                            ] as [string, string | null | undefined][]).filter(([, v]) => v).map(([label, val]) => (
-                                                <div key={label}>
-                                                    <span style={{ fontSize: 9, fontWeight: 700, color: 'rgba(245,158,11,0.45)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block' }}>{label}</span>
-                                                    <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--t-text)' }}>{val}</span>
-                                                </div>
+                                        <div className="vkv">
+                                            {rows.map(([label, val]) => (
+                                                <div key={label}><label>{label}</label><span>{val}</span></div>
                                             ))}
                                         </div>
-
-                                        {/* Prices row */}
-                                        {(sd.precio_nuevo || sd.valor_venta || sd.valor_compra) && (
-                                            <div style={{ display: 'flex', gap: 18, marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(245,158,11,0.08)' }}>
-                                                {[['Precio Nuevo', sd.precio_nuevo], ['Valor Venta', sd.valor_venta], ['Valor Compra', sd.valor_compra]].filter(([, v]) => v).map(([label, val]) => (
-                                                    <div key={String(label)}>
-                                                        <span style={{ fontSize: 9, fontWeight: 700, color: 'rgba(245,158,11,0.45)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block' }}>{label}</span>
-                                                        <span style={{ fontSize: 14, fontWeight: 800, color: '#f59e0b' }}>€{(val as number).toLocaleString('es-ES')}</span>
-                                                    </div>
+                                        {prices.length > 0 && (
+                                            <div className="vprice">
+                                                {prices.map(([label, val]) => (
+                                                    <div key={label}><label>{label}</label><strong>{eur(val as number)}</strong></div>
                                                 ))}
                                             </div>
                                         )}
-
-                                        {/* Catalog match */}
-                                        {card.catStatus === 'loading' && (
-                                            <p style={{ margin: '10px 0 0', fontSize: 11, color: 'var(--t-text-3)' }}>Buscando en catálogo...</p>
-                                        )}
+                                        {card.catStatus === 'loading' && <p className="note" style={{ marginTop: 12 }}>Buscando en el catálogo…</p>}
                                         {hasCat && (
                                             <CatalogResult
                                                 matches={card.catMatches}
@@ -954,21 +721,11 @@ export default function VehiculosPage() {
 
                                 {/* ── Manual fallback — always available ──── */}
                                 {card.sdStatus !== 'loading' && (
-                                    <div style={{ borderTop: '1px solid var(--t-line)', padding: '0 18px 14px' }}>
-                                        <button
-                                            onClick={() => updateCard(card.originalInput, { manualOpen: !card.manualOpen })}
-                                            style={{
-                                                width: '100%', marginTop: 12, padding: '8px 12px', borderRadius: 8,
-                                                background: 'var(--t-line-soft)', border: '1px solid var(--t-line)',
-                                                color: 'var(--t-text-2)', fontSize: 11, fontWeight: 700,
-                                                letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer',
-                                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                            }}
-                                        >
-                                            <span>Identificar en catálogo</span>
-                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ transform: card.manualOpen ? 'rotate(180deg)' : 'none', transition: 'transform 180ms' }}>
-                                                <polyline points="6 9 12 15 18 9" />
-                                            </svg>
+                                    <div className="vman">
+                                        <button className="tg" aria-expanded={card.manualOpen}
+                                            onClick={() => updateCard(card.originalInput, { manualOpen: !card.manualOpen })}>
+                                            <span>Identificar en catálogo a mano</span>
+                                            <i aria-hidden="true">{card.manualOpen ? '−' : '+'}</i>
                                         </button>
                                         {card.manualOpen && (
                                             <ManualForm
@@ -978,11 +735,16 @@ export default function VehiculosPage() {
                                         )}
                                     </div>
                                 )}
-                            </div>
+                            </article>
                         );
                     })}
-                </div>
-            </div>}
+                </section>
+            )}
+
+            <div className="footer">
+                <span>ORION · Datos en tiempo real</span>
+                <span>Vehículos</span>
+            </div>
         </div>
     );
 }

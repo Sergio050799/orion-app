@@ -17,7 +17,7 @@
     /* tinta */
     --text:  #f3f6fc;
     --sub:   #b5bfd0;
-    --quiet: #909db4;
+    --quiet: #98a6bd;
 
     /* acento */
     --blue:      #4989ff;
@@ -79,6 +79,10 @@
     --t-silver:        var(--silver);
     --t-sdoff:         var(--sdoff);
 
+    --scrim: rgba(2,5,16,.6);
+    --gutter:   max(clamp(16px,4.2cqw,86px),env(safe-area-inset-left,0px));
+    --gutter-r: max(clamp(16px,4.2cqw,86px),env(safe-area-inset-right,0px));
+
     /* compat */
     --background: var(--bg);
     --foreground: var(--text);
@@ -95,9 +99,9 @@
     --line:    #d8e0eb;
     --text:    #18243a;
     --sub:     #4b5b72;
-    --quiet:   #62718a;
+    --quiet:   #586780;
     --blue:    #265fc9;
-    --blue-2:  #315fc0;
+    --blue-2:  #2a56b3;
     --blue-area: rgba(38, 95, 201, .12);
     --st-contratada: #17399a;
     --st-estudio:    #2f67cf;
@@ -111,6 +115,7 @@
     --danger:  #b83434;
     --series-prev: #8a97ab;
     --head: #1b2a44;
+    --scrim: rgba(11,18,34,.4);
 
     --t-bg:            var(--bg);
     --t-surface:       var(--surface);
@@ -337,34 +342,6 @@
 .slide-in-from-bottom-6 { animation: slideInFromBottom .4s ease-out; }
 .slide-in-from-top-4    { animation: slideInFromTop .25s ease-out; }
 
-/* ── Shared Detail Drawer (dr-*) ─────────────────────────────────── */
-.dr-scrim{position:fixed;inset:0;background:rgba(2,5,16,.55);z-index:9990;opacity:0;pointer-events:none;transition:opacity .22s}
-.dr-scrim.open{opacity:1;pointer-events:auto}
-.dr-drawer{position:fixed;top:0;right:0;bottom:0;width:min(680px,100%);z-index:9991;background:var(--bg);border-left:1px solid var(--line);transform:translateX(102%);transition:transform .35s cubic-bezier(.2,.8,.2,1);overflow-y:auto;padding:28px clamp(20px,3.6cqw,52px) 48px clamp(20px,3.6cqw,52px);container-type:inline-size}
-.dr-drawer.open{transform:none;box-shadow:-25px 0 80px rgba(0,0,0,.35)}
-.dr-drawer:focus{outline:none}
-.dr-x{position:absolute;right:14px;top:14px;all:unset;cursor:pointer;font-size:24px;line-height:1;color:var(--quiet);width:36px;height:36px;display:grid;place-items:center;border-radius:6px;transition:background .16s}
-.dr-x:hover{background:var(--hover);color:var(--text)}
-.dr-over{margin-top:40px;font-size:12px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:var(--blue-2)}
-.dr-drawer h3{font:600 clamp(26px,3cqw,34px)/1.12 var(--font-display);letter-spacing:-.045em;margin:10px 0 12px;text-wrap:balance;color:var(--text)}
-.dr-desc{color:var(--sub);font-size:14.5px;line-height:1.7;margin:0}
-.dr-drawer h4{font-size:11px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:var(--quiet);margin:26px 0 10px;padding-bottom:10px;border-bottom:1px solid var(--line)}
-.dr-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin:24px 0}
-.dr-stats div{padding:16px 14px 16px 0}
-.dr-stats div+div{padding-left:16px;border-left:1px solid var(--line)}
-.dr-stats label{display:block;font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--quiet);margin-bottom:6px;cursor:default}
-.dr-stats strong{font:600 28px/1.1 var(--font-display);letter-spacing:-.04em;font-variant-numeric:tabular-nums;color:var(--text)}
-.dr-scroll{overflow-x:auto;margin:0 0 8px}
-.dr-tbl{width:100%;border-collapse:collapse;font-size:14px}
-.dr-tbl th{text-align:left;font-size:11px;font-weight:600;letter-spacing:.07em;color:var(--head,#d6deed);padding:0 12px 10px 0;text-transform:uppercase;border-bottom:1px solid var(--line);white-space:nowrap}
-.dr-tbl td{padding:10px 12px 10px 0;border-bottom:1px solid var(--line);vertical-align:middle;color:var(--sub)}
-.dr-annex{background:var(--soft);border:1px solid var(--line);border-radius:6px;padding:6px 18px;margin-top:12px}
-.dr-fx{padding:14px 0;border-bottom:1px solid var(--line)}
-.dr-fx:last-child{border-bottom:0}
-.dr-fx b{display:block;font-size:14px;font-weight:600;margin-bottom:5px;color:var(--text)}
-.dr-fx code{display:block;font:13.5px/1.7 ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:var(--sub);overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
-.dr-annex .nt{font-size:13px;color:var(--quiet);line-height:1.6;padding:12px 0}
-.dr-note{font-size:13.5px;color:var(--quiet);margin-top:16px;line-height:1.6}
 .orion-page-enter       { animation: fadeSlideIn .2s ease-out; }
 .duration-200 { animation-duration: .2s; }
 .duration-300 { animation-duration: .3s; }

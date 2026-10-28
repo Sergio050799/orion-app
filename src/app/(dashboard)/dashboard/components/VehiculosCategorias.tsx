@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { nf } from '@/lib/fmt';
 
 export type TipologiaStat = {
   tipologia: string;
@@ -271,12 +272,12 @@ export default function VehiculosCategorias({ stats, noBorder }: { stats: CatSta
               Vehículos por categoría
             </h2>
             <span style={{ fontSize: 12, color: 'var(--t-blue)', opacity: 0.8, whiteSpace: 'nowrap' }}>
-              Ver informe →
+              Ver informe
             </span>
           </button>
           {totalVeh > 0 && (
             <span style={{ fontSize: 11, color: 'var(--t-text-3)', letterSpacing: '0.06em' }}>
-              {totalVeh.toLocaleString('es')} vehículos
+              {nf(totalVeh)} vehículos
             </span>
           )}
         </div>

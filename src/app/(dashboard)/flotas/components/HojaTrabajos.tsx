@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useRef, forwardRef, useImperativeHandle, useMemo } from 'react';
+import React, { useState, useCallback, useRef, forwardRef, useImperativeHandle, useMemo, useEffect } from 'react';
 import { ANYO_MATRICULA_DEF, POLIZA_SINCO_DEF } from './constants';
 import {
   contarVehiculos, filtrarFilasReales, detectarClaveFlota,
@@ -9,6 +9,7 @@ import {
 import type { ClaveFlotaGrupo } from '@/core/flotas';
 import type { FlotaGridHandle } from './types';
 import { DetailDrawer } from '@/components/saas/DetailDrawer';
+import type { DetailDrawerData } from '@/components/saas/DetailDrawer';
 
 // ─── Silverdat types ─────────────────────────────────────────────────────────
 
@@ -166,6 +167,7 @@ const HojaTrabajos = forwardRef<FlotaGridHandle, Props>(function HojaTrabajos(
   const [silverdatLoading,  setSilverdatLoading]  = useState(false);
   const [silverdatProgress, setSilverdatProgress] = useState('');
   const [silverdatReport,   setSilverdatReport]   = useState<{ mismatches: Mismatch[]; enriched: number; noData: string[]; total: number; vehicles: SilverdatVehicle[] } | null>(null);
+  const [trabDrawerKey,     setTrabDrawerKey]     = useState<string | null>(null);
 
   const prevClaveKeyRef   = useRef('');
   const silverdatPendingRef = useRef(false);
@@ -181,10 +183,10 @@ const HojaTrabajos = forwardRef<FlotaGridHandle, Props>(function HojaTrabajos(
 
   useImperativeHandle(ref, () => ({
     getData:    () => rowsRef.current,
-    setData:    (d) => setRowsState(d),
+    setData:    (d) => { setRowsState(d); runClaveDetection(d); },
     toRows:     () => rowsRef.current,
     getColDefs: () => [],
-  }), []);
+  }), []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const vehicleCount = useMemo(() => {
     const mats = rows.map(r => r['matricula'] ?? '').filter(v => v.trim());
@@ -207,6 +209,109 @@ const HojaTrabajos = forwardRef<FlotaGridHandle, Props>(function HojaTrabajos(
     }
     if (grupos.length > 0) setPolizaResolucion('none');
   }, []);
+
+  // Detectar clave de flota en datos precargados al montar
+  useEffect(() => {
+    if (rowsRef.current.length > 0) runClaveDetection(rowsRef.current);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const buildTrabDetailData = useCallback((key: string): DetailDrawerData => {
+    const nf = (n: number) => String(n);
+    const tiposList = [...new Set(visibleRows.map(r => r['tipo_vehiculo'] ?? '—').filter(Boolean))];
+
+    if (key === 'total') {
+      const desglose = tiposList.map(t => [t, nf(visibleRows.filter(r => (r['tipo_vehiculo'] ?? '—') === t).length)] as (string | number)[]);
+      return {
+        over: 'Trabajo · PASO 04',
+        title: 'Total vehículos',
+        desc: 'Matrículas válidas cargadas en la hoja de Trabajo.',
+        stats: [['Total vehículos', nf(vehicleCount)]],
+        head: ['Tipología', 'Vehículos'],
+        rows: desglose,
+        fx: [['Total matrículas', `CONTARA(Matrícula) = ${nf(vehicleCount)}`]],
+      };
+    }
+    if (key === 'poliza') {
+      const desglose = tiposList.map(t => {
+        const tr = visibleRows.filter(r => (r['tipo_vehiculo'] ?? '—') === t);
+        const con = tr.filter(r => (r['num_poliza_actual'] ?? '').trim()).length;
+        return [t, nf(con), nf(tr.length - con)] as (string | number)[];
+      });
+      return {
+        over: 'Trabajo · PASO 04',
+        title: 'Con póliza SINCO',
+        desc: 'Vehículos con Nº póliza actual informado. SINCO requiere póliza para buscar historial.',
+        stats: [['Con póliza', nf(conPolizaSinco)], ['Sin póliza', nf(vehicleCount - conPolizaSinco)]],
+        head: ['Tipología', 'Con póliza', 'Sin póliza'],
+        rows: desglose,
+        fx: [['Vehículos con póliza', `CONTARA(Nº póliza actual) = ${nf(conPolizaSinco)}`]],
+      };
+    }
+    // key === 'tipos'
+    const desglose = tiposList.map(t => [t, nf(visibleRows.filter(r => (r['tipo_vehiculo'] ?? '—') === t).length)] as (string | number)[]);
+    return {
+      over: 'Trabajo · PASO 04',
+      title: 'Tipologías',
+      desc: 'Distribución por tipo de vehículo. Cada tipología tiene baremos SINCO distintos.',
+      stats: [['Tipologías distintas', nf(tipologias)], ['Vehículos', nf(vehicleCount)]],
+      head: ['Tipología', 'Vehículos'],
+      rows: desglose,
+      fx: [['Tipologías distintas', `CONTARA(Tipo vehículo DISTINCT) = ${nf(tipologias)}`]],
+    };
+  }, [visibleRows, vehicleCount, conPolizaSinco, tipologias]);
+
+  const handleDownloadTrabajo = useCallback(async () => {
+    const ExcelJS = (await import('exceljs')).default;
+    const wb = new ExcelJS.Workbook();
+    wb.creator = 'MMT Seguros';
+    const ws = wb.addWorksheet('TRABAJO');
+    const EXPORT_COLS = [
+      { key: 'matricula',              label: 'Matrícula' },
+      { key: 'cif_nif',                label: 'CIF/NIF' },
+      { key: 'tomador',                label: 'Tomador' },
+      { key: 'cia_actual',             label: 'Cía actual' },
+      { key: 'num_poliza_actual',      label: 'Nº póliza actual' },
+      { key: 'fecha_vencimiento',      label: 'Vencimiento' },
+      { key: 'marca',                  label: 'Marca' },
+      { key: 'modelo',                 label: 'Modelo' },
+      { key: 'tipo_vehiculo',          label: 'Tipo vehículo' },
+      { key: 'uso',                    label: 'Uso' },
+      { key: 'kw',                     label: 'kW' },
+      { key: 'ambito',                 label: 'Ámbito' },
+      { key: 'coberturas_solicitadas', label: 'Coberturas solicitadas' },
+      { key: 'frq',                    label: 'Franq.' },
+      { key: 'prima_referencia',       label: 'Prima ref.' },
+    ];
+    ws.columns = EXPORT_COLS.map(() => ({ width: 20 }));
+    const headerRow = ws.addRow(EXPORT_COLS.map(c => c.label));
+    headerRow.height = 24;
+    headerRow.eachCell(cell => {
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF002F82' } };
+      cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, name: 'Calibri', size: 9 };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      cell.border = { bottom: { style: 'medium', color: { argb: 'FF002F82' } }, right: { style: 'thin', color: { argb: 'FFFFFFFF' } } };
+    });
+    visibleRows.forEach((r, i) => {
+      const rowData = EXPORT_COLS.map(c => r[c.key] ?? '');
+      const row = ws.addRow(rowData);
+      row.height = 18;
+      row.eachCell({ includeEmpty: true }, cell => {
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: i % 2 === 0 ? 'FFFFFFFF' : 'FFF0F4FA' } };
+        cell.font = { name: 'Calibri', size: 9, color: { argb: 'FF0A1628' } };
+        cell.alignment = { horizontal: 'left', vertical: 'middle' };
+        cell.border = { bottom: { style: 'thin', color: { argb: 'FFB8C8E8' } }, right: { style: 'thin', color: { argb: 'FFB8C8E8' } } };
+      });
+    });
+    const buffer = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'Plantilla_Trabajo.xlsx';
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [visibleRows]);
 
   const doImport = useCallback(() => {
     const raw = getOriginalSnapshot();
@@ -373,76 +478,68 @@ const HojaTrabajos = forwardRef<FlotaGridHandle, Props>(function HojaTrabajos(
     <div className="flex flex-col h-full min-h-0" style={{ overflow: 'hidden' }}>
 
       {/* ── Cabecera ── */}
-      <div className="sh" style={{ flexShrink: 0, padding: '20px 32px', borderBottom: '1px solid var(--line)' }}>
+      <div className="sh" style={{ flexShrink: 0 }}>
         <div>
-          <h2><b>04</b>TRABAJO</h2>
-          <p>Datos normalizados desde Original. Solo lectura: descarga, edita y sube para modificar.</p>
+          <h2><b>04 ·</b>Trabajo</h2>
+          <p>Los mismos datos, normalizados y con columnas calculadas.</p>
         </div>
         <div className="acts">
-          <button className="mini" onClick={handleCopy}>
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
-            </svg>
-            Copiar de Original
-          </button>
-          <button className="mini" onClick={() => setUploadDrawerOpen(true)}>
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
-            </svg>
-            Subir Trabajo modificado
-          </button>
           {!silverdatLoading ? (
             <button className="mini sd" onClick={handleSilverdatClick}>Añadir datos Silverdat</button>
           ) : (
             <button className="mini" onClick={() => { silverdatStopRef.current = true; }} style={{ color: 'var(--warn)' }}>Detener</button>
           )}
+          <button className="mini" onClick={handleCopy}>
+            Copiar de Original
+          </button>
+          <button className="mini" onClick={handleDownloadTrabajo}>
+            Descargar plantilla de trabajo
+          </button>
+          <button className="mini" onClick={() => setUploadDrawerOpen(true)}>
+            Subir Trabajo modificado
+          </button>
         </div>
       </div>
 
       {/* ── Avisos inline ── */}
       {correctionParseError && (
-        <div style={{ flexShrink: 0, padding: '6px 16px', background: 'rgba(239,68,68,0.07)', borderBottom: '1px solid rgba(239,68,68,0.2)', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: '#f87171' }}>{correctionParseError}</span>
-          <button onClick={() => setCorrectionParseError('')} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#f87171', fontSize: 15 }}>×</button>
+        <div className="strip warn">
+          <b>{correctionParseError}</b>
+          <button onClick={() => setCorrectionParseError('')} className="mini sp">Cerrar</button>
         </div>
       )}
       {silverdatProgress && (
-        <div style={{ flexShrink: 0, padding: '5px 32px', borderBottom: '1px solid var(--line)', fontSize: 12, fontWeight: 600, color: silverdatStopRef.current ? '#ef4444' : '#d97706' }}>
-          Silverdat: {silverdatProgress}
+        <div className={`strip${silverdatStopRef.current ? ' warn' : ''}`}>
+          <b>Silverdat:</b><span>{silverdatProgress}</span>
         </div>
       )}
       {confirmPending && (
-        <div style={{ flexShrink: 0, padding: '8px 32px', borderBottom: '1px solid rgba(252,211,77,0.3)', background: 'rgba(252,211,77,0.06)', display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontSize: 12, fontWeight: 700, color: '#92400e' }}>¿Sobreescribir los datos actuales de Trabajo?</span>
-          <button onClick={doImport} style={{ fontSize: 12, fontWeight: 800, padding: '3px 12px', borderRadius: 6, background: '#fef3c7', color: '#92400e', border: '1px solid #fcd34d', cursor: 'pointer' }}>Sí, sobreescribir</button>
-          <button onClick={() => setConfirmPending(false)} style={{ fontSize: 12, fontWeight: 600, padding: '3px 10px', borderRadius: 6, background: 'transparent', color: 'var(--sub)', border: '1px solid var(--line)', cursor: 'pointer' }}>Cancelar</button>
+        <div className="strip warn">
+          <b>¿Sobreescribir los datos actuales de Trabajo?</b>
+          <button onClick={doImport} className="mini pri">Sí, sobreescribir</button>
+          <button onClick={() => setConfirmPending(false)} className="mini">Cancelar</button>
         </div>
       )}
 
       {/* ── Banner clave de flota ── */}
       {claveGrupos.length > 0 && polizaResolucion === 'none' && (
-        <div style={{ background: 'rgba(252,211,77,0.05)', borderBottom: '1px solid rgba(252,211,77,0.2)', padding: '8px 32px', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--warn)' }}>
-            Posible clave de flota: {claveGrupos.map(g => `"${g.prefijo}" (${g.afectadas.length} pólizas)`).join(' · ')}
-          </span>
-          <span style={{ fontSize: 11, color: 'var(--sub)' }}>¿Cómo normalizar Nº póliza SINCO?</span>
+        <div className="strip warn">
+          <b>Posible clave de flota: {claveGrupos.map(g => `"${g.prefijo}" (${g.afectadas.length} pólizas)`).join(' · ')}</b>
+          <span>¿Cómo normalizar Nº póliza SINCO?</span>
           <button onClick={() => handleApplyPolizaOverride('ultimos5')} className="mini">Últimos 5 dígitos</button>
           <button onClick={() => handleApplyPolizaOverride('clave')} className="mini pri">Normalizar con clave de flota</button>
         </div>
       )}
       {claveGrupos.length > 0 && polizaResolucion !== 'none' && (
-        <div style={{ background: 'rgba(16,185,129,0.04)', borderBottom: '1px solid rgba(16,185,129,0.15)', padding: '6px 32px', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-          <span style={{ fontSize: 11, fontWeight: 700, color: '#15803d' }}>
-            Póliza SINCO: {polizaResolucion === 'clave' ? 'normalizada con clave de flota' : 'últimos 5 dígitos (por defecto)'}
-          </span>
-          <button onClick={handleUndoPolizaOverride} className="mini" style={{ marginLeft: 4 }}>Deshacer</button>
+        <div className="strip">
+          <b>Póliza SINCO: {polizaResolucion === 'clave' ? 'normalizada con clave de flota' : 'últimos 5 dígitos (por defecto)'}</b>
+          <button onClick={handleUndoPolizaOverride} className="mini sp">Deshacer</button>
         </div>
       )}
 
       {/* ── Contenido ── */}
       {visibleRows.length > 0 ? (
-        <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: '20px 32px' }}>
+        <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: '0 0 20px' }}>
           <div className="lock">
             <b>Solo lectura</b>
             <span>Se calcula desde Original. Para corregir algo, descarga la plantilla de trabajo, edítala y súbela: el cambio llega a SINCO, Informe, Oferta y Pre-emisión, pero Original no se toca.</span>
@@ -450,15 +547,15 @@ const HojaTrabajos = forwardRef<FlotaGridHandle, Props>(function HojaTrabajos(
 
           {/* stat3 KPIs */}
           <div className="stat3">
-            <button>
+            <button type="button" onClick={() => setTrabDrawerKey('total')}>
               <label>Total vehículos</label>
               <strong>{vehicleCount}</strong>
             </button>
-            <button>
+            <button type="button" onClick={() => setTrabDrawerKey('poliza')}>
               <label>Con póliza SINCO</label>
               <strong>{conPolizaSinco}</strong>
             </button>
-            <button>
+            <button type="button" onClick={() => setTrabDrawerKey('tipos')}>
               <label>Tipologías</label>
               <strong>{tipologias}</strong>
             </button>
@@ -514,9 +611,6 @@ const HojaTrabajos = forwardRef<FlotaGridHandle, Props>(function HojaTrabajos(
             </p>
             <button onClick={handleCopy}
               style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 24px', borderRadius: 8, background: 'var(--blue)', color: '#fff', border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer', margin: '0 auto' }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
-              </svg>
               Copiar de Original
             </button>
           </div>
@@ -524,6 +618,13 @@ const HojaTrabajos = forwardRef<FlotaGridHandle, Props>(function HojaTrabajos(
       )}
 
       <input ref={correctionFileRef} type="file" accept=".xlsx,.xls" style={{ display: 'none' }} onChange={handleCorrectionFile} />
+
+      {/* ── Drawer KPIs TRABAJO ── */}
+      <DetailDrawer
+        isOpen={trabDrawerKey !== null}
+        onClose={() => setTrabDrawerKey(null)}
+        data={trabDrawerKey ? buildTrabDetailData(trabDrawerKey) : null}
+      />
 
       {/* ── Silverdat modals ── */}
       {showLogin && (
