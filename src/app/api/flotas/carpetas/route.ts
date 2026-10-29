@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
       const stripped = data.map((c: any) => ({
         id: c.id, nombre: c.nombre, estado: c.estado,
         creadaEn: c.creadaEn, actualizadaEn: c.actualizadaEn,
-        corredor_id: c.corredor_id, porcentajeComision: c.porcentajeComision,
+        corredor_id: c.corredor_id, comisionBase: c.comisionBase ?? c.porcentajeComision,
         primaClienteTotal: c.primaClienteTotal, descuentoOferta: c.descuentoOferta,
         header: c.header, historico: c.historico, observaciones: c.observaciones,
         tarifaFlota: c.tarifaFlota,

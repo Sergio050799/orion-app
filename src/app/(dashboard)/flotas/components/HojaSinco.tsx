@@ -86,9 +86,6 @@ const HojaSinco = forwardRef<HojaSincoHandle, Props>(function HojaSinco({ header
           style={{ color: '#16a34a', background: 'rgba(22,163,74,0.07)', border: '1px solid rgba(22,163,74,0.25)' }}
           onMouseEnter={e => (e.currentTarget.style.background = 'rgba(22,163,74,0.14)')}
           onMouseLeave={e => (e.currentTarget.style.background = 'rgba(22,163,74,0.07)')}>
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
-          </svg>
           Descargar SINCO (.xlsx)
         </button>
       </div>

@@ -2,6 +2,7 @@
 
 import React from 'react';
 import type { FlotaCarpeta, Corredor } from '@/core/flotas';
+import { eur } from '@/lib/fmt';
 
 interface Props {
   carpeta: FlotaCarpeta;
@@ -35,7 +36,7 @@ export default function FichaContratada({ carpeta, corredor, onAbrirEstudio }: P
   const h = carpeta.header;
 
   return (
-    <div style={{ flex: 1, overflowY: 'auto', padding: '24px 32px' }} className="custom-scrollbar">
+    <div style={{ flex: 1, overflowY: 'auto', padding: '0 0 24px' }} className="custom-scrollbar">
       <div style={{ maxWidth: 720, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 24 }}>
 
         {/* Banner contratada */}
@@ -56,10 +57,6 @@ export default function FichaContratada({ carpeta, corredor, onAbrirEstudio }: P
             border: '1px solid rgba(51,102,255,0.3)', cursor: 'pointer',
             display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0,
           }}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
-              <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
-            </svg>
             Abrir en estudio
           </button>
         </div>
@@ -84,7 +81,7 @@ export default function FichaContratada({ carpeta, corredor, onAbrirEstudio }: P
             <>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px', gap: 14 }}>
                 <Field label="Corredor" value={[corredor.nombre, corredor.comercial].filter(Boolean).join(' · ')} />
-                <Field label="Comisión" value={`${carpeta.porcentajeComision ?? corredor.porcentajeComision}%`} />
+                <Field label="Comisión" value={`${carpeta.comisionBase ?? corredor.comisionBase}%`} />
               </div>
               {(corredor.email || corredor.telefono) && (
                 <p style={{ marginTop: 8, fontSize: 11, color: 'rgba(178,198,245,0.5)' }}>
@@ -146,7 +143,7 @@ export default function FichaContratada({ carpeta, corredor, onAbrirEstudio }: P
                   <span style={{ fontSize: 12, color: '#FFFFFF' }}>{t.tipo || '—'}</span>
                   <span style={{ fontSize: 12, color: 'rgba(178,198,245,0.65)' }}>{t.cobertura || '—'}</span>
                   <span style={{ fontSize: 13, fontWeight: 700, fontFamily: 'monospace', color: '#10b981', textAlign: 'right' }}>
-                    {t.precio ? `${t.precio.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €` : '—'}
+                    {t.precio ? eur(t.precio, 2) : '—'}
                   </span>
                 </div>
               ))}

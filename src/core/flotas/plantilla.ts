@@ -1,5 +1,9 @@
 import type ExcelJS from 'exceljs';
 import type { FlotaCarpeta } from './carpeta';
+import {
+  FRANQUICIAS_CAT1, FRANQUICIAS_CAT2, FRANQUICIAS_MOTO, PRODUCTOS, grupoCob, productosPermitidos, tipoKeyDesdeEtiqueta,
+  type GrupoCob,
+} from './catalogoCoberturas';
 
 let _logoMmtCache: string | null = null;
 async function fetchLogoMmt(): Promise<string | null> {
@@ -74,7 +78,17 @@ function fillRow(ws: ExcelJS.Worksheet, row: number, fill: ExcelJS.Fill) {
 
 // ─── Funcion principal ────────────────────────────────────────────────────────
 
-export async function generarPlantillaExcel(carpeta?: Pick<FlotaCarpeta, 'nombre' | 'header'>, corredores?: string[]): Promise<Blob> {
+/**
+ * Plantilla de estudio de flotas. Sin `filas` sale en blanco; con `filas` (los vehículos de ORIGINAL) sale rellena,
+ * con los mismos datos que se subieron, y se puede volver a subir sin perder nada.
+ * `corredorNombre` rellena la casilla CORREDOR de la cabecera.
+ */
+export async function generarPlantillaExcel(
+  carpeta?: Pick<FlotaCarpeta, 'nombre' | 'header'>,
+  corredores?: string[],
+  filas?: Record<string, string>[],
+  corredorNombre?: string,
+): Promise<Blob> {
   const ExcelJS = (await import('exceljs')).default;
   const wb = new ExcelJS.Workbook();
   wb.creator = 'MMT Seguros';
@@ -142,7 +156,7 @@ export async function generarPlantillaExcel(carpeta?: Pick<FlotaCarpeta, 'nombre
   const hasCorredores = corredores && corredores.length > 0;
   ws.getCell(3, 11).value = 'CORREDOR:'; ws.getCell(3, 11).font = labelFont; ws.getCell(3, 11).alignment = leftAlign;
   const corrCell = ws.getCell(3, 12);
-  corrCell.value = '';
+  corrCell.value = corredorNombre ?? '';
   corrCell.font = { ...valueFont, italic: !hasCorredores, color: { argb: hasCorredores ? 'FF' + C.text : 'FF9CA3AF' } };
   corrCell.alignment = leftAlign;
   corrCell.border = { bottom: { style: 'thin', color: { argb: 'FF' + C.border } } };
@@ -178,32 +192,77 @@ export async function generarPlantillaExcel(carpeta?: Pick<FlotaCarpeta, 'nombre
   });
 
   // ── Filas de datos (100 filas) ───────────────────────────────────────────
-  const TIPO_OPTIONS   = '"Turismo,Furgoneta,Cabeza tractora,Camion rigido,Semirremolque,Industrial matriculado,Industrial no matriculado"';
+  // Tipo → Cobertura → Franquicia: tres desplegables encadenados que salen del catálogo único de coberturas
+  // (catalogoCoberturas.ts). La tipología limita la cobertura y la cobertura limita la franquicia.
+  const TIPOS_PLANTILLA = ['Turismo', 'Furgoneta', 'Cabeza tractora', 'Camion rigido', 'Semirremolque', 'Industrial matriculado', 'Industrial no matriculado', 'Motocicleta'];
+  const GRUPOS: GrupoCob[] = ['a1', 'a2', 'ind', 'a3'];
+  const NO_APLICA = 'No aplica';
+  const wsL = wb.addWorksheet('_LISTAS', { state: 'veryHidden' });
+  // A:B → tipo y grupo de coberturas (A1, A2, IND, A3)
+  TIPOS_PLANTILLA.forEach((t, i) => {
+    wsL.getCell(i + 1, 1).value = t;
+    wsL.getCell(i + 1, 2).value = (grupoCob(tipoKeyDesdeEtiqueta(t)) ?? 'a1').toUpperCase();
+  });
+  const addLista = (col: number, nombre: string, valores: (string | number)[]) => {
+    valores.forEach((v, i) => { wsL.getCell(i + 1, col).value = v; });
+    const L = colLetter(col);
+    wb.definedNames.add(`_LISTAS!$${L}$1:$${L}$${valores.length}`, nombre);
+  };
+  const tipoRep = (g: GrupoCob) => TIPOS_PLANTILLA.find(t => grupoCob(tipoKeyDesdeEtiqueta(t)) === g)!;
+  GRUPOS.forEach((g, i) => {
+    const prods = productosPermitidos(tipoKeyDesdeEtiqueta(tipoRep(g)));
+    addLista(4 + i, `COB_${g.toUpperCase()}`, prods.map(p => PRODUCTOS.find(x => x.key === p)!.etiquetaHoja));
+  });
+  addLista(8, 'FRQ_A1', [...FRANQUICIAS_CAT1]);
+  addLista(9, 'FRQ_A2', [...FRANQUICIAS_CAT2]);
+  addLista(10, 'FRQ_A3', [...FRANQUICIAS_MOTO]);
+  addLista(11, 'FRQ_NONE', [NO_APLICA]);
+  wb.definedNames.add('_LISTAS!$K$1:$K$1', 'FRQ_IND');
+  const COL_TIPO = colLetter(COLUMNS.findIndex(c => c.key === 'tipo_vehiculo') + 1);
+  const COL_COB  = colLetter(COLUMNS.findIndex(c => c.key === 'coberturas_solicitadas') + 1);
+  const grupoDe = (r: number) => `IFERROR(VLOOKUP($${COL_TIPO}${r},_LISTAS!$A$1:$B$${TIPOS_PLANTILLA.length},2,FALSE),"A1")`;
+  const grupoFrq = (r: number) => `IFERROR(VLOOKUP($${COL_TIPO}${r},_LISTAS!$A$1:$B$${TIPOS_PLANTILLA.length},2,FALSE),"A1")`;
+  const TIPO_OPTIONS   = `_LISTAS!$A$1:$A$${TIPOS_PLANTILLA.length}`;
   const USO_OPTIONS    = '"Particular,Servicio publico,Transportes propios"';
   const ADR_OPTIONS_DV = '"No,Si"';
   const AMBITO_OPTIONS = '"Nacional,Internacional"';
-  const COB_OPTIONS    = '"Terceros,Terceros Ampliado,Todo Riesgo con Franquicia"';
   const SI_NO_OPTIONS  = '"Si,No"';
 
   const dvMap: Record<string, string> = {
-    tipo_vehiculo:          TIPO_OPTIONS,
     uso:                    USO_OPTIONS,
     adr:                    ADR_OPTIONS_DV,
     ambito:                 AMBITO_OPTIONS,
-    coberturas_solicitadas: COB_OPTIONS,
     lunas:                  SI_NO_OPTIONS,
     animales:               SI_NO_OPTIONS,
     seguro_conductor:       SI_NO_OPTIONS,
     asistencia:             SI_NO_OPTIONS,
   };
 
-  for (let r = DATA_START_ROW; r < DATA_START_ROW + 200; r++) {
+  // Valor de cada columna de la plantilla a partir de una fila de ORIGINAL (el año de la plantilla es el de fabricación)
+  const NUMERICAS = new Set(['anyo', 'frq', 'prima_referencia']);
+  const valorDe = (fila: Record<string, string> | undefined, key: string): string | number => {
+    if (!fila) return '';
+    const v = key === 'anyo'
+      ? ((fila['anyo_fabricacion'] || fila['anyo_matricula'] || fila['anyo'] || '').match(/(\d{4})/) ?? [])[1] ?? ''
+      : (fila[key] ?? '').toString().trim();
+    if (NUMERICAS.has(key) && v) {
+      const n = Number(String(v).replace(',', '.'));
+      if (Number.isFinite(n) && /^[\d.,]+$/.test(String(v))) return n;
+    }
+    return v;
+  };
+  const conDatos = (filas ?? []).filter(f => Object.values(f).some(v => String(v ?? '').trim()));
+  const nFilas = Math.max(200, conDatos.length + 50);
+
+  for (let r = DATA_START_ROW; r < DATA_START_ROW + nFilas; r++) {
     const row = ws.getRow(r);
     row.height = 18;
     const isEven = (r - DATA_START_ROW) % 2 === 0;
 
     COLUMNS.forEach((col, i) => {
       const cell = row.getCell(i + 1);
+      const v = valorDe(conDatos[r - DATA_START_ROW], col.key);
+      if (v !== '') cell.value = v;
 
       cell.fill = { type: 'pattern', pattern: 'solid',
         fgColor: { argb: 'FF' + (isEven ? C.white : C.gray_50) } };
@@ -214,8 +273,28 @@ export async function generarPlantillaExcel(carpeta?: Pick<FlotaCarpeta, 'nombre
         right:  { style: 'thin', color: { argb: 'FF' + C.border } },
       };
 
-      // Validaciones dropdown
-      if (dvMap[col.key]) {
+      // Validaciones encadenadas: tipo (lista cerrada) → cobertura (según tipo) → franquicia (según tipo y cobertura)
+      const rr = r;
+      if (col.key === 'tipo_vehiculo') {
+        cell.dataValidation = {
+          type: 'list', allowBlank: true, formulae: [TIPO_OPTIONS],
+          showErrorMessage: true, errorStyle: 'stop', errorTitle: 'Tipo de vehículo', error: 'Elige un tipo de la lista.',
+          showInputMessage: true, promptTitle: col.header, prompt: 'Elige primero el tipo: limita las coberturas y las franquicias.',
+        };
+      } else if (col.key === 'coberturas_solicitadas') {
+        cell.dataValidation = {
+          type: 'list', allowBlank: true, formulae: [`INDIRECT("COB_"&${grupoDe(rr)})`],
+          showErrorMessage: true, errorStyle: 'stop', errorTitle: 'Cobertura', error: 'Elige una cobertura de la lista (depende del tipo de vehículo).',
+          showInputMessage: true, promptTitle: col.header, prompt: 'Las coberturas disponibles dependen del tipo de vehículo.',
+        };
+      } else if (col.key === 'frq') {
+        cell.dataValidation = {
+          type: 'list', allowBlank: true,
+          formulae: [`INDIRECT("FRQ_"&IF(ISNUMBER(SEARCH("franquicia",$${COL_COB}${rr})),${grupoFrq(rr)},"NONE"))`],
+          showErrorMessage: true, errorStyle: 'stop', errorTitle: 'Franquicia', error: 'Elige una franquicia de la lista (depende del tipo y de la cobertura).',
+          showInputMessage: true, promptTitle: col.header, prompt: 'Solo las coberturas con franquicia admiten un importe.',
+        };
+      } else if (dvMap[col.key]) {
         cell.dataValidation = {
           type: 'list',
           allowBlank: true,

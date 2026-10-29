@@ -20,6 +20,11 @@ function normalizeCandidato(c: CatalogoCandidato) {
         pma: c.pma ?? 0,
         puertas: c.num_puertas,
         anyo: iniYear,
+        // Ventana de comercialización y tipología: ORION los usa para verificar la identificación (verificacion.ts)
+        desde: iniYear,
+        hasta: c.fec_fin_comerc ? parseInt(c.fec_fin_comerc.substring(0, 4)) || 0 : 0,
+        plazasMin: c.num_plazas_min,
+        tipo: c.tipo || 'sin_clasificar',
         pvp: c.pvp || undefined,
         score: c.score,
     };

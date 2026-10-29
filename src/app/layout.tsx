@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
-import { Inter, Space_Grotesk } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
-const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-display" });
+// Tipografías alojadas en el proyecto (src/app/fonts): mismas fuentes que el diseño, sin red.
+const inter = localFont({ src: "./fonts/Inter-latin-variable.woff2", weight: "100 900", variable: "--font-inter", display: "swap" });
+const spaceGrotesk = localFont({ src: "./fonts/SpaceGrotesk-latin-variable.woff2", weight: "300 700", variable: "--font-display", display: "swap" });
 
 export const metadata: Metadata = {
     title: "ORION | Del Caos al Orden",
