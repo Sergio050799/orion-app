@@ -5,10 +5,6 @@ import { consolidarSinco, consolidarSincoPorTipo } from '@/core/flotas';
 import type { ResumenSinco } from '@/core/flotas';
 import type { FlotaHeader, CoberturaRow } from './types';
 import type { DanosPropiosData } from '@/core/flotas';
-import { nf, dec, eur, signedPc } from '@/lib/fmt';
-import { DetailDrawer, type DetailDrawerData } from '@/components/saas/DetailDrawer';
-import ConfigCoberturas, { type GrupoConfig } from './ConfigCoberturas';
-import { garantiasOferta, normalizarConfig, tipoKeyDesdeEtiqueta, type ConfigCobertura } from '@/core/flotas/catalogoCoberturas';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -45,8 +41,6 @@ interface Props {
   sincoGlobal: SincoGlobal | null;
   primasMmtValues?: Record<string, number>;
   onPrimasMmtChange?: (primas: Record<string, number>) => void;
-  configCoberturas?: Record<string, ConfigCobertura>;
-  onConfigCoberturasChange?: (cfg: Record<string, ConfigCobertura>) => void;
   tarifaFlota?: TarifaEntry[];
   corredorLabel?: string;
   danosPropios?: DanosPropiosData;
@@ -60,13 +54,18 @@ const normTipo = (t: string) => {
   return u === 'DERIVADO DE TURISMO' ? 'TURISMO' : u || 'SIN TIPO';
 };
 
-const fmtEur = (n: number) => eur(n, 2);
-const fmtEur2 = (n: number) => eur(n, 2);
-const fmt2 = (n: number) => dec(n, 2);
+const fmtEur = (n: number) =>
+  n.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+
+const fmtEur2 = (n: number) =>
+  n.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+
+const fmt2 = (n: number) =>
+  (isNaN(n) || !isFinite(n) ? '—' : n.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 
 // frecuencia es un ratio (0.14 = 14%); null = sin exposición válida
 const fmtFreq = (n: number | null) =>
-  n === null ? 'Sin exp.' : (isNaN(n) || !isFinite(n) ? '—' : `${dec(n * 100, 1)} %`);
+  n === null ? 'Sin exp.' : (isNaN(n) || !isFinite(n) ? '—' : `${(n * 100).toLocaleString('es-ES', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %`);
 
 const today = () => new Date().toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
@@ -109,6 +108,9 @@ const COB_NOMBRES: Record<string, string> = {
 
 // ─── PDF Generator ────────────────────────────────────────────────────────────
 
+// SVG logo fallback (si falla la carga del PNG)
+const LOGO_SVG_FALLBACK = `<svg class="orion-mark" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg"><path d="M17.5 3.3 29.5 9.1 29.5 23.3 17.4 31.4 5.1 24.5 5.1 10.4Z" fill="none" stroke="#000" stroke-linejoin="round" stroke-width="3"/><path d="M8.3 23.2 22.2 15.1M23.2 3.9 32.9 8.8 32.9 16.7M19.5 29.8 29.4 24.1" fill="none" stroke="#000" stroke-linecap="round" stroke-width="3"/></svg>`;
+
 let _logoCache: string | null = null;
 async function fetchLogoDataUrl(): Promise<string> {
   if (_logoCache) return _logoCache;
@@ -140,8 +142,6 @@ const fmtDateField = (v?: string): string => {
       return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
     }
   }
-  const iso = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (iso) return `${iso[3]}/${iso[2]}/${iso[1]}`;
   return v;
 };
 
@@ -175,9 +175,13 @@ function buildPdfHtml(data: {
 
   const fleetName = data.carpetaNombre?.trim() || header?.tomador?.trim() || data.tomadoresArr?.[0]?.trim() || '';
 
-  const brandrow = (slim = false) => `<div class="ph${slim ? ' slim' : ''}">
-  <div class="ph-l"><b>MMT Seguros</b>${slim ? `<span>${fleetName || 'Análisis técnico de flotas'}</span>` : '<span>Departamento Técnico</span>'}</div>
-  <div class="ph-r">${[corredorLabel, dateStr].filter(Boolean).join(' · ')}</div>
+  const logoRight = data.logoSrc
+    ? `<img src="${data.logoSrc}" alt="ORION" style="width:32px;height:32px;object-fit:contain;display:block;filter:brightness(0)">`
+    : LOGO_SVG_FALLBACK;
+
+  const brandrow = `<div class="brandrow">
+  <div class="brandname">MMT SEGUROS</div>
+  ${logoRight}
 </div>`;
 
   // Pivot rows
@@ -185,12 +189,12 @@ function buildPdfHtml(data: {
     const total = pivot.cobs.reduce((a, c) => a + (pivot.counts[tipo]?.[c] ?? 0), 0);
     return `<tr>
       <td>${tipo}</td>
-      <td class="cnt"><b>${nf(total)}</b></td>
-      ${pivot.cobs.map(c => `<td class="cnt">${nf(pivot.counts[tipo]?.[c] ?? 0)}</td>`).join('')}
+      <td class="cnt"><b>${total}</b></td>
+      ${pivot.cobs.map(c => `<td class="cnt">${pivot.counts[tipo]?.[c] ?? 0}</td>`).join('')}
     </tr>`;
   }).join('');
   const pivotTotals = pivot.cobs.map(c =>
-    `<td class="cnt">${nf(pivot.tipos.reduce((a, t) => a + (pivot.counts[t]?.[c] ?? 0), 0))}</td>`
+    `<td class="cnt">${pivot.tipos.reduce((a, t) => a + (pivot.counts[t]?.[c] ?? 0), 0)}</td>`
   ).join('');
 
   const primasRows = primasSol.map((r, i) => {
@@ -199,7 +203,7 @@ function buildPdfHtml(data: {
     const difCls = difRow < 0 ? ' neg' : difRow > 0 ? ' pos' : '';
     return `<tr>
       <td><strong>${r.tipo}</strong><span class="minor">${r.cob}</span></td>
-      <td class="cnt">${nf(r.count)}</td>
+      <td class="cnt">${r.count}</td>
       <td class="num">${r.media ? fmtEur2(r.media) : '—'}</td>
       <td class="num">${r.total ? fmtEur(r.total) : '—'}</td>
       <td class="num">${mmt?.prima != null ? fmtEur2(mmt.prima) : '—'}</td>
@@ -216,7 +220,7 @@ function buildPdfHtml(data: {
     ${data.fechaVctoDisplay ? `<div><small>Vencimiento</small><strong>${data.fechaVctoDisplay}</strong></div>` : ''}
     ${ambitoLabel           ? `<div><small>Ámbito</small><strong>${ambitoLabel}</strong></div>` : ''}
     ${header?.cif           ? `<div><small>CIF / NIF</small><strong>${header.cif}</strong></div>` : ''}
-    ${numTomadores > 1      ? `<div><small>Composición</small><strong>${nf(numTomadores)} tomadores</strong></div>` : ''}
+    ${numTomadores > 1      ? `<div><small>Composición</small><strong>${numTomadores} tomadores</strong></div>` : ''}
     ${obsLine               ? `<div style="flex:2"><small>Observaciones</small><strong>${obsLine}</strong></div>` : ''}
   </div>`;
 
@@ -229,16 +233,16 @@ function buildPdfHtml(data: {
     const tipoRows = (sincoPorTipo && sincoPorTipo.length > 1)
       ? sincoPorTipo.map(({ tipologia, resumen: r }) => `<tr>
           <td>${tipologia}</td>
-          <td class="cnt">${nf(r.totalVehiculos)}</td>
-          <td class="cnt">${nf(r.vehiculosConSinco)}</td>
-          <td class="cnt">${nf(r.totalSiniestros)}</td>
+          <td class="cnt">${r.totalVehiculos}</td>
+          <td class="cnt">${r.vehiculosConSinco}</td>
+          <td class="cnt">${r.totalSiniestros}</td>
           <td class="num">${fmt2(r.antiguedadMedia)} a</td>
           <td class="num">${fmt2(r.siniestrosPorAnio)}</td>
           <td class="num">${fmtFreq(r.frecuencia)}</td>
         </tr>`).join('')
       : null;
     return `<section class="report-section section-break">
-    <h2 class="sec-title">2 · Siniestralidad SINCO <em>Resumen global</em></h2>
+    <h2 class="sec-title">Siniestralidad SINCO <em>Resumen global</em></h2>
     <div class="metricstrip">${items}</div>
     ${hasSinExp ? `<p class="method">Sin exposición válida: la frecuencia no puede interpretarse como 0 %.</p>` : ''}
     ${tipoRows ? `<table class="table">
@@ -260,7 +264,7 @@ function buildPdfHtml(data: {
       `<div class="metric"><b>${v}</b><small>${l}</small></div>`
     ).join('');
     return `<section class="report-section section-break">
-    <h2 class="sec-title">3 · Siniestralidad Daños Propios <em>Resumen global</em></h2>
+    <h2 class="sec-title">Siniestralidad Daños Propios <em>Resumen global</em></h2>
     <div class="metricstrip">${items}</div>
   </section>`;
   })() : '';
@@ -270,7 +274,7 @@ function buildPdfHtml(data: {
     <div><small>Prima solicitada</small><strong>${fmtEur(totalSol)}</strong></div>
     <div><small>Prima MMT</small><strong>${fmtEur(totalMmt)}</strong></div>
     <div><small>Diferencia</small><strong class="${dif >= 0 ? 'pos' : 'neg'}">${dif >= 0 ? '+' : ''}${fmtEur(dif)}</strong></div>
-    <div><small>Variación</small><strong class="${dif >= 0 ? 'pos' : 'neg'}">${totalSol ? (dif >= 0 ? '+' : '') + dec(pctDif, 1) + ' %' : '—'}</strong></div>
+    <div><small>Variación</small><strong class="${dif >= 0 ? 'pos' : 'neg'}">${totalSol ? (dif >= 0 ? '+' : '') + pctDif.toLocaleString('es-ES', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' %' : '—'}</strong></div>
   </div>
   <p class="method">Diferencia calculada como prima MMT menos prima solicitada.</p>` : '';
 
@@ -290,7 +294,7 @@ function buildPdfHtml(data: {
       <tbody>${primasRows}</tbody>
       <tbody><tr class="total">
         <td>TOTAL</td>
-        <td class="cnt">${nf(primasSol.reduce((a, r) => a + r.count, 0))}</td>
+        <td class="cnt">${primasSol.reduce((a, r) => a + r.count, 0)}</td>
         <td class="num">—</td>
         <td class="num">${totalSol ? fmtEur(totalSol) : '—'}</td>
         <td class="num">—</td>
@@ -309,86 +313,85 @@ function buildPdfHtml(data: {
   const totalPages = 1 + (hasPrimasData ? 1 : 0) + covChunks.length;
 
   return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
-<title>Informe — ${fleetName || header?.tomador || 'MMT Seguros'}</title>
+<title>Informe — ${fleetName || header?.tomador || 'ORION'}</title>
 <style>
 @page{size:A4;margin:0}
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--ink:#18243a;--muted:#5d6b82;--line:#d6deea;--soft:#f7f9fd;--blue:#002F82;--tot:#eaf0fa;--green:#157858;--red:#b84b56}
+:root{--ink:#181d24;--muted:#5b6470;--line:#d9dde3;--soft:#f3f5f7;--blue:#1240cc;--green:#157858}
 html,body,.page,.page *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}
 html{background:#e8ebef}
 body{margin:0;font-family:Arial,Helvetica,sans-serif;color:var(--ink)}
 .pages{padding:20px}
-.page{width:210mm;height:297mm;background:#fff;margin:0 auto 20px;padding:11mm 12.5mm 20mm;box-shadow:0 7px 35px rgba(15,19,28,.15);position:relative;overflow:hidden;display:flex;flex-direction:column}
-.ph{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid var(--blue);padding-bottom:7px;margin-bottom:12px}
-.ph-l b{display:block;font-size:17px;font-weight:800;letter-spacing:.04em;color:var(--blue)}
-.ph-l span{display:block;font-size:10px;color:var(--muted);margin-top:2px}
-.ph-r{font-size:10px;color:var(--muted);text-align:right}
-.ph.slim{padding-bottom:5px;margin-bottom:10px}
-.ph.slim .ph-l{display:flex;gap:10px;align-items:baseline}
-.ph.slim .ph-l b{font-size:12px}
+.page{width:210mm;height:297mm;background:white;margin:0 auto 20px;padding:11mm 12.5mm 20mm;box-shadow:0 7px 35px rgba(15,19,28,.15);position:relative;overflow:hidden;display:flex;flex-direction:column}
+.brandrow{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #d1d6df;padding-bottom:7px;margin-bottom:8px}
+.brandname{font-size:17px;font-weight:800;letter-spacing:.115em;color:var(--ink)}
+.orion-mark{width:32px;height:32px;display:block;flex:none}
 .kicker{font-size:10px;letter-spacing:.18em;font-weight:750;color:var(--blue);margin:1px 0 5px}
-.report-title{font-size:23px;line-height:1.1;letter-spacing:-.03em;margin:0 0 5px;font-weight:800;color:var(--ink)}
+.report-title{font-size:23px;line-height:1.05;letter-spacing:-.045em;margin:0 0 5px;font-weight:800;color:var(--ink)}
 .subtitle{font-size:11px;color:var(--muted);margin:0}
 .hero{display:flex;justify-content:space-between;gap:10px;margin-top:8px;margin-bottom:9px;padding:8px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 .hero div{flex:1}
 .hero small{display:block;text-transform:uppercase;color:var(--muted);font-size:9px;letter-spacing:.07em;font-weight:750;margin-bottom:5px}
 .hero strong{font-size:12px;line-height:1.3;font-weight:700;color:var(--ink)}
 .report-section{margin-top:6px}
-.section-break{margin-top:12px}
-.sec-title{font-size:14px;margin:0 0 7px;font-weight:780;letter-spacing:-.01em;display:flex;align-items:center;justify-content:space-between;color:var(--blue)}
+.section-break{margin-top:9px}
+.sec-title{font-size:14px;margin:0 0 7px;font-weight:780;letter-spacing:-.02em;display:flex;align-items:center;justify-content:space-between;color:var(--ink)}
 .sec-title em{font-style:normal;font-size:10px;color:var(--muted);font-weight:normal}
 .table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:11.2px;line-height:1.32}
-.table th{padding:8px 7px;background:var(--blue);font-size:9.6px;color:#fff;font-weight:750;text-align:left}
-.table td{padding:8px 7px;border-bottom:1px solid var(--line);vertical-align:top;line-height:1.4;color:var(--ink);white-space:nowrap}
-.table td:first-child{white-space:normal}
-.table td.num,.table th.num{text-align:center;font-variant-numeric:tabular-nums}
+.table th{padding:8px 7px;background:#e8edf4;font-size:9.6px;color:#303948;font-weight:750;text-align:left;border-bottom:1px solid var(--line)}
+.table td{padding:8px 7px;border-bottom:1px solid #e4e7eb;vertical-align:top;line-height:1.4;color:var(--ink)}
+.table td.num,.table th.num{text-align:right;font-variant-numeric:tabular-nums}
 .table td.cnt,.table th.cnt{text-align:center;font-variant-numeric:tabular-nums}
-.table tbody tr:nth-child(even):not(.total) td{background:var(--soft)}
-.table .total td{font-weight:800;background:var(--tot);border-top:1.5px solid var(--blue)}
+.table tbody tr:nth-child(even):not(.total) td{background:#f8fafd}
+.table .total td{font-weight:800;background:#e9edf3;border-top:1px solid #aeb8c8}
 .table td:first-child{font-weight:550}
 .table td:first-child b{font-size:11px}
 .minor{display:block;font-size:10px;color:var(--muted);margin-top:3px;line-height:1.35}
-.metricstrip{display:grid;grid-template-columns:repeat(6,1fr);border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin:7px 0 9px;background:var(--soft)}
+.metricstrip{display:grid;grid-template-columns:repeat(6,1fr);border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin:7px 0 9px;background:#f8fafd}
 .metric{padding:8px 7px;border-right:1px solid var(--line)}
 .metric:first-child{padding-left:0}
 .metric:last-child{border:0}
-.metric b{font-size:15px;display:block;line-height:1.2;color:var(--blue);white-space:nowrap}
+.metric b{font-size:15px;display:block;line-height:1.2;color:var(--ink)}
 .metric small{font-size:8.2px;text-transform:uppercase;letter-spacing:.035em;color:var(--muted);font-weight:740}
-.economy{display:grid;grid-template-columns:repeat(4,1fr);border-top:1.3px solid var(--line);border-bottom:1.3px solid var(--line);margin-top:9px;background:var(--soft)}
+.economy{display:grid;grid-template-columns:repeat(4,1fr);border-top:1.3px solid var(--line);border-bottom:1.3px solid var(--line);margin-top:9px;background:#f8fafd}
 .economy div{padding:9px 8px;border-right:1px solid var(--line)}
 .economy div:first-child{padding-left:0}
 .economy div:last-child{border:0}
 .economy small{display:block;color:var(--muted);font-size:8.8px;text-transform:uppercase;font-weight:bold;margin-bottom:4px}
-.economy strong{font-size:17px;font-variant-numeric:tabular-nums;color:var(--ink);white-space:nowrap}
-.pos{color:var(--green)}.neg{color:var(--red)}
+.economy strong{font-size:17px;font-variant-numeric:tabular-nums;color:var(--ink)}
+.pos{color:var(--green)}.neg{color:#b84b56}
 .method{font-size:9.2px;color:var(--muted);padding-top:6px}
 .coverage-grid{display:grid;grid-template-columns:1fr 1fr;gap:7mm;align-content:start;margin-top:14px}
-.coverage{border-top:2px solid var(--blue);padding-top:7px;break-inside:avoid}
+.coverage{border-top:2px solid #272d36;padding-top:7px;break-inside:avoid}
 .coverage h3{font-size:14px;margin:0 0 3px;font-weight:800;color:var(--ink)}
 .coverage .type{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:9px;border-bottom:1px solid var(--line);padding-bottom:6px}
 .coverage ul{padding:0;margin:0;list-style:none}
-.coverage li{display:flex;gap:9px;align-items:flex-start;border-bottom:1px solid var(--line);padding:7px 0;font-size:11px;line-height:1.35;color:var(--ink)}
+.coverage li{display:flex;gap:9px;align-items:flex-start;border-bottom:1px solid #eceef1;padding:7px 0;font-size:11px;line-height:1.35;color:var(--ink)}
 .coverage li::before{content:"";width:9px;flex:none;height:2px;background:var(--blue);margin-top:5px}
-.note{border-left:3px solid var(--blue);background:var(--tot);color:#3a4a66;padding:9px 11px;font-size:10px;line-height:1.5;margin-top:13px}
+.note{border-left:3px solid var(--blue);background:#edf3fc;color:#485160;padding:9px 11px;font-size:10px;line-height:1.5;margin-top:13px}
 .footer{position:absolute;bottom:8mm;left:12.5mm;right:12.5mm;border-top:1px solid var(--line);padding-top:7px;display:flex;justify-content:space-between;color:var(--muted);font-size:9px}
 @media print{
   body{background:white}
   .pages{padding:0}
   .page{height:296mm;width:210mm;margin:0;box-shadow:none;break-after:page;page-break-after:always}
   .page:last-child{break-after:auto;page-break-after:auto}
+  .table th{background:#e8edf4 !important}
+  .table .total td{background:#e9edf3 !important}
+  .metricstrip,.economy{background:#f8fafd !important}
+  .note{background:#edf3fc !important}
 }
 </style>
 </head><body>
 <div class="pages">
 
 <article class="page">
-${brandrow(false)}
+${brandrow}
 <div class="kicker">ANÁLISIS TÉCNICO DE FLOTAS</div>
 <h1 class="report-title">${fleetName || 'Informe de estudio de flota'}</h1>
 <p class="subtitle">Composición del riesgo, siniestralidad y comparativa económica</p>
 ${heroHtml}
 <section class="report-section">
-  <h2 class="sec-title">1 · Composición de la flota <em>${nf(totalVehiculos)} vehículos informados</em></h2>
+  <h2 class="sec-title">Composición de la flota <em>${totalVehiculos} vehículos informados</em></h2>
   <table class="table">
     <colgroup><col style="width:35%"><col style="width:9%">${pivot.cobs.map(() => `<col style="width:${Math.floor(56/Math.max(pivot.cobs.length,1))}%">`).join('')}</colgroup>
     <thead><tr>
@@ -399,7 +402,7 @@ ${heroHtml}
     <tbody>${pivotRows}</tbody>
     <tbody><tr class="total">
       <td>Total declarado</td>
-      <td class="cnt"><b>${nf(totalVehiculos)}</b></td>
+      <td class="cnt"><b>${totalVehiculos}</b></td>
       ${pivotTotals}
     </tr></tbody>
   </table>
@@ -407,37 +410,35 @@ ${heroHtml}
 ${sincoSection}
 ${sincoPorTipoSection}
 ${danosPropiosSection}
-${sinco ? `<section class="report-section section-break">
-  <h2 class="sec-title">Anexo · cómo se calcula</h2>
-  <div class="note" style="margin-top:0;font-size:9px;line-height:1.7">
-    <strong>Antigüedad media (*)</strong> = media de <em>Num_Anios_Asegurado</em> de los vehículos con consulta SINCO válida (código de retorno vacío o 0)<br>
-    <strong>Siniestros por año (*)</strong> = &Sigma; siniestros &divide; antigüedad media<br>
-    <strong>Frecuencia (*)</strong> = (siniestros por año &divide; vehículos con SINCO) &times; 100 %${sincoPorTipo && sincoPorTipo.length > 1 ? '<br><em>Por tipología: mismas fórmulas aplicadas a cada subgrupo de forma independiente. Las frecuencias parciales no son aditivas respecto al global porque cada tipología tiene su propia antigüedad media.</em>' : ''}
-  </div>
-</section>` : ''}
+${sinco ? `<div class="note" style="margin-bottom:9px;font-size:9px;line-height:1.7">
+  <strong style="display:block;margin-bottom:5px;font-size:9.5px">Metodología de cálculo</strong>
+  <strong>Antigüedad media*</strong> = media de <em>Num_Anios_Asegurado</em> de los vehículos con consulta SINCO válida (código retorno vacío o 0)<br>
+  <strong>Sin./año*</strong> = &Sigma; siniestros &divide; antigüedad media<br>
+  <strong>Frecuencia*</strong> = (sin./año &divide; veh. con SINCO) &times; 100 %${sincoPorTipo && sincoPorTipo.length > 1 ? '<br><em>Por tipología: mismas fórmulas aplicadas a cada subgrupo de forma independiente. Las frecuencias parciales no son aditivas respecto al global porque cada tipología tiene su propia antigüedad media.</em>' : ''}
+</div>` : ''}
 <div class="footer"${escObs ? ' style="flex-direction:column;gap:4px"' : ''}>
   ${escObs ? `<div style="font-style:italic;color:#7a8594;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:9px">Obs.: ${escObs}</div>` : ''}
   <div style="display:flex;justify-content:space-between;width:100%">
-    <span>Documento confidencial</span>
-    <span>Página 1 de ${totalPages}</span>
+    <span>ORION · Documento confidencial</span>
+    <span>${dateStr} · Página 1 de ${totalPages}</span>
   </div>
 </div>
 </article>
 
 ${hasPrimasData ? `<article class="page">
-${brandrow(true)}
+${brandrow}
 <div class="kicker">ANÁLISIS ECONÓMICO</div>
 <h1 class="report-title">${fleetName || 'Comparativa de primas'}</h1>
 <p class="subtitle">Importes anuales — Prima solicitada vs Prima MMT de referencia</p>
 ${primasSection}
 <div class="footer">
-  <span>Documento confidencial</span>
-  <span>Página 2 de ${totalPages}</span>
+  <span>ORION · Documento confidencial</span>
+  <span>${dateStr} · Página 2 de ${totalPages}</span>
 </div>
 </article>` : ''}
 
 ${covChunks.map((chunk, ci) => `<article class="page">
-${brandrow(true)}
+${brandrow}
 <div class="kicker">ANEXO DE CONDICIONES</div>
 <h1 class="report-title">${fleetName || 'Coberturas del estudio'}</h1>
 ${ci === 0 ? `<p class="subtitle">Relación de garantías declaradas según modalidad y tipología. Las condiciones definitivas corresponden a la póliza emitida.</p>` : ''}
@@ -450,8 +451,8 @@ ${ci === 0 ? `<p class="subtitle">Relación de garantías declaradas según moda
 </div>
 ${ci === covChunks.length - 1 ? `<div class="note">Las coberturas mostradas proceden del informe de referencia aportado. Condiciones sujetas a la póliza definitiva emitida por MMT Seguros.</div>` : ''}
 <div class="footer">
-  <span>Documento confidencial</span>
-  <span>Página ${(hasPrimasData ? 3 : 2) + ci} de ${totalPages}</span>
+  <span>ORION · Documento confidencial</span>
+  <span>${dateStr} · Página ${(hasPrimasData ? 3 : 2) + ci} de ${totalPages}</span>
 </div>
 </article>`).join('\n')}
 
@@ -464,7 +465,7 @@ ${ci === covChunks.length - 1 ? `<div class="note">Las coberturas mostradas proc
 export default function HojaInforme({
   header, carpetaNombre,
   trabajoRows, coberturas, sincoResultRows, sincoManual, sincoGlobal,
-  primasMmtValues, onPrimasMmtChange, configCoberturas, onConfigCoberturasChange, tarifaFlota, corredorLabel, danosPropios, observacion,
+  primasMmtValues, onPrimasMmtChange, tarifaFlota, corredorLabel, danosPropios, observacion,
 }: Props) {
 
   // ── Pivot tipo × cobertura ──────────────────────────────────────────────────
@@ -571,7 +572,6 @@ export default function HojaInforme({
   const [orionResults, setOrionResults] = useState<Record<string, OrionResult | null>>({});
   const [orionLoading, setOrionLoading] = useState(false);
   const [orionExpanded, setOrionExpanded] = useState<Record<string, boolean>>({});
-  const [pdfLoading, setPdfLoading] = useState(false);
 
   // ── Daños Propios ────────────────────────────────────────────────────────────
   const danosPropiosItems = useMemo((): [string, string][] | null => {
@@ -612,20 +612,6 @@ export default function HojaInforme({
       if (!isNaN(prima)) grupos[key].sumaSol += prima;
     });
     return grupos;
-  }, [trabajoRows]);
-
-  // Grupos (tipología × cobertura solicitada) para el configurador de coberturas, con lo que pidió el corredor
-  const gruposConfig = useMemo<GrupoConfig[]>(() => {
-    const out: Record<string, GrupoConfig> = {};
-    trabajoRows.filter(r => r['matricula']?.trim()).forEach(r => {
-      const tipoNorm = normTipo(r['tipo_vehiculo'] || '');
-      const cob = r['coberturas_solicitadas'] || 'Sin cobertura';
-      const key = `${tipoNorm}||${cob}`;
-      if (!out[key]) out[key] = { key, tipoNorm, cob, count: 0, filas: [] };
-      out[key].count++;
-      out[key].filas.push({ frq: r['frq'], lunas: r['lunas'], animales: r['animales'] });
-    });
-    return Object.values(out);
   }, [trabajoRows]);
 
   // ── Motor ORION — constantes y handler (post tipoCobGrupos) ─────────────────
@@ -784,26 +770,7 @@ export default function HojaInforme({
     const makeCobMap = () => new Map<string, CobEntry>();
     const cobMapSin = makeCobMap();
     const cobMapCon = makeCobMap();
-    // Filas con coberturas confirmadas en el configurador: el anexo sale del catálogo único
-    const porCfg = new Map<string, { titulo: string; tipologias: Set<string>; garantias: string[]; orden: number }>();
-    const ORDEN: Record<ConfigCobertura['producto'], number> = { terceros: 0, terceros_ampliado: 1, todo_riesgo: 2, moto_terceros: 3, moto_ampliado: 4 };
-    const BASE: Record<ConfigCobertura['producto'], string> = { terceros: 'Terceros', terceros_ampliado: 'Terceros ampliado', todo_riesgo: 'Todo riesgo con franquicia', moto_terceros: 'Terceros', moto_ampliado: 'Terceros ampliado con franquicia' };
-    const gobernada = new Set<string>();
     trabajoRows.filter(r => r['matricula']?.trim()).forEach(r => {
-      const tipoNorm = normTipo(r['tipo_vehiculo'] || '');
-      const clave = `${tipoNorm}||${r['coberturas_solicitadas'] || 'Sin cobertura'}`;
-      const tipoK = tipoKeyDesdeEtiqueta(tipoNorm);
-      const cfg = normalizarConfig(tipoK, configCoberturas?.[clave]);
-      if (!cfg) return;
-      gobernada.add(r['matricula']);
-      const garantias = garantiasOferta(tipoK, cfg);
-      const titulo = cfg.franquicia ? `${BASE[cfg.producto]} ${nf(cfg.franquicia)} €` : BASE[cfg.producto];
-      const sig = `${titulo}|${garantias.join('|')}`;
-      const e = porCfg.get(sig) ?? { titulo, tipologias: new Set<string>(), garantias, orden: ORDEN[cfg.producto] };
-      e.tipologias.add(tipoNorm.charAt(0) + tipoNorm.slice(1).toLowerCase());
-      porCfg.set(sig, e);
-    });
-    trabajoRows.filter(r => r['matricula']?.trim() && !gobernada.has(r['matricula'])).forEach(r => {
       const cob = r['coberturas_solicitadas'] || '';
       if (!cob) return;
       const tipo = normTipo(r['tipo_vehiculo'] || '');
@@ -842,14 +809,14 @@ export default function HojaInforme({
           const tipologias = [...nonRem];
           if (key === 't') result.push({ titulo: 'Terceros', tipologias, garantias: [...BASE_GARANTIAS, ...lunasGar, ...animalesGar, ...conductorGar, ...asistGar] });
           else if (key === 'ta') result.push({ titulo: 'Terceros Ampliado', tipologias, garantias: [...BASE_GARANTIAS, 'Lunas', 'Robo', 'Incendio', ...animalesGar, ...conductorGar, ...asistGar] });
-          else if (key === 'tr') result.push({ titulo: 'Todo Riesgo con Franquicia', tipologias, garantias: [...BASE_GARANTIAS, 'Lunas', 'Robo', 'Incendio', 'Daños propios con franquicia', ...animalesGar, ...conductorGar, ...asistGar] });
+          else if (key === 'tr') result.push({ titulo: 'Todo Riesgo con Franquicia 1.800 €', tipologias, garantias: [...BASE_GARANTIAS, 'Lunas', 'Robo', 'Incendio', 'Daños propios con franquicia de 1.800 €', ...animalesGar, ...conductorGar, ...asistGar] });
         }
         if (rem.size > 0 && !seen.has(keyFull + '_rem')) {
           seen.add(keyFull + '_rem');
           const tipologias = [...rem];
           if (key === 't') result.push({ titulo: 'Terceros — Remolques', tipologias, garantias: [...BASE_NO_CONDUCTOR, ...animalesGar, ...asistGar] });
           else if (key === 'ta') result.push({ titulo: 'Terceros Ampliado — Remolques', tipologias, garantias: [...BASE_NO_CONDUCTOR, 'Robo', 'Incendio', ...animalesGar, ...asistGar] });
-          else if (key === 'tr') result.push({ titulo: 'Todo Riesgo — Remolques', tipologias, garantias: [...BASE_NO_CONDUCTOR, 'Robo', 'Incendio', 'Daños propios con franquicia', ...animalesGar, ...asistGar] });
+          else if (key === 'tr') result.push({ titulo: 'Todo Riesgo — Remolques', tipologias, garantias: [...BASE_NO_CONDUCTOR, 'Robo', 'Incendio', 'Daños propios con franquicia de 1.800 €', ...animalesGar, ...asistGar] });
         }
       });
     };
@@ -862,12 +829,9 @@ export default function HojaInforme({
       const prev = dedupMap.get(k);
       if (!prev || entry.garantias.length > prev.garantias.length) dedupMap.set(k, entry);
     }
-    const titleOrder: Record<string, number> = { 'Terceros': 0, 'Terceros — Remolques': 1, 'Terceros Ampliado': 2, 'Terceros Ampliado — Remolques': 3, 'Todo Riesgo con Franquicia': 4, 'Todo Riesgo — Remolques': 5 };
-    const legacy = [...dedupMap.values()].sort((a, b) => (titleOrder[a.titulo] ?? 9) - (titleOrder[b.titulo] ?? 9));
-    const nuevas = [...porCfg.values()].sort((a, b) => a.orden - b.orden || a.titulo.localeCompare(b.titulo))
-      .map(e => ({ titulo: e.titulo, tipologias: [...e.tipologias], garantias: e.garantias }));
-    return [...nuevas, ...legacy];
-  }, [trabajoRows, configCoberturas]);
+    const titleOrder: Record<string, number> = { 'Terceros': 0, 'Terceros — Remolques': 1, 'Terceros Ampliado': 2, 'Terceros Ampliado — Remolques': 3, 'Todo Riesgo con Franquicia 1.800 €': 4, 'Todo Riesgo — Remolques': 5 };
+    return [...dedupMap.values()].sort((a, b) => (titleOrder[a.titulo] ?? 9) - (titleOrder[b.titulo] ?? 9));
+  }, [trabajoRows]);
 
   // ── Defaults tarifa ───────────────────────────────────────────────────────────
   const tarifaDefaults = useMemo(() => {
@@ -955,8 +919,6 @@ export default function HojaInforme({
 
   // ── PDF ───────────────────────────────────────────────────────────────────────
   const handlePdf = useCallback(async () => {
-    setPdfLoading(true);
-    try {
     const logoSrc = await fetchLogoDataUrl();
     const r = resumenAuto ?? resumenManual;
     const sincoValues: [string, string][] | null = (() => {
@@ -1014,302 +976,279 @@ export default function HojaInforme({
     });
 
     const w = window.open('', '_blank', 'width=860,height=700');
-    if (!w) { setPdfLoading(false); return; }
+    if (!w) return;
     w.document.write(html);
     w.document.close();
-    } finally {
-      setPdfLoading(false);
-    }
   }, [header, pivot, totalVehiculos, ambito, adrActivo, primasSol, mmtRows, resumenAuto, resumenManual, sincoGlobal, danosPropios, cobAnexo, sincoPorTipo, fechaVctoDisplay]);
-
-  // ── Detalle (panel lateral de los KPIs) ──────────────────────────────────────
-  const [infKey, setInfKey] = useState<string | null>(null);
-  const [draft, setDraft] = useState<Record<string, string>>({});
-
-  const sincoItems = (() => {
-    const r = resumenAuto ?? resumenManual;
-    const items: [string, string, string?][] = r ? [
-      ['Vehículos', nf(r.totalVehiculos)],
-      ['Con SINCO', nf(r.vehiculosConSinco)],
-      ['Siniestros', nf(r.totalSiniestros)],
-      ['Antigüedad', `${fmt2(r.antiguedadMedia)} años`],
-      ['Sin./año', fmt2(r.siniestrosPorAnio)],
-      ['Frecuencia', fmtFreq(r.frecuencia)],
-    ] : sincoGlobal ? [
-      ['Siniestros', nf(sincoGlobal.siniestrosTotales)],
-      ['Años exp.', `${fmt2(sincoGlobal.anyosExperiencia)} años`],
-      ['Frecuencia', fmtFreq(sincoGlobal.frecuencia)],
-    ] : [];
-    return items;
-  })();
-
-  const infDetail = (k: string | null): DetailDrawerData | null => {
-    if (!k) return null;
-    const nPrimas = primasSol.length;
-    const rowsTip = primasSol.map((p, i) => {
-      const m = mmtRows[i];
-      return { p, m };
-    });
-    switch (k) {
-      case 'veh':
-        return {
-          over: 'Informe · Composición', title: 'Vehículos informados', desc: 'Vehículos con matrícula en Trabajo, por tipo.',
-          stats: [['Vehículos', nf(totalVehiculos)], ['Ámbito', totalVehiculos > 0 ? (ambito.label ?? 'Nacional') : '—']],
-          head: ['Tipo', 'Vehículos'],
-          rows: pivot.tipos.map(t => [t, nf(pivot.cobs.reduce((a, c) => a + (pivot.counts[t]?.[c] ?? 0), 0))]),
-          fx: [['Total', `Σ vehículos de cada tipo = ${nf(totalVehiculos)}`]],
-        };
-      case 'sol':
-        return {
-          over: 'Informe · Primas', title: 'Prima solicitada', desc: 'Prima que pide el corredor, por tipología y cobertura.',
-          stats: [['Prima solicitada', fmtEur(totalSol)], ['Grupos', nf(nPrimas)]],
-          head: ['Tipología y cobertura', 'Veh.', 'Sol./veh.', 'Total'],
-          rows: primasSol.map(p => [`${p.tipo} · ${p.cob}`, nf(p.count), p.media ? fmtEur2(p.media) : '—', p.total ? fmtEur(p.total) : '—']),
-          fx: [['Total por grupo', 'Prima solicitada por vehículo × Nº de vehículos'], ['Prima solicitada total', `Σ totales de los grupos = ${fmtEur(totalSol)}`]],
-        };
-      case 'mmt':
-        return {
-          over: 'Informe · Primas', title: 'Prima MMT', desc: 'Prima ofertada por MMT, por tipología y cobertura.',
-          stats: [['Prima MMT', fmtEur(totalMmt)], ['Grupos con prima', nf(mmtRows.filter(r => r.total != null).length)]],
-          head: ['Tipología y cobertura', 'Veh.', 'MMT/veh.', 'Total'],
-          rows: rowsTip.map(({ p, m }) => [`${p.tipo} · ${p.cob}`, nf(p.count), m?.prima != null ? fmtEur2(m.prima) : '—', m?.total != null ? fmtEur(m.total) : '—']),
-          fx: [['Total por grupo', 'Prima MMT por vehículo × Nº de vehículos'], ['Prima MMT total', `Σ totales de los grupos = ${fmtEur(totalMmt)}`]],
-        };
-      case 'dif':
-      case 'var':
-        return {
-          over: 'Informe · Primas', title: k === 'dif' ? 'Diferencia' : 'Variación', desc: 'Prima MMT frente a la solicitada.',
-          stats: [['Diferencia', `${dif >= 0 ? '+' : '−'}${fmtEur(Math.abs(dif))}`], ['Variación', signedPc(pctDif, 1)]],
-          head: ['Tipología y cobertura', 'Solicitada', 'MMT', 'Diferencia'],
-          rows: rowsTip.map(({ p, m }) => {
-            const d = (m?.total ?? 0) - p.total;
-            return [`${p.tipo} · ${p.cob}`, p.total ? fmtEur(p.total) : '—', m?.total != null ? fmtEur(m.total) : '—', m?.total != null ? `${d >= 0 ? '+' : '−'}${fmtEur(Math.abs(d))}` : '—'];
-          }),
-          fx: [
-            ['Diferencia', `Prima MMT − Prima solicitada = ${fmtEur(totalMmt)} − ${fmtEur(totalSol)} = ${dif >= 0 ? '+' : '−'}${fmtEur(Math.abs(dif))}`],
-            ['Variación', `Diferencia ÷ Prima solicitada × 100 = ${fmtEur(Math.abs(dif))} ÷ ${fmtEur(totalSol)} × 100 = ${signedPc(pctDif, 1)}`],
-          ],
-        };
-      default:
-        return null;
-    }
-  };
-
-  const fechaHoy = today();
-  const tomadorTitulo = (header?.tomador || carpetaNombre || 'Flota').toString();
-  const interpretacion = `La flota de ${tomadorTitulo} se compone de ${nf(totalVehiculos)} vehículos${hasSincoData && sincoItems.length ? `, con una frecuencia de siniestralidad del ${fmtFreq((resumenAuto ?? resumenManual)?.frecuencia ?? sincoGlobal?.frecuencia ?? null)}` : ''}.${totalSol > 0 && totalMmt > 0 ? ` La prima MMT queda ${dif <= 0 ? 'por debajo' : 'por encima'} de la solicitada en ${fmtEur(Math.abs(dif))}.` : ''}`;
 
   // ── Render ────────────────────────────────────────────────────────────────────
   return (
-    <div className="stepscroll custom-scrollbar">
-      <div className="infbody">
+    <div className="flex flex-col h-full min-h-0" style={{ background: 'transparent', width: '100%', minWidth: 0, overflow: 'hidden' }}>
 
-        {/* ── Cabecera de paso ── */}
-        <div className="sh" style={{ flexShrink: 0 }}>
-          <div>
-            <h2><b>06 ·</b>Informe</h2>
-            <p>Análisis técnico de la flota, listo para descargar.</p>
-          </div>
-          <div className="acts">
-            <button className="mini" onClick={handleRecalcPrimas}
-              title="Recalcula las primas MMT desde los valores de la Oferta y la tarifa">
-              Recalcular desde la oferta
-            </button>
-            <button className="mini pri" onClick={handlePdf} disabled={pdfLoading}>
-              {pdfLoading ? 'Generando…' : 'Descargar informe'}
-            </button>
+      {/* report-actions — cabecera del informe */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid var(--t-line)', flexShrink: 0, gap: 20 }}>
+        <div>
+          <strong style={{ fontSize: 15, fontWeight: 700, color: 'var(--t-text)', display: 'block', lineHeight: 1.2 }}>
+            Informe · {totalVehiculos} vehículos
+          </strong>
+          <div style={{ fontSize: 12, color: 'var(--t-text-2)', marginTop: 5, lineHeight: 1.4 }}>
+            {[
+              tomadores.size > 1 ? `${tomadores.size} tomadores` : null,
+              totalVehiculos > 0 ? (ambito.label ?? 'Nacional') : null,
+              fechaVctoDisplay ? `vencimiento ${fechaVctoDisplay}` : null,
+              corredorLabel ? `${corredorLabel} · ${adrActivo ? 'SÍ lleva ADR' : 'NO lleva ADR'}` : (adrActivo ? 'ADR SÍ' : null),
+            ].filter(Boolean).join(' · ')}
           </div>
         </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexShrink: 0 }}>
+          <button onClick={handleRecalcPrimas} style={{
+            display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 6,
+            background: 'transparent', border: '1px solid var(--t-line)',
+            color: 'var(--t-text)', fontSize: 12, fontWeight: 650, cursor: 'pointer',
+          }}
+            title="Recalcula las primas MMT desde los valores de la Oferta y la tarifa"
+            onMouseEnter={e => (e.currentTarget.style.filter = 'brightness(1.13)')}
+            onMouseLeave={e => (e.currentTarget.style.filter = '')}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/>
+              <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+            </svg>
+            Recalcular primas
+          </button>
+          <button onClick={handlePdf} style={{
+            display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 6,
+            background: 'var(--t-blue)', border: '1px solid var(--t-blue)',
+            color: '#fff', fontSize: 12, fontWeight: 650, cursor: 'pointer',
+          }}
+            onMouseEnter={e => (e.currentTarget.style.filter = 'brightness(1.13)')}
+            onMouseLeave={e => (e.currentTarget.style.filter = '')}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" />
+              <line x1="12" y1="18" x2="12" y2="12" /><line x1="9" y1="15" x2="15" y2="15" />
+            </svg>
+            Descargar PDF
+          </button>
+        </div>
+      </div>
 
-        {/* ── Configurador de coberturas por tipología ── */}
-        <ConfigCoberturas grupos={gruposConfig} configs={configCoberturas ?? {}} onChange={cfg => onConfigCoberturasChange?.(cfg)} />
+      {/* Contenido: columna única, scroll vertical */}
+      <div className="flex-1 custom-scrollbar" style={{ overflowY: 'auto', overflowX: 'auto', padding: '24px 24px 40px', display: 'flex', flexDirection: 'column', gap: 20, width: '100%', boxSizing: 'border-box' }}>
 
-        {/* ── Hoja del informe ── */}
-        <article className="paper wide" aria-label="Vista previa del informe">
-          <div className="ph">
-            <div>
-              <div className="cl">MMT Seguros</div>
-              <div className="ref" style={{ textAlign: 'left' }}>Departamento Técnico</div>
-            </div>
-            <div className="ref">
-              {corredorLabel && <div>{corredorLabel}</div>}
-              <div>{fechaHoy}</div>
-            </div>
+        {/* ── Summary bar: Ámbito · Vencimiento · SINCO ───────────────── */}
+        <div style={{ display: 'grid', gridTemplateColumns: '160px 180px 1fr', gap: 0, border: '1px solid var(--t-line)', borderRadius: 8, overflow: 'hidden', background: 'var(--t-surface)', alignItems: 'stretch', flexShrink: 0 }}>
+          {/* Ámbito */}
+          <div style={{ padding: '20px 22px', borderRight: '1px solid var(--t-line)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}>
+            <small style={{ display: 'block', fontSize: 11.4, fontWeight: 700, letterSpacing: '0.05em', color: 'var(--t-text-2)', marginBottom: 10, textTransform: 'uppercase' }}>Ámbito</small>
+            <strong style={{ fontSize: 23, lineHeight: 1.1, color: 'var(--t-text)', fontWeight: 700 }}>{totalVehiculos > 0 ? (ambito.label ?? 'Nacional') : '—'}</strong>
           </div>
-
-          <h3>{tomadorTitulo}</h3>
-          <p>
-            {[header?.cif ? `CIF ${header.cif}` : null, header?.actividad || null].filter(Boolean).join(' · ') || ' '}
-          </p>
-          <p>
-            {[fechaVctoDisplay ? `Fecha de vencimiento: ${fechaVctoDisplay}` : null, `Nº de tomadores: ${nf(Math.max(1, tomadores.size))}`, totalVehiculos > 0 ? `Ámbito: ${ambito.label ?? 'Nacional'}` : null, adrActivo ? 'ADR: sí' : null].filter(Boolean).join(' · ')}
-          </p>
-
-          <div className="kb">
-            <button type="button" onClick={() => setInfKey('veh')}>
-              <label>Vehículos</label>
-              <strong>{nf(totalVehiculos)}</strong>
-            </button>
-            {sincoItems.map(([l, v]) => (
-              <button key={l} type="button" style={{ cursor: 'default' }}>
-                <label>{l}</label>
-                <strong>{v}</strong>
-              </button>
-            ))}
+          {/* Vencimiento */}
+          <div style={{ padding: '20px 22px', borderRight: '1px solid var(--t-line)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}>
+            <small style={{ display: 'block', fontSize: 11.4, fontWeight: 700, letterSpacing: '0.05em', color: 'var(--t-text-2)', marginBottom: 10, textTransform: 'uppercase' }}>Vencimiento</small>
+            <strong style={{ fontSize: 23, lineHeight: 1.1, color: 'var(--t-text)', fontWeight: 700 }}>{fechaVctoDisplay ?? '—'}</strong>
           </div>
-          {!hasSincoData && <p className="warnp">Falta importar SINCO (paso 05): la siniestralidad no aparece hasta entonces.</p>}
+          {/* SINCO global */}
+          {(() => {
+            const r = resumenAuto ?? resumenManual;
+            const items: [string, string][] = r ? [
+              ['Vehículos', String(r.totalVehiculos)],
+              ['Con SINCO', String(r.vehiculosConSinco)],
+              ['Siniestros', String(r.totalSiniestros)],
+              ['Antigüedad', fmt2(r.antiguedadMedia) + 'a'],
+              ['Sin./año', fmt2(r.siniestrosPorAnio)],
+              ['Frecuencia', fmtFreq(r.frecuencia)],
+            ] : sincoGlobal ? [
+              ['Siniestros', String(sincoGlobal.siniestrosTotales)],
+              ['Años exp.', fmt2(sincoGlobal.anyosExperiencia) + 'a'],
+              ['Frecuencia', fmtFreq(sincoGlobal.frecuencia)],
+            ] : [];
+            return (
+              <div style={{ padding: '16px 22px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <small style={{ display: 'block', fontSize: 11.4, letterSpacing: '0.07em', color: 'var(--t-text-2)', fontWeight: 700, marginBottom: 14, textTransform: 'uppercase' }}>
+                  Siniestralidad SINCO · Vista Global
+                </small>
+                {items.length > 0 ? (
+                  <div style={{ display: 'grid', gridTemplateColumns: `repeat(${items.length}, 1fr)`, gap: 14, alignItems: 'stretch' }}>
+                    {items.map(([l, v]) => (
+                      <div key={l} style={{ textAlign: 'center' }}>
+                        <b style={{ display: 'block', fontSize: 22, lineHeight: 1.05, marginBottom: 5, color: 'var(--t-text)', fontWeight: 700 }}>{v}</b>
+                        <span style={{ fontSize: 10.6, color: 'var(--t-text-3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{l}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <span style={{ fontSize: 12, color: 'var(--t-text-3)' }}>Sin datos SINCO</span>
+                )}
+              </div>
+            );
+          })()}
+        </div>
 
-          {sincoPorTipo.length > 1 && (
-            <>
-              <h4>Siniestralidad por tipología</h4>
-              <table>
-                <thead><tr><th>Tipología</th><th>Veh.</th><th>Con SINCO</th><th>Siniestros</th><th>Antigüedad</th><th>Sin./año</th><th>Frecuencia</th></tr></thead>
+        {/* ── Desglose SINCO por tipología ─────────────────────────────── */}
+        {sincoPorTipo.length > 1 && (
+          <Card title="Siniestralidad por tipología" desc="Histórico SINCO registrado">
+            <div style={tableWrapS}>
+              <table style={{ minWidth: 400, width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr>
+                    {['Tipología', 'Veh.', 'Con SINCO', 'Siniestros', 'Antigüedad*', 'Sin./año*', 'Frecuencia*'].map(h =>
+                      <th key={h} style={thS}>{h}</th>)}
+                  </tr>
+                </thead>
                 <tbody>
                   {sincoPorTipo.map(({ tipologia, resumen: r }) => (
                     <tr key={tipologia}>
-                      <td>{tipologia}</td><td>{nf(r.totalVehiculos)}</td><td>{nf(r.vehiculosConSinco)}</td><td>{nf(r.totalSiniestros)}</td>
-                      <td>{fmt2(r.antiguedadMedia)} años</td><td>{fmt2(r.siniestrosPorAnio)}</td><td>{fmtFreq(r.frecuencia)}</td>
+                      <td style={{ ...tdS, fontWeight: 710 }}>{tipologia}</td>
+                      <td style={{ ...tdS, textAlign: 'center' }}>{r.totalVehiculos}</td>
+                      <td style={{ ...tdS, textAlign: 'center' }}>{r.vehiculosConSinco}</td>
+                      <td style={{ ...tdS, textAlign: 'center' }}>{r.totalSiniestros}</td>
+                      <td style={{ ...tdS, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{fmt2(r.antiguedadMedia)} a</td>
+                      <td style={{ ...tdS, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{fmt2(r.siniestrosPorAnio)}</td>
+                      <td style={{ ...tdS, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{fmtFreq(r.frecuencia)}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-            </>
-          )}
+            </div>
+          </Card>
+        )}
 
-          {danosPropiosItems && (
-            <>
-              <h4>Siniestralidad de daños propios</h4>
-              <div className="kb">
-                {danosPropiosItems.map(([l, v]) => (
-                  <button key={l} type="button" style={{ cursor: 'default' }}><label>{l}</label><strong>{v}</strong></button>
-                ))}
-              </div>
-            </>
-          )}
-
-          <h4>1 · Composición de la flota</h4>
-          <table>
-            <thead>
-              <tr>
-                <th>Tipología</th>
-                {pivot.cobs.map(c => <th key={c}>{c || '—'}</th>)}
-                <th>Nº veh.</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pivot.tipos.map(tipo => {
-                const total = pivot.cobs.reduce((a, c) => a + (pivot.counts[tipo]?.[c] ?? 0), 0);
-                return (
-                  <tr key={tipo}>
-                    <td>{tipo}</td>
-                    {pivot.cobs.map(c => <td key={c}>{nf(pivot.counts[tipo]?.[c] ?? 0)}</td>)}
-                    <td>{nf(total)}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-            <tfoot>
-              <tr>
-                <td>Total</td>
-                {pivot.cobs.map(c => <td key={c}>{nf(pivot.tipos.reduce((a, ti) => a + (pivot.counts[ti]?.[c] ?? 0), 0))}</td>)}
-                <td>{nf(totalVehiculos)}</td>
-              </tr>
-            </tfoot>
-          </table>
-
-          <h4>2 · Comparativa de primas</h4>
-          <table>
-            <thead>
-              <tr>
-                <th>Tipología</th><th>Cobertura</th><th>Nº veh.</th><th>Prima solicitada</th><th>Total solicitada (*)</th>
-                <th>Prima MMT</th><th>Total MMT (*)</th><th>Diferencia (*)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {primasSol.length === 0 ? (
-                <tr><td colSpan={8} style={{ textAlign: 'center', padding: '22px 0', color: '#586780' }}>Sin datos</td></tr>
-              ) : primasSol.map((r, i) => {
-                const mmt = mmtRows[i];
-                const difRow = (mmt?.total ?? 0) - r.total;
-                const hasDif = mmt?.total != null;
-                const shown = draft[r.key] ?? (mmt?.prima != null ? String(mmt.prima).replace('.', ',') : '');
-                return (
-                  <tr key={r.key}>
-                    <td>{r.tipo}</td>
-                    <td>{r.cob}</td>
-                    <td>{nf(r.count)}</td>
-                    <td>{r.media ? fmtEur2(r.media) : '—'}</td>
-                    <td>{r.total ? fmtEur(r.total) : '—'}</td>
-                    <td>
-                      <input
-                        className="pm"
-                        inputMode="decimal"
-                        aria-label={`Prima MMT por vehículo · ${r.tipo} · ${r.cob}`}
-                        value={shown}
-                        placeholder="—"
-                        onChange={e => {
-                          const v = e.target.value.replace(/\./g, ',');
-                          if (v === '' || /^\d*,?\d{0,2}$/.test(v)) {
-                            setDraft(d => ({ ...d, [r.key]: v }));
-                            handleMmtChange(r.key, v.replace(',', '.'));
-                          }
-                        }}
-                        onBlur={() => setDraft(d => { const n = { ...d }; delete n[r.key]; return n; })}
-                      />
-                    </td>
-                    <td>{hasDif ? fmtEur(mmt.total as number) : '—'}</td>
-                    <td className={hasDif ? (difRow < 0 ? 'dif neg' : difRow > 0 ? 'dif pos' : 'dif') : 'dif'}>
-                      {hasDif ? `${difRow >= 0 ? '+' : '−'}${fmtEur(Math.abs(difRow))}` : '—'}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-            {primasSol.length > 0 && (
-              <tfoot>
-                <tr>
-                  <td colSpan={2}>Total</td>
-                  <td>{nf(primasSol.reduce((a, r) => a + r.count, 0))}</td>
-                  <td />
-                  <td>{totalSol ? fmtEur(totalSol) : '—'}</td>
-                  <td />
-                  <td>{mmtRows.some(r => r.total != null) ? fmtEur(totalMmt) : '—'}</td>
-                  <td>{totalMmt ? `${dif >= 0 ? '+' : '−'}${fmtEur(Math.abs(dif))}` : '—'}</td>
-                </tr>
-              </tfoot>
-            )}
-          </table>
-          <div className="edtools">
-            <span>La prima MMT de cada fila es editable. Con fondo ámbar: distinta de la tarifa u oferta.</span>
+        {/* ── Siniestralidad Daños Propios ──────────────────────────────── */}
+        {danosPropiosItems && (
+          <div style={{ borderTop: '1px solid var(--t-line)', paddingTop: 14, flexShrink: 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 14, gap: 20 }}>
+              <h2 style={{ margin: 0, fontSize: 18, fontWeight: 720, letterSpacing: '-0.025em', color: 'var(--t-text)' }}>Siniestralidad Daños Propios</h2>
+              <span style={{ fontSize: 12.6, color: 'var(--t-text-2)' }}>Resumen global</span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${danosPropiosItems.length}, 1fr)`, border: '1px solid var(--t-line)', borderRadius: 7, overflow: 'hidden', background: 'var(--t-surface)' }}>
+              {danosPropiosItems.map(([l, v], idx) => (
+                <div key={l} style={{ padding: '18px 16px', borderRight: idx < danosPropiosItems.length - 1 ? '1px solid var(--t-line)' : 'none', textAlign: 'center' }}>
+                  <div style={{ fontSize: 10.6, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--t-text-3)', marginBottom: 6 }}>{l}</div>
+                  <div style={{ fontSize: 22, fontWeight: 720, color: 'var(--t-text)', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.025em' }}>{v}</div>
+                </div>
+              ))}
+            </div>
           </div>
+        )}
 
+        {/* ── Composición de flota ─────────────────────────────────────────── */}
+        <Card title="Composición de la flota" desc="Distribución por modalidad">
+          <div style={tableWrapS}>
+            <table style={{ minWidth: 300, width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr>
+                  <th style={thS}>Tipo de vehículo</th>
+                  {pivot.cobs.map(c => <th key={c} style={{ ...thS, textAlign: 'center' }}>{c || '—'}</th>)}
+                  <th style={{ ...thS, textAlign: 'center' }}>Total informado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pivot.tipos.map(tipo => {
+                  const total = pivot.cobs.reduce((a, c) => a + (pivot.counts[tipo]?.[c] ?? 0), 0);
+                  return (
+                    <tr key={tipo}>
+                      <td style={{ ...tdS, fontWeight: 710 }}>{tipo}</td>
+                      {pivot.cobs.map(c => <td key={c} style={{ ...tdS, textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}>{pivot.counts[tipo]?.[c] ?? 0}</td>)}
+                      <td style={{ ...tdS, textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}>{total}</td>
+                    </tr>
+                  );
+                })}
+                <tr style={{ background: 'var(--t-head)', fontWeight: 760 }}>
+                  <td style={{ ...tdS, borderTop: '2px solid var(--t-line)' }}>Total declarado por expediente</td>
+                  {pivot.cobs.map(c => {
+                    const t = pivot.tipos.reduce((a, ti) => a + (pivot.counts[ti]?.[c] ?? 0), 0);
+                    return <td key={c} style={{ ...tdS, textAlign: 'center', fontVariantNumeric: 'tabular-nums', borderTop: '2px solid var(--t-line)' }}>{t}</td>;
+                  })}
+                  <td style={{ ...tdS, textAlign: 'center', fontVariantNumeric: 'tabular-nums', borderTop: '2px solid var(--t-line)' }}>{totalVehiculos}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </Card>
+
+        {/* ── Comparativa de primas ────────────────────────────────────────── */}
+        <Card title="Comparativa de primas" desc="Importes anuales · valores por vehículo y total">
+          <div style={tableWrapS}>
+            <table style={{ minWidth: 560, width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr>
+                  <th style={{ ...thS, width: '28%' }}>Tipología y coberturas</th>
+                  <th style={{ ...thS, textAlign: 'center' }}>Veh.</th>
+                  <th style={{ ...thS, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>Sol./veh.</th>
+                  <th style={{ ...thS, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>Prima solicitada</th>
+                  <th style={{ ...thS, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>MMT/veh.</th>
+                  <th style={{ ...thS, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>Prima MMT</th>
+                  <th style={{ ...thS, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>Diferencia</th>
+                </tr>
+              </thead>
+              <tbody>
+                {primasSol.length === 0
+                  ? <tr><td colSpan={7} style={{ textAlign: 'center', padding: '24px 0', color: 'var(--t-text-3)', fontSize: 13.8 }}>Sin datos</td></tr>
+                  : primasSol.map((r, i) => {
+                      const mmt = mmtRows[i];
+                      const difRow = (mmt?.total ?? 0) - r.total;
+                      const hasDif = mmt?.total != null;
+                      return (
+                        <tr key={r.key}>
+                          <td style={tdS}>
+                            <span style={{ fontWeight: 710 }}>{r.tipo}</span>
+                            <div style={{ fontSize: 12, color: 'var(--t-text-2)', marginTop: 4, lineHeight: 1.35 }}>{r.cob}</div>
+                          </td>
+                          <td style={{ ...tdS, textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}>{r.count}</td>
+                          <td style={{ ...tdS, textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}>{r.media ? fmtEur2(r.media) : '—'}</td>
+                          <td style={{ ...tdS, textAlign: 'center', fontVariantNumeric: 'tabular-nums', fontWeight: 700 }}>{r.total ? fmtEur(r.total) : '—'}</td>
+                          <td style={{ ...tdS, textAlign: 'right' }}>
+                            <input
+                              inputMode="decimal"
+                              value={mmt?.prima != null ? mmt.prima : ''}
+                              onChange={e => { const v = e.target.value; if (v === '' || /^\d*\.?\d*$/.test(v)) handleMmtChange(r.key, v); }}
+                              placeholder="—"
+                              style={{
+                                minWidth: 96, textAlign: 'center', fontVariantNumeric: 'tabular-nums', fontSize: 13,
+                                background: 'var(--t-surface)', border: '1px solid var(--t-line)',
+                                outline: 'none', padding: '9px 10px', borderRadius: 5, color: 'var(--t-text)',
+                              }}
+                              onFocus={e => { e.currentTarget.style.borderColor = 'var(--t-blue)'; }}
+                              onBlur={e => { e.currentTarget.style.borderColor = 'var(--t-line)'; }}
+                            />
+                          </td>
+                          <td style={{ ...tdS, textAlign: 'center', fontVariantNumeric: 'tabular-nums', fontWeight: 700 }}>{mmt?.total != null ? fmtEur(mmt.total) : '—'}</td>
+                          <td style={{ ...tdS, textAlign: 'center', fontVariantNumeric: 'tabular-nums', fontWeight: 700, color: hasDif ? difColor(difRow) : 'var(--t-text-3)' }}>
+                            {hasDif ? (difRow >= 0 ? '+' : '') + fmtEur(difRow) : '—'}
+                          </td>
+                        </tr>
+                      );
+                    })
+                }
+                {primasSol.length > 0 && (
+                  <tr style={{ background: 'var(--t-head)', fontWeight: 760 }}>
+                    <td style={{ ...tdS, borderTop: '2px solid var(--t-line)' }}>TOTAL</td>
+                    <td style={{ ...tdS, textAlign: 'center', fontVariantNumeric: 'tabular-nums', borderTop: '2px solid var(--t-line)' }}>{primasSol.reduce((a, r) => a + r.count, 0)}</td>
+                    <td style={{ ...tdS, borderTop: '2px solid var(--t-line)' }}>—</td>
+                    <td style={{ ...tdS, textAlign: 'right', fontVariantNumeric: 'tabular-nums', borderTop: '2px solid var(--t-line)' }}>{totalSol ? fmtEur(totalSol) : '—'}</td>
+                    <td style={{ ...tdS, borderTop: '2px solid var(--t-line)' }}>—</td>
+                    <td style={{ ...tdS, textAlign: 'right', fontVariantNumeric: 'tabular-nums', borderTop: '2px solid var(--t-line)' }}>{mmtRows.some(r => r.total != null) ? fmtEur(totalMmt) : '—'}</td>
+                    <td style={{ ...tdS, textAlign: 'right', fontVariantNumeric: 'tabular-nums', borderTop: '2px solid var(--t-line)', color: difColor(dif) }}>{totalMmt ? (dif >= 0 ? '+' : '') + fmtEur(dif) : '—'}</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
           {totalSol > 0 && totalMmt > 0 && (
-            <div className="kb">
-              <button type="button" onClick={() => setInfKey('sol')}><label>Prima solicitada total</label><strong>{fmtEur(totalSol)}</strong></button>
-              <button type="button" onClick={() => setInfKey('mmt')}><label>Prima MMT total</label><strong>{fmtEur(totalMmt)}</strong></button>
-              <button type="button" onClick={() => setInfKey('dif')}><label>Diferencia</label><strong>{dif >= 0 ? '+' : '−'}{fmtEur(Math.abs(dif))}</strong></button>
-              <button type="button" onClick={() => setInfKey('var')}><label>Variación</label><strong>{signedPc(pctDif, 1)}</strong></button>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', borderTop: '1px solid var(--t-line)', borderBottom: '1px solid var(--t-line)', marginTop: 19 }}>
+              {[
+                { label: 'Prima solicitada total', value: fmtEur(totalSol), color: 'var(--t-text)' },
+                { label: 'Prima de referencia MMT', value: fmtEur(totalMmt), color: 'var(--t-text)' },
+                { label: 'Diferencia', value: (dif >= 0 ? '+' : '') + fmtEur(dif), color: dif > 0 ? '#54bc8d' : dif < 0 ? '#dc2626' : 'var(--t-text)' },
+                { label: 'Variación', value: (pctDif >= 0 ? '+' : '') + pctDif.toFixed(1) + ' %', color: dif > 0 ? '#54bc8d' : dif < 0 ? '#dc2626' : 'var(--t-text)' },
+              ].map(({ label, value, color }, idx) => (
+                <div key={label} style={{ padding: '22px 18px', borderRight: idx < 3 ? '1px solid var(--t-line)' : 'none', textAlign: 'center' }}>
+                  <label style={{ display: 'block', fontSize: 11.4, color: 'var(--t-text-2)', fontWeight: 650, marginBottom: 10 }}>{label}</label>
+                  <strong style={{ display: 'block', fontSize: 30, letterSpacing: '-0.04em', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums', color }}>{value}</strong>
+                </div>
+              ))}
             </div>
           )}
-
-          <h4>3 · Interpretación técnica</h4>
-          <p>{interpretacion}</p>
-          {observacion && <p>{observacion}</p>}
-
-          <h4>4 · Anexo · cómo se calcula</h4>
-          <div className="fxl">
-            (*) Total solicitada = prima solicitada × Nº veh.<br />
-            (*) Total MMT = prima MMT × Nº veh.<br />
-            (*) Diferencia = Total MMT − Total solicitada{totalSol > 0 && totalMmt > 0 ? ` = ${fmtEur(totalMmt)} − ${fmtEur(totalSol)} = ${dif >= 0 ? '+' : '−'}${fmtEur(Math.abs(dif))}` : ''}
-          </div>
-
-          <div className="pf">
-            <span>MMT Seguros · Documento confidencial</span>
-            <span>{fechaHoy}</span>
-          </div>
-        </article>
-
-        <DetailDrawer isOpen={infKey !== null} onClose={() => setInfKey(null)} data={infDetail(infKey)} />
+        </Card>
 
         {/* ── Coste estimado ORION ────────────────────────────────────────── */}
         {Object.keys(orionResults).length > 0 && (() => {
@@ -1451,14 +1390,14 @@ export default function HojaInforme({
                                 const mmtFreq = rcDetalle?.mmt_freq_rco1 as number | null | undefined;
                                 if (rcTipo === 'rc_con_sinco') {
                                   const ratio = rcDetalle!.ratio_sinco as number;
-                                  lines.push(`RC ajustado por SINCO (ratio ${ratio != null ? dec(ratio, 3) : '—'} vs media MMT). Las estadísticas del cliente inciden directamente en el coste.`);
+                                  lines.push(`RC ajustado por SINCO (ratio ${ratio?.toFixed(3) ?? '—'} vs media MMT). Las estadísticas del cliente inciden directamente en el coste.`);
                                 } else {
-                                  const freqStr = mmtFreq != null ? ` (freq. MMT: ${dec(mmtFreq * 100, 2)} % por vehículo y año)` : '';
+                                  const freqStr = mmtFreq != null ? ` (freq. MMT: ${(mmtFreq * 100).toFixed(2)}%/veh·año)` : '';
                                   lines.push(`RC calculado sobre diagnóstico base MMT${freqStr}. Sin frecuencia SINCO con exposición válida para este grupo.`);
                                 }
                                 // Alerta LR excepcional en la foto activa
                                 if (lrRco1 != null && lrRco1 > 1.5) {
-                                  lines.push(`Alerta: la fotografía ${r.fecha_foto} tiene ratio de pérdida RC = ${dec(lrRco1 * 100, 0)} % (coste > prima). El período captura siniestros de coste excepcional. Las fotos anteriores pueden mostrar condiciones más moderadas.`);
+                                  lines.push(`Alerta: la fotografía ${r.fecha_foto} tiene ratio de pérdida RC = ${(lrRco1 * 100).toFixed(0)}% (coste > prima). El período captura siniestros de coste excepcional. Las fotos anteriores pueden mostrar condiciones más moderadas.`);
                                 }
                                 // Option B: prima media MMT vs coste técnico
                                 const pmMmt = r.prima_orientativa_mmt_veh;
@@ -1466,7 +1405,7 @@ export default function HojaInforme({
                                   if (costVeh > pmMmt * 1.5) {
                                     lines.push(`La prima media que cobra MMT por estas coberturas es ${fmtEur2(pmMmt)}/veh (B). El coste técnico ORION (${fmtEur2(costVeh)}) supera ese nivel porque la fotografía activa captura un período con siniestralidad anormalmente alta. Las fotos anteriores muestran costes mucho menores.`);
                                   } else if (pmMmt > costVeh * 1.3) {
-                                    lines.push(`La prima media que cobra MMT por estas coberturas es ${fmtEur2(pmMmt)}/veh (B), ${dec((pmMmt/costVeh-1)*100, 0)} % por encima del coste técnico ORION (${fmtEur2(costVeh)}). La diferencia representa la carga comercial de MMT (gastos, comisión, margen).`);
+                                    lines.push(`La prima media que cobra MMT por estas coberturas es ${fmtEur2(pmMmt)}/veh (B), ${((pmMmt/costVeh-1)*100).toFixed(0)}% por encima del coste técnico ORION (${fmtEur2(costVeh)}). La diferencia representa la carga comercial de MMT (gastos, comisión, margen).`);
                                   } else {
                                     lines.push(`Prima media MMT: ${fmtEur2(pmMmt)}/veh (B). Coste técnico ORION: ${fmtEur2(costVeh)}/veh (A). Ambos están en rango similar para la foto activa.`);
                                   }
@@ -1475,11 +1414,11 @@ export default function HojaInforme({
                                 if (primaSolVeh != null && primaSolVeh > 0) {
                                   const pct = (costVeh / primaSolVeh) * 100;
                                   if (pct >= 80) {
-                                    lines.push(`El coste técnico estimado (${fmtEur2(costVeh)}) representa el ${dec(pct, 0)} % de la prima solicitada (${fmtEur2(primaSolVeh)}). Sin gastos ni margen incorporados, la prima solicitada puede ser insuficiente${hasPending ? ' — y el cálculo excluye garantías pendientes' : ''}.`);
+                                    lines.push(`El coste técnico estimado (${fmtEur2(costVeh)}) representa el ${pct.toFixed(0)}% de la prima solicitada (${fmtEur2(primaSolVeh)}). Sin gastos ni margen incorporados, la prima solicitada puede ser insuficiente${hasPending ? ' — y el cálculo excluye garantías pendientes' : ''}.`);
                                   } else if (pct >= 40) {
-                                    lines.push(`El coste técnico estimado (${fmtEur2(costVeh)}) es el ${dec(pct, 0)} % de la prima solicitada (${fmtEur2(primaSolVeh)}). El margen aparente no incluye gastos de estructura ni prima ORION final${hasPending ? ', y hay garantías pendientes de calcular' : ''}.`);
+                                    lines.push(`El coste técnico estimado (${fmtEur2(costVeh)}) es el ${pct.toFixed(0)}% de la prima solicitada (${fmtEur2(primaSolVeh)}). El margen aparente no incluye gastos de estructura ni prima ORION final${hasPending ? ', y hay garantías pendientes de calcular' : ''}.`);
                                   } else {
-                                    lines.push(`El coste técnico estimado (${fmtEur2(costVeh)}) es el ${dec(pct, 0)} % de la prima solicitada (${fmtEur2(primaSolVeh)})${hasPending ? '. Hay garantías contratadas sin estadísticas MMT que no están incluidas en el coste' : ''}.`);
+                                    lines.push(`El coste técnico estimado (${fmtEur2(costVeh)}) es el ${pct.toFixed(0)}% de la prima solicitada (${fmtEur2(primaSolVeh)})${hasPending ? '. Hay garantías contratadas sin estadísticas MMT que no están incluidas en el coste' : ''}.`);
                                   }
                                 }
                                 if (!lines.length) return null;
@@ -1584,11 +1523,11 @@ export default function HojaInforme({
                                             background: h.fecha_foto === r.fecha_foto ? 'var(--t-line-soft)' : undefined,
                                             fontWeight: h.fecha_foto === r.fecha_foto ? 700 : undefined,
                                           }}>
-                                            <td style={tdS}>{h.fecha_foto}{h.fecha_foto === r.fecha_foto ? ' · actual' : ''}</td>
+                                            <td style={tdS}>{h.fecha_foto}{h.fecha_foto === r.fecha_foto ? ' ◄' : ''}</td>
                                             <td style={{ ...tdS, textAlign: 'right', fontFamily: 'monospace' }}>{fmtEur2(h.coste_rc_veh)}</td>
                                             <td style={{ ...tdS, textAlign: 'right', fontFamily: 'monospace', color: '#854d0e' }}>{fmtEur2(h.prima_mmt_rc_veh)}</td>
                                             <td style={{ ...tdS, textAlign: 'right', fontFamily: 'monospace', color: h.lr_rco1 != null && h.lr_rco1 > 1.5 ? '#dc2626' : undefined }}>
-                                              {h.lr_rco1 != null ? `${dec(h.lr_rco1*100, 0)} %` : '—'}
+                                              {h.lr_rco1 != null ? `${(h.lr_rco1*100).toFixed(0)}%` : '—'}
                                             </td>
                                             <td style={{ ...tdS, textAlign: 'right' }}>{h.stros}</td>
                                           </tr>
@@ -1621,7 +1560,7 @@ export default function HojaInforme({
                                           </td>
                                           <td style={{ ...tdS, textAlign: 'right', fontFamily: 'monospace', fontWeight: 700, color: 'var(--t-blue)' }}>{fmtEur2(dt.prima_tecnica_veh)}</td>
                                           <td style={{ ...tdS, textAlign: 'right', fontFamily: 'monospace' }}>
-                                            {dt.ratio_sinco != null ? dec(dt.ratio_sinco, 3) : '—'}
+                                            {dt.ratio_sinco != null ? dt.ratio_sinco.toFixed(3) : '—'}
                                           </td>
                                           <td style={{ ...tdS, fontSize: 9, color: '#6b7280', maxWidth: 220 }}>
                                             {dt.tipo === 'rc_ajustado_sinco' ? 'RC ajustado por freq. SINCO' :

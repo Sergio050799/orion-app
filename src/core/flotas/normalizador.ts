@@ -7,7 +7,7 @@
 
 export const TIPO_VEHICULO_OPTS = [
   'Turismo', 'Todoterreno', 'Furgoneta', 'Cabeza tractora', 'Camión rígido',
-  'Semirremolque', 'Industrial matriculado', 'Industrial no matriculado', 'Motocicleta',
+  'Semirremolque', 'Industrial matriculado', 'Industrial no matriculado',
 ];
 
 export const USO_OPTS = ['Particular', 'Servicio público', 'Transportes propios'];
@@ -15,7 +15,7 @@ export const USO_OPTS = ['Particular', 'Servicio público', 'Transportes propios
 export const AMBITO_OPTS = ['Nacional', 'Internacional'];
 
 export const COBERTURA_OPTS = [
-  'Terceros', 'Terceros Ampliado', 'Todo Riesgo con Franquicia', 'Terceros Ampliado con Franquicia',
+  'Terceros', 'Terceros Ampliado', 'Todo Riesgo con Franquicia',
 ];
 
 export const LUNAS_OPTS = ['Sí', 'No'];
@@ -193,10 +193,6 @@ export function normalizeColumnValue(
       return { value: 'Todo Riesgo con Franquicia', matched: true };
     }
     if (v.startsWith('3') || v.includes('tercero')) {
-      // Motos: «Terceros ampliado con franquicia» es un producto propio (se distingue de «Todo riesgo con franquicia»)
-      if ((v.includes('ampli') || v.includes('amp')) && v.includes('franq')) {
-        return { value: 'Terceros Ampliado con Franquicia', matched: true };
-      }
       if (v.includes('ampliado') || v.includes('amp') || v.match(/3[oa][^\w]*a/)) {
         return { value: 'Terceros Ampliado', matched: true };
       }

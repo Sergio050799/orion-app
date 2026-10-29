@@ -17,7 +17,6 @@ export interface CatalogoVehiculo {
     pff: number;        // Precio de fábrica (índice 11)
     pvp: number;        // Precio de venta al público (índice 12)
     pma?: number;       // Peso Máximo Autorizado (índice 13)
-    tipo?: string;      // Tipología ORION (ver tipologia.ts): se calcula al cargar el CSV
 }
 
 export interface SearchParams {

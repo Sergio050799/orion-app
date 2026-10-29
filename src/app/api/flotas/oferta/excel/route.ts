@@ -13,7 +13,6 @@ interface Vehiculo {
   marca: string;
   modelo: string;
   coberturas: string;
-  franquicia?: number;
   periodicidad: string;
   fecha_vencimiento: string;
   prima_ofertada: number;
@@ -28,14 +27,6 @@ interface OfertaBody {
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
-
-const NUM_EUR = '#,##0.00 "€"';
-
-function toDate(raw: unknown): Date | null {
-  const t = fmtFecha(raw);
-  const m = t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  return m ? new Date(Date.UTC(+m[3], +m[2] - 1, +m[1])) : null;
-}
 
 function fmtFecha(raw: unknown): string {
   if (!raw) return '';
@@ -54,13 +45,17 @@ function fmtFecha(raw: unknown): string {
   return s;
 }
 
+function fmtEUR(n: number): string {
+  return n > 0 ? n.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €' : '';
+}
+
 // ── Paleta ──────────────────────────────────────────────────────────────────
 const DARK_BLUE  = 'FF002F82';
 const WHITE      = 'FFFFFFFF';
-const STRIPE_ODD = 'FFF7F9FD';
-const INDIGO_BG  = 'FFEAF0FA';
-const COB_DARK   = 'FF002F82';
-const COB_LIGHT  = 'FFEAF0FA';
+const STRIPE_ODD = 'FFF0F4FA';
+const INDIGO_BG  = 'FFEEF3FF';
+const COB_DARK   = 'FF0A3D91';
+const COB_LIGHT  = 'FFEEF3FF';
 const BORDER_C   = 'FFD4DFF5';
 
 const thin: ExcelJS.BorderStyle = 'thin';
@@ -107,9 +102,7 @@ export async function POST(req: NextRequest) {
 
     // ── Hoja 1: Oferta ────────────────────────────────────────────────────────
     const ws = wb.addWorksheet('Oferta', {
-      pageSetup: { orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0, paperSize: 9 },
-      headerFooter: { oddFooter: '&L&8Documento confidencial&R&8Página &P de &N' },
-      views: [{ state: 'frozen', ySplit: 3 }],
+      pageSetup: { orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 1, paperSize: 9 },
     });
 
     const COLS = [
@@ -119,7 +112,6 @@ export async function POST(req: NextRequest) {
       { header: 'MARCA',              key: 'marca',         width: 16 },
       { header: 'MODELO',             key: 'modelo',        width: 22 },
       { header: 'COBERTURAS',         key: 'coberturas',    width: 35 },
-      { header: 'FRANQUICIA',         key: 'franquicia',    width: 16 },
       { header: 'PERIODICIDAD',       key: 'periodicidad',  width: 16 },
       { header: 'VENCIMIENTO',        key: 'vencimiento',   width: 14 },
       { header: 'PRIMA OFERTADA MMT', key: 'prima',        width: 26 },
@@ -131,15 +123,15 @@ export async function POST(req: NextRequest) {
     const colMaxLen: number[] = COLS.map(c => c.header.length);
 
     // ── Fila 1: Título ────────────────────────────────────────────────────────
-    const titleRow = ws.addRow([`OFERTA PARA LA FLOTA ${body.flota_nombre}`, '', '', '', '', '', '', '', '', '']);
+    const titleRow = ws.addRow([`OFERTA PARA LA FLOTA ${body.flota_nombre}`, '', '', '', '', '', '', '', '']);
     titleRow.height = 56;
-    ws.mergeCells(`A1:J1`);
+    ws.mergeCells(`A1:I1`);
     const titleCell = ws.getCell('A1');
     titleCell.fill   = { type: 'pattern', pattern: 'solid', fgColor: { argb: DARK_BLUE } };
     titleCell.font   = { bold: true, size: 22, color: { argb: WHITE }, name: 'Calibri' };
     titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
     // Fill remaining cells in title row with blue background
-    for (let c = 2; c <= 10; c++) {
+    for (let c = 2; c <= 9; c++) {
       const cell = titleRow.getCell(c);
       cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: DARK_BLUE } };
     }
@@ -158,14 +150,14 @@ export async function POST(req: NextRequest) {
     const coLabel = body.empresa_cif
       ? `${body.empresa_nombre}  —  ${body.empresa_cif}`
       : body.empresa_nombre;
-    const coRow = ws.addRow([coLabel, '', '', '', '', '', '', '', '', '']);
+    const coRow = ws.addRow([coLabel, '', '', '', '', '', '', '', '']);
     coRow.height = 28;
-    ws.mergeCells('A2:J2');
+    ws.mergeCells('A2:I2');
     const coCell = ws.getCell('A2');
     coCell.font      = { bold: true, size: 13, name: 'Calibri' };
     coCell.alignment = { horizontal: 'center', vertical: 'middle' };
     coCell.border    = { bottom: cellBorder(medium, 'FFE5E7EB') };
-    for (let c = 2; c <= 10; c++) {
+    for (let c = 2; c <= 9; c++) {
       ws.getCell(2, c).border = { bottom: cellBorder(medium, 'FFE5E7EB') };
     }
 
@@ -187,11 +179,9 @@ export async function POST(req: NextRequest) {
       const bgColor = even ? 'FFFFFFFF' : STRIPE_ODD;
       const rowValues = [
         v.tomador, v.tipologia, v.matricula, v.marca, v.modelo,
-        v.coberturas,
-        v.franquicia && v.franquicia > 0 ? v.franquicia : '',
-        v.periodicidad,
-        toDate(v.fecha_vencimiento) ?? fmtFecha(v.fecha_vencimiento),
-        v.prima_ofertada > 0 ? v.prima_ofertada : '',
+        v.coberturas, v.periodicidad,
+        fmtFecha(v.fecha_vencimiento),
+        fmtEUR(v.prima_ofertada),
       ];
       // Track max col lengths for auto-fit
       rowValues.forEach((val, ci) => {
@@ -202,29 +192,25 @@ export async function POST(req: NextRequest) {
       const dr = ws.addRow(rowValues);
       dr.height = cobLen > 60 ? Math.min(22 + Math.ceil((cobLen - 30) / 40) * 14, 90) : 22;
       dr.eachCell((cell, colNumber) => {
-        const isLast = colNumber === 10;
-        if (colNumber === 7 || isLast) cell.numFmt = NUM_EUR;
-        if (colNumber === 9) cell.numFmt = 'dd/mm/yyyy';
+        const isLast = colNumber === 9;
         cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: bgColor } };
         cell.font      = isLast
           ? { bold: true, size: 11, name: 'Calibri', color: { argb: DARK_BLUE } }
           : { size: 11, name: 'Calibri' };
-        cell.alignment = { horizontal: colNumber === 1 ? 'left' : 'center', vertical: 'middle', wrapText: true };
+        cell.alignment = { horizontal: isLast ? 'right' : 'center', vertical: 'middle', wrapText: true };
         cell.border    = { top: cellBorder(), bottom: cellBorder(), left: cellBorder(), right: cellBorder() };
       });
     });
 
     // ── Fila de totales ───────────────────────────────────────────────────────
-    const firstData = 4, lastData = 3 + body.vehiculos.length;
-    const totalRow = ws.addRow(['TOTALES', '', '', '', '', '', '', '', '', { formula: `SUM(J${firstData}:J${lastData})`, result: totalOferta }]);
+    const totalRow = ws.addRow(['TOTALES', '', '', '', '', '', '', '', fmtEUR(totalOferta)]);
     totalRow.height = 26;
-    ws.mergeCells(`A${totalRow.number}:I${totalRow.number}`);
+    ws.mergeCells(`A${totalRow.number}:H${totalRow.number}`);
     totalRow.eachCell((cell, colNumber) => {
-      const isLast = colNumber === 10;
-      if (isLast) cell.numFmt = NUM_EUR;
+      const isLast = colNumber === 9;
       cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: INDIGO_BG } };
       cell.font      = { bold: true, size: isLast ? 13 : 12, name: 'Calibri', color: isLast ? { argb: DARK_BLUE } : undefined };
-      cell.alignment = { horizontal: isLast ? 'center' : 'right', vertical: 'middle' };
+      cell.alignment = { horizontal: isLast ? 'right' : 'right', vertical: 'middle' };
       cell.border    = { top: cellBorder(medium), bottom: cellBorder(medium), left: cellBorder(medium), right: cellBorder(medium) };
     });
     // Label in merged cell
@@ -242,7 +228,6 @@ export async function POST(req: NextRequest) {
     if (body.cobAnexo && body.cobAnexo.length > 0) {
       const ws2 = wb.addWorksheet('Coberturas', {
         pageSetup: { orientation: 'portrait', fitToPage: true },
-        headerFooter: { oddFooter: '&L&8Documento confidencial&R&8Página &P de &N' },
       });
       ws2.columns = [{ width: 56 }, { width: 6 }];
 
@@ -297,11 +282,11 @@ export async function POST(req: NextRequest) {
       // Footer coberturas
       const footer2 = ws2.addRow(['']);
       footer2.height = 6;
-      const footerRow = ws2.addRow(['Documento confidencial', '']);
+      const footerRow = ws2.addRow(['MMT Seguros — Documento confidencial', '']);
       footerRow.height = 18;
       ws2.mergeCells(`A${footerRow.number}:B${footerRow.number}`);
       const footerCell = ws2.getCell(`A${footerRow.number}`);
-      footerCell.font      = { size: 9, italic: true, color: { argb: 'FF5D6B82' }, name: 'Calibri' };
+      footerCell.font      = { size: 9, italic: true, color: { argb: 'FF8EA3C8' }, name: 'Calibri' };
       footerCell.alignment = { horizontal: 'left', vertical: 'middle' };
       footerCell.border    = { top: cellBorder(thin, BORDER_C) };
     }

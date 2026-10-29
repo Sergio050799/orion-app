@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
         actualizadaEn: now,
         estado,
         corredor_id,
-        comisionBase: parseFloat(str(r.comision)) || 0,
+        porcentajeComision: parseFloat(str(r.comision)) || 0,
         historico: existingId ? undefined : [{ fecha: now, accion: 'Importación Excel', estadoNuevo: estado }],
         header: {
           cif,

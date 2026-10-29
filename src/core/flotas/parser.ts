@@ -31,13 +31,8 @@ const HEADER_MAP: Record<string, string> = {
   'combustible': 'combustible', 'fuel': 'combustible', 'carburante': 'combustible',
   'tipo combustible': 'combustible', 'energia': 'combustible',
   // Año
-  // El año de la plantilla (columna AÑO) es el del vehículo: se trata como año de fabricación, que es el que
-  // valida el sistema de emisión. Si el fichero dice expresamente «matriculación» va a su propio campo.
-  'ano': 'anyo_fabricacion', 'anyo': 'anyo_fabricacion', 'year': 'anyo_fabricacion', 'ano fabricacion': 'anyo_fabricacion',
-  'anyo fabricacion': 'anyo_fabricacion', 'ano de fabricacion': 'anyo_fabricacion', 'ano modelo': 'anyo_fabricacion',
-  'ano matriculacion': 'anyo_matricula', 'anyo matriculacion': 'anyo_matricula', 'ano de matriculacion': 'anyo_matricula',
-  'ano matricula': 'anyo_matricula', 'fecha matriculacion': 'fecha_matriculacion', 'fecha de matriculacion': 'fecha_matriculacion',
-  'f matriculacion': 'fecha_matriculacion',
+  'ano': 'anyo', 'anyo': 'anyo', 'year': 'anyo', 'ano matriculacion': 'anyo',
+  'fecha matriculacion': 'anyo', 'ano fabricacion': 'anyo',
   // Puertas
   'puertas': 'puertas', 'num puertas': 'puertas', 'doors': 'puertas',
   // TN
@@ -57,14 +52,14 @@ const HEADER_MAP: Record<string, string> = {
   // Animales
   'animales': 'animales', 'animal': 'animales',
   // Seguro del conductor
-  'seguro conductor': 'seguro_conductor', 'seg conductor': 'seguro_conductor', 'seguro del conductor': 'seguro_conductor',
+  'seguro conductor': 'seguro_conductor', 'seguro del conductor': 'seguro_conductor',
   'conductor': 'seguro_conductor',
   // FRQ / Franquicia
-  'frq': 'frq', 'franquicia': 'frq', 'franchise': 'frq', 'franq': 'frq',
+  'frq': 'frq', 'franquicia': 'frq', 'franchise': 'frq',
   // Asistencia
   'asistencia': 'asistencia', 'assistance': 'asistencia',
   // Prima referencia
-  'prima referencia': 'prima_referencia', 'prima ref': 'prima_referencia', 'prima': 'prima_referencia', 'importe': 'prima_referencia',
+  'prima referencia': 'prima_referencia', 'prima': 'prima_referencia', 'importe': 'prima_referencia',
   'tirea': 'prima_referencia', 'prima actual': 'prima_referencia',
   // CIF/NIF tomador (nivel fila)
   'cif nif': 'cif_nif', 'nif': 'cif_nif', 'cif': 'cif_nif',
@@ -99,13 +94,7 @@ function cleanHeader(h: string): string {
 }
 
 export interface ParseResult {
-  /** vehículos (las filas totalmente vacías de la plantilla se descartan) */
   rows: Record<string, string>[];
-  /** datos de cabecera que trae la plantilla encima de la tabla (CIF, tomador, actividad, periodicidad, efecto) */
-  header: { cif?: string; tomador?: string; actividad?: string; periodicidad?: string; efecto?: string };
-  /** corredor y nombre del estudio indicados en la cabecera, si los hay */
-  corredor?: string;
-  estudio?: string;
   unmapped: string[];   // cabeceras que no se pudieron mapear
   total: number;        // total de filas (incluyendo vacías)
   mapped: number;       // filas con al menos un campo reconocido
@@ -124,49 +113,15 @@ export async function parseExcelTemplate(file: File): Promise<ParseResult> {
     raw: false,
   });
 
-  if (allRows.length === 0) return { rows: [], header: {}, unmapped: [], total: 0, mapped: 0 };
+  if (allRows.length === 0) return { rows: [], unmapped: [], total: 0, mapped: 0 };
 
-  // La fila de cabeceras es la que reconoce MÁS columnas distintas (mín. 2) y, a igualdad, la que trae la matrícula.
-  // Mirar solo «la primera fila con una coincidencia» fallaba con la plantilla de ORION: su fila 2 lleva rótulos
-  // como «CIF:» o «TOMADOR:» que coinciden con columnas y se tomaba por cabecera.
-  let headerRowIdx = -1;
-  let mejor = { n: 0, mat: false };
-  for (let i = 0; i < Math.min(allRows.length, 15); i++) {
-    const ids = new Set<string>();
-    for (const cell of allRows[i] as unknown[]) {
-      const id = HEADER_MAP[cleanHeader(String(cell ?? ''))];
-      if (id) ids.add(id);
-    }
-    const cand = { n: ids.size, mat: ids.has('matricula') };
-    if (cand.n >= 2 && (headerRowIdx < 0 || cand.n > mejor.n || (cand.n === mejor.n && cand.mat && !mejor.mat))) {
-      headerRowIdx = i; mejor = cand;
-    }
-  }
-  if (headerRowIdx < 0) {
-    // sin una fila clara: la primera con alguna coincidencia (comportamiento anterior), o la primera
-    headerRowIdx = allRows.findIndex((r, i) => i < 10 && (r as unknown[]).some(c => !!HEADER_MAP[cleanHeader(String(c ?? ''))]));
-    if (headerRowIdx < 0) headerRowIdx = 0;
-  }
-
-  // Datos de cabecera: rótulo «CIF:» seguido de su valor, en las filas por encima de la tabla
-  const header: ParseResult['header'] = {};
-  let corredor: string | undefined, estudio: string | undefined;
-  const esRotulo = (t: string) => /:\s*$/.test(t);
-  for (let i = 0; i < headerRowIdx; i++) {
-    const fila = (allRows[i] as unknown[]).map(c => String(c ?? '').trim());
-    fila.forEach((txt, j) => {
-      if (!esRotulo(txt)) return;
-      const val = fila[j + 1] && !esRotulo(fila[j + 1]) ? fila[j + 1] : '';
-      if (!val) return;
-      const k = cleanHeader(txt);
-      if (k === 'cif') header.cif = val;
-      else if (k === 'tomador') header.tomador = val;
-      else if (k === 'actividad') header.actividad = val;
-      else if (k === 'periodicidad') header.periodicidad = val.toLowerCase();
-      else if (k === 'efecto') header.efecto = val;
-      else if (k === 'corredor') corredor = val;
-      else if (k === 'estudio') estudio = val;
-    });
+  // Buscar la primera fila (entre las 5 primeras) donde al menos una celda
+  // coincide con HEADER_MAP — esa es la cabecera real
+  let headerRowIdx = 0;
+  for (let i = 0; i < Math.min(allRows.length, 10); i++) {
+    const row = allRows[i] as string[];
+    const hasHeader = row.some(cell => !!HEADER_MAP[cleanHeader(String(cell ?? ''))]);
+    if (hasHeader) { headerRowIdx = i; break; }
   }
 
   const headerRow = allRows[headerRowIdx] as string[];
@@ -202,8 +157,7 @@ export async function parseExcelTemplate(file: File): Promise<ParseResult> {
     return r;
   });
 
-  // Las plantillas traen cientos de filas con desplegables y sin datos: se descartan
-  const reales = rows.filter(r => Object.values(r).some(v => v.trim()));
+  const mapped = rows.filter(r => Object.values(r).some(v => v.trim())).length;
 
-  return { rows: reales, header, corredor, estudio, unmapped, total: dataRows.length, mapped: reales.length };
+  return { rows, unmapped, total: dataRows.length, mapped };
 }

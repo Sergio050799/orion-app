@@ -187,7 +187,7 @@ export default function GestionDocumentalPage() {
       }
       const data = await res.json();
 
-      const defaultPct = data.porcentajeComision ?? corredor?.comisionBase ?? 0;
+      const defaultPct = data.porcentajeComision ?? corredor?.porcentajeComision ?? 0;
 
       // Parse grupos if available, else build single group from rows
       const rawGrupos: Array<{ tomador: string; cifTomador: string; rows: Record<string, unknown>[]; porcentajeComision?: number }> =
@@ -273,7 +273,7 @@ export default function GestionDocumentalPage() {
     setGrupos(prev => {
       const idx = prev.findIndex(g => g.tomador === tomadorTab);
       if (idx < 0) {
-        return [...prev, { tomador: tomadorTab, cifTomador: "", pctComision: corredor?.comisionBase ?? 0, rows: [{
+        return [...prev, { tomador: tomadorTab, cifTomador: "", pctComision: corredor?.porcentajeComision ?? 0, rows: [{
           id: nextId(), poliza: "", numRecibo: "", riesgo: "", fecha: "", tipo: "",
           importe: 0, pNeta: 0, impuesto: 0, comision: 0, liquido: 0,
           periodicidad: "", fechaInicioPoliza: "", fechaVencimiento: "", tomador: tomadorTab,
@@ -515,7 +515,7 @@ export default function GestionDocumentalPage() {
                   <label style={labelSt}>Corredor</label>
                   <select style={selectSt} value={corredorId} onChange={e => { setCorredorId(e.target.value); setFlotaId(""); }}>
                     <option value="">Seleccionar corredor...</option>
-                    {corredores.map(c => <option key={c.id} value={c.id}>{c.nombre} &middot; {c.comisionBase}%</option>)}
+                    {corredores.map(c => <option key={c.id} value={c.id}>{c.nombre} &middot; {c.porcentajeComision}%</option>)}
                   </select>
                 </div>
                 <div>

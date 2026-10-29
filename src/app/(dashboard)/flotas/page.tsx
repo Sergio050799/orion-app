@@ -1,32 +1,14 @@
 "use client";
 
 import React, { lazy, Suspense, useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { createPortal } from 'react-dom';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import {
   listarCarpetas, crearCarpeta, guardarCarpeta, cargarCarpeta, eliminarCarpeta,
   cambiarEstado, listarCorredores, sesionJoin, sesionLeave, sesionHeartbeat,
-  cargarCarpetasDelServidor, consolidarSinco, filtrarFilasReales,
+  cargarCarpetasDelServidor,
   type FlotaCarpeta, type EstadoFlota,
 } from '@/core/flotas';
-
-// TRABAJO se genera desde ORIGINAL. Si ya había datos de trabajo (Silverdat, etc.) para una matrícula,
-// se conservan los campos que el nuevo Original no trae; lo que sí trae el Original manda.
-const matLimpiaFila = (r: Record<string, string>) => (r['matricula'] ?? '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-function trabajoDesdeOriginal(original: Record<string, string>[], previo: Record<string, string>[]): Record<string, string>[] {
-  const reales = filtrarFilasReales(original);
-  if (reales.length === 0) return [];
-  const prev = new Map<string, Record<string, string>>();
-  previo.forEach(r => { const k = matLimpiaFila(r); if (k) prev.set(k, r); });
-  return reales.map(n => {
-    const old = prev.get(matLimpiaFila(n));
-    if (!old) return n;
-    const m = { ...old };
-    for (const [k, v] of Object.entries(n)) if (v !== '' || !(k in m)) m[k] = v;
-    return m;
-  });
-}
 
 // Simple identity for open-flotas tab label
 function flotaLabel(f: FlotaCarpeta) {
@@ -38,24 +20,19 @@ import HojaOriginal from './components/HojaOriginal';
 import HojaTrabajos from './components/HojaTrabajos';
 import HojaSincoUnificado from './components/HojaSincoUnificado';
 import HojaInforme from './components/HojaInforme';
-import HojaEmision from './components/HojaEmision';
 import type { HojaOfertaHandle } from './components/HojaOferta';
 const HojaOferta = lazy(() => import('./components/HojaOferta'));
 import HojaPreEmision from './components/HojaPreEmision';
-import type { InfoVerificacion } from '@/core/catalogo/verificacion';
 import HojaDatosGenerales from './components/HojaDatosGenerales';
 import FichaContratada from './components/FichaContratada';
 import HojaAutomatico from './components/HojaAutomatico';
 import SilverdatChip from '@/components/saas/SilverdatChip';
 import type { FlotaGridHandle, FlotaHeader, CoberturaRow } from './components/types';
-import { ESTUDIO_CSS } from './estudio-css';
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
 
-type TabName = 'DATOS GENERALES' | 'AUTOMÁTICO' | 'ORIGINAL' | 'TRABAJO' | 'SINCO' | 'INFORME' | 'OFERTA' | 'PRE-EMISIÓN' | 'EMISIÓN';
-const TABS: TabName[] = ['DATOS GENERALES', 'AUTOMÁTICO', 'ORIGINAL', 'TRABAJO', 'SINCO', 'INFORME', 'OFERTA', 'PRE-EMISIÓN', 'EMISIÓN'];
-
-const MOTIVOS_RECHAZO = ['Precio', 'Siniestralidad', 'Actividad', 'ADR', 'Antigüedad de los vehículos', 'Tipología de vehículos', 'Falta de documentación', 'Prefiere seguir con su aseguradora', 'Sin respuesta del corredor', 'Otro'];
+type TabName = 'DATOS GENERALES' | 'AUTOMÁTICO' | 'ORIGINAL' | 'TRABAJO' | 'SINCO' | 'INFORME' | 'OFERTA' | 'PRE-EMISIÓN';
+const TABS: TabName[] = ['DATOS GENERALES', 'AUTOMÁTICO', 'ORIGINAL', 'TRABAJO', 'SINCO', 'INFORME', 'OFERTA', 'PRE-EMISIÓN'];
 
 const EMPTY_HEADER: FlotaHeader = { cif: '', tomador: '', actividad: '', formaPago: '', efecto: '' };
 
@@ -153,46 +130,6 @@ async function descargarTodo(carpeta: FlotaCarpeta, corredorNombre?: string) {
   // 6. Oferta
   addSheet('OFERTA', carpeta.oferta);
 
-  // 7. Informe técnico (siempre al final: el importador solo lee la primera hoja)
-  {
-    const gr = Object.values(grupos);
-    const aoa: (string | number | { t: 'n'; f: string; v: number; z?: string })[][] = [
-      [`INFORME TÉCNICO · ${carpeta.nombre}`],
-      [],
-      ['1 · Composición de la flota'],
-      ['Tipología', 'Cobertura', 'Vehículos'],
-      ...gr.map(g => [g.tipo, g.cob, g.count]),
-    ];
-    const firstC = 5, lastC = 4 + gr.length;
-    const totalVeh = gr.reduce((a, g) => a + g.count, 0);
-    if (gr.length > 0) aoa.push(['Total', '', { t: 'n', f: `SUM(C${firstC}:C${lastC})`, v: totalVeh }]);
-    if ((carpeta.sincoResultados?.length ?? 0) > 0) {
-      const rs = consolidarSinco(carpeta.sincoResultados);
-      const r0 = aoa.length + 1; // fila (1-based) donde empieza el bloque SINCO
-      aoa.push([], ['2 · Siniestralidad SINCO']);
-      aoa.push(['Indicador', '', 'Valor']);
-      aoa.push(['Vehículos con SINCO', '', rs.vehiculosConSinco]);
-      aoa.push(['Siniestros (Σ)', '', rs.totalSiniestros]);
-      aoa.push(['Antigüedad media (años) (*)', '', Math.round(rs.antiguedadMedia * 100) / 100]);
-      const rVeh = r0 + 3, rSin = r0 + 4, rAnt = r0 + 5;
-      const sinAnio = rs.antiguedadMedia > 0 ? Math.round((rs.totalSiniestros / rs.antiguedadMedia) * 100) / 100 : 0;
-      aoa.push(['Siniestros por año (*)', '', { t: 'n', f: `IF(C${rAnt}>0,C${rSin}/C${rAnt},0)`, v: sinAnio, z: '0.00' }]);
-      const rSA = r0 + 6;
-      const frec = rs.vehiculosConSinco > 0 ? sinAnio / rs.vehiculosConSinco : 0;
-      aoa.push(['Frecuencia (*)', '', { t: 'n', f: `IF(C${rVeh}>0,C${rSA}/C${rVeh},0)`, v: rs.frecuencia ?? frec, z: '0.00%' }]);
-      aoa.push([], ['Anexo · cómo se calcula']);
-      aoa.push(['(*) Antigüedad media = media de Num_Anios_Asegurado de los vehículos con consulta SINCO válida']);
-      aoa.push(['(*) Siniestros por año = Σ siniestros ÷ antigüedad media']);
-      aoa.push(['(*) Frecuencia = siniestros por año ÷ vehículos con SINCO']);
-    }
-    aoa.push([], ['Documento confidencial']);
-    if (gr.length > 0 || (carpeta.sincoResultados?.length ?? 0) > 0) {
-      const wsT = XLSX.utils.aoa_to_sheet(aoa);
-      wsT['!cols'] = [{ wch: 34 }, { wch: 34 }, { wch: 14 }];
-      XLSX.utils.book_append_sheet(wb, wsT, 'INFORME_TECNICO');
-    }
-  }
-
   // Lanzar la API de oferta plantilla en paralelo mientras construimos el XLSX local
   const ofertaVehiculos = carpeta.oferta.filter(r => r['matricula']?.trim()).map(r => ({
     tomador: carpeta.header.tomador,
@@ -201,7 +138,6 @@ async function descargarTodo(carpeta: FlotaCarpeta, corredorNombre?: string) {
     marca: r['marca'] ?? '',
     modelo: r['modelo'] ?? '',
     coberturas: r['coberturas'] ?? r['coberturas_solicitadas'] ?? '',
-    franquicia: (r['coberturas'] ?? '') === 'Todo Riesgo con Franquicia' ? (parseFloat(String(r['frq'] ?? '').replace(',', '.')) || 0) : 0,
     prima_actual: parseFloat(r['prima_referencia'] ?? '0') || 0,
     forma_pago: carpeta.header.formaPago,
     fecha_vencimiento: r['fecha_vencimiento'] ?? carpeta.header.fechaVencimiento ?? '',
@@ -265,16 +201,12 @@ function vehiclesToTrabajoRows(vehicles: any[]): Record<string, string>[] {
     vin:                  v.vin                   || '',
     fecha_matriculacion:  v.fecha_matriculacion   || '',
     anyo_fabricacion:     v.anyo_fabricacion      || '',
-    anyo_fab_fuente:      v.anyo_fabricacion ? (v.anyo_fab_fuente || 'fabricacion') : '',
     combustible:          v.combustible           || '',
     etiqueta_dgt:         v.etiqueta_dgt          || '',
     euro:                 v.euro                  || '',
     co2:                  v.co2                   || '',
   }));
 }
-
-// ─── CSS ─────────────────────────────────────────────────────────────────────
-
 
 // ─── FlotasPage ─────────────────────────────────────────────────────────────
 
@@ -290,7 +222,7 @@ export default function FlotasPage() {
   const [isDownloading, setIsDownloading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [saveFlash, setSaveFlash] = useState(false);
-  const [estadoPopover, setEstadoPopover] = useState<{ estado: EstadoFlota; motivo: string; fechaVencimiento: string; comentario: string } | null>(null);
+  const [estadoPopover, setEstadoPopover] = useState<{ estado: EstadoFlota; motivo: string } | null>(null);
   const [openFlotas, setOpenFlotas] = useState<FlotaCarpeta[]>([]);
   const [fichaMode, setFichaMode] = useState(false);
 
@@ -318,15 +250,6 @@ export default function FlotasPage() {
 
   const carpetaActivaRef = useRef(carpetaActiva);
   carpetaActivaRef.current = carpetaActiva;
-
-  // Verificación de la identificación en el catálogo (la calcula PRE-EMISIÓN; EMISIÓN la lee)
-  const [verifInfo, setVerifInfo] = useState<Record<string, InfoVerificacion>>({});
-  const verifCarpetaRef = useRef<string | null>(null);
-  if (verifCarpetaRef.current !== (carpetaActiva?.id ?? null)) {
-    verifCarpetaRef.current = carpetaActiva?.id ?? null;
-    if (Object.keys(verifInfo).length > 0) setVerifInfo({});
-  }
-  const guardaCatalogoRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!carpetaActiva) return;
@@ -391,9 +314,8 @@ export default function FlotasPage() {
       : (Array.isArray(savedVehicles) && savedVehicles.length > 0 ? vehiclesToTrabajoRows(savedVehicles) : []);
     // Pre-populate refs BEFORE state updates so the rebuild useEffect in HojaOferta
     // sees savedEditsRef already filled when it fires — prevents spurious auto-calc
-    const originalToUse = carpeta.original.length > 0 ? carpeta.original : trabajo;
     if (carpeta.oferta.length > 0) ofertaRef.current?.setData(carpeta.oferta);
-    if (originalToUse.length > 0) originalRef.current?.setData(originalToUse);
+    if (carpeta.original.length > 0) originalRef.current?.setData(carpeta.original);
     if (trabajo.length > 0) trabajoRef.current?.setData(trabajo);
     setOpenFlotas(prev => {
       const rest = prev.filter(f => f.id !== carpeta.id);
@@ -401,7 +323,7 @@ export default function FlotasPage() {
     });
     setCarpetaActiva(carpeta);
     setFlotaHeader(carpeta.header);
-    setOriginalData(originalToUse);
+    setOriginalData(carpeta.original);
     setOfertaRows(carpeta.oferta);
     setSincoResultRows(carpeta.sincoResultados ?? []);
     setActiveTab('DATOS GENERALES');
@@ -410,43 +332,7 @@ export default function FlotasPage() {
     setTrabajoRows(trabajo);
   }, []);
 
-  const trabajoRowsRef = useRef(trabajoRows);
-  trabajoRowsRef.current = trabajoRows;
-  // Al subir Original, Trabajo se genera solo (antes había que pulsar «Copiar de Original» y la pestaña se quedaba vacía)
-  const handleOriginalChange = useCallback((data: Record<string, string>[]) => {
-    setOriginalData(data);
-    const nuevo = trabajoDesdeOriginal(data, trabajoRowsRef.current);
-    if (nuevo.length > 0) {
-      trabajoRowsRef.current = nuevo;
-      setTrabajoRows(nuevo);
-      setTimeout(() => trabajoRef.current?.setData(nuevo), 0);
-    }
-  }, []);
-
-  // Flota con Original pero sin Trabajo (subida antigua, carpeta importada…): Trabajo se rellena al abrir el estudio
-  useEffect(() => {
-    if (showCarpetaScreen || !carpetaActiva) return;
-    if (trabajoRows.some(r => (r['matricula'] ?? '').trim())) return;
-    const nuevo = trabajoDesdeOriginal(originalData, []);
-    if (nuevo.length === 0) return;
-    setTrabajoRows(nuevo);
-    setTimeout(() => trabajoRef.current?.setData(nuevo), 0);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showCarpetaScreen, carpetaActiva?.id, originalData, trabajoRows]);
-  // La plantilla subida trae datos de cabecera: se completan los de DATOS GENERALES que estén vacíos (no se pisa nada escrito)
-  const handleHeaderDetectado = useCallback((h: { cif?: string; tomador?: string; actividad?: string; periodicidad?: string; efecto?: string }) => {
-    setFlotaHeader(prev => {
-      const next = { ...prev };
-      if (h.cif && !prev.cif?.trim()) next.cif = h.cif;
-      if (h.tomador && !prev.tomador?.trim()) next.tomador = h.tomador;
-      if (h.actividad && !prev.actividad?.trim()) next.actividad = h.actividad;
-      if (h.efecto && !prev.efecto?.trim()) next.efecto = h.efecto;
-      if (h.periodicidad && !prev.periodicidad && ['mensual', 'bimestral', 'trimestral', 'semestral', 'anual'].includes(h.periodicidad)) {
-        next.periodicidad = h.periodicidad as NonNullable<FlotaHeader['periodicidad']>;
-      }
-      return next;
-    });
-  }, []);
+  const handleOriginalChange = useCallback((data: Record<string, string>[]) => { setOriginalData(data); }, []);
   const handleTrabajoChange = useCallback((data: Record<string, string>[]) => { setTrabajoRows(data); }, []);
   const handleOfertaChange = useCallback((data: Record<string, string>[]) => { setOfertaRows(data); }, []);
   const getOriginalSnapshot = useCallback(() => originalRef.current?.getData() ?? null, []);
@@ -472,13 +358,12 @@ export default function FlotasPage() {
     const trabajo = fresh.trabajo.length > 0
       ? fresh.trabajo
       : (Array.isArray(savedVehicles) && savedVehicles.length > 0 ? vehiclesToTrabajoRows(savedVehicles) : []);
-    const originalToUse = fresh.original.length > 0 ? fresh.original : trabajo;
     if (fresh.oferta.length > 0) ofertaRef.current?.setData(fresh.oferta);
-    if (originalToUse.length > 0) originalRef.current?.setData(originalToUse);
+    if (fresh.original.length > 0) originalRef.current?.setData(fresh.original);
     if (trabajo.length > 0) trabajoRef.current?.setData(trabajo);
     setCarpetaActiva(fresh);
     setFlotaHeader(fresh.header);
-    setOriginalData(originalToUse);
+    setOriginalData(fresh.original);
     setOfertaRows(fresh.oferta);
     setSincoResultRows(fresh.sincoResultados ?? []);
     setActiveTab('DATOS GENERALES');
@@ -489,19 +374,8 @@ export default function FlotasPage() {
 
   const handleConfirmarEstado = useCallback(() => {
     if (!carpetaActiva || !estadoPopover) return;
-    if (estadoPopover.estado === 'CONTRATADA' && !estadoPopover.fechaVencimiento.trim()) return;
-    const motivo = estadoPopover.estado === 'RECHAZADA' ? (estadoPopover.motivo || undefined) : undefined;
-    const obs    = estadoPopover.estado === 'RECHAZADA' && estadoPopover.comentario.trim() ? estadoPopover.comentario.trim() : undefined;
-    const updated = cambiarEstado(carpetaActiva.id, estadoPopover.estado, motivo, obs);
-    if (updated) {
-      let final = normalizarCarpeta(updated);
-      if (estadoPopover.estado === 'CONTRATADA' && estadoPopover.fechaVencimiento.trim()) {
-        final = { ...final, header: { ...final.header, fechaVencimiento: estadoPopover.fechaVencimiento.trim() } };
-        guardarCarpeta(final);
-      }
-      setCarpetaActiva(final);
-      if (estadoPopover.estado === 'CONTRATADA') setFichaMode(true);
-    }
+    const updated = cambiarEstado(carpetaActiva.id, estadoPopover.estado, estadoPopover.motivo || undefined);
+    if (updated) setCarpetaActiva(normalizarCarpeta(updated));
     setEstadoPopover(null);
   }, [carpetaActiva, estadoPopover]);
 
@@ -576,7 +450,6 @@ export default function FlotasPage() {
     'INFORME': Object.keys(carpetaActiva?.primasMmtInforme ?? {}).length > 0,
     'OFERTA': ofertaRows.length > 0,
     'PRE-EMISIÓN': Object.keys(carpetaActiva?.catalogoSeleccion ?? {}).length > 0,
-    'EMISIÓN': !!(carpetaActiva?.emision?.idCliente?.trim() && carpetaActiva?.emision?.idFlota?.trim()),
   }), [flotaHeader, originalData, trabajoRows, sincoResultRows, carpetaActiva, ofertaRows]);
 
   const completedCount = useMemo(() => TABS.filter(t => tabComplete[t]).length, [tabComplete]);
@@ -619,32 +492,10 @@ export default function FlotasPage() {
     }
   }, [carpetaActiva, flotaHeader, originalData, trabajoRows, sincoResultRows, ofertaRows, openFlotas]);
 
-  // ─── Corredor activo ────────────────────────────────────────────────────────
-  const corrActivo = useMemo(() => {
-    if (!carpetaActiva?.corredor_id) return null;
-    return listarCorredores().find(c => c.id === carpetaActiva.corredor_id) ?? null;
-  }, [carpetaActiva?.corredor_id]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const ofertadaDias = useMemo(() => {
-    if (!carpetaActiva || carpetaActiva.estado !== 'OFERTADA') return 0;
-    const last = [...(carpetaActiva.historico ?? [])].reverse().find(h => h.estadoNuevo === 'OFERTADA');
-    if (!last?.fecha) return 0;
-    return Math.floor((Date.now() - new Date(last.fecha).getTime()) / 86400000);
-  }, [carpetaActiva]);
-
-  // Escape key cierra el drawer de cambio de estado
-  useEffect(() => {
-    if (!estadoPopover) return;
-    const h = (e: KeyboardEvent) => { if (e.key === 'Escape') setEstadoPopover(null); };
-    document.addEventListener('keydown', h);
-    return () => document.removeEventListener('keydown', h);
-  }, [!!estadoPopover]); // eslint-disable-line react-hooks/exhaustive-deps
-
   // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
     <>
-      <style dangerouslySetInnerHTML={{ __html: ESTUDIO_CSS }} />
       <style>{`
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .rdg-light {
@@ -656,11 +507,24 @@ export default function FlotasPage() {
           --rdg-border-color: #e5e7eb;
           color: #111827;
         }
-        .rdg-light .rdg-cell { border-right: 1px solid #e5e7eb; border-bottom: 1px solid #e5e7eb; }
-        .rdg-light .rdg-header-row .rdg-cell { font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.03em; color: #374151; text-align: center; justify-content: center; }
+        .rdg-light .rdg-cell {
+          border-right: 1px solid #e5e7eb;
+          border-bottom: 1px solid #e5e7eb;
+        }
+        .rdg-light .rdg-header-row .rdg-cell {
+          font-weight: 700;
+          font-size: 12px;
+          text-transform: uppercase;
+          letter-spacing: 0.03em;
+          color: #374151;
+          text-align: center;
+          justify-content: center;
+        }
+        .t-stage:hover { background: rgba(255,255,255,0.04); }
+        .t-stage-x:hover { color: #ef4444 !important; }
       `}</style>
 
-      <div className={`es pg${showCarpetaScreen ? '' : ' ws'}`}>
+      <div className="flex flex-col" style={{ height: 'calc(100vh - 126px)' }}>
 
         {/* ── CarpetaScreen ── */}
         {showCarpetaScreen && <CarpetaScreen onSelect={handleSelectCarpeta} />}
@@ -668,152 +532,240 @@ export default function FlotasPage() {
         {/* ── Study view ── */}
         {!showCarpetaScreen && carpetaActiva && (
           <>
-            {/* ── Estado drawer (portal) ── */}
-            {estadoPopover && typeof document !== 'undefined' && createPortal(
-              <>
-                <div className="dr-scrim open" onClick={() => setEstadoPopover(null)} />
-                <aside className="dr-drawer open" role="dialog" aria-modal="true" tabIndex={-1}>
-                  <button className="x" onClick={() => setEstadoPopover(null)} aria-label="Cerrar">&times;</button>
-                  <div className="over">CAMBIAR ESTADO</div>
-                  <h3>{carpetaActiva?.nombre || 'Estudio'}</h3>
-                  <p className="desc">Estado actual: <EstadoBadge estado={carpetaActiva?.estado ?? ''} small />. El cambio se refleja en el Dashboard y en Flotas.</p>
-                  <form className="form" onSubmit={e => { e.preventDefault(); handleConfirmarEstado(); }} noValidate>
-                    <div className="fld">
-                      <label htmlFor="es_estado">Nuevo estado</label>
-                      <select id="es_estado" className="select"
-                        value={estadoPopover.estado}
-                        onChange={e => setEstadoPopover(p => p ? { ...p, estado: e.target.value as EstadoFlota, motivo: MOTIVOS_RECHAZO[0], fechaVencimiento: '', comentario: '' } : null)}>
-                        {(['EN ESTUDIO', 'ESTUDIADA', 'OFERTADA', 'CONTRATADA', 'RECHAZADA'] as EstadoFlota[])
-                          .filter(s => s !== carpetaActiva?.estado)
-                          .map(s => <option key={s} value={s}>{s}</option>)}
-                      </select>
-                    </div>
+            {/* ── Heading block ── */}
+            <div style={{ flexShrink: 0, borderBottom: '1px solid var(--t-line)', padding: '14px 28px 13px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 18, paddingBottom: 13, marginBottom: 12, borderBottom: '1px solid var(--t-line)' }}>
+                <div>
+                  <p style={{ margin: '0 0 5px', fontSize: 10, fontWeight: 750, letterSpacing: '0.13em', textTransform: 'uppercase', color: 'var(--t-muted)' }}>
+                    {fichaMode ? 'FICHA CONTRATADA' : `ESTUDIO · ${String(activeTabIndex + 1).padStart(2, '0')} / 08`}
+                  </p>
+                  <h1 style={{ margin: '0 0 4px', fontSize: 24, fontWeight: 720, letterSpacing: '-0.04em', color: 'var(--t-text)', lineHeight: 1.1 }}>
+                    Estudio de Flotas
+                  </h1>
+                  <p style={{ margin: 0, fontSize: 13, color: 'var(--t-muted)' }}>
+                    {fichaMode ? 'Datos del expediente contratado' : `${activeTab} · ${completedCount}/${TABS.length} pasos completados`}
+                  </p>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                  <SilverdatChip />
 
-                    {estadoPopover.estado === 'ESTUDIADA' && (
-                      <p className="hint">El estudio está terminado y la oferta aún no se ha enviado.</p>
+                  {/* Actualizar estudio */}
+                  <button onClick={handleRefresh} disabled={isRefreshing} style={{
+                    border: '1px solid var(--t-line)', color: 'var(--t-text)', background: 'transparent',
+                    padding: '8px 12px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: isRefreshing ? 'not-allowed' : 'pointer',
+                    display: 'flex', alignItems: 'center', gap: 5, opacity: isRefreshing ? 0.5 : 1, whiteSpace: 'nowrap',
+                  }}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+                      style={{ animation: isRefreshing ? 'spin 0.8s linear infinite' : 'none' }}>
+                      <polyline points="23 4 23 10 17 10"/>
+                      <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                    </svg>
+                    {isRefreshing ? 'Actualizando...' : 'Actualizar estudio'}
+                  </button>
+
+                  {/* Guardar */}
+                  <button onClick={handleSave} style={{
+                    border: `1px solid ${saveFlash ? 'rgba(34,197,94,0.4)' : 'var(--t-line)'}`,
+                    color: saveFlash ? '#4ade80' : 'var(--t-text)',
+                    background: saveFlash ? 'rgba(34,197,94,0.1)' : 'transparent',
+                    padding: '8px 12px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap',
+                    transition: 'all 200ms',
+                  }}>
+                    {saveFlash ? (
+                      <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>Guardado</>
+                    ) : (
+                      <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Guardar</>
                     )}
+                  </button>
 
-                    {estadoPopover.estado === 'CONTRATADA' && (
-                      <div className="fld">
-                        <label htmlFor="es_vcto">Fecha de vencimiento (DD/MM/AAAA) <span className="req">*</span></label>
-                        <input id="es_vcto" className="inp" placeholder="31/12/2027"
-                          value={estadoPopover.fechaVencimiento}
-                          onChange={e => setEstadoPopover(p => p ? { ...p, fechaVencimiento: e.target.value } : null)} />
+                  {/* Descargar todo */}
+                  <button onClick={handleDownload} disabled={isDownloading} style={{
+                    background: 'var(--t-blue)', border: '1px solid var(--t-blue)',
+                    color: '#fff', padding: '8px 14px', borderRadius: 6, fontSize: 12, fontWeight: 600,
+                    cursor: isDownloading ? 'not-allowed' : 'pointer', opacity: isDownloading ? 0.5 : 1,
+                    display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap',
+                  }}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                    </svg>
+                    {isDownloading ? 'Generando...' : 'Descargar todo'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Casebar */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 15 }}>
+                <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--t-muted)', marginRight: 2 }}>EXPEDIENTE</span>
+                  <strong style={{ fontSize: 15, color: 'var(--t-text)', fontWeight: 700 }}>{carpetaActiva.nombre}</strong>
+                  <span style={{ fontSize: 12, color: 'var(--t-muted)' }}>{numVeh} vehículos</span>
+                  <EstadoBadge estado={carpetaActiva.estado} />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7, position: 'relative' }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--t-muted)' }}>ESTADO</span>
+                  <select
+                    value=""
+                    onChange={e => {
+                      const val = e.target.value as EstadoFlota;
+                      if (val && val !== carpetaActiva.estado) setEstadoPopover({ estado: val, motivo: '' });
+                    }}
+                    style={{
+                      border: '1px solid var(--t-line)', background: 'var(--t-surface)', color: 'var(--t-text)',
+                      padding: '7px 10px', borderRadius: 5, fontSize: 12, cursor: 'pointer', outline: 'none',
+                    }}
+                  >
+                    <option value="">Cambiar estado</option>
+                    {(['EN ESTUDIO', 'OFERTADA', 'CONTRATADA', 'RECHAZADA'] as EstadoFlota[])
+                      .filter(e => e !== carpetaActiva.estado)
+                      .map(e => <option key={e} value={e}>{e}</option>)}
+                  </select>
+
+                  {/* Estado popover */}
+                  {estadoPopover && (
+                    <div style={{
+                      position: 'absolute', top: '100%', right: 0, marginTop: 8, zIndex: 100,
+                      padding: 14, borderRadius: 8, minWidth: 220,
+                      background: 'var(--t-surface)', border: '1px solid var(--t-line)',
+                      boxShadow: '0 12px 40px rgba(0,0,0,0.3)',
+                    }}>
+                      <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--t-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>
+                        Cambiar a <EstadoBadge estado={estadoPopover.estado} small />
+                      </p>
+                      <input autoFocus placeholder="Motivo (opcional)"
+                        value={estadoPopover.motivo}
+                        onChange={e => setEstadoPopover(p => p ? { ...p, motivo: e.target.value } : null)}
+                        onKeyDown={e => { if (e.key === 'Enter') handleConfirmarEstado(); if (e.key === 'Escape') setEstadoPopover(null); }}
+                        style={{
+                          width: '100%', fontSize: 12, marginBottom: 10,
+                          border: '1px solid var(--t-line)', background: 'var(--t-surface)', color: 'var(--t-text)',
+                          padding: '7px 10px', borderRadius: 5, outline: 'none', boxSizing: 'border-box',
+                        }} />
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button onClick={handleConfirmarEstado} style={{
+                          flex: 1, fontSize: 11, fontWeight: 600, padding: '6px 0', borderRadius: 6,
+                          background: 'var(--t-blue)', color: '#fff', border: 'none', cursor: 'pointer',
+                        }}>Confirmar</button>
+                        <button onClick={() => setEstadoPopover(null)} style={{
+                          fontSize: 11, padding: '6px 12px', borderRadius: 6,
+                          background: 'transparent', color: 'var(--t-muted)', border: '1px solid var(--t-line)', cursor: 'pointer',
+                        }}>Cancelar</button>
                       </div>
-                    )}
-
-                    {estadoPopover.estado === 'RECHAZADA' && (
-                      <>
-                        <div className="fld">
-                          <label htmlFor="es_mot">Motivo del rechazo</label>
-                          <select id="es_mot" className="select"
-                            value={estadoPopover.motivo}
-                            onChange={e => setEstadoPopover(p => p ? { ...p, motivo: e.target.value } : null)}>
-                            {MOTIVOS_RECHAZO.map(m => <option key={m}>{m}</option>)}
-                          </select>
-                        </div>
-                        <div className="fld">
-                          <label htmlFor="es_com">Comentario (opcional)</label>
-                          <input id="es_com" className="inp" placeholder="Añade un detalle si hace falta"
-                            value={estadoPopover.comentario}
-                            onChange={e => setEstadoPopover(p => p ? { ...p, comentario: e.target.value } : null)} />
-                        </div>
-                      </>
-                    )}
-
-                    <div className="fact">
-                      <button type="submit"
-                        disabled={estadoPopover.estado === 'CONTRATADA' && !estadoPopover.fechaVencimiento.trim()}
-                        className="btn"
-                        style={{ opacity: (estadoPopover.estado === 'CONTRATADA' && !estadoPopover.fechaVencimiento.trim()) ? 0.5 : 1 }}>
-                        Confirmar
-                      </button>
-                      <button type="button" onClick={() => setEstadoPopover(null)} className="btn ghost">Cancelar</button>
                     </div>
-                  </form>
-                </aside>
-              </>,
-              document.body
-            )}
+                  )}
 
-            {/* ── wsbar: back + open chips + silverdat ── */}
-            <div className="wsbar">
-              <button onClick={() => setShowCarpetaScreen(true)} className="mini">Todas las flotas</button>
-              <div className="opens">
-                {openFlotas.length > 0 && <span className="lb">ABIERTAS</span>}
+                  {/* Cambiar expediente */}
+                  <button onClick={() => setShowCarpetaScreen(true)} style={{
+                    border: '1px solid var(--t-line)', color: 'var(--t-muted)', background: 'transparent',
+                    padding: '7px 12px', borderRadius: 5, fontSize: 12, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',
+                  }}>
+                    Expedientes
+                  </button>
+                </div>
+              </div>
+
+              {/* Banner estado archivado */}
+              {(carpetaActiva.estado === 'RECHAZADA' || carpetaActiva.estado === 'OFERTADA') && (
+                <div style={{
+                  marginTop: 10,
+                  padding: '8px 14px',
+                  borderRadius: 6,
+                  background: carpetaActiva.estado === 'RECHAZADA' ? 'rgba(239,77,90,0.08)' : 'rgba(240,185,77,0.08)',
+                  border: `1px solid ${carpetaActiva.estado === 'RECHAZADA' ? 'rgba(239,77,90,0.35)' : 'rgba(240,185,77,0.35)'}`,
+                  display: 'flex', alignItems: 'center', gap: 10,
+                }}>
+                  <span style={{
+                    fontSize: 10, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase',
+                    color: carpetaActiva.estado === 'RECHAZADA' ? 'var(--t-red)' : 'var(--t-amber)',
+                    flexShrink: 0,
+                  }}>
+                    {carpetaActiva.estado}
+                  </span>
+                  {motivoCarpeta && (
+                    <span style={{ fontSize: 12, color: 'var(--t-text-2)', fontStyle: 'italic' }}>
+                      {motivoCarpeta}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* ── Tabstrip: open flotas ── */}
+            {openFlotas.length > 0 && (
+              <div style={{
+                flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6,
+                padding: '6px 28px 6px', borderBottom: '1px solid var(--t-line)',
+                overflowX: 'auto', scrollbarWidth: 'none',
+              }}>
+                <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--t-muted)', marginRight: 6, flexShrink: 0, whiteSpace: 'nowrap' }}>
+                  ABIERTAS
+                </span>
                 {openFlotas.map(f => {
                   const isActiveTab = carpetaActiva?.id === f.id;
                   return (
-                    <div key={f.id} className="chip" aria-current={isActiveTab ? 'true' : undefined}>
-                      <button onClick={() => handleSwitchFlota(f)}>{flotaLabel(f)}</button>
-                      <button className="x" onClick={() => handleCloseTab(f)} title={`Cerrar ${flotaLabel(f)}`}>×</button>
+                    <div key={f.id} style={{
+                      display: 'flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap',
+                      border: `1px solid ${isActiveTab ? 'var(--t-text)' : 'var(--t-line)'}`,
+                      borderRadius: 5, padding: '5px 6px 5px 10px',
+                      background: isActiveTab ? 'rgba(255,255,255,0.04)' : 'transparent',
+                      fontSize: 11, fontWeight: 650,
+                      color: isActiveTab ? 'var(--t-text)' : 'var(--t-muted)',
+                    }}>
+                      <button
+                        onClick={() => handleSwitchFlota(f)}
+                        style={{ all: 'unset', cursor: 'pointer', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis' }}
+                      >
+                        {flotaLabel(f)}
+                      </button>
+                      <button
+                        onClick={() => handleCloseTab(f)}
+                        className="t-stage-x"
+                        title={`Cerrar ${flotaLabel(f)}`}
+                        style={{ border: 'none', background: 'transparent', color: 'var(--t-muted)', fontSize: 16, lineHeight: 1, padding: '0 2px', cursor: 'pointer' }}
+                      >
+                        ×
+                      </button>
                     </div>
                   );
                 })}
               </div>
-              <SilverdatChip />
-            </div>
+            )}
 
-            {/* ── case: carpeta heading ── */}
-            <div className="case">
-              <div>
-                {fichaMode && <p className="over">Ficha contratada</p>}
-                <h1>{carpetaActiva.nombre || '(sin nombre)'}</h1>
-                <div className="meta">
-                  {corrActivo?.nombre && <span>{corrActivo.nombre}</span>}
-                  {corrActivo?.sucursal && <span>{corrActivo.sucursal}</span>}
-                  <span>{numVeh} {numVeh === 1 ? 'vehículo' : 'vehículos'}</span>
-                  <EstadoBadge estado={carpetaActiva.estado} />
-                </div>
-                {carpetaActiva.estado === 'ESTUDIADA' && (
-                  <div className="banner" style={{ '--c': 'var(--st-estudiada)' } as React.CSSProperties}>
-                    <b>Estudiada</b>
-                    <span>El estudio está terminado. Falta enviar la oferta al corredor.</span>
-                  </div>
-                )}
-                {carpetaActiva.estado === 'OFERTADA' && (
-                  <div className="banner" style={{ '--c': 'var(--st-ofertada)' } as React.CSSProperties}>
-                    <b>Ofertada</b>
-                    <span>Enviada hace {ofertadaDias} {ofertadaDias === 1 ? 'día' : 'días'}. A la espera de respuesta del corredor.</span>
-                  </div>
-                )}
-                {carpetaActiva.estado === 'RECHAZADA' && (
-                  <div className="banner" style={{ '--c': 'var(--st-rechazada)' } as React.CSSProperties}>
-                    <b>Rechazada</b>
-                    <span>{motivoCarpeta || 'Sin motivo indicado'}</span>
-                  </div>
-                )}
-              </div>
-              <div className="acts">
-                <button onClick={handleSave} className={`mini${saveFlash ? ' flash' : ''}`}>{saveFlash ? 'Guardado' : 'Guardar'}</button>
-                <button onClick={handleRefresh} disabled={isRefreshing} className="mini">{isRefreshing ? 'Actualizando…' : 'Actualizar'}</button>
-                <button className="mini" onClick={() => {
-                  const first = (['EN ESTUDIO', 'ESTUDIADA', 'OFERTADA', 'CONTRATADA', 'RECHAZADA'] as EstadoFlota[]).find(s => s !== carpetaActiva.estado)!;
-                  setEstadoPopover({ estado: first, motivo: MOTIVOS_RECHAZO[0], fechaVencimiento: '', comentario: '' });
-                }}>Cambiar estado</button>
-                <button onClick={handleDownload} disabled={isDownloading} className="mini pri">{isDownloading ? 'Generando…' : 'Descargar todo'}</button>
-              </div>
-            </div>
-
-            {/* ── steps nav ── */}
+            {/* ── Stages: navegación de 8 hojas ── */}
             {!fichaMode && (
-              <nav className="steps">
+              <div style={{
+                flexShrink: 0, display: 'flex', gap: 0,
+                borderBottom: '1px solid var(--t-line)',
+                overflowX: 'auto', scrollbarWidth: 'thin',
+              }}>
                 {TABS.map((tab, idx) => {
                   const isActive = activeTab === tab;
                   const done = tabComplete[tab];
                   return (
-                    <button key={tab} onClick={() => setActiveTab(tab)} className="stp8" aria-current={isActive ? 'step' : undefined}>
-                      <b>{String(idx + 1).padStart(2, '0')}</b>
-                      {tab}
-                      {tab === 'AUTOMÁTICO' && <span className="op">OPCIONAL</span>}
-                      {done && <span className="ok" />}
+                    <button
+                      key={tab}
+                      onClick={() => setActiveTab(tab)}
+                      className="t-stage"
+                      style={{
+                        whiteSpace: 'nowrap', flex: '1', textAlign: 'center', minWidth: 120,
+                        border: 'none', borderBottom: `2px solid ${isActive ? 'var(--t-blue)' : 'transparent'}`,
+                        padding: '14px 9px 12px', background: 'none', cursor: 'pointer',
+                        color: isActive ? 'var(--t-text)' : 'var(--t-muted)',
+                        fontSize: 10, fontWeight: 750, letterSpacing: '0.025em',
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+                        transition: 'color 150ms, border-color 150ms',
+                      }}
+                    >
+                      <b style={{ fontSize: 10, opacity: 0.65, marginRight: 3 }}>{String(idx + 1).padStart(2, '0')}</b>
+                      {tab.toUpperCase()}
+                      {done && <span style={{ color: '#10b981', fontSize: 20, lineHeight: 0, verticalAlign: 'middle', marginLeft: 3 }}>·</span>}
                     </button>
                   );
                 })}
-              </nav>
+              </div>
             )}
 
-            {/* ── content ── */}
+            {/* ── Content ── */}
             <div className="flex-1 min-h-0">
               {fichaMode ? (
                 <FichaContratada
@@ -824,7 +776,7 @@ export default function FlotasPage() {
               ) : (
                 <div style={{ position: 'relative', height: '100%' }}>
                   {TABS.map(tab => (
-                    <div key={tab} className="pane" style={{ display: activeTab === tab ? 'flex' : 'none' }}>
+                    <div key={tab} style={{ position: 'absolute', inset: 0, display: activeTab === tab ? 'flex' : 'none', flexDirection: 'column' }}>
                       {tab === 'DATOS GENERALES' && carpetaActiva && (
                         <HojaDatosGenerales carpetaActiva={carpetaActiva} header={flotaHeader} onHeaderChange={setFlotaHeader} onCarpetaChange={handleCarpetaChange} />
                       )}
@@ -851,13 +803,10 @@ export default function FlotasPage() {
                         />
                       )}
                       {tab === 'ORIGINAL' && (
-                        <HojaOriginal ref={originalRef} onDataChange={handleOriginalChange} carpetaOriginalEmpty={carpetaActiva ? carpetaActiva.original.length === 0 : false} initialData={originalData}
-                          carpeta={carpetaActiva ? { nombre: carpetaActiva.nombre, header: flotaHeader } : undefined}
-                          corredorNombre={corrActivo?.nombre}
-                          onHeaderDetected={handleHeaderDetectado} />
+                        <HojaOriginal ref={originalRef} header={flotaHeader} onHeaderChange={setFlotaHeader} onDataChange={handleOriginalChange} carpetaOriginalEmpty={carpetaActiva ? carpetaActiva.original.length === 0 : false} initialData={originalData} />
                       )}
                       {tab === 'TRABAJO' && (
-                        <HojaTrabajos ref={trabajoRef} getOriginalSnapshot={getOriginalSnapshot} onDataChange={handleTrabajoChange} initialData={trabajoRows} />
+                        <HojaTrabajos ref={trabajoRef} header={flotaHeader} onHeaderChange={setFlotaHeader} getOriginalSnapshot={getOriginalSnapshot} onDataChange={handleTrabajoChange} initialData={trabajoRows} />
                       )}
                       {tab === 'SINCO' && carpetaActiva && (
                         <HojaSincoUnificado header={flotaHeader} trabajoRows={trabajoRows} carpetaActiva={carpetaActiva} sincoResultRows={sincoResultRows} onSincoResultChange={setSincoResultRows} onTrabajoChange={setTrabajoRows} onCarpetaChange={handleCarpetaChange} />
@@ -870,7 +819,7 @@ export default function FlotasPage() {
                           ? [corredor.comercial, corredor.nombre].filter(Boolean).join(' · ')
                           : undefined;
                         return (
-                          <HojaInforme header={flotaHeader} carpetaNombre={carpetaActiva?.nombre} trabajoRows={trabajoRows} coberturas={coberturas} sincoResultRows={sincoResultRows} sincoManual={carpetaActiva?.sincoManual ?? []} sincoGlobal={carpetaActiva?.sincoGlobal ?? null} primasMmtValues={carpetaActiva?.primasMmtInforme} onPrimasMmtChange={(primas) => { const cur = carpetaActivaRef.current; if (cur) { const updated = { ...cur, primasMmtInforme: primas }; setCarpetaActiva(updated); guardarCarpeta(updated); } }} configCoberturas={carpetaActiva?.configCoberturas} onConfigCoberturasChange={(cfg) => { const cur = carpetaActivaRef.current; if (cur) { const updated = { ...cur, configCoberturas: cfg }; setCarpetaActiva(updated); guardarCarpeta(updated); } }} tarifaFlota={carpetaActiva?.tarifaFlota} corredorLabel={corredorLabel} danosPropios={carpetaActiva?.danosPropios} observacion={motivoCarpeta} />
+                          <HojaInforme header={flotaHeader} carpetaNombre={carpetaActiva?.nombre} trabajoRows={trabajoRows} coberturas={coberturas} sincoResultRows={sincoResultRows} sincoManual={carpetaActiva?.sincoManual ?? []} sincoGlobal={carpetaActiva?.sincoGlobal ?? null} primasMmtValues={carpetaActiva?.primasMmtInforme} onPrimasMmtChange={(primas) => { const cur = carpetaActivaRef.current; if (cur) { const updated = { ...cur, primasMmtInforme: primas }; setCarpetaActiva(updated); guardarCarpeta(updated); } }} tarifaFlota={carpetaActiva?.tarifaFlota} corredorLabel={corredorLabel} danosPropios={carpetaActiva?.danosPropios} observacion={motivoCarpeta} />
                         );
                       })()}
                       {tab === 'OFERTA' && (
@@ -881,7 +830,6 @@ export default function FlotasPage() {
                             header={flotaHeader}
                             carpetaNombre={carpetaActiva?.nombre}
                             primasMmt={carpetaActiva?.primasMmtInforme}
-                            configCoberturas={carpetaActiva?.configCoberturas}
                             onDataChange={handleOfertaChange}
                             primaClienteTotal={carpetaActiva?.primaClienteTotal}
                             descuentoOferta={carpetaActiva?.descuentoOferta}
@@ -896,52 +844,8 @@ export default function FlotasPage() {
                         </Suspense>
                       )}
                       {tab === 'PRE-EMISIÓN' && (
-                        <HojaPreEmision
-                          trabajoRows={trabajoRows}
-                          initialSeleccion={carpetaActiva?.catalogoSeleccion}
-                          initialVerificacionOk={carpetaActiva?.verificacionOk}
-                          initialVerificacionRegistro={carpetaActiva?.verificacionRegistro}
-                          onCatalogoChange={(selecciones) => {
-                            const cur = carpetaActivaRef.current;
-                            if (!cur) return;
-                            const updated = { ...cur, catalogoSeleccion: selecciones };
-                            carpetaActivaRef.current = updated;   // las dos notificaciones de PRE-EMISIÓN llegan juntas: la segunda parte de esta
-                            setCarpetaActiva(updated);
-                            // se guarda (con una pequeña espera, llegan muchas seguidas) para no perder las identificaciones
-                            if (guardaCatalogoRef.current) clearTimeout(guardaCatalogoRef.current);
-                            guardaCatalogoRef.current = setTimeout(() => { const c = carpetaActivaRef.current; if (c) guardarCarpeta(c); }, 800);
-                          }}
-                          onVerificacionChange={(info, ok, registro) => {
-                            setVerifInfo(info);
-                            const cur = carpetaActivaRef.current;
-                            if (cur && (JSON.stringify(cur.verificacionOk ?? {}) !== JSON.stringify(ok) || JSON.stringify(cur.verificacionRegistro ?? {}) !== JSON.stringify(registro))) {
-                              const updated = { ...cur, verificacionOk: ok, verificacionRegistro: registro };
-                              carpetaActivaRef.current = updated;
-                              setCarpetaActiva(updated);
-                              guardarCarpeta(updated);
-                            }
-                          }}
-                        />
+                        <HojaPreEmision trabajoRows={trabajoRows} initialSeleccion={carpetaActiva?.catalogoSeleccion} onCatalogoChange={(selecciones) => { if (carpetaActiva) setCarpetaActiva({ ...carpetaActiva, catalogoSeleccion: selecciones }); }} />
                       )}
-                      {tab === 'EMISIÓN' && carpetaActiva && (() => {
-                        const corredor = carpetaActiva.corredor_id ? listarCorredores().find(c => c.id === carpetaActiva.corredor_id) : undefined;
-                        return (
-                          <HojaEmision
-                            trabajoRows={trabajoRows}
-                            catalogoSeleccion={carpetaActiva.catalogoSeleccion}
-                            verificacion={verifInfo}
-                            configCoberturas={carpetaActiva.configCoberturas}
-                            ofertaRows={ofertaRows}
-                            emision={carpetaActiva.emision}
-                            onEmisionChange={(emision) => { const cur = carpetaActivaRef.current; if (cur) { const updated = { ...cur, emision }; setCarpetaActiva(updated); guardarCarpeta(updated); } }}
-                            idPerceptor={corredor?.idPerceptor}
-                            corredorNombre={corredor?.nombre}
-                            carpetaNombre={carpetaActiva.nombre}
-                            efectoGenerales={flotaHeader.efecto}
-                            periodicidadGenerales={flotaHeader.periodicidad}
-                          />
-                        );
-                      })()}
                     </div>
                   ))}
                 </div>

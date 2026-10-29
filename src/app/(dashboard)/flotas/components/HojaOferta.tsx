@@ -5,9 +5,7 @@ import { DataGrid, renderTextEditor } from 'react-data-grid';
 import type { Column, RenderCellProps, RenderEditCellProps } from 'react-data-grid';
 import 'react-data-grid/lib/styles.css';
 import { COBERTURA_OPTS, LUNAS_OPTS, AMBITO_OPTS } from '@/core/flotas';
-import { nf, dec, eur } from '@/lib/fmt';
 import { calcularPrima, type CalcPrimaParams, type TipoVehiculo, type Producto } from '@/core/flotas/primas';
-import { aOfertaRow, garantiasOferta, normalizarConfig, tipoKeyDesdeEtiqueta, type ConfigCobertura } from '@/core/flotas/catalogoCoberturas';
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -30,8 +28,6 @@ interface OfertaRow {
   perdida_total: string; // 'true' | ''
   oferta_prima_mmt: string;
   _primaOverride: string; // 'true' si usuario escribió a mano
-  cob_solicitada: string; // cobertura que pidió el corredor (clave de la prima MMT del informe)
-  _cfg: string;           // 'true' si las coberturas las fija la configuración confirmada en INFORME
 }
 
 export interface HojaOfertaHandle {
@@ -50,7 +46,6 @@ interface Props {
   header?: { cif: string; tomador: string; actividad: string; formaPago: string; efecto: string; periodicidad?: string };
   carpetaNombre?: string;
   primasMmt?: Record<string, number>;  // key: "TIPO||COBERTURA", value: prima media (from Informe)
-  configCoberturas?: Record<string, ConfigCobertura>; // coberturas confirmadas en INFORME, key: "TIPO||COBERTURA SOLICITADA"
   onDataChange?: (data: Record<string, string>[]) => void;
   // Campos de carpeta para descuentos y prima cliente
   primaClienteTotal?: number;
@@ -150,13 +145,6 @@ function calcPrimaForRow(row: OfertaRow): string {
   return String(result);
 }
 
-// Franquicia legible («1.800 €») solo si la cobertura la lleva; vacío si no aplica.
-const frqTexto = (r: Pick<OfertaRow, 'coberturas' | 'frq'>) => {
-  if (!/franquicia/i.test(r.coberturas ?? '') || !r.frq) return '';
-  const n = parseFloat(String(r.frq).replace(',', '.'));
-  return n > 0 ? `${nf(n)} €` : '';
-};
-
 // ─── PDF builder ─────────────────────────────────────────────────────────────
 
 const BASE_GARANTIAS_OFERTA = [
@@ -174,228 +162,88 @@ function buildOfertaPdfHtml(data: {
   primaTotal: number;
 }): string {
   const { rows, header, carpetaNombre, cobAnexo, primaTotal } = data;
-  const fmtE = (n: number) => eur(n, 2);
-  const esc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  const today = new Date().toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
-  const fleetName = (carpetaNombre ?? '').trim() || (header?.tomador ?? '').trim() || 'Flota';
+  const fmtE = (n: number) => n.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+  const today = new Date().toLocaleDateString('es-ES');
 
-  const veh = rows.filter(r => r.matricula.trim());
-  const primaDe = (r: OfertaRow) => parseFloat(r.oferta_prima_mmt) || 0;
-  const tipoDe = (r: OfertaRow) => (r.tipo_vehiculo || 'Sin tipo').toUpperCase();
-  const cobDe = (r: OfertaRow) => r.coberturas || 'Sin cobertura';
+  const vehiculosHtml = rows.filter(r => r.matricula.trim()).map((r, i) => {
+    const [marca, ...mp] = r.marca_modelo.split(' ');
+    const stripe = i % 2 === 1 ? '#f7f8fa' : '#ffffff';
+    return `<tr style="background:${stripe};border-bottom:1px solid #e8eaed">
+      <td>${(r.tomador ?? '').toUpperCase()}</td>
+      <td>${r.tipo_vehiculo.toUpperCase()}</td>
+      <td style="font-weight:800;color:#002F82;letter-spacing:.04em">${r.matricula}</td>
+      <td>${(marca ?? '').toUpperCase()}</td>
+      <td>${mp.join(' ').toUpperCase()}</td>
+      <td style="font-weight:700">${r.coberturas.toUpperCase()}</td>
+      <td>${(header?.periodicidad ?? 'anual').toUpperCase()}</td>
+      <td>${parseFecha(header?.efecto) || '—'}</td>
+      <td style="font-weight:700;color:#002F82;text-align:right;font-family:monospace">${r.oferta_prima_mmt ? fmtE(parseFloat(r.oferta_prima_mmt)||0) : '—'}</td>
+    </tr>`;
+  }).join('');
 
-  // Resumen por tipología y cobertura
-  const grupos = new Map<string, { tipo: string; cob: string; n: number; total: number }>();
-  veh.forEach(r => {
-    const k = `${tipoDe(r)}||${cobDe(r)}`;
-    const g = grupos.get(k) ?? { tipo: tipoDe(r), cob: cobDe(r), n: 0, total: 0 };
-    g.n += 1; g.total += primaDe(r);
-    grupos.set(k, g);
-  });
-  const gruposArr = [...grupos.values()].sort((a, b) => a.tipo.localeCompare(b.tipo) || a.cob.localeCompare(b.cob));
-
-  // Resumen por cobertura
-  const porCob = new Map<string, { n: number; total: number }>();
-  veh.forEach(r => {
-    const g = porCob.get(cobDe(r)) ?? { n: 0, total: 0 };
-    g.n += 1; g.total += primaDe(r);
-    porCob.set(cobDe(r), g);
-  });
-  const cobArr = [...porCob.entries()].sort((a, b) => b[1].total - a[1].total);
-  const sumTotal = cobArr.reduce((a, [, g]) => a + g.total, 0);
-  const nTipos = new Set(veh.map(tipoDe)).size;
-
-  const efecto = parseFecha(header?.efecto) || '—';
-  const periodicidad = (header?.periodicidad ?? 'anual');
-
-  // ── Contenido de origen ─────────────────────────────────────────────────
-  // La paginación se hace en el propio documento midiendo la altura REAL de cada bloque (ver PAGINADOR),
-  // así las tablas se parten por filas y las coberturas se reparten en 2 columnas, 2 o 4 por hoja, sin solaparse.
-  const tbl = (head: string[], body: string[][], widths: string[], tot?: string[], wrap: number[] = []) => {
-    const cell = (c: string, i: number) => `<td${i === 0 ? ' class="l"' : wrap.includes(i) ? ' class="w"' : ''}>${c}</td>`;
-    const th = head.map((h, i) => `<th${i === 0 ? ' class="l"' : ''}>${h}</th>`).join('');
-    const tr = body.map(r => `<tr>${r.map(cell).join('')}</tr>`).join('');
-    const tf = tot ? `<tfoot><tr class="total">${tot.map(cell).join('')}</tr></tfoot>` : '';
-    return `<table class="tb"><colgroup>${widths.map(w => `<col style="width:${w}">`).join('')}</colgroup><thead><tr>${th}</tr></thead><tbody>${tr}</tbody>${tf}</table>`;
-  };
-  const items: string[] = [];
-  const addTable = (titulo: string, head: string[], rowsData: string[][], widths: string[], tot?: string[], wrap: number[] = []) => {
-    items.push(`<section class="it tsec" data-t="${esc(titulo)}">${tbl(head, rowsData, widths, tot, wrap)}</section>`);
-  };
-
-  // Datos + KPIs
-  const kpi = (l: string, v: string) => `<div><small>${l}</small><strong>${v}</strong></div>`;
-  items.push(`<div class="it blk"><div class="kicker">OFERTA</div>
-<h1>Oferta para la flota ${esc(fleetName)}</h1>
-<p class="sub">${esc((header?.tomador ?? '').toUpperCase())}${header?.cif ? ` · ${esc(header.cif.toUpperCase())}` : ''}</p>
-<div class="data">
-  ${kpi('Fecha de efecto', efecto)}${kpi('Periodicidad', esc(periodicidad.charAt(0).toUpperCase() + periodicidad.slice(1)))}${kpi('Fecha de emisión', today)}
-</div>
-<div class="kb">
-  ${kpi('Vehículos', nf(veh.length))}${kpi('Tipologías', nf(nTipos))}${kpi('Coberturas', nf(porCob.size))}${kpi('Prima total anual', fmtE(primaTotal))}
-</div></div>`);
-
-  addTable('1 · Resumen de primas por tipología y cobertura',
-    ['Tipología y cobertura', 'Vehículos', 'Prima media', 'Prima total'],
-    gruposArr.map(g => [`<b>${esc(g.tipo)}</b><span class="mi">${esc(g.cob)}</span>`, nf(g.n), g.n ? fmtE(g.total / g.n) : '—', fmtE(g.total)]),
-    ['46%', '14%', '20%', '20%'],
-    ['Total', nf(veh.length), '—', fmtE(sumTotal)]);
-
-  addTable('2 · Resumen por cobertura',
-    ['Cobertura', 'Vehículos', 'Prima total', '% de la prima'],
-    cobArr.map(([c, g]) => [esc(c), nf(g.n), fmtE(g.total), sumTotal > 0 ? dec(g.total / sumTotal * 100, 1) + ' %' : '—']),
-    ['46%', '14%', '20%', '20%'],
-    ['Total', nf(veh.length), fmtE(sumTotal), sumTotal > 0 ? '100 %' : '—']);
-
-  // Coberturas incluidas (solo nombres): tarjetas que se reparten en 2 columnas
-  if (cobAnexo.length > 0) {
-    const cov = (c: { titulo: string; tipologias: string[]; garantias: string[] }) =>
-      `<div class="cv"><h3>${esc(c.titulo)}</h3>${c.tipologias.length ? `<div class="ty">${esc(c.tipologias.join(' · '))}</div>` : ''}<ul>${c.garantias.map(g => `<li>${esc(g)}</li>`).join('')}</ul></div>`;
-    items.push(`<section class="it csec" data-t="3 · Coberturas incluidas">${cobAnexo.map(cov).join('')}</section>`);
-  }
-
-  // Detalle por vehículo
-  const detRows = veh.map(r => [
-    `<b class="mt">${esc(r.matricula)}</b>`,
-    esc(tipoDe(r)),
-    esc(r.marca_modelo || '—'),
-    esc(cobDe(r)),
-    frqTexto(r) || '—',
-    r.oferta_prima_mmt ? fmtE(primaDe(r)) : '—',
-  ]);
-  addTable('4 · Detalle por vehículo',
-    ['Matrícula', 'Tipología', 'Marca y modelo', 'Cobertura', 'Franquicia', 'Prima'],
-    detRows, ['13%', '16%', '23%', '22%', '12%', '14%'], ['Total', '', '', '', '', fmtE(primaTotal)], [1, 2, 3]);
-
-  // PAGINADOR: se ejecuta al cargar. Mide en mm reales, coloca cada bloque donde cabe y reparte tablas y tarjetas.
-  const PAGINADOR = `(function(){
-var src=document.getElementById('src'),out=document.getElementById('out');
-var fleet=src.getAttribute('data-fleet')||'';
-var pr=document.createElement('div');pr.style.cssText='position:absolute;visibility:hidden;height:100mm;width:1px';document.body.appendChild(pr);
-var MM=pr.offsetHeight/100;document.body.removeChild(pr);
-var pages=[],cur=null;
-function esc(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-function newPage(){
-  var slim=pages.length>0,a=document.createElement('article');a.className='page';
-  a.innerHTML='<div class="band'+(slim?' slim':'')+'"><img src="/LOGOMMT.jpg" alt="MMT Seguros" onerror="this.style.display=\\'none\\'"><span>'+(slim?esc(fleet):'Oferta de seguro de flotas')+'</span></div><div class="body"><div class="inner"></div></div><div class="footer"><span>Documento confidencial</span><span class="pn"></span></div>';
-  out.appendChild(a);
-  cur={el:a,inner:a.querySelector('.inner'),limit:(297-(slim?18:30)-8-22)*MM};pages.push(cur);
-}
-function over(){return cur.inner.offsetHeight>cur.limit;}
-function alone(){return cur.inner.children.length<=1;}
-function placeBlock(b){var n=b.cloneNode(true);cur.inner.appendChild(n);if(over()&&!alone()){cur.inner.removeChild(n);newPage();cur.inner.appendChild(n);}}
-function placeTable(sec){
-  var title=sec.getAttribute('data-t'),rows=[].slice.call(sec.querySelectorAll('tbody tr')),foot=sec.querySelector('tfoot tr');
-  var cg=sec.querySelector('colgroup').outerHTML,th=sec.querySelector('thead').outerHTML;
-  var i=0,first=true;
-  while(i<rows.length||(first&&rows.length===0)){
-    var s=document.createElement('section');
-    s.innerHTML='<h2>'+title+(first?'':' <em>(continúa)</em>')+'</h2><table class="tb">'+cg+th+'<tbody></tbody></table>';
-    var tb=s.querySelector('tbody'),tab=s.querySelector('table'),placed=0;
-    cur.inner.appendChild(s);
-    while(i<rows.length){tb.appendChild(rows[i].cloneNode(true));if(over()){tb.removeChild(tb.lastChild);break;}i++;placed++;}
-    if(placed===0&&rows.length>0){
-      if(!alone()){cur.inner.removeChild(s);newPage();continue;}
-      tb.appendChild(rows[i].cloneNode(true));i++;placed++;
-    }
-    if(i>=rows.length&&foot){
-      var f=document.createElement('tfoot');f.appendChild(foot.cloneNode(true));tab.appendChild(f);
-      if(over()){
-        tab.removeChild(f);
-        if(placed>1){tb.removeChild(tb.lastChild);i--;}
-        else if(!alone()){cur.inner.removeChild(s);i-=placed;newPage();continue;}
-        else{tab.appendChild(f);}
-      }
-    }
-    first=false;
-    if(i<rows.length)newPage();
-  }
-}
-function placeCovers(sec){
-  var title=sec.getAttribute('data-t'),cards=[].slice.call(sec.querySelectorAll('.cv')),first=true,g=null,cols=null,count=0;
-  function mk(){g=document.createElement('section');g.innerHTML='<h2>'+title+(first?'':' <em>(continúa)</em>')+'</h2><div class="cg"><div class="col"></div><div class="col"></div></div>';cur.inner.appendChild(g);cols=g.querySelectorAll('.col');count=0;}
-  function tryPlace(c){
-    var order=[cols[0],cols[1]].sort(function(a,b){return a.offsetHeight-b.offsetHeight;});
-    for(var k=0;k<2;k++){var n=c.cloneNode(true);order[k].appendChild(n);if(!over()){count++;return true;}order[k].removeChild(n);}
-    return false;
-  }
-  var q=cards.slice();
-  function placeAny(){for(var qi=0;qi<q.length;qi++){if(tryPlace(q[qi])){q.splice(qi,1);return true;}}return false;}
-  mk();
-  while(q.length){
-    if(placeAny())continue;
-    if(count===0&&!alone()){cur.inner.removeChild(g);newPage();mk();}
-    else{first=false;newPage();mk();}
-    if(!placeAny()){cols[0].appendChild(q.shift().cloneNode(true));count++;}
-  }
-}
-newPage();
-[].slice.call(src.children).forEach(function(it){
-  if(it.classList.contains('tsec'))placeTable(it);
-  else if(it.classList.contains('csec'))placeCovers(it);
-  else placeBlock(it);
-});
-var N=pages.length;
-pages.forEach(function(p,i){p.el.querySelector('.pn').textContent='Página '+(i+1)+' de '+N;});
-src.parentNode.removeChild(src);
-setTimeout(function(){window.print();},350);
-})();`;
+  const anexoHtml = cobAnexo.length > 0 ? `
+  <div style="page-break-before:always;padding-top:14mm">
+    <div style="font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:.12em;color:#002F82;border-bottom:2px solid #002F82;padding-bottom:4px;margin-bottom:10px">
+      Anexo — Detalle de coberturas incluidas
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      ${cobAnexo.map(({ titulo, tipologias, garantias }) => `
+      <div style="border:1px solid #d4dff5;border-radius:7px;overflow:hidden">
+        <div style="background:#002F82;color:#fff;padding:7px 13px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.1em">${titulo}</div>
+        ${tipologias.length > 0 ? `<div style="background:#0a3d91;color:rgba(255,255,255,0.75);padding:2px 13px 5px;font-size:9px;letter-spacing:.05em;text-transform:uppercase">${tipologias.join(' · ')}</div>` : ''}
+        <div style="padding:8px 13px">
+          ${garantias.map(g => `<div style="display:flex;align-items:center;gap:7px;padding:4px 0;border-bottom:1px solid #eaeffb;font-size:11px;color:#1e2a4a">
+            <span style="width:5px;height:5px;border-radius:50%;background:#002F82;flex-shrink:0;display:inline-block"></span>${g}
+          </div>`).join('')}
+        </div>
+      </div>`).join('')}
+    </div>
+    <div style="margin-top:12px;padding-top:6px;border-top:1px solid #d4dff5;display:flex;justify-content:space-between;font-size:10px;color:#8ea3c8">
+      <span>MMT Seguros — Documento confidencial</span><span>Generado: ${today}</span>
+    </div>
+  </div>` : '';
 
   return `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8">
-<title>Oferta ${esc(fleetName)}</title>
+<title>Oferta ${(carpetaNombre ?? '').toUpperCase()}</title>
 <style>
-@page{size:A4;margin:0}
-*{box-sizing:border-box;margin:0;padding:0}
-:root{--ink:#18243a;--muted:#5d6b82;--line:#d6deea;--soft:#f7f9fd;--blue:#002F82;--tot:#eaf0fa}
-html,body,.page,.page *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}
-html{background:#e8ebef}
-body{font-family:Arial,Helvetica,sans-serif;color:var(--ink);font-size:11px}
-.page{width:210mm;height:297mm;background:#fff;margin:0 auto 20px;position:relative;overflow:hidden;box-shadow:0 7px 35px rgba(15,19,28,.15)}
-.band{background:var(--blue);height:30mm;display:flex;align-items:center;justify-content:space-between;padding:0 12.5mm;color:#fff}
-.band img{height:17mm;object-fit:contain}
-.band span{font-size:15px;font-weight:700;letter-spacing:.02em}
-.band.slim{height:18mm}.band.slim img{height:10mm}.band.slim span{font-size:11px;font-weight:600}
-.body{padding:8mm 12.5mm 0}
-.inner{display:flow-root}
-#src{display:none}
-.kicker{font-size:10px;letter-spacing:.18em;font-weight:750;color:var(--blue);margin-bottom:5px}
-h1{font-size:22px;line-height:1.1;letter-spacing:-.03em;font-weight:800;margin-bottom:5px}
-.sub{font-size:11px;color:var(--muted)}
-.data,.kb{display:grid;grid-template-columns:repeat(4,1fr);margin-top:10px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
-.data{grid-template-columns:repeat(3,1fr)}
-.kb{background:var(--soft);margin-top:8px}
-.data>div,.kb>div{padding:8px 8px;border-right:1px solid var(--line)}
-.data>div:first-child,.kb>div:first-child{padding-left:0}
-.data>div:last-child,.kb>div:last-child{border:0}
-small{display:block;font-size:8.6px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:750;margin-bottom:4px}
-.data strong{font-size:12px}
-.kb strong{font-size:16px;color:var(--blue);white-space:nowrap}
-section{margin-top:12px}
-h2{font-size:13.5px;font-weight:780;color:var(--blue);margin-bottom:7px}
-h2 em{font-style:normal;font-weight:400;font-size:10px;color:var(--muted)}
-.tb{width:100%;border-collapse:collapse;table-layout:fixed;font-size:10.6px}
-.tb th{background:var(--blue);color:#fff;padding:7px 7px;font-size:9.2px;font-weight:750;text-align:center}
-.tb td{padding:6px 7px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums}
-.tb th.l,.tb td.l{text-align:left}
-.tb td.l,.tb td.w{white-space:normal;overflow-wrap:anywhere}
-.tb tbody tr:nth-child(even):not(.total) td{background:var(--soft)}
-.tb .total td{font-weight:800;background:var(--tot);border-top:1.5px solid var(--blue)}
-.mi{display:block;font-size:9.4px;color:var(--muted);margin-top:2px}
-.mt{letter-spacing:.04em;color:var(--blue)}
-.cg{display:flex;gap:6mm;margin-top:6px;align-items:flex-start}
-.cg .col{flex:1;min-width:0;display:flex;flex-direction:column;gap:5mm}
-.cv{border-top:2px solid var(--blue);padding-top:6px;break-inside:avoid}
-.cv h3{font-size:12.5px;font-weight:800;margin-bottom:3px}
-.ty{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;padding-bottom:5px;border-bottom:1px solid var(--line)}
-.cv ul{list-style:none}
-.cv li{display:flex;gap:8px;padding:4px 0;border-bottom:1px solid var(--line);font-size:10.4px;line-height:1.3}
-.cv li::before{content:"✓";color:var(--blue);font-weight:800;flex:none}
-.footer{position:absolute;bottom:8mm;left:12.5mm;right:12.5mm;border-top:1px solid var(--line);padding-top:7px;display:flex;justify-content:space-between;color:var(--muted);font-size:9px}
-@media print{html,body{background:#fff}.page{margin:0;box-shadow:none;height:296mm;break-after:page;page-break-after:always}.page:last-child{break-after:auto;page-break-after:auto}}
+  @page{size:A4 landscape;margin:10mm 13mm}
+  @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}.no-print{display:none}}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Calibri,Arial,sans-serif;font-size:12px;color:#1e2a4a;background:#fff;line-height:1.3}
+  table{width:100%;border-collapse:collapse}
+  th{background:#002F82;color:#fff;padding:10px 8px;font-size:11px;font-weight:800;text-transform:uppercase;text-align:center;white-space:nowrap;letter-spacing:.04em}
+  td{padding:9px 8px;text-align:center;font-size:12px}
+  .tfoot td{background:#eef3ff;font-weight:900;font-size:13px;border-top:3px solid #002F82}
 </style></head><body>
-<div id="src" data-fleet="${esc(fleetName).replace(/"/g, '&quot;')}">${items.join('\n')}</div>
-<div id="out"></div>
-<script>${PAGINADOR}</script>
+<div style="background:#002F82;padding:22px 30px;display:flex;align-items:center;justify-content:center;position:relative;margin-bottom:0">
+  <img src="/LOGOMMT.jpg" alt="Logo MMT" style="position:absolute;left:28px;top:50%;transform:translateY(-50%);height:60px;object-fit:contain" onerror="this.style.display='none'">
+  <div style="color:#fff;font-size:22px;font-weight:900;text-align:center;letter-spacing:.03em">
+    OFERTA PARA LA FLOTA ${(carpetaNombre ?? 'FLOTA').toUpperCase()}
+  </div>
+</div>
+<div style="padding:10px 30px;text-align:center;border-bottom:2px solid #e5e7eb;background:#fafbfc;font-size:14px;font-weight:700;margin-bottom:8px">
+  ${(header?.tomador ?? '').toUpperCase()}${header?.cif ? ` — ${header.cif.toUpperCase()}` : ''}
+</div>
+<table>
+  <thead><tr>
+    <th>Tomador</th><th>Tipología</th><th>Matrícula</th><th>Marca</th><th>Modelo</th>
+    <th>Coberturas</th><th>Periodicidad</th><th>Vencimiento</th><th>Prima Ofertada MMT</th>
+  </tr></thead>
+  <tbody>${vehiculosHtml}</tbody>
+  <tfoot><tr class="tfoot">
+    <td colspan="8" style="text-align:right;font-weight:900">TOTALES</td>
+    <td style="text-align:right;font-family:monospace;color:#002F82">${fmtE(primaTotal)}</td>
+  </tr></tfoot>
+</table>
+<div style="display:flex;gap:28px;padding:12px 30px;border-top:2px solid #e5e7eb;background:#fafbfc;flex-wrap:wrap;margin-top:8px">
+  <div><div style="font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.06em">Vehículos</div>
+    <div style="font-size:20px;font-weight:900;color:#002F82;font-family:monospace">${rows.filter(r=>r.matricula.trim()).length}</div></div>
+  <div><div style="font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.06em">Prima Ofertada MMT</div>
+    <div style="font-size:20px;font-weight:900;color:#002F82;font-family:monospace">${fmtE(primaTotal)}</div></div>
+</div>
+<div style="text-align:center;padding:8px;font-size:10px;color:#9ca3af;border-top:1px solid #e5e7eb">MMT Seguros · ${today}</div>
+${anexoHtml}
+<script>window.onload=()=>{window.print()}</script>
 </body></html>`;
 }
 
@@ -432,9 +280,8 @@ function CheckboxCell({ row, columnKey, enabled, onToggle }: {
     );
   }
   return (
-    <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: row._cfg === 'true' ? 'default' : 'pointer', opacity: row._cfg === 'true' ? 0.65 : 1 }}
-      title={row._cfg === 'true' ? 'Definido en INFORME' : undefined}
-      onClick={() => { if (row._cfg !== 'true') onToggle(row, columnKey); }}>
+    <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+      onClick={() => onToggle(row, columnKey)}>
       <div style={{
         width: 16, height: 16, borderRadius: 4,
         border: checked ? '2px solid #1240CC' : '2px solid #d1d5db',
@@ -443,7 +290,9 @@ function CheckboxCell({ row, columnKey, enabled, onToggle }: {
         transition: 'all 0.1s',
       }}>
         {checked && (
-          <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M2.5 6.5l2.2 2.2L9.5 3.8"/></svg>
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5">
+            <path d="M20 6L9 17l-5-5" />
+          </svg>
         )}
       </div>
     </div>
@@ -491,8 +340,6 @@ function trabajoToOferta(rows: Record<string, string>[]): OfertaRow[] {
       perdida_total:   '',
       oferta_prima_mmt: '',
       _primaOverride:  '',
-      cob_solicitada:  r['coberturas_solicitadas'] ?? '',
-      _cfg:            '',
     }));
 }
 
@@ -502,26 +349,10 @@ function rowToRecord(row: OfertaRow): Record<string, string> {
   return rest;
 }
 
-const PRODUCTO_LABEL_OFERTA: Record<ConfigCobertura['producto'], string> = {
-  terceros: 'Terceros', terceros_ampliado: 'Terceros ampliado', todo_riesgo: 'Todo riesgo con franquicia',
-  moto_terceros: 'Terceros', moto_ampliado: 'Terceros ampliado con franquicia',
-};
-const ORDEN_PRODUCTO: Record<ConfigCobertura['producto'], number> = {
-  terceros: 0, terceros_ampliado: 1, todo_riesgo: 2, moto_terceros: 3, moto_ampliado: 4,
-};
-
-// Clave de INFORME de una fila: «TIPO||Cobertura solicitada».
-const tipoNormDe = (tv: string) => {
-  const u = (tv || '').toUpperCase().trim() || 'SIN TIPO';
-  return u === 'DERIVADO DE TURISMO' ? 'TURISMO' : u;
-};
-const claveInforme = (row: Pick<OfertaRow, 'tipo_vehiculo' | 'cob_solicitada' | 'coberturas'>) =>
-  `${tipoNormDe(row.tipo_vehiculo)}||${row.cob_solicitada || row.coberturas || 'Sin cobertura'}`;
-
 // ─── HojaOferta ───────────────────────────────────────────────────────────────
 
 const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
-  { trabajoRows, header, carpetaNombre, primasMmt, configCoberturas, onDataChange, primaClienteTotal, descuentoOferta, descuentosCoberturas, onOfertaFieldsChange },
+  { trabajoRows, header, carpetaNombre, primasMmt, onDataChange, primaClienteTotal, descuentoOferta, descuentosCoberturas, onOfertaFieldsChange },
   ref,
 ) {
   const [rows, setRows] = useState<OfertaRow[]>([]);
@@ -533,6 +364,7 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
   const [editsVersion, setEditsVersion] = useState(0);
 
   // ─── Ajustes de oferta ────────────────────────────────────────────────────
+  const [showAjustes, setShowAjustes] = useState(false);
   const [localDescuento, setLocalDescuento] = useState('');
   const [localDescCob, setLocalDescCob] = useState<Record<string, string>>({});
   const onOfertaFieldsRef = useRef(onOfertaFieldsChange);
@@ -602,22 +434,6 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
       // Force lunas='No' for types that can't have lunas
       if (NO_LUNAS_TIPOS.has(row.tipo_vehiculo.toLowerCase())) row.lunas = 'No';
 
-      // Coberturas confirmadas en INFORME: mandan sobre lo que pidió el corredor y sobre ediciones antiguas
-      const claveInf = claveInforme(src);
-      const cfg = normalizarConfig(tipoKeyDesdeEtiqueta(tipoNormDe(src.tipo_vehiculo)), configCoberturas?.[claveInf]);
-      if (cfg) {
-        const o = aOfertaRow(tipoKeyDesdeEtiqueta(tipoNormDe(src.tipo_vehiculo)), cfg);
-        row.coberturas = o.coberturas; row.frq = o.frq; row.lunas = o.lunas; row.asistencia = o.asistencia;
-        row.animales = o.animales; row.perdida_total = o.perdida_total;
-        row._cfg = 'true';
-        // La prima la fija el informe (prima MMT del grupo) salvo que alguien la haya escrito a mano en la oferta
-        const informePrima = primasMmt?.[claveInf];
-        if (informePrima && row._primaOverride !== 'true') {
-          row.oferta_prima_mmt = String(informePrima);
-          return row;
-        }
-      }
-
       // Prima priority:
       // 1. Si hay prima guardada (saved o existing) → respetarla siempre
       // 2. Solo auto-calc si no hay ninguna prima guardada en absoluto
@@ -627,7 +443,9 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
         if (auto) {
           row.oferta_prima_mmt = auto;
         } else {
-          const informePrima = primasMmt?.[claveInforme(row)];
+          const tipoKey = (row.tipo_vehiculo || '').toUpperCase().trim() || 'SIN TIPO';
+          const tNorm = tipoKey === 'DERIVADO DE TURISMO' ? 'TURISMO' : tipoKey;
+          const informePrima = primasMmt?.[`${tNorm}||${row.coberturas || 'Sin cobertura'}`];
           row.oferta_prima_mmt = informePrima ? String(informePrima) : '';
         }
       }
@@ -638,7 +456,7 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
     setRows(rebuilt);
     if (!seeded) setSeeded(true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [trabajoRows, editsVersion, primasMmt, configCoberturas]);
+  }, [trabajoRows, editsVersion, primasMmt]);
 
   // Notify parent of changes
   useEffect(() => {
@@ -754,7 +572,7 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
     const cobMapSin = makeCobMap();
     const cobMapCon = makeCobMap();
     rows.forEach(r => {
-      if (!r.coberturas || r._cfg === 'true') return;
+      if (!r.coberturas) return;
       const isRem = TIPOS_REMOLQUE.has(r.tipo_vehiculo.toLowerCase());
       const asist = (r.asistencia || '').toLowerCase();
       const targetMap = (asist && asist !== 'no') ? cobMapCon : cobMapSin;
@@ -766,23 +584,6 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
       if (!isRem && ['sí', 'si', 'true', 's'].includes((r.lunas ?? '').toLowerCase())) entry.hasLunas = true;
     });
     const result: { titulo: string; tipologias: string[]; garantias: string[] }[] = [];
-    // Filas con coberturas confirmadas en INFORME: el anexo sale del mismo catálogo que el panel y la emisión
-    const porCfg = new Map<string, { titulo: string; tipologias: Set<string>; garantias: string[]; orden: number }>();
-    rows.forEach(r => {
-      if (r._cfg !== 'true') return;
-      const tipo = tipoKeyDesdeEtiqueta(tipoNormDe(r.tipo_vehiculo));
-      const cfg = normalizarConfig(tipo, configCoberturas?.[claveInforme(r)]);
-      if (!cfg) return;
-      const garantias = garantiasOferta(tipo, cfg);
-      const base = PRODUCTO_LABEL_OFERTA[cfg.producto];
-      const titulo = cfg.franquicia ? `${base} ${nf(cfg.franquicia)} €` : base;
-      const sig = `${titulo}|${garantias.join('|')}`;
-      const e = porCfg.get(sig) ?? { titulo, tipologias: new Set<string>(), garantias, orden: ORDEN_PRODUCTO[cfg.producto] };
-      e.tipologias.add(r.tipo_vehiculo.charAt(0).toUpperCase() + r.tipo_vehiculo.slice(1).toLowerCase());
-      porCfg.set(sig, e);
-    });
-    [...porCfg.values()].sort((a, b) => a.orden - b.orden || a.titulo.localeCompare(b.titulo))
-      .forEach(e => result.push({ titulo: e.titulo, tipologias: [...e.tipologias], garantias: e.garantias }));
     const seen = new Set<string>();
     const buildEntries = (cobMap: Map<string, { nonRem: Set<string>; rem: Set<string>; hasLunas: boolean }>, asistGar: string[]) => {
       cobMap.forEach(({ nonRem, rem, hasLunas }, rawCob) => {
@@ -799,30 +600,32 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
           const tipologias = [...nonRem];
           if (key === 't') result.push({ titulo: 'Terceros', tipologias, garantias: [...BASE_GARANTIAS_OFERTA, ...lunasGar, ...asistGar] });
           else if (key === 'ta') result.push({ titulo: 'Terceros Ampliado', tipologias, garantias: [...BASE_GARANTIAS_OFERTA, 'Lunas', 'Robo', 'Incendio', ...asistGar] });
-          else if (key === 'tr') result.push({ titulo: 'Todo Riesgo con Franquicia', tipologias, garantias: [...BASE_GARANTIAS_OFERTA, 'Lunas', 'Robo', 'Incendio', 'Daños propios con franquicia', ...asistGar] });
+          else if (key === 'tr') result.push({ titulo: 'Todo Riesgo con Franquicia 1.800 €', tipologias, garantias: [...BASE_GARANTIAS_OFERTA, 'Lunas', 'Robo', 'Incendio', 'Daños propios con franquicia de 1.800 €', ...asistGar] });
         }
         if (rem.size > 0 && !seen.has(keyFull + '_rem')) {
           seen.add(keyFull + '_rem');
           const tipologias = [...rem];
           if (key === 't') result.push({ titulo: 'Terceros — Remolques', tipologias, garantias: [...BASE_NO_CONDUCTOR, ...asistGar] });
           else if (key === 'ta') result.push({ titulo: 'Terceros Ampliado — Remolques', tipologias, garantias: [...BASE_NO_CONDUCTOR, 'Robo', 'Incendio', ...asistGar] });
-          else if (key === 'tr') result.push({ titulo: 'Todo Riesgo — Remolques', tipologias, garantias: [...BASE_NO_CONDUCTOR, 'Robo', 'Incendio', 'Daños propios con franquicia', ...asistGar] });
+          else if (key === 'tr') result.push({ titulo: 'Todo Riesgo — Remolques', tipologias, garantias: [...BASE_NO_CONDUCTOR, 'Robo', 'Incendio', 'Daños propios con franquicia de 1.800 €', ...asistGar] });
         }
       });
     };
     buildEntries(cobMapSin, []);
     buildEntries(cobMapCon, ['Asistencia en Viaje']);
-    const titleOrder: Record<string, number> = { 'Terceros': 0, 'Terceros — Remolques': 1, 'Terceros Ampliado': 2, 'Terceros Ampliado — Remolques': 3, 'Todo Riesgo con Franquicia': 4, 'Todo Riesgo — Remolques': 5 };
-    const legacy = result.slice(porCfg.size).sort((a, b) => (titleOrder[a.titulo] ?? 9) - (titleOrder[b.titulo] ?? 9));
-    return [...result.slice(0, porCfg.size), ...legacy];
-  }, [rows, configCoberturas]);
+    const titleOrder: Record<string, number> = { 'Terceros': 0, 'Terceros — Remolques': 1, 'Terceros Ampliado': 2, 'Terceros Ampliado — Remolques': 3, 'Todo Riesgo con Franquicia 1.800 €': 4, 'Todo Riesgo — Remolques': 5 };
+    return result.sort((a, b) => (titleOrder[a.titulo] ?? 9) - (titleOrder[b.titulo] ?? 9));
+  }, [rows]);
 
   // ── Actualizar primas desde Informe ──────────────────────────────────────
   const handleActualizarDesdeInforme = useCallback(() => {
     if (!primasMmt || Object.keys(primasMmt).length === 0) return;
     setRows(prev => prev.map(row => {
-      const prima = primasMmt[claveInforme(row)];
-      if (prima != null) return { ...row, oferta_prima_mmt: String(prima), _primaOverride: row._cfg === 'true' ? '' : 'true' };
+      const tipoKey = (row.tipo_vehiculo || '').toUpperCase().trim() || 'SIN TIPO';
+      const tNorm = tipoKey === 'DERIVADO DE TURISMO' ? 'TURISMO' : tipoKey;
+      const key = `${tNorm}||${row.coberturas || 'Sin cobertura'}`;
+      const prima = primasMmt[key];
+      if (prima != null) return { ...row, oferta_prima_mmt: String(prima), _primaOverride: 'true' };
       return row;
     }));
   }, [primasMmt]);
@@ -853,7 +656,6 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
           marca: (marca ?? '').toUpperCase(),
           modelo: modeloParts.join(' ').toUpperCase(),
           coberturas: (r.coberturas ?? '').toUpperCase(),
-          franquicia: /franquicia/i.test(r.coberturas ?? '') ? (parseFloat(String(r.frq).replace(',', '.')) || 0) : 0,
           periodicidad: (header?.periodicidad ?? 'anual').toUpperCase(),
           fecha_vencimiento: parseFecha(header?.efecto),
           prima_ofertada: parseFloat(r.oferta_prima_mmt) || 0,
@@ -940,7 +742,7 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
     },
     {
       key: 'coberturas', name: 'COBERTURAS', width: 200,
-      editable: (row: OfertaRow) => row._cfg !== 'true',
+      editable: true,
       renderEditCell: (props) => <DropdownEditor {...props} options={COBERTURA_OPTS} />,
       renderCell: ({ row }: RenderCellProps<OfertaRow>) => (
         <div style={{ height: '100%', display: 'flex', alignItems: 'center', paddingLeft: 8, fontSize: 12, color: row.coberturas ? '#000000' : '#9ca3af', fontStyle: row.coberturas ? 'normal' : 'italic' }}>
@@ -950,7 +752,7 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
     },
     {
       key: 'lunas', name: 'LUNAS', width: 70,
-      editable: (row: OfertaRow) => row._cfg !== 'true',
+      editable: true,
       renderEditCell: (props) => NO_LUNAS_TIPOS.has(props.row.tipo_vehiculo.toLowerCase()) ? <div /> : <DropdownEditor {...props} options={LUNAS_OPTS} />,
       renderCell: ({ row }: RenderCellProps<OfertaRow>) => {
         if (NO_LUNAS_TIPOS.has(row.tipo_vehiculo.toLowerCase())) {
@@ -979,10 +781,10 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
     },
     {
       key: 'frq', name: 'FRQ', width: 70,
-      editable: (row: OfertaRow) => row._cfg !== 'true',
+      editable: true,
       renderEditCell: renderTextEditor,
       renderCell: ({ row }: RenderCellProps<OfertaRow>) => {
-        const disabled = !/franquicia/i.test(row.coberturas ?? '');
+        const disabled = row.coberturas !== 'Todo Riesgo con Franquicia';
         return (
           <div style={{ height: '100%', display: 'flex', alignItems: 'center', paddingLeft: 8, fontSize: 12, color: disabled ? '#9ca3af' : '#000000', fontStyle: disabled ? 'italic' : 'normal' }}>
             {row.frq || ''}
@@ -1036,222 +838,142 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
   ], [handleCheckboxToggle]);
 
   const filledRows = rows.filter(r => r.matricula.trim()).length;
-  const noAdmitidos = rows.filter(r => r.matricula.trim() && tipoKeyDesdeEtiqueta(tipoNormDe(r.tipo_vehiculo)) === 'minibus_autocar').length;
 
-  // ─── Vista: tabla de trabajo · documento del cliente · edición de datos ────
-  const [vista, setVista] = useState<'tabla' | 'cliente' | 'datos'>('tabla');
-  const [shown, setShown] = useState(15);
-  const PAGE = 15;
+  // ─── Preview mode toggle ───────────────────────────────────────────────────
+  const [showPreview, setShowPreview] = useState(true);
 
-  const fmtEUR = (n: number) => eur(n, 2);
-  const sg = (n: number) => (n > 0 ? '+' : '') + eur(n, 2);
-  const hoyDMY = () => {
-    const d = new Date();
-    return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
-  };
+  const fmtEUR = (n: number) => n.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
 
-  // Handle inline prima edit
+  // Handle inline prima edit in preview
   const handlePreviewPrimaChange = useCallback((id: number, value: string) => {
     setRows(prev => prev.map(r => {
       if (r._id !== id) return r;
       if (value.trim() === '') {
-        const informe = r._cfg === 'true' ? primasMmt?.[claveInforme(r)] : undefined;
-        const auto = informe ? String(informe) : calcPrimaForRow(r);
+        const auto = calcPrimaForRow(r);
         return { ...r, oferta_prima_mmt: auto, _primaOverride: '' };
       }
       return { ...r, oferta_prima_mmt: value, _primaOverride: 'true' };
     }));
-  }, [primasMmt]);
-
-  // ─── Precio propio por grupo (tipología + cobertura) ────────────────────────
-  const [poTipo, setPoTipo] = useState('');
-  const [poCob, setPoCob] = useState('');
-  const [poPrima, setPoPrima] = useState('');
-  const tiposList = useMemo(() => {
-    const seen = new Set<string>();
-    for (const r of rows) if (r.tipo_vehiculo) seen.add(r.tipo_vehiculo);
-    return [...seen].sort();
-  }, [rows]);
-  const nOverrides = useMemo(() => rows.filter(r => r._primaOverride === 'true').length, [rows]);
-  const poValor = parseFloat(poPrima.replace(',', '.'));
-  const handleAplicarGrupo = useCallback(() => {
-    if (isNaN(poValor) || poValor < 0) return;
-    const txt = poValor.toFixed(2);
-    setRows(prev => prev.map(r => {
-      if (!r.matricula.trim()) return r;
-      if (poTipo && r.tipo_vehiculo !== poTipo) return r;
-      if (poCob && r.coberturas !== poCob) return r;
-      return { ...r, oferta_prima_mmt: txt, _primaOverride: 'true' };
-    }));
-  }, [poTipo, poCob, poValor]);
-  const handleQuitarPropios = useCallback(() => {
-    setRows(prev => prev.map(r => r._primaOverride === 'true'
-      ? { ...r, oferta_prima_mmt: calcPrimaForRow(r), _primaOverride: '' }
-      : r));
   }, []);
-
-  const visibles = useMemo(() => rows.filter(r => r.matricula.trim()), [rows]);
-  const primaSolTotal = useMemo(() => visibles.reduce((sum, r) => sum + (parseFloat(r.prima_referencia) || 0), 0), [visibles]);
-  const hayAjustes = primaNetaTotal > 0 && primaNetaTotal !== primaTotal;
-  const emitirAjustes = () => emitAjustes({
-    descuentoOferta: localDescuento ? parseFloat(localDescuento) : undefined,
-    descuentosCoberturas: Object.fromEntries(Object.entries(localDescCob).filter(([, v]) => v).map(([k, v]) => [k, parseFloat(v)])),
-  });
 
   return (
     <div className="flex flex-col h-full min-h-0">
-      {/* ── Cabecera de paso ── */}
-      <div className="sh" style={{ flexShrink: 0 }}>
-        <div>
-          <h2><b>07 ·</b>Oferta</h2>
-          <p>Prima ofertada por vehículo y diferencia con la solicitada.</p>
-        </div>
-        <div className="acts">
-          {primasMmt && Object.keys(primasMmt).length > 0 && (
-            <button className="mini" onClick={handleActualizarDesdeInforme}>Actualizar primas</button>
+      {/* Toolbar */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 16px', borderBottom: showAjustes ? 'none' : '1px solid #e5e7eb', background: '#f9fafb', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <span style={{ color: '#002F82', fontWeight: 900 }}>{filledRows}</span> vehículos seleccionados
+          </span>
+          {primaTotal > 0 && (
+            <span style={{ fontSize: 12, fontWeight: 900, color: '#111827', fontFamily: 'monospace', background: 'rgba(178,198,245,0.28)', padding: '3px 10px', borderRadius: 6, border: '1px solid rgba(178,198,245,0.5)' }}>
+              TOTAL: {fmtEUR(primaTotal)}
+            </span>
           )}
-          <button className="mini" onClick={() => setVista(vista === 'cliente' ? 'tabla' : 'cliente')}>
-            {vista === 'cliente' ? 'Volver a la tabla' : 'Vista del cliente'}
+          {primaNetaTotal > 0 && primaNetaTotal !== primaTotal && (
+            <span style={{ fontSize: 12, fontWeight: 900, color: '#16a34a', fontFamily: 'monospace', background: 'rgba(22,163,74,0.08)', padding: '3px 10px', borderRadius: 6, border: '1px solid rgba(22,163,74,0.2)' }}>
+              NETO: {fmtEUR(primaNetaTotal)}
+            </span>
+          )}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {/* Actualizar primas desde Informe */}
+          {primasMmt && Object.keys(primasMmt).length > 0 && (
+            <button
+              onClick={handleActualizarDesdeInforme}
+              style={{ fontSize: 10, fontWeight: 800, padding: '4px 10px', borderRadius: 6, background: 'rgba(0,48,132,0.08)', color: '#002F82', border: '1px solid rgba(0,48,132,0.25)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+              Actualizar primas
+            </button>
+          )}
+          {/* Ajustes toggle */}
+          <button
+            onClick={() => setShowAjustes(!showAjustes)}
+            style={{ fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 6, background: showAjustes ? 'rgba(0,48,132,0.12)' : 'rgba(0,0,0,0.04)', color: showAjustes ? '#002F82' : '#6b7280', border: '1px solid ' + (showAjustes ? 'rgba(0,48,132,0.3)' : '#e5e7eb'), cursor: 'pointer' }}>
+            Ajustes
           </button>
-          <button className="mini" onClick={() => setVista(vista === 'datos' ? 'tabla' : 'datos')}>
-            {vista === 'datos' ? 'Volver a la tabla' : 'Editar datos'}
+          {/* Toggle preview/grid */}
+          <button
+            onClick={() => setShowPreview(!showPreview)}
+            style={{ fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 6, background: showPreview ? 'rgba(0,48,132,0.1)' : 'rgba(0,0,0,0.04)', color: showPreview ? '#002F82' : '#6b7280', border: '1px solid ' + (showPreview ? 'rgba(0,48,132,0.25)' : '#e5e7eb'), cursor: 'pointer' }}>
+            {showPreview ? 'Vista previa' : 'Editar datos'}
           </button>
           {rows.length > 0 && (
             <>
-              <button className="mini" onClick={handleExportPdf}>Descargar oferta (PDF)</button>
-              <button className="mini pri" onClick={handleExportOferta} disabled={exporting}>
-                {exporting ? 'Generando…' : 'Descargar oferta (Excel)'}
+              <button onClick={handleExportOferta}
+                disabled={exporting}
+                style={{ fontSize: 10, fontWeight: 800, padding: '4px 12px', borderRadius: 6, background: exporting ? 'rgba(22,163,74,0.05)' : 'rgba(22,163,74,0.1)', color: '#16a34a', border: '1px solid rgba(22,163,74,0.25)', cursor: exporting ? 'wait' : 'pointer', textTransform: 'uppercase', letterSpacing: '0.05em', opacity: exporting ? 0.6 : 1, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                {exporting ? 'Generando...' : 'Excel'}
+              </button>
+              <button onClick={handleExportPdf}
+                style={{ fontSize: 10, fontWeight: 800, padding: '4px 12px', borderRadius: 6, background: 'rgba(220,38,38,0.08)', color: '#dc2626', border: '1px solid rgba(220,38,38,0.25)', cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                PDF
               </button>
             </>
+          )}
+          {rows.length === 0 && trabajoRows.length === 0 && (
+            <span style={{ fontSize: 10, color: '#9ca3af' }}>Completa TRABAJO para generar la oferta.</span>
           )}
         </div>
       </div>
 
-      {vista === 'tabla' && (
-        <div className="stepscroll">
-          {/* Ajustes: uno por cobertura y global */}
-          <div className="adj">
-            {coberturasList.map(cob => (
-              <div className="fld" key={cob}>
-                <label htmlFor={`aj_${cob}`}>Ajuste {cob.toLowerCase()} %</label>
-                <input
-                  id={`aj_${cob}`} className="inp" type="number" step="0.1" placeholder="ej. −5 ó +10"
-                  value={localDescCob[cob] ?? ''}
-                  onChange={e => setLocalDescCob(prev => ({ ...prev, [cob]: e.target.value }))}
-                  onBlur={emitirAjustes}
-                />
-              </div>
-            ))}
-            <div className="fld">
-              <label htmlFor="aj_global">Ajuste global %</label>
+      {/* Ajustes panel */}
+      {showAjustes && (
+        <div style={{ padding: '10px 16px', borderBottom: '1px solid #e5e7eb', background: '#f9fafb', display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start', flexShrink: 0 }}>
+
+          {/* Ajuste global */}
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: '#002F82', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Ajuste (%)</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <input
-                id="aj_global" className="inp" type="number" step="0.1" placeholder="ej. −5 ó +10"
+                type="number" step="0.1" placeholder="ej. -5 ó +10"
                 value={localDescuento}
                 onChange={e => setLocalDescuento(e.target.value)}
-                onBlur={emitirAjustes}
+                onBlur={() => emitAjustes({ descuentoOferta: localDescuento ? parseFloat(localDescuento) : undefined, descuentosCoberturas: Object.fromEntries(Object.entries(localDescCob).filter(([,v]) => v).map(([k,v]) => [k, parseFloat(v)])) })}
+                style={{ width: 100, padding: '4px 8px', borderRadius: 6, border: '1px solid #d1d5db', fontSize: 12, fontFamily: 'monospace', outline: 'none' }}
               />
+              <span style={{ fontSize: 11, color: '#6b7280' }}>%</span>
+              {localDescuento && primaTotal > 0 && (() => {
+                const ajuste = parseFloat(localDescuento) || 0;
+                const total = primaTotal * (1 + ajuste / 100);
+                const sube = ajuste > 0;
+                return (
+                  <span style={{ fontSize: 10, color: sube ? '#dc2626' : '#16a34a', fontFamily: 'monospace', background: sube ? 'rgba(220,38,38,0.08)' : 'rgba(22,163,74,0.1)', padding: '2px 6px', borderRadius: 4 }}>
+                    = {fmtEUR(total)}
+                  </span>
+                );
+              })()}
             </div>
           </div>
 
-          {/* Precio propio por grupo */}
-          <div className="adj poset" style={{ marginTop: 18 }}>
-            <div className="fld">
-              <label htmlFor="po_t">Precio propio para</label>
-              <select id="po_t" className="select" value={poTipo} onChange={e => setPoTipo(e.target.value)}>
-                <option value="">Todas las tipologías</option>
-                {tiposList.map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
-            </div>
-            <div className="fld">
-              <label htmlFor="po_c">Cobertura</label>
-              <select id="po_c" className="select" value={poCob} onChange={e => setPoCob(e.target.value)}>
-                <option value="">Todas</option>
-                {coberturasList.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </div>
-            <div className="fld">
-              <label htmlFor="po_p">Prima ofertada €</label>
-              <input id="po_p" className="inp" inputMode="decimal" placeholder="ej. 450,00" value={poPrima} onChange={e => setPoPrima(e.target.value)} />
-            </div>
-            <button className="mini" onClick={handleAplicarGrupo} disabled={isNaN(poValor)}>Aplicar a ese grupo</button>
-            <button className="mini" onClick={handleQuitarPropios} disabled={nOverrides === 0}>
-              Quitar precios propios{nOverrides ? ` (${nf(nOverrides)})` : ''}
-            </button>
-          </div>
-          <div className="note" style={{ marginTop: 8 }}>
-            También puedes escribir el precio de cada vehículo en la tabla. Un precio propio no cambia al recalcular con otra cobertura.
-          </div>
-
-          {visibles.length === 0 ? (
-            <div className="notice" style={{ marginTop: 18 }}>Todavía no hay vehículos en el trabajo para ofertar.</div>
-          ) : (
-            <>
-              {noAdmitidos > 0 && (
-                <div className="notice" style={{ marginTop: 14 }}>
-                  {nf(noAdmitidos)} {noAdmitidos === 1 ? 'vehículo es' : 'vehículos son'} de una tipología que MMT no admite en flotas (minibús, autocar). No debería ofertarse; revísalo en el trabajo.
-                </div>
-              )}
-              <div className="xwrap" style={{ marginTop: 14, maxHeight: 'none' }}>
-                <table className="xg">
-                  <thead>
-                    <tr>
-                      <th>Matrícula</th><th>Tipología</th><th>Cobertura</th><th className="n">Franquicia</th>
-                      <th>Periodicidad</th><th>Vencimiento</th>
-                      <th className="n">Prima solicitada</th><th className="n">Prima ofertada MMT</th><th className="n">Diferencia</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {visibles.slice(0, shown).map(r => {
-                      const sol = parseFloat(r.prima_referencia);
-                      const ofe = parseFloat(r.oferta_prima_mmt);
-                      const ov = r._primaOverride === 'true';
-                      return (
-                        <tr key={r._id}>
-                          <td>{r.matricula.toUpperCase()}</td>
-                          <td>{r.tipo_vehiculo || '—'}</td>
-                          <td>{r.coberturas || <span className="em">—</span>}</td>
-                          <td className="n">{frqTexto(r) || <span className="em">—</span>}</td>
-                          <td>{header?.periodicidad ? header.periodicidad.charAt(0).toUpperCase() + header.periodicidad.slice(1) : 'Anual'}</td>
-                          <td>{parseFecha(header?.efecto) || '—'}</td>
-                          <td className="n">{isNaN(sol) ? <span className="em">—</span> : eur(sol, 2)}</td>
-                          <td className={`n${ov ? ' ov' : ''}`}>
-                            <PrimaInput value={r.oferta_prima_mmt} onCommit={v => handlePreviewPrimaChange(r._id, v)} label={`Prima ofertada de ${r.matricula}`} />
-                          </td>
-                          <td className="n">{isNaN(sol) || isNaN(ofe) ? <span className="em">—</span> : sg(ofe - sol)}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                  <tfoot>
-                    <tr>
-                      <td>Totales</td>
-                      <td colSpan={5}>{nf(filledRows)} vehículos</td>
-                      <td className="n">{eur(primaSolTotal, 2)}</td>
-                      <td className="n">{eur(primaTotal, 2)}</td>
-                      <td className="n">{primaSolTotal > 0 ? sg(primaTotal - primaSolTotal) : '—'}</td>
-                    </tr>
-                  </tfoot>
-                </table>
+          {/* Ajuste por cobertura */}
+          {coberturasList.length > 0 && (
+            <div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: '#002F82', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Ajuste por cobertura (%)</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {coberturasList.map(cob => (
+                  <div key={cob} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ fontSize: 10, color: '#374151', maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={cob}>{cob}</span>
+                    <input
+                      type="number" step="0.1" placeholder="0"
+                      value={localDescCob[cob] ?? ''}
+                      onChange={e => setLocalDescCob(prev => ({ ...prev, [cob]: e.target.value }))}
+                      onBlur={() => emitAjustes({ descuentoOferta: localDescuento ? parseFloat(localDescuento) : undefined, descuentosCoberturas: Object.fromEntries(Object.entries({ ...localDescCob }).filter(([,v]) => v).map(([k,v]) => [k, parseFloat(v)])) })}
+                      style={{ width: 50, padding: '2px 6px', borderRadius: 4, border: '1px solid #d1d5db', fontSize: 11, fontFamily: 'monospace', outline: 'none' }}
+                    />
+                    <span style={{ fontSize: 10, color: '#6b7280' }}>%</span>
+                  </div>
+                ))}
               </div>
-              <div className="note">
-                Prima ofertada = tarifa MMT, salvo en los vehículos con precio propio (fondo ámbar). Diferencia = ofertada − solicitada.
-                {hayAjustes && <> Con los ajustes indicados (el de la cobertura, si lo hay; si no, el global) la prima total sería {fmtEUR(primaNetaTotal)}.</>}
-              </div>
-              <div className="note" style={{ marginTop: 6 }}>Mostrando {nf(Math.min(shown, visibles.length))} de {nf(visibles.length)}</div>
-              {shown < visibles.length && (
-                <div className="more" style={{ paddingBottom: 8 }}>
-                  <button onClick={() => setShown(n => n + PAGE)}>
-                    Mostrar {nf(Math.min(PAGE, visibles.length - shown))} más &middot; quedan {nf(visibles.length - shown)}
-                  </button>
-                </div>
-              )}
-            </>
+            </div>
           )}
         </div>
       )}
 
-      {vista === 'cliente' && (
-        <div className="flex-1 min-h-0" style={{ overflow: 'auto', padding: '24px clamp(12px,2cqw,28px)', background: 'var(--soft)', borderRadius: 6 }}>
+      {showPreview ? (
+        /* ─── Excel Preview ─────────────────────────────────────────────────── */
+        <div className="flex-1 min-h-0" style={{ overflow: 'auto', padding: '24px 32px', background: '#eef1f6' }}>
           <div style={{ maxWidth: 1400, margin: '0 auto', boxShadow: '0 8px 40px rgba(0,0,0,0.18)', borderRadius: 10, overflow: 'hidden', background: '#fff' }}>
 
             {/* Header azul */}
@@ -1301,7 +1023,7 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
                         <td style={{ padding: '12px 10px', textAlign: 'center', fontWeight: 800, color: '#002F82', fontSize: 14, letterSpacing: '0.04em' }}>{r.matricula.toUpperCase()}</td>
                         <td style={{ padding: '12px 10px', textAlign: 'center', color: '#000', fontSize: 13, fontWeight: 600 }}>{(marca ?? '').toUpperCase()}</td>
                         <td style={{ padding: '12px 10px', textAlign: 'center', color: '#000', fontSize: 13 }}>{modeloParts.join(' ').toUpperCase()}</td>
-                        <td style={{ padding: '12px 10px', textAlign: 'center', color: '#000', fontSize: 13, fontWeight: 600 }}>{r.coberturas.toUpperCase()}{frqTexto(r) ? ` · ${frqTexto(r)}` : ''}</td>
+                        <td style={{ padding: '12px 10px', textAlign: 'center', color: '#000', fontSize: 13, fontWeight: 600 }}>{r.coberturas.toUpperCase()}</td>
                         <td style={{ padding: '12px 10px', textAlign: 'center', color: '#000', fontSize: 13 }}>{(header?.periodicidad ?? 'anual').toUpperCase()}</td>
                         <td style={{ padding: '12px 10px', textAlign: 'center', color: '#000', fontSize: 13, fontWeight: 600 }}>{parseFecha(header?.efecto)}</td>
                         <td style={{ padding: '10px 8px', textAlign: 'center' }}>
@@ -1310,7 +1032,7 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
                             value={r.oferta_prima_mmt}
                             onChange={e => handlePreviewPrimaChange(r._id, e.target.value)}
                             style={{
-                              width: 110, textAlign: 'right', fontSize: 14, fontWeight: 800, fontVariantNumeric: 'tabular-nums',
+                              width: 110, textAlign: 'right', fontSize: 14, fontWeight: 800, fontFamily: 'monospace',
                               padding: '6px 10px', borderRadius: 6, color: '#000',
                               border: '2px solid #d1d5db',
                               background: '#fff',
@@ -1327,7 +1049,7 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
                   {/* Totals row */}
                   <tr style={{ background: '#f0f2f5', borderTop: '3px solid #002F82' }}>
                     <td colSpan={8} style={{ padding: '16px 12px', textAlign: 'right', fontWeight: 900, fontSize: 15, color: '#000', letterSpacing: '0.03em' }}>TOTALES</td>
-                    <td style={{ padding: '16px 12px', textAlign: 'right', fontWeight: 900, fontVariantNumeric: 'tabular-nums', fontSize: 16, color: '#002F82' }}>
+                    <td style={{ padding: '16px 12px', textAlign: 'right', fontWeight: 900, fontFamily: 'monospace', fontSize: 16, color: '#002F82' }}>
                       {fmtEUR(primaTotal)}
                     </td>
                   </tr>
@@ -1340,18 +1062,18 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
               <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap' }}>
                 <div>
                   <div style={{ fontSize: 10, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Vehículos</div>
-                  <div style={{ fontSize: 22, fontWeight: 900, color: '#002F82', fontVariantNumeric: 'tabular-nums' }}>{filledRows}</div>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: '#002F82', fontFamily: 'monospace' }}>{filledRows}</div>
                 </div>
                 <div>
                   <div style={{ fontSize: 10, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Prima Ofertada MMT</div>
-                  <div style={{ fontSize: 22, fontWeight: 900, color: '#002F82', fontVariantNumeric: 'tabular-nums' }}>{fmtEUR(primaTotal)}</div>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: '#002F82', fontFamily: 'monospace' }}>{fmtEUR(primaTotal)}</div>
                 </div>
                 {primaNetaTotal > 0 && primaNetaTotal !== primaTotal && (
                   <div>
                     <div style={{ fontSize: 10, fontWeight: 700, color: (parseFloat(localDescuento)||0) < 0 ? '#15803d' : '#dc2626', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                      Prima ajustada ({dec(parseFloat(localDescuento) || 0, 1)} %)
+                      Prima Ajustada ({localDescuento}%)
                     </div>
-                    <div style={{ fontSize: 22, fontWeight: 900, color: (parseFloat(localDescuento)||0) < 0 ? '#16a34a' : '#dc2626', fontVariantNumeric: 'tabular-nums' }}>{fmtEUR(primaNetaTotal)}</div>
+                    <div style={{ fontSize: 22, fontWeight: 900, color: (parseFloat(localDescuento)||0) < 0 ? '#16a34a' : '#dc2626', fontFamily: 'monospace' }}>{fmtEUR(primaNetaTotal)}</div>
                   </div>
                 )}
                 {(() => {
@@ -1359,12 +1081,12 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
                   const comparar = primaNetaTotal > 0 && primaNetaTotal !== primaTotal ? primaNetaTotal : primaTotal;
                   if (base <= 0 || comparar <= 0) return null;
                   const diff = comparar - base;
-                  const pctN = (diff / base) * 100;
+                  const pct = ((diff / base) * 100).toFixed(1);
                   return (
                     <div>
                       <div style={{ fontSize: 10, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Diferencia</div>
-                      <div style={{ fontSize: 22, fontWeight: 900, fontVariantNumeric: 'tabular-nums', color: diff <= 0 ? '#16a34a' : '#dc2626' }}>
-                        {diff > 0 ? '+' : ''}{fmtEUR(diff)} <span style={{ fontSize: 14, fontWeight: 700 }}>({dec(pctN, 1)} %)</span>
+                      <div style={{ fontSize: 22, fontWeight: 900, fontFamily: 'monospace', color: diff <= 0 ? '#16a34a' : '#dc2626' }}>
+                        {diff <= 0 ? '' : '+'}{fmtEUR(diff)} <span style={{ fontSize: 14, fontWeight: 700 }}>({pct}%)</span>
                       </div>
                     </div>
                   );
@@ -1375,14 +1097,13 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
             {/* Footer */}
             <div style={{ padding: '14px 40px', textAlign: 'center', borderTop: '1px solid #e5e7eb', background: '#f5f6f8' }}>
               <span style={{ fontSize: 11, color: '#9ca3af', fontWeight: 600 }}>
-                MMT Seguros · {hoyDMY()}
+                MMT Seguros · {new Date().toLocaleDateString('es-ES')}
               </span>
             </div>
           </div>
         </div>
-      )}
-
-      {vista === 'datos' && (
+      ) : (
+        /* ─── DataGrid Editor ────────────────────────────────────────────────── */
         <div className="flex-1 min-h-0">
           <DataGrid
             columns={columns}
@@ -1398,21 +1119,6 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
     </div>
   );
 });
-
-function PrimaInput({ value, onCommit, label }: { value: string; onCommit: (v: string) => void; label: string }) {
-  const [focus, setFocus] = useState(false);
-  const num = parseFloat(value);
-  const shown = focus || isNaN(num) ? value.replace('.', ',') : dec(num, 2);
-  return (
-    <input
-      className="inp pm" inputMode="decimal" aria-label={label} placeholder="0,00"
-      value={shown}
-      onFocus={() => setFocus(true)}
-      onBlur={() => setFocus(false)}
-      onChange={e => onCommit(e.target.value.replace(',', '.'))}
-    />
-  );
-}
 
 function readonlyCell({ row, column }: RenderCellProps<OfertaRow>) {
   return (

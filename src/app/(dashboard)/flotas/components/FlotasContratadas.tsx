@@ -205,6 +205,9 @@ export default function FlotasContratadas({ onSelect }: Props) {
             opacity: uploading ? 0.7 : 1,
             boxShadow: '0 0 20px rgba(16,185,129,0.3)',
           }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+            </svg>
             {uploading ? 'Importando...' : 'Subir flotas'}
             <input ref={fileRef} type="file" accept=".xlsx,.xls" style={{ display: 'none' }} onChange={handleFileUpload} disabled={uploading} />
           </label>
@@ -344,7 +347,7 @@ export default function FlotasContratadas({ onSelect }: Props) {
 
                 {/* Comisión */}
                 <span style={{ fontSize: 12, color: 'rgba(178,198,245,0.7)' }}>
-                  {corr ? `${corr.comisionBase}%` : c.comisionBase ? `${c.comisionBase}%` : '—'}
+                  {corr ? `${corr.porcentajeComision}%` : c.porcentajeComision ? `${c.porcentajeComision}%` : '—'}
                 </span>
 
                 {/* Estado */}

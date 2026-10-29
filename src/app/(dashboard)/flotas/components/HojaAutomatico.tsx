@@ -4,9 +4,6 @@ import React, { useState, useRef, useMemo } from 'react';
 import { generarPlantillaExcel } from '@/core/flotas/plantilla';
 import { normalizeTipoVehiculo, TIPO_VEHICULO_OPTS } from '@/core/flotas/normalizador';
 import type { FlotaHeader } from './types';
-import { EstadoBadge } from './CarpetaScreen';
-import SilverdatModal from '@/components/saas/SilverdatModal';
-import { nf, eur2, dec } from '@/lib/fmt';
 import { listarCarpetas, listarCorredores, type FlotaCarpeta } from '@/core/flotas';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -24,7 +21,6 @@ interface SilverdatVehicle {
     plazas?: number;
     puertas?: number;
     anyo_fabricacion?: string;
-    anyo_fab_fuente?: string;
     fecha_matriculacion?: string;
     tara?: number;
     tipo_vehiculo?: string;
@@ -49,8 +45,6 @@ interface ProcessedVehicle {
     combustible: string;
     fecha_matriculacion: string;
     anyo_fabricacion: string;
-    /** origen del año: 'fabricacion' (real) o 'matriculacion' (sustituto); vacío si no hay año */
-    anyo_fab_fuente?: string;
     cif_nif: string;
     tomador: string;
     fecha_vencimiento: string;
@@ -90,8 +84,808 @@ interface Props {
     onHeaderUpdate?: (header: Partial<FlotaHeader>) => void;
 }
 
+// ─── Design tokens ────────────────────────────────────────────────────────────
+
+const glass: React.CSSProperties = {
+    background: 'var(--t-surface)',
+    border: '1px solid var(--t-line)',
+    borderRadius: 12,
+};
+
+// ─── Silverdat login modal ────────────────────────────────────────────────────
+
+function SilverdatModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
+    const [datId, setDatId] = useState('');
+    const [user, setUser] = useState('');
+    const [pass, setPass] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+
+    const handleLogin = async () => {
+        if (!datId.trim() || !user.trim() || !pass.trim()) return;
+        setLoading(true); setError('');
+        try {
+            const res = await fetch('/api/silverdat/login', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ datId: datId.trim(), user: user.trim(), pass: pass.trim() }),
+            });
+            const data = await res.json();
+            if (data.ok) { onSuccess(); }
+            else setError((data.error || 'Error de autenticación') + (data.debug ? `\n\nDEBUG: ${data.debug}` : ''));
+        } catch { setError('Error de conexión'); }
+        finally { setLoading(false); }
+    };
+
+    return (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }} onClick={onClose}>
+            <div onClick={e => e.stopPropagation()} style={{ width: 360, padding: 28, borderRadius: 18, background: 'rgba(8,22,72,0.97)', border: '1px solid rgba(245,158,11,0.25)', boxShadow: '0 30px 80px rgba(0,0,0,0.7)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+                    <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg, #f59e0b, #d97706)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 800, color: '#fff' }}>S</div>
+                    <div>
+                        <h2 style={{ margin: 0, fontSize: 16, color: 'var(--t-text)', fontWeight: 700 }}>Silverdat</h2>
+                        <p style={{ margin: 0, fontSize: 11, color: 'var(--t-text-2)' }}>Credenciales DAT / fastVALUATE</p>
+                    </div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    <input autoFocus placeholder="DAT N. Cliente" value={datId} onChange={e => setDatId(e.target.value)} className="orion-input" style={{ fontSize: 13 }} onKeyDown={e => { if (e.key === 'Enter') handleLogin(); }} />
+                    <input placeholder="Usuario" value={user} onChange={e => setUser(e.target.value)} className="orion-input" style={{ fontSize: 13 }} onKeyDown={e => { if (e.key === 'Enter') handleLogin(); }} />
+                    <input placeholder="Contraseña" type="password" value={pass} onChange={e => setPass(e.target.value)} className="orion-input" style={{ fontSize: 13 }} onKeyDown={e => { if (e.key === 'Enter') handleLogin(); }} />
+                </div>
+                {error && <pre style={{ margin: '10px 0 0', fontSize: 11, color: '#ef4444', whiteSpace: 'pre-wrap', wordBreak: 'break-all', maxHeight: 100, overflow: 'auto', background: 'rgba(239,68,68,0.06)', padding: 8, borderRadius: 8 }}>{error}</pre>}
+                <p style={{ margin: '12px 0', fontSize: 10, color: 'var(--t-text-3)', lineHeight: 1.4 }}>Las credenciales NO se guardan. Solo para esta sesión.</p>
+                <div style={{ display: 'flex', gap: 8 }}>
+                    <button onClick={handleLogin} disabled={loading || !datId.trim() || !user.trim() || !pass.trim()} style={{ flex: 1, fontSize: 12, fontWeight: 700, padding: '10px 0', borderRadius: 10, background: loading ? 'rgba(245,158,11,0.3)' : 'linear-gradient(135deg, #d97706, #f59e0b)', color: '#fff', border: 'none', cursor: loading ? 'not-allowed' : 'pointer' }}>
+                        {loading ? 'Conectando...' : 'Iniciar sesión'}
+                    </button>
+                    <button onClick={onClose} style={{ fontSize: 12, padding: '10px 16px', borderRadius: 10, background: 'transparent', color: 'var(--t-text-2)', border: '1px solid var(--t-line)', cursor: 'pointer' }}>Cancelar</button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ─── Mode toggle ─────────────────────────────────────────────────────────────
+
 type ProcessMode = 'con' | 'sin';
 
+function ModeToggle({ value, onChange }: { value: ProcessMode; onChange: (m: ProcessMode) => void }) {
+    const options: { id: ProcessMode; title: string; desc: string; tag: string; accent: string; bg: string; tagBg: string }[] = [
+        {
+            id: 'con',
+            title: 'Con Silverdat',
+            desc: 'Enriquece cada vehículo con datos técnicos: marca, modelo, KW, tipo, año de matriculación.',
+            tag: 'Completo',
+            accent: '#f59e0b',
+            bg: 'rgba(245,158,11,0.08)',
+            tagBg: 'rgba(245,158,11,0.15)',
+        },
+        {
+            id: 'sin',
+            title: 'Solo plantilla',
+            desc: 'Carga directamente los datos del Excel. Sin esperas. Ideal si ya tienes los datos completos.',
+            tag: 'Rápido',
+            accent: '#10b981',
+            bg: 'rgba(16,185,129,0.07)',
+            tagBg: 'rgba(16,185,129,0.15)',
+        },
+    ];
+
+    return (
+        <div style={{ display: 'flex', gap: 12 }}>
+            {options.map(opt => {
+                const active = value === opt.id;
+                return (
+                    <button
+                        key={opt.id}
+                        onClick={() => onChange(opt.id)}
+                        style={{
+                            flex: 1, textAlign: 'left', padding: '14px 16px', borderRadius: 12, cursor: 'pointer',
+                            background: active ? opt.bg : 'transparent',
+                            border: `1.5px solid ${active ? opt.accent : 'var(--t-line)'}`,
+                            transition: 'all 0.18s',
+                            position: 'relative', overflow: 'hidden',
+                        }}
+                    >
+                        {active && (
+                            <div style={{
+                                position: 'absolute', top: 0, left: 0, right: 0, height: 2,
+                                background: opt.accent, borderRadius: '12px 12px 0 0',
+                            }} />
+                        )}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                            <div style={{
+                                width: 14, height: 14, borderRadius: '50%', flexShrink: 0,
+                                border: `2px solid ${active ? opt.accent : 'var(--t-line)'}`,
+                                background: active ? opt.accent : 'transparent',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            }}>
+                                {active && <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#fff' }} />}
+                            </div>
+                            <span style={{ fontSize: 13, fontWeight: 800, color: active ? 'var(--t-text)' : 'var(--t-text-2)' }}>
+                                {opt.title}
+                            </span>
+                            <span style={{
+                                marginLeft: 'auto', fontSize: 9, fontWeight: 800, letterSpacing: '0.08em',
+                                textTransform: 'uppercase', padding: '2px 7px', borderRadius: 20,
+                                background: active ? opt.tagBg : 'rgba(61,112,255,0.08)',
+                                color: active ? opt.accent : 'rgba(178,198,245,0.35)',
+                            }}>
+                                {opt.tag}
+                            </span>
+                        </div>
+                        <p style={{ margin: 0, fontSize: 11, color: active ? 'var(--t-text-2)' : 'var(--t-text-3)', lineHeight: 1.5 }}>
+                            {opt.desc}
+                        </p>
+                    </button>
+                );
+            })}
+        </div>
+    );
+}
+
+// ─── Step 1: Upload ───────────────────────────────────────────────────────────
+
+function estadoBg(estado: string) {
+    switch (estado) {
+        case 'CONTRATADA': return 'rgba(16,185,129,0.15)';
+        case 'OFERTADA':   return 'rgba(59,130,246,0.15)';
+        case 'EN ESTUDIO': return 'rgba(245,158,11,0.15)';
+        case 'RECHAZADA':  return 'rgba(239,68,68,0.15)';
+        default:           return 'rgba(61,112,255,0.15)';
+    }
+}
+function estadoColor(estado: string) {
+    switch (estado) {
+        case 'CONTRATADA': return '#10b981';
+        case 'OFERTADA':   return '#3b82f6';
+        case 'EN ESTUDIO': return '#f59e0b';
+        case 'RECHAZADA':  return '#ef4444';
+        default:           return '#BDD4FF';
+    }
+}
+
+function Step1({
+    header, carpetaActiva, onNext,
+}: {
+    header: FlotaHeader;
+    carpetaActiva: FlotaCarpeta | null;
+    onNext: (rows: Record<string, string>[], detectedHeader?: Partial<FlotaHeader>, mode?: ProcessMode) => void;
+}) {
+    const [downloadLoading, setDownloadLoading] = useState(false);
+    const [uploadedRows, setUploadedRows] = useState<Record<string, string>[] | null>(null);
+    const [parseError, setParseError] = useState('');
+    const [mode, setMode] = useState<ProcessMode>('con');
+    const [flotasMatch, setFlotasMatch] = useState<FlotaCarpeta[]>([]);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const detectedHeaderRef = useRef<Partial<FlotaHeader>>({});
+
+    const handleDownload = async () => {
+        setDownloadLoading(true);
+        try {
+            const blob = await generarPlantillaExcel(
+              carpetaActiva ?? { nombre: header.tomador || 'Flota', header },
+              listarCorredores().map(c => c.nombre),
+            );
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `plantilla_${(carpetaActiva?.nombre || 'flota').replace(/[/\\:*?"<>|]/g, '')}.xlsx`;
+            a.click();
+            URL.revokeObjectURL(url);
+        } finally { setDownloadLoading(false); }
+    };
+
+    const handleFile = async (file: File) => {
+        setParseError('');
+        setUploadedRows(null);
+        try {
+            const XLSX = await import('xlsx');
+            const buf = await file.arrayBuffer();
+            const wb = XLSX.read(buf, { type: 'array', cellDates: true });
+            const ws = wb.Sheets[wb.SheetNames[0]];
+
+            // Convierte celda a string: fechas → dd/mm/yyyy, resto → texto formateado de Excel
+            type XlsxCell = { t?: string; v?: unknown; w?: string };
+            const cellStr = (cell: XlsxCell | undefined): string => {
+                if (!cell) return '';
+                if (cell.t === 'd' && cell.v instanceof Date) {
+                    return cell.v.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                }
+                // Numeric cells: use raw value to avoid locale-formatted thousands separators
+                if (cell.t === 'n') return String(cell.v ?? '');
+                return (cell.w ?? String(cell.v ?? '')).trim();
+            };
+
+            // Data starts at row 6 (1-indexed), headers at row 5
+            const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+            const headers: string[] = [];
+            // Read headers from row 5 (0-indexed: row 4)
+            for (let c = range.s.c; c <= range.e.c; c++) {
+                const cell = ws[XLSX.utils.encode_cell({ r: 4, c })] as XlsxCell | undefined;
+                headers.push(cell ? String(cell.v).toLowerCase().trim().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') : `col_${c}`);
+            }
+
+            const rows: Record<string, string>[] = [];
+            for (let r = 5; r <= range.e.r; r++) { // row 6+ (0-indexed: 5+)
+                const row: Record<string, string> = {};
+                let hasData = false;
+                for (let c = range.s.c; c <= range.e.c; c++) {
+                    const cell = ws[XLSX.utils.encode_cell({ r, c })] as XlsxCell | undefined;
+                    const val = cellStr(cell);
+                    row[headers[c - range.s.c]] = val;
+                    if (val) hasData = true;
+                }
+                if (hasData) rows.push(row);
+            }
+
+            const withPlate = rows.filter(r => r['matricula']?.trim());
+            if (withPlate.length === 0) throw new Error('No se encontraron matrículas en la plantilla');
+
+            // Extract header info from rows 2-3 of the plantilla (CIF, Tomador, Actividad, etc.)
+            const rawPer = cellStr(ws[XLSX.utils.encode_cell({ r: 2, c: 1 })] as XlsxCell).toLowerCase();
+            const parsedPer = rawPer.includes('mensual') ? 'mensual' :
+                              rawPer.includes('bimestral') ? 'bimestral' :
+                              rawPer.includes('trimestral') ? 'trimestral' :
+                              rawPer.includes('semestral') ? 'semestral' :
+                              rawPer.includes('anual') ? 'anual' : undefined;
+            const detectedHeader: Partial<FlotaHeader> = {
+                cif:          cellStr(ws[XLSX.utils.encode_cell({ r: 1, c: 1 })] as XlsxCell),
+                tomador:      cellStr(ws[XLSX.utils.encode_cell({ r: 1, c: 3 })] as XlsxCell),
+                actividad:    cellStr(ws[XLSX.utils.encode_cell({ r: 1, c: 6 })] as XlsxCell),
+                efecto:       cellStr(ws[XLSX.utils.encode_cell({ r: 2, c: 3 })] as XlsxCell),
+                ...(parsedPer ? { periodicidad: parsedPer } : {}),
+            };
+            // Only keep values that are non-empty and not label text
+            const labels = new Set(['cif:', 'tomador:', 'actividad:', 'periodicidad:', 'efecto:', 'estudio:']);
+            for (const k of Object.keys(detectedHeader) as (keyof FlotaHeader)[]) {
+                const v = detectedHeader[k] as string;
+                if (!v || labels.has(v.toLowerCase())) delete detectedHeader[k];
+            }
+            detectedHeaderRef.current = detectedHeader;
+
+            // Detectar si esta flota ya existe en el sistema
+            // eslint-disable-next-line no-misleading-character-class
+            const normalize = (s?: string) =>
+                (s ?? '').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+            const cifNorm     = normalize(detectedHeader.cif);
+            const tomadorNorm = normalize(detectedHeader.tomador);
+            const matches = listarCarpetas().filter(c => {
+                if (carpetaActiva && c.id === carpetaActiva.id) return false;
+                const cCif     = normalize(c.header.cif);
+                const cTomador = normalize(c.header.tomador);
+                const cNombre  = normalize(c.nombre);
+                const cifOk    = cifNorm.length > 3 && cCif.length > 3 && cifNorm === cCif;
+                const tomOk    = tomadorNorm.length > 3 && cTomador.length > 3 &&
+                    (cTomador.includes(tomadorNorm) || tomadorNorm.includes(cTomador));
+                const nombreOk = tomadorNorm.length > 3 && cNombre.length > 3 &&
+                    (cNombre.includes(tomadorNorm) || tomadorNorm.includes(cNombre));
+                return cifOk || tomOk || nombreOk;
+            });
+            setFlotasMatch(matches);
+
+            setUploadedRows(withPlate);
+        } catch (err: unknown) {
+            setParseError((err instanceof Error ? err.message : null) || 'Error al leer el archivo');
+        }
+    };
+
+    return (
+        <div style={{ maxWidth: 700, margin: '0 auto', padding: '32px 24px' }}>
+
+            {/* shead */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 17 }}>
+                <div>
+                    <h2 style={{ fontSize: 22, letterSpacing: '-0.55px', margin: '0 0 5px', fontWeight: 720, color: 'var(--t-text)' }}>Plantilla de vehículos</h2>
+                    <p style={{ fontSize: 12, color: 'var(--t-text-3)', lineHeight: 1.5, margin: 0 }}>Descarga, cumplimenta e importa el Excel del estudio.</p>
+                </div>
+                <span style={{ display: 'inline-block', padding: '5px 8px', border: '1px solid var(--t-line)', borderRadius: 4, color: 'var(--t-text-3)', fontSize: 10, fontWeight: 750, whiteSpace: 'nowrap', flexShrink: 0 }}>PASO 1 DE 3</span>
+            </div>
+
+            {/* processline */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 9, color: 'var(--t-text-3)', fontSize: 11, margin: '0 0 30px' }}>
+                <span style={{ display: 'grid', placeItems: 'center', border: '1px solid var(--t-blue)', borderRadius: '50%', width: 26, height: 26, background: 'var(--t-blue)', color: '#fff', flexShrink: 0, fontSize: 11 }}>1</span>
+                <span style={{ flex: 1, height: 1, background: 'var(--t-line)', display: 'block' }} />
+                <span style={{ display: 'grid', placeItems: 'center', border: '1px solid var(--t-line)', borderRadius: '50%', width: 26, height: 26, flexShrink: 0, fontSize: 11 }}>2</span>
+                <span style={{ flex: 1, height: 1, background: 'var(--t-line)', display: 'block' }} />
+                <span style={{ display: 'grid', placeItems: 'center', border: '1px solid var(--t-line)', borderRadius: '50%', width: 26, height: 26, flexShrink: 0, fontSize: 11 }}>3</span>
+            </div>
+
+            {/* Banner: flota ya registrada */}
+            {flotasMatch.length > 0 && (
+                <div style={{ padding: '13px 16px', background: 'rgba(245,158,11,0.07)', borderLeft: '2px solid var(--t-amber)', color: 'var(--t-amber)', fontSize: 12, marginBottom: 26 }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+                        <div style={{ flex: 1 }}>
+                            <div style={{ fontWeight: 800, marginBottom: 8 }}>Esta flota ya está registrada en Orion</div>
+                            {flotasMatch.map(c => (
+                                <div key={c.id} style={{ fontSize: 11, color: 'var(--t-text-2)', marginBottom: 5, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                                    <span style={{ fontWeight: 700 }}>{c.nombre}</span>
+                                    {c.header.tomador && <span style={{ color: 'var(--t-text-3)' }}>{c.header.tomador}</span>}
+                                    <span style={{ padding: '1px 8px', borderRadius: 20, fontSize: 10, fontWeight: 800, background: estadoBg(c.estado), color: estadoColor(c.estado) }}>{c.estado}</span>
+                                </div>
+                            ))}
+                            <div style={{ fontSize: 11, color: 'var(--t-text-3)', marginTop: 8 }}>Puedes continuar para estudiarla de nuevo o cerrar este archivo.</div>
+                        </div>
+                        <button onClick={() => setFlotasMatch([])} style={{ background: 'none', border: 'none', color: 'var(--t-text-3)', cursor: 'pointer', padding: '2px 4px', flexShrink: 0, fontSize: 16, lineHeight: 1 }} title="Ignorar aviso">✕</button>
+                    </div>
+                </div>
+            )}
+
+            {/* stepitem 01 — Descargar plantilla */}
+            <div style={{ display: 'flex', gap: 18, padding: '22px 0', borderTop: '1px solid var(--t-line)', alignItems: 'flex-start' }}>
+                <span style={{ fontSize: 12, color: 'var(--t-text-3)', fontWeight: 730, width: 19, flexShrink: 0 }}>01</span>
+                <div style={{ flex: 1 }}>
+                    <h3 style={{ fontSize: 14, margin: '0 0 6px', color: 'var(--t-text)', fontWeight: 700 }}>Descargar plantilla</h3>
+                    <p style={{ fontSize: 12, lineHeight: 1.6, color: 'var(--t-text-3)', margin: 0 }}>Plantilla MMT para 200 vehículos, con el formato corporativo original y las coberturas opcionales.</p>
+                </div>
+                <button
+                    onClick={handleDownload}
+                    disabled={downloadLoading}
+                    style={{ flexShrink: 0, padding: '10px 14px', border: '1px solid var(--t-line)', borderRadius: 6, fontSize: 12, fontWeight: 600, background: 'transparent', color: 'var(--t-text)', cursor: downloadLoading ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap', minHeight: 36 }}
+                >
+                    {downloadLoading ? 'Generando...' : 'Descargar plantilla'}
+                </button>
+            </div>
+
+            {/* stepitem 02 — Subir plantilla */}
+            <div style={{ display: 'flex', gap: 18, padding: '22px 0', borderTop: '1px solid var(--t-line)', alignItems: 'flex-start' }}>
+                <span style={{ fontSize: 12, color: 'var(--t-text-3)', fontWeight: 730, width: 19, flexShrink: 0 }}>02</span>
+                <div style={{ flex: 1 }}>
+                    <h3 style={{ fontSize: 14, margin: '0 0 6px', color: 'var(--t-text)', fontWeight: 700 }}>Subir plantilla rellenada</h3>
+                    <p style={{ fontSize: 12, lineHeight: 1.6, color: 'var(--t-text-3)', margin: '0 0 12px' }}>El formato del Excel se mantiene sin modificaciones visuales en esta etapa.</p>
+                    <div
+                        onClick={() => fileInputRef.current?.click()}
+                        onDragOver={e => { e.preventDefault(); }}
+                        onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
+                        style={{ border: '1px dashed var(--t-line)', borderRadius: 7, textAlign: 'center', padding: '33px 20px', cursor: 'pointer', background: 'transparent' }}
+                        onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = 'var(--t-blue)'}
+                        onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = uploadedRows ? 'var(--t-blue)' : 'var(--t-line)'}
+                    >
+                        <strong style={{ display: 'block', fontSize: 14, color: 'var(--t-text)', margin: '0 0 6px' }}>
+                            {uploadedRows ? `✓ ${uploadedRows.length} vehículos detectados` : 'Seleccionar o arrastrar archivo Excel'}
+                        </strong>
+                        {!uploadedRows && <span style={{ fontSize: 12, color: 'var(--t-text-3)' }}>.xlsx</span>}
+                        <input ref={fileInputRef} type="file" accept=".xlsx,.xls" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = ''; }} />
+                    </div>
+
+                    {parseError && (
+                        <p style={{ margin: '10px 0 0', fontSize: 12, color: 'var(--t-red)', fontWeight: 600 }}>{parseError}</p>
+                    )}
+
+                    {uploadedRows && (() => {
+                        const seen = new Map<string, number>();
+                        uploadedRows.forEach(r => {
+                            const mat = r['matricula']?.trim().replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+                            if (mat) seen.set(mat, (seen.get(mat) ?? 0) + 1);
+                        });
+                        const duplicadas = Array.from(seen.entries()).filter(([, n]) => n > 1).map(([m]) => m);
+                        return (
+                            <>
+                                {duplicadas.length > 0 && (
+                                    <div style={{ marginTop: 10, padding: '10px 14px', background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.35)', borderRadius: 7 }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                                            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--t-red)' }}>
+                                                {duplicadas.length} matrícula{duplicadas.length !== 1 ? 's' : ''} duplicada{duplicadas.length !== 1 ? 's' : ''}
+                                            </span>
+                                            <button
+                                                onClick={() => {
+                                                    const firstSeen = new Set<string>();
+                                                    setUploadedRows(uploadedRows!.filter(r => {
+                                                        const mat = r['matricula']?.trim().replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+                                                        if (!mat) return true;
+                                                        if (firstSeen.has(mat)) return false;
+                                                        firstSeen.add(mat);
+                                                        return true;
+                                                    }));
+                                                }}
+                                                style={{ fontSize: 11, fontWeight: 700, color: '#fff', background: 'var(--t-red)', border: 'none', borderRadius: 6, padding: '4px 12px', cursor: 'pointer', flexShrink: 0 }}
+                                            >
+                                                Eliminar duplicadas
+                                            </button>
+                                        </div>
+                                        <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                                            {duplicadas.map(m => (
+                                                <span key={m} style={{ fontSize: 11, fontWeight: 800, color: 'var(--t-red)', background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 4, padding: '2px 8px', fontFamily: 'monospace' }}>
+                                                    {m} ×{seen.get(m)}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                                <div style={{ marginTop: 10, padding: '10px 14px', background: 'rgba(81,184,138,0.08)', border: '1px solid rgba(81,184,138,0.2)', borderRadius: 7 }}>
+                                    <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--t-green)' }}>
+                                        {uploadedRows.length} vehículo{uploadedRows.length !== 1 ? 's' : ''} detectados
+                                        {duplicadas.length > 0 && <span style={{ color: 'var(--t-amber)', fontWeight: 700 }}> · {duplicadas.length} dup.</span>}
+                                    </span>
+                                    <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                                        {uploadedRows.slice(0, 8).map((r, i) => {
+                                            const mat = r['matricula']?.trim().replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+                                            const isDup = duplicadas.includes(mat);
+                                            return (
+                                                <span key={i} style={{ fontSize: 10, fontWeight: 700, color: isDup ? 'var(--t-red)' : 'var(--t-text-3)', background: isDup ? 'rgba(239,68,68,0.1)' : 'var(--t-line-soft)', border: `1px solid ${isDup ? 'rgba(239,68,68,0.3)' : 'var(--t-line)'}`, borderRadius: 4, padding: '2px 7px', fontFamily: 'monospace' }}>
+                                                    {r['matricula']}
+                                                </span>
+                                            );
+                                        })}
+                                        {uploadedRows.length > 8 && <span style={{ fontSize: 10, color: 'var(--t-text-3)' }}>+{uploadedRows.length - 8} más</span>}
+                                    </div>
+                                </div>
+                            </>
+                        );
+                    })()}
+                </div>
+            </div>
+
+            {/* stepitem 03 — Modo de procesado */}
+            <div style={{ display: 'flex', gap: 18, padding: '22px 0', borderTop: '1px solid var(--t-line)', alignItems: 'flex-start' }}>
+                <span style={{ fontSize: 12, color: 'var(--t-text-3)', fontWeight: 730, width: 19, flexShrink: 0 }}>03</span>
+                <div style={{ flex: 1 }}>
+                    <h3 style={{ fontSize: 14, margin: '0 0 12px', color: 'var(--t-text)', fontWeight: 700 }}>Modo de procesado</h3>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                        <button
+                            onClick={() => setMode('con')}
+                            style={{ padding: 18, background: mode === 'con' ? 'rgba(18,64,204,0.05)' : 'transparent', border: `1px solid ${mode === 'con' ? 'var(--t-blue)' : 'var(--t-line)'}`, borderRadius: 7, textAlign: 'left', color: 'var(--t-text)', cursor: 'pointer' }}
+                        >
+                            <h4 style={{ fontSize: 13, margin: '0 0 7px', fontWeight: 700, color: 'var(--t-text)' }}>Con Silverdat</h4>
+                            <p style={{ fontSize: 12, color: 'var(--t-text-3)', lineHeight: 1.5, margin: 0 }}>Enriquece los vehículos con los datos técnicos de la conexión existente.</p>
+                        </button>
+                        <button
+                            onClick={() => setMode('sin')}
+                            style={{ padding: 18, background: mode === 'sin' ? 'rgba(18,64,204,0.05)' : 'transparent', border: `1px solid ${mode === 'sin' ? 'var(--t-blue)' : 'var(--t-line)'}`, borderRadius: 7, textAlign: 'left', color: 'var(--t-text)', cursor: 'pointer' }}
+                        >
+                            <h4 style={{ fontSize: 13, margin: '0 0 7px', fontWeight: 700, color: 'var(--t-text)' }}>Solo plantilla</h4>
+                            <p style={{ fontSize: 12, color: 'var(--t-text-3)', lineHeight: 1.5, margin: 0 }}>Procesa las columnas originales del Excel sin consultas externas.</p>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Continue */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 20 }}>
+                <button
+                    onClick={() => uploadedRows && onNext(uploadedRows, detectedHeaderRef.current, mode)}
+                    disabled={!uploadedRows}
+                    style={{ padding: '10px 20px', background: uploadedRows ? 'linear-gradient(135deg,#1240CC,#3366FF)' : 'transparent', border: uploadedRows ? 'none' : '1px solid var(--t-line)', borderRadius: 6, color: uploadedRows ? '#fff' : 'var(--t-text-3)', fontSize: 12, fontWeight: 600, cursor: uploadedRows ? 'pointer' : 'not-allowed', whiteSpace: 'nowrap', minHeight: 36 }}
+                >
+                    Continuar
+                </button>
+            </div>
+        </div>
+    );
+}
+
+// ─── Step 2: Processing ───────────────────────────────────────────────────────
+
+function Step2({
+    uploadedRows,
+    carpetaActiva,
+    onComplete,
+}: {
+    uploadedRows: Record<string, string>[];
+    carpetaActiva: FlotaCarpeta | null;
+    onComplete: (vehicles: ProcessedVehicle[]) => void;
+}) {
+    const [progress, setProgress] = useState<ProgressState>({ current: 0, total: uploadedRows.length, log: [] });
+    const [error, setError] = useState('');
+    const [showSdModal, setShowSdModal] = useState(false);
+    const [started, setStarted] = useState(false);
+    const [finished, setFinished] = useState(false);
+    const [cacheCount, setCacheCount] = useState(0);
+    const abortRef = useRef(false);
+    const allProcessedRef = useRef<ProcessedVehicle[]>([]);
+    const failedRowsRef = useRef<Record<string, string>[]>([]);
+
+    const NO_LUNAS = new Set(['semirremolque', 'industrial no matriculado']);
+
+    const querySilverdat = async (mat: string): Promise<{ vehicle?: SilverdatVehicle; noSession?: boolean; fromCache?: boolean }> => {
+        const ctrl = new AbortController();
+        const poll = setInterval(() => { if (abortRef.current) ctrl.abort(); }, 200);
+        try {
+            const res = await fetch('/api/silverdat/enrich', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    matriculas: [mat],
+                    carpeta_id:     carpetaActiva?.id     ?? '',
+                    carpeta_nombre: carpetaActiva?.nombre ?? '',
+                    corredor_id:    carpetaActiva?.corredor_id ?? '',
+                }),
+                signal: ctrl.signal,
+            });
+            if (res.status === 401) return { noSession: true };
+            const data = await res.json();
+            if (data.ok && data.results?.[0]?.ok && data.results[0].vehicle) {
+                return { vehicle: data.results[0].vehicle as SilverdatVehicle, fromCache: !!data.results[0].fromCache };
+            }
+            return {};
+        } catch { return {}; }
+        finally { clearInterval(poll); }
+    };
+
+    const buildVehicle = (row: Record<string, string>, sd?: SilverdatVehicle, id_veh?: string): ProcessedVehicle => {
+        const matricula = row['matricula'].trim().replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+        const tipoRaw = sd?.tipo_vehiculo || row['tipo_vehiculo'] || inferTipoFromMat(matricula);
+        const tipo = normalizeTipoVehiculo(tipoRaw) || '';
+        const sinLunas = NO_LUNAS.has(tipo.toLowerCase());
+        return {
+            matricula,
+            marca: sd?.marca || row['marca'] || '',
+            modelo: sd?.modelo || row['modelo'] || '',
+            tipo_vehiculo: tipo,
+            kw: sd?.kw || parseFloat(row['kw'] || '0') || 0,
+            cv: sd?.cv || parseFloat(row['cv'] || '0') || 0,
+            combustible: sd?.combustible || '',
+            fecha_matriculacion: sd?.fecha_matriculacion || '',
+            anyo_fabricacion: sd?.anyo_fabricacion || '',
+            cif_nif: row['cif_nif'] || '',
+            tomador: row['tomador'] || '',
+            fecha_vencimiento: row['fecha_vencimiento'] || '',
+            cia_actual: row['cia_actual'] || '',
+            num_poliza_actual: row['num_poliza_actual'] || row['n_poliza_actual'] || '',
+            uso: row['uso'] || 'Particular',
+            adr: row['adr'] || 'No',
+            ambito: row['ambito'] || row['ámbito'] || 'Nacional',
+            coberturas_solicitadas: row['coberturas_solicitadas'] || '',
+            lunas: sinLunas ? 'No' : (row['lunas'] || 'No'),
+            frq: row['frq'] || '',
+            asistencia: row['asistencia'] || 'no',
+            prima_referencia: row['prima_referencia'] || row['prima referencia'] || '',
+            vin: sd?.vin || '',
+            etiqueta_dgt: sd?.etiqueta_dgt || '',
+            euro: sd?.euro || '',
+            co2: sd?.co2 != null ? String(sd.co2) : '',
+            precio_nuevo: sd?.precio_nuevo || 0,
+            valor_venta: sd?.valor_venta || 0,
+            id_veh,
+            sd_ok: !!sd,
+        };
+    };
+
+    const runProcess = async (rows: Record<string, string>[], mergeWith?: ProcessedVehicle[]) => {
+        abortRef.current = false;
+        setError('');
+        setFinished(false);
+
+        // Dedup: same plate only queried once even if duplicated in input
+        const seenMats = new Set<string>();
+        const uniqueRows = rows.filter(r => {
+            const mat = r['matricula']?.trim().replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+            if (!mat || seenMats.has(mat)) return false;
+            seenMats.add(mat);
+            return true;
+        });
+
+        const processed: ProcessedVehicle[] = mergeWith ? [...mergeWith] : [];
+        const mergeMap = new Map(processed.map(v => [v.matricula, v]));
+
+        let done = 0;
+        setProgress({ current: 0, total: uniqueRows.length, log: [] });
+
+        const processOne = async (row: Record<string, string>) => {
+            if (abortRef.current) return;
+            const matricula = row['matricula'].trim().replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+            let sd: SilverdatVehicle | undefined;
+            let id_veh: string | undefined;
+
+            const result = await querySilverdat(matricula);
+            if (result.noSession) { setError('Sesión Silverdat expirada. Reinicia y vuelve a hacer login.'); abortRef.current = true; return; }
+            sd = result.vehicle;
+            if (result.fromCache) setCacheCount(n => n + 1);
+            if (abortRef.current) return;
+
+            try {
+                const rowMarca = row['marca'] || '';
+                const rowModelo = row['modelo'] || '';
+                const body: Record<string, string | number> = {};
+                if (sd?.marca)      body.marca      = sd.marca;
+                else if (rowMarca)  body.rawText    = [rowMarca, rowModelo].filter(Boolean).join(' ');
+                if (sd?.modelo)     body.modelo     = sd.modelo;
+                if (sd?.kw)         body.kw         = sd.kw;
+                if (sd?.cilindrada) body.cilindrada = sd.cilindrada;
+                if (Object.keys(body).length > 0) {
+                    const catData = await (await fetch('/api/catalogo/search', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(body),
+                    })).json();
+                    const lista = catData.candidates ?? catData.candidatos ?? [];
+                    if (lista.length > 0) id_veh = lista[0].id_veh;
+                }
+            } catch { /* catálogo opcional */ }
+
+            const vehicle = buildVehicle(row, sd, id_veh);
+            mergeMap.set(matricula, vehicle);
+
+            done++;
+            setProgress(p => ({ current: done, total: uniqueRows.length, log: [...p.log, { plate: matricula, ok: !!sd, marca: sd?.marca, modelo: sd?.modelo?.split(' ')[0], fromCache: !!result.fromCache }] }));
+        };
+
+        // 3 workers en paralelo — cola compartida
+        let queueIdx = 0;
+        const worker = async () => {
+            while (!abortRef.current) {
+                const myIdx = queueIdx++;
+                if (myIdx >= uniqueRows.length) break;
+                await processOne(uniqueRows[myIdx]);
+                if (!abortRef.current && myIdx < uniqueRows.length - 1)
+                    await new Promise(r => setTimeout(r, 200));
+            }
+        };
+        await Promise.all([worker(), worker(), worker()]);
+
+        if (!abortRef.current) {
+            const all = Array.from(mergeMap.values());
+            allProcessedRef.current = all;
+            failedRowsRef.current = uniqueRows.filter(r => {
+                const mat = r['matricula'].trim().replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+                return !mergeMap.get(mat)?.sd_ok;
+            });
+            setFinished(true);
+        }
+    };
+
+    const checkAndRun = async () => {
+        setStarted(true);
+        const rows = uploadedRows.filter(r => r['matricula']?.trim());
+        try {
+            const sessionData = await (await fetch('/api/silverdat/login')).json();
+            if (!sessionData.hasSession) { setShowSdModal(true); return; }
+        } catch { setShowSdModal(true); return; }
+        runProcess(rows);
+    };
+
+    const handleRetry = async () => {
+        const failed = failedRowsRef.current;
+        if (!failed.length) return;
+        try {
+            const sessionData = await (await fetch('/api/silverdat/login')).json();
+            if (!sessionData.hasSession) { setShowSdModal(true); return; }
+        } catch { setShowSdModal(true); return; }
+        runProcess(failed, allProcessedRef.current);
+    };
+
+    const pct = progress.total > 0 ? Math.round((progress.current / progress.total) * 100) : 0;
+    const failedCount = failedRowsRef.current.length;
+    const okCount = allProcessedRef.current.filter(v => v.sd_ok).length;
+
+    return (
+        <div style={{ maxWidth: 700, margin: '0 auto', padding: '32px 24px' }}>
+            {showSdModal && (
+                <SilverdatModal
+                    onClose={() => { setShowSdModal(false); setStarted(false); }}
+                    onSuccess={() => { setShowSdModal(false); runProcess(uploadedRows.filter(r => r['matricula']?.trim())); }}
+                />
+            )}
+
+            <div style={{ textAlign: 'center', marginBottom: 32 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--t-amber)', marginBottom: 8 }}>Paso 2 de 3</div>
+                <h2 style={{ fontSize: 22, fontWeight: 800, color: 'var(--t-text)', margin: '0 0 8px' }}>Procesado automático</h2>
+                <p style={{ fontSize: 13, color: 'var(--t-text-2)', margin: 0 }}>
+                    Consultando Silverdat y catálogo SINCO para {progress.total} vehículos
+                </p>
+            </div>
+
+            {!started ? (
+                <div style={{ textAlign: 'center' }}>
+                    <p style={{ fontSize: 13, color: 'var(--t-text-2)', marginBottom: 24 }}>
+                        Se consultará Silverdat por cada matrícula (~{Math.ceil(progress.total * 0.5)} segundos)
+                    </p>
+                    <button onClick={checkAndRun} style={{
+                        padding: '14px 32px', borderRadius: 12,
+                        background: 'linear-gradient(135deg, #d97706, #f59e0b)',
+                        color: '#fff', border: 'none', fontSize: 13, fontWeight: 800,
+                        letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer',
+                    }}>
+                        Iniciar
+                    </button>
+                </div>
+            ) : (
+                <>
+                    {/* Progress bar */}
+                    <div style={{ ...glass, padding: 20, marginBottom: 20 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--t-text)' }}>Progreso</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                <span style={{ fontSize: 12, fontWeight: 700, color: '#f59e0b' }}>{progress.current}/{progress.total}</span>
+                                {progress.current < progress.total && (
+                                    <button onClick={() => { abortRef.current = true; }} style={{
+                                        fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 6,
+                                        background: 'rgba(239,68,68,0.15)', color: '#ef4444',
+                                        border: '1px solid rgba(239,68,68,0.3)', cursor: 'pointer',
+                                    }}>⬛ Detener</button>
+                                )}
+                            </div>
+                        </div>
+                        <div style={{ height: 3, borderRadius: 4, background: 'var(--t-line)', overflow: 'hidden' }}>
+                            <div style={{
+                                height: '100%', borderRadius: 4, transition: 'width 0.4s ease',
+                                width: `${pct}%`,
+                                background: progress.current === progress.total ? 'linear-gradient(90deg, #10b981, #34d399)' : 'linear-gradient(90deg, #d97706, #f59e0b)',
+                            }} />
+                        </div>
+                        {progress.current < progress.total && (
+                            <p style={{ margin: '8px 0 0', fontSize: 11, color: 'var(--t-text-3)' }}>
+                                Restante estimado: ~{Math.ceil((progress.total - progress.current) * 2.5)}s · Consulta secuencial para fiabilidad máxima
+                            </p>
+                        )}
+                    </div>
+
+                    {/* Log */}
+                    <div style={{ ...glass, padding: 16, maxHeight: 220, overflowY: 'auto' }}>
+                        {progress.log.length === 0 ? (
+                            <p style={{ margin: 0, fontSize: 12, color: 'var(--t-text-3)', textAlign: 'center' }}>Iniciando...</p>
+                        ) : (
+                            progress.log.map((entry, i) => (
+                                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '4px 0', borderBottom: i < progress.log.length - 1 ? '1px solid var(--t-line)' : 'none' }}>
+                                    <span style={{ fontSize: 12, color: entry.ok ? 'var(--t-green)' : 'var(--t-red)', flexShrink: 0 }}>{entry.ok ? '✓' : '✗'}</span>
+                                    <span style={{ fontSize: 12, fontFamily: 'monospace', fontWeight: 700, color: 'var(--t-text)', flexShrink: 0 }}>{entry.plate}</span>
+                                    {entry.ok && <span style={{ fontSize: 11, color: 'var(--t-text-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{entry.marca} {entry.modelo}</span>}
+                                    {entry.ok && entry.fromCache && <span style={{ fontSize: 10, color: '#6366f1', fontWeight: 700, flexShrink: 0 }}>historial</span>}
+                                    {!entry.ok && <span style={{ fontSize: 11, color: 'rgba(239,68,68,0.6)' }}>Sin datos Silverdat</span>}
+                                </div>
+                            ))
+                        )}
+                    </div>
+
+                    {error && <p style={{ marginTop: 12, fontSize: 12, color: '#ef4444', fontWeight: 600 }}>{error}</p>}
+
+                    {/* Resumen + acciones post-proceso */}
+                    {finished && (
+                        <div style={{ ...glass, padding: 20, marginTop: 16 }}>
+                            <div style={{ display: 'flex', gap: 16, marginBottom: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
+                                <div style={{ textAlign: 'center' }}>
+                                    <div style={{ fontSize: 24, fontWeight: 900, color: '#10b981' }}>{okCount}</div>
+                                    <div style={{ fontSize: 10, color: 'var(--t-text-3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Con Silverdat</div>
+                                </div>
+                                <div style={{ width: 1, background: 'var(--t-line)' }} />
+                                <div style={{ textAlign: 'center' }}>
+                                    <div style={{ fontSize: 24, fontWeight: 900, color: failedCount > 0 ? 'var(--t-amber)' : 'var(--t-green)' }}>{failedCount}</div>
+                                    <div style={{ fontSize: 10, color: 'var(--t-text-3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Sin datos</div>
+                                </div>
+                                {cacheCount > 0 && (
+                                    <>
+                                        <div style={{ width: 1, background: 'var(--t-line)' }} />
+                                        <div style={{ textAlign: 'center' }}>
+                                            <div style={{ fontSize: 24, fontWeight: 900, color: 'var(--t-blue)' }}>{cacheCount}</div>
+                                            <div style={{ fontSize: 10, color: 'var(--t-text-3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Del historial</div>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                                {failedCount > 0 && (
+                                    <button onClick={handleRetry} style={{
+                                        flex: 1, padding: '11px 0', borderRadius: 10,
+                                        background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.4)',
+                                        color: '#f59e0b', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                                    }}>
+                                        Segunda barrida ({failedCount} matrícula{failedCount !== 1 ? 's' : ''})
+                                    </button>
+                                )}
+                                <button
+                                    onClick={() => { window.open('/api/silverdat/historial-txt', '_blank'); }}
+                                    style={{
+                                        padding: '11px 16px', borderRadius: 10,
+                                        background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.4)',
+                                        color: '#818cf8', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                                    }}
+                                >
+                                    Historial TXT
+                                </button>
+                                <button onClick={() => onComplete(allProcessedRef.current)} style={{
+                                    flex: 1, padding: '11px 0', borderRadius: 10,
+                                    background: 'linear-gradient(135deg, #1240CC, #2563eb)',
+                                    border: 'none', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                                }}>
+                                    Continuar → Paso 3
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </>
+            )}
+        </div>
+    );
+}
 
 // ─── Step 3: Offer builder ────────────────────────────────────────────────────
 
@@ -127,6 +921,7 @@ function Step3({
             result[key].vehList.push(v);
         }
         return result;
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [vehicles, tipoOverrides]);
 
     const cleanPoliza = (p: string) => p.replace(/[\s\-\.\/]/g, '');
@@ -159,7 +954,6 @@ function Step3({
                 vin: v.vin,
                 fecha_matriculacion: v.fecha_matriculacion,
                 anyo_fabricacion: v.anyo_fabricacion || '',
-                anyo_fab_fuente: v.anyo_fabricacion ? (v.anyo_fab_fuente || 'fabricacion') : '',
                 combustible: v.combustible,
                 etiqueta_dgt: v.etiqueta_dgt,
                 euro: v.euro,
@@ -175,53 +969,77 @@ function Step3({
     }, 0);
 
     const sdOkCount = vehicles.filter(v => v.sd_ok).length;
-
-    const sinTipo = vehicles.filter(v => !effectiveTipo(v)).length;
-    const presentTypes = Array.from(new Set(vehicles.map(v => effectiveTipo(v)))).sort();
-    const applyBulk = () => {
-        if (!bulkTo) return;
-        setTipoOverrides(prev => {
-            const next = { ...prev };
-            vehicles.forEach(v => {
-                const cur = tipoOverrides[v.matricula] || v.tipo_vehiculo || '';
-                if (bulkFrom === '' ? !cur : cur === bulkFrom) {
-                    next[v.matricula] = bulkTo;
-                }
-            });
-            return next;
-        });
-        setBulkFrom('');
-        setBulkTo('');
-    };
+    const sdOkPlates  = vehicles.filter(v => v.sd_ok).map(v => v.matricula);
+    const sdFailPlates = vehicles.filter(v => !v.sd_ok).map(v => v.matricula);
 
     return (
-        <div className="s3">
-            <div className="sh" style={{ marginBottom: 8 }}>
-                <div>
-                    <h2 style={{ fontSize: 22 }}>Confirmar oferta</h2>
-                    <p>{nf(vehicles.length)} vehículos · primas y coberturas del Excel</p>
-                </div>
+        <div style={{ maxWidth: 800, margin: '0 auto', padding: '32px 24px' }}>
+            <div style={{ textAlign: 'center', marginBottom: 28 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--t-amber)', marginBottom: 8 }}>Paso 3 de 3</div>
+                <h2 style={{ fontSize: 22, fontWeight: 800, color: 'var(--t-text)', margin: '0 0 8px' }}>Confirmar oferta</h2>
+                <p style={{ fontSize: 13, color: 'var(--t-text-2)', margin: 0 }}>
+                    {vehicles.length} vehículos · primas y coberturas del Excel
+                </p>
             </div>
 
-            {/* Resumen */}
-            <div className="stat3">
-                <div><label>Vehículos</label><strong>{nf(vehicles.length)}</strong></div>
-                <div><label>Con Silverdat</label><strong>{nf(sdOkCount)}</strong></div>
-                <div><label>Sin tipo</label><strong>{nf(sinTipo)}</strong></div>
-                <div><label>Grupos</label><strong>{nf(Object.keys(groups).length)}</strong></div>
-            </div>
+            {/* Cambio masivo de tipología */}
+            {(() => {
+                const presentTypes = Array.from(new Set(vehicles.map(v => effectiveTipo(v)))).sort();
+                const applyBulk = () => {
+                    if (!bulkTo) return;
+                    setTipoOverrides(prev => {
+                        const next = { ...prev };
+                        vehicles.forEach(v => {
+                            const cur = tipoOverrides[v.matricula] || v.tipo_vehiculo || '';
+                            if (bulkFrom === '' ? !cur : cur === bulkFrom) {
+                                next[v.matricula] = bulkTo;
+                            }
+                        });
+                        return next;
+                    });
+                    setBulkFrom('');
+                    setBulkTo('');
+                };
+                return (
+                    <div style={{ ...glass, padding: 16, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--t-text-3)', textTransform: 'uppercase', letterSpacing: '0.08em', flexShrink: 0 }}>Cambio masivo</span>
+                        <select value={bulkFrom} onChange={e => setBulkFrom(e.target.value)} style={{ background: 'var(--t-bg)', color: 'var(--t-text)', border: '1px solid var(--t-line)', borderRadius: 8, padding: '6px 10px', fontSize: 12, cursor: 'pointer', flex: '1 1 140px' }}>
+                            <option value="">— Sin tipo —</option>
+                            {presentTypes.filter(Boolean).map(t => <option key={t} value={t}>{t}</option>)}
+                        </select>
+                        <span style={{ fontSize: 11, color: 'var(--t-text-3)', flexShrink: 0 }}>→</span>
+                        <select value={bulkTo} onChange={e => setBulkTo(e.target.value)} style={{ background: 'var(--t-bg)', color: 'var(--t-text)', border: '1px solid var(--t-line)', borderRadius: 8, padding: '6px 10px', fontSize: 12, cursor: 'pointer', flex: '1 1 140px' }}>
+                            <option value="">— Tipo nuevo —</option>
+                            {TIPO_VEHICULO_OPTS.map(o => <option key={o} value={o}>{o}</option>)}
+                        </select>
+                        <button onClick={applyBulk} disabled={!bulkTo} style={{ padding: '7px 18px', borderRadius: 8, background: bulkTo ? 'linear-gradient(135deg,#1240CC,#3366FF)' : 'var(--t-line)', color: '#fff', border: 'none', fontSize: 12, fontWeight: 700, cursor: bulkTo ? 'pointer' : 'not-allowed', flexShrink: 0 }}>
+                            Aplicar
+                        </button>
+                        {bulkFrom === '' && <span style={{ fontSize: 10, color: 'var(--t-text-3)', flex: '100%' }}>Selecciona un tipo origen para cambiar todos los vehículos de ese tipo, o deja vacío para asignar a los que no tienen tipo.</span>}
+                    </div>
+                );
+            })()}
 
             {/* Tipos pendientes */}
-            {sinTipo > 0 && (
-                <div className="notice">
-                    <span className="ttl">Faltan tipos de vehículo: asígnalos antes de continuar</span>
-                    <div className="s3list">
+            {vehicles.some(v => !effectiveTipo(v)) && (
+                <div style={{ ...glass, padding: 16, marginBottom: 20, border: '1px solid rgba(245,158,11,0.35)', background: 'rgba(245,158,11,0.07)' }}>
+                    <p style={{ margin: '0 0 12px', fontSize: 12, fontWeight: 700, color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                        Tipos de vehículo pendientes — asigna antes de continuar
+                    </p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                         {vehicles.filter(v => !effectiveTipo(v)).map(v => (
-                            <div key={v.matricula} className="rowline between">
-                                <span><b className="strong" style={{ fontFamily: 'ui-monospace,Menlo,monospace' }}>{v.matricula}</b>{v.marca ? ` · ${v.marca} ${v.modelo}` : ''}</span>
-                                <select className="select" aria-label={`Tipo de ${v.matricula}`} value={tipoOverrides[v.matricula] || ''}
-                                    onChange={e => setTipoOverrides(prev => ({ ...prev, [v.matricula]: e.target.value }))}>
-                                    <option value="">Seleccionar tipo</option>
+                            <div key={v.matricula} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                <span style={{ fontFamily: 'monospace', fontSize: 13, fontWeight: 700, color: 'var(--t-text)', minWidth: 100 }}>{v.matricula}</span>
+                                {v.marca && <span style={{ fontSize: 12, color: 'var(--t-text-3)', flex: 1 }}>{v.marca} {v.modelo}</span>}
+                                <select
+                                    value={tipoOverrides[v.matricula] || ''}
+                                    onChange={e => setTipoOverrides(prev => ({ ...prev, [v.matricula]: e.target.value }))}
+                                    style={{
+                                        background: 'var(--t-bg)', color: 'var(--t-text)', border: '1px solid rgba(245,158,11,0.4)',
+                                        borderRadius: 8, padding: '6px 10px', fontSize: 12, fontWeight: 600, cursor: 'pointer', minWidth: 160,
+                                    }}
+                                >
+                                    <option value="">— Seleccionar tipo —</option>
                                     {TIPO_VEHICULO_OPTS.map(o => <option key={o} value={o}>{o}</option>)}
                                 </select>
                             </div>
@@ -230,82 +1048,114 @@ function Step3({
                 </div>
             )}
 
-            {/* Cambio masivo · descuento · total (misma rejilla de tres columnas que el inicio del paso) */}
-            <div className="tri s3tri">
-                <div>
-                    <h3>Cambio masivo de tipología</h3>
-                    <p>Cambia de golpe el tipo de todos los vehículos de un tipo, o asígnalo a los que no lo tienen.</p>
-                    <div className="adj">
-                        <div className="fld">
-                            <label htmlFor="bk_from">De</label>
-                            <select id="bk_from" className="select" value={bulkFrom} onChange={e => setBulkFrom(e.target.value)}>
-                                <option value="">Sin tipo</option>
-                                {presentTypes.filter(Boolean).map(t => <option key={t} value={t}>{t}</option>)}
-                            </select>
-                        </div>
-                        <div className="fld">
-                            <label htmlFor="bk_to">A</label>
-                            <select id="bk_to" className="select" value={bulkTo} onChange={e => setBulkTo(e.target.value)}>
-                                <option value="">Tipo nuevo</option>
-                                {TIPO_VEHICULO_OPTS.map(o => <option key={o} value={o}>{o}</option>)}
-                            </select>
-                        </div>
-                        <button className="mini pri" onClick={applyBulk} disabled={!bulkTo}>Aplicar</button>
+            {/* Stats */}
+            <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+                {[
+                    { label: 'Total vehículos', value: vehicles.length, color: '#3366FF' },
+                    { label: 'Con Silverdat', value: sdOkCount, color: '#10b981' },
+                    { label: 'Sin tipo', value: vehicles.filter(v => !effectiveTipo(v)).length, color: vehicles.some(v => !effectiveTipo(v)) ? 'var(--t-amber)' : 'var(--t-text-3)' },
+                    { label: 'Grupos', value: Object.keys(groups).length, color: 'var(--t-blue)' },
+                ].map(({ label, value, color }) => (
+                    <div key={label} style={{ flex: '1 1 120px', ...glass, padding: '12px 16px', textAlign: 'center' }}>
+                        <div style={{ fontSize: 22, fontWeight: 800, color }}>{value}</div>
+                        <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--t-text-3)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>{label}</div>
                     </div>
-                </div>
-                <div>
-                    <h3>Descuento global</h3>
-                    <p>Se aplica a la prima de todos los grupos.</p>
-                    <div className="adj">
-                        <div className="fld">
-                            <label htmlFor="s3_desc">Descuento (%)</label>
-                            <input id="s3_desc" className="inp" type="number" min="0" max="100" step="0.5"
-                                value={globalDiscount} onChange={e => setGlobalDiscount(e.target.value)} />
-                        </div>
-                    </div>
-                </div>
-                <div>
-                    <h3>Prima total</h3>
-                    <p>{discount > 0 ? `Con un descuento del ${dec(discount, 1)} %.` : 'Sin descuento aplicado.'}</p>
-                    <div className="tot s3tot">
-                        <div><strong>{eur2(totalPrima)}</strong></div>
-                    </div>
-                </div>
+                ))}
             </div>
 
             {/* Resumen por grupo (tipo + cobertura del Excel) */}
-            <h3 className="s3h">Resumen por tipología y cobertura</h3>
-            <div className="dg-scroll">
-                <table className="tbl">
-                    <thead>
-                        <tr><th>Tipología</th><th>Cobertura</th><th>Veh.</th><th>Prima media por vehículo</th><th>Total del grupo</th></tr>
-                    </thead>
-                    <tbody>
-                        {Object.entries(groups).map(([key, g]) => {
-                            const groupPrimas = g.vehList.map(v => parseFloat(v.prima_referencia || '0') || 0);
-                            const avgPrima = groupPrimas.length > 0 ? groupPrimas.reduce((s, p) => s + p, 0) / groupPrimas.length : 0;
-                            const totalGrupo = groupPrimas.reduce((s, p) => s + p, 0) * (1 - discount / 100);
-                            return (
-                                <tr key={key}>
-                                    <td style={{ textAlign: 'left' }}>
-                                        <div style={{ fontWeight: 600, color: g.tipo ? 'var(--text)' : 'var(--warn)' }}>{g.tipo || 'Sin tipo'}</div>
-                                        <div className="muted">{g.vehList.map(v => v.matricula).slice(0, 3).join(', ')}{g.vehList.length > 3 ? ` y ${nf(g.vehList.length - 3)} más` : ''}</div>
-                                    </td>
-                                    <td>{g.cob || '—'}</td>
-                                    <td>{nf(g.vehList.length)}</td>
-                                    <td>{avgPrima > 0 ? eur2(avgPrima) : '—'}</td>
-                                    <td>{totalGrupo > 0 ? eur2(totalGrupo) : '—'}</td>
-                                </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
+            <div style={{ ...glass, padding: 20, marginBottom: 20 }}>
+                <p style={{ margin: '0 0 14px', fontSize: 12, fontWeight: 700, color: 'var(--t-text-3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Resumen por tipología y cobertura</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {Object.entries(groups).map(([key, g]) => {
+                        const groupPrimas = g.vehList.map(v => parseFloat(v.prima_referencia || '0') || 0);
+                        const avgPrima = groupPrimas.length > 0 ? groupPrimas.reduce((s, p) => s + p, 0) / groupPrimas.length : 0;
+                        const totalGrupo = groupPrimas.reduce((s, p) => s + p, 0) * (1 - discount / 100);
+                        return (
+                            <div key={key} style={{
+                                display: 'grid',
+                                gridTemplateColumns: '1fr auto 64px 130px 120px',
+                                alignItems: 'center', gap: 12,
+                                padding: '12px 16px', borderRadius: 10,
+                                background: 'var(--t-line-soft)',
+                                border: '1px solid var(--t-line)',
+                            }}>
+                                <div>
+                                    <span style={{ fontSize: 13, fontWeight: 700, color: g.tipo ? 'var(--t-text)' : 'var(--t-amber)' }}>
+                                        {g.tipo || 'Sin tipo'}
+                                    </span>
+                                    <div style={{ fontSize: 10, color: 'var(--t-text-3)', marginTop: 2 }}>
+                                        {g.vehList.map(v => v.matricula).slice(0, 3).join(', ')}{g.vehList.length > 3 ? ` +${g.vehList.length - 3}` : ''}
+                                    </div>
+                                </div>
+                                <div>
+                                    {g.cob
+                                        ? <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--t-blue)', background: 'rgba(18,64,204,0.08)', padding: '3px 9px', borderRadius: 20 }}>{g.cob}</span>
+                                        : <span style={{ fontSize: 11, color: 'var(--t-text-3)' }}>—</span>
+                                    }
+                                </div>
+                                <div style={{ textAlign: 'center' }}>
+                                    <span style={{ fontSize: 18, fontWeight: 800, color: 'var(--t-blue)' }}>{g.vehList.length}</span>
+                                    <div style={{ fontSize: 9, color: 'var(--t-text-3)', textTransform: 'uppercase' }}>veh.</div>
+                                </div>
+                                <div style={{ textAlign: 'right' }}>
+                                    <div style={{ fontSize: 13, fontWeight: 700, color: avgPrima > 0 ? 'var(--t-text)' : 'var(--t-text-3)' }}>
+                                        {avgPrima > 0 ? `€${avgPrima.toFixed(2)}` : '—'}
+                                    </div>
+                                    <div style={{ fontSize: 9, color: 'var(--t-text-3)', textTransform: 'uppercase' }}>media/veh</div>
+                                </div>
+                                <div style={{ textAlign: 'right' }}>
+                                    <div style={{ fontSize: 14, fontWeight: 800, color: totalGrupo > 0 ? 'var(--t-amber)' : 'var(--t-text-3)' }}>
+                                        {totalGrupo > 0 ? `€${totalGrupo.toFixed(0)}` : '—'}
+                                    </div>
+                                    <div style={{ fontSize: 9, color: 'var(--t-text-3)', textTransform: 'uppercase' }}>total grupo</div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+
+            {/* Global discount */}
+            <div style={{ ...glass, padding: 16, marginBottom: 24, display: 'flex', alignItems: 'center', gap: 20 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1 }}>
+                    <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--t-text-2)', flexShrink: 0 }}>Descuento global</label>
+                    <input
+                        type="number" min="0" max="100" step="0.5"
+                        value={globalDiscount}
+                        onChange={e => setGlobalDiscount(e.target.value)}
+                        className="orion-input"
+                        style={{ fontSize: 14, fontWeight: 700, width: 80, textAlign: 'center' }}
+                    />
+                    <span style={{ fontSize: 13, color: 'var(--t-text-3)' }}>%</span>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: 13, color: 'var(--t-text-3)' }}>Prima total</div>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: '#f59e0b' }}>€{totalPrima.toFixed(0)}</div>
+                </div>
             </div>
 
             {/* Actions */}
-            <div className="s3act">
-                <button className="btn ghost" onClick={onBack}>Volver</button>
-                <button className="btn" onClick={handleApply}>Aplicar a Trabajo y continuar</button>
+            <div style={{ display: 'flex', gap: 12 }}>
+                <button onClick={onBack} style={{
+                    padding: '12px 24px', borderRadius: 10,
+                    background: 'transparent', color: 'var(--t-text-2)',
+                    border: '1px solid var(--t-line)', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', gap: 8,
+                }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
+                    Volver
+                </button>
+                <button onClick={handleApply} style={{
+                    flex: 1, padding: '14px 0', borderRadius: 12,
+                    background: 'linear-gradient(135deg, #1240CC, #3366FF)',
+                    color: '#fff', border: 'none', fontSize: 13, fontWeight: 800,
+                    letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                }}>
+                    Aplicar a TRABAJO y continuar
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+                </button>
             </div>
         </div>
     );
@@ -340,7 +1190,6 @@ function rowsToVehicles(rows: Record<string, string>[]): ProcessedVehicle[] {
                 combustible: r['combustible'] || '',
                 fecha_matriculacion: r['fecha_matriculacion'] || '',
                 anyo_fabricacion: r['anyo_fabricacion'] || '',
-                anyo_fab_fuente: r['anyo_fabricacion'] ? (r['anyo_fab_fuente'] || 'fabricacion') : '',
                 cif_nif: r['cif_nif'] || '',
                 tomador: r['tomador'] || '',
                 fecha_vencimiento: r['fecha_vencimiento'] || '',
@@ -365,43 +1214,43 @@ function rowsToVehicles(rows: Record<string, string>[]): ProcessedVehicle[] {
         });
 }
 
-// ─── HojaAutomatico ───────────────────────────────────────────────────────────
+// ─── HojaAutomatico (main wizard) ─────────────────────────────────────────────
 
 export default function HojaAutomatico({ header, carpetaActiva, onComplete, onVehiclesProcessed, onHeaderUpdate }: Props) {
+    // Recover from saved carpeta state (cross-session persistence)
     const savedVehicles = carpetaActiva?.automaticoVehicles as ProcessedVehicle[] | undefined;
-
-    // ── Phase ──────────────────────────────────────────────────────────────────
-    const [phase, setPhase] = useState<'input' | 'processing' | 'confirm'>(
-        savedVehicles && savedVehicles.length > 0 ? 'confirm' : 'input'
-    );
-
-    // ── Upload state ───────────────────────────────────────────────────────────
-    const [downloadLoading, setDownloadLoading] = useState(false);
-    const [uploadedRows, setUploadedRows] = useState<Record<string, string>[] | null>(null);
-    const [parseError, setParseError] = useState('');
-    const [mode, setMode] = useState<ProcessMode>('con');
-    const [flotasMatch, setFlotasMatch] = useState<FlotaCarpeta[]>([]);
-    const fileInputRef = useRef<HTMLInputElement>(null);
-    const detectedHeaderRef = useRef<Partial<FlotaHeader>>({});
-
-    // ── Silverdat state ────────────────────────────────────────────────────────
-    const [progress, setProgress] = useState<ProgressState>({ current: 0, total: 0, log: [] });
-    const [sdError, setSdError] = useState('');
-    const [showSdModal, setShowSdModal] = useState(false);
-    const [sdFinished, setSdFinished] = useState(false);
-    const [cacheCount, setCacheCount] = useState(0);
-    const abortRef = useRef(false);
-    const allProcessedRef = useRef<ProcessedVehicle[]>([]);
-    const failedRowsRef = useRef<Record<string, string>[]>([]);
-
-    // ── Confirm state ──────────────────────────────────────────────────────────
+    const [step, setStep] = useState<1 | 2 | 3>(savedVehicles && savedVehicles.length > 0 ? 3 : 1);
+    const [uploadedRows, setUploadedRows] = useState<Record<string, string>[]>([]);
     const [processedVehicles, setProcessedVehicles] = useState<ProcessedVehicle[]>(savedVehicles ?? []);
 
-    const NO_LUNAS = new Set(['semirremolque', 'industrial no matriculado']);
+    const handleStep1Done = (rows: Record<string, string>[], detectedHeader?: Partial<FlotaHeader>, mode: ProcessMode = 'con') => {
+        setUploadedRows(rows);
+        if (detectedHeader && Object.keys(detectedHeader).length > 0) {
+            onHeaderUpdate?.(detectedHeader);
+        }
+        if (mode === 'sin') {
+            const vehicles = rowsToVehicles(rows);
+            setProcessedVehicles(vehicles);
+            onVehiclesProcessed?.(vehicles);
+            setStep(3);
+        } else {
+            setStep(2);
+        }
+    };
+
+    const handleStep2Done = (vehicles: ProcessedVehicle[]) => {
+        setProcessedVehicles(vehicles);
+        setStep(3);
+        onVehiclesProcessed?.(vehicles);
+    };
+
+    const handleStep3Done = (rows: Record<string, string>[]) => {
+        onComplete(rows);
+    };
 
     const polizaMap = useMemo<Record<string, string>>(() => {
         const map: Record<string, string> = {};
-        for (const row of (uploadedRows ?? [])) {
+        for (const row of uploadedRows) {
             const mat = (row['matricula'] || '').trim().toUpperCase();
             if (!mat) continue;
             const pol = row['num_poliza_actual'] || row['n_poliza_actual'] || '';
@@ -410,509 +1259,54 @@ export default function HojaAutomatico({ header, carpetaActiva, onComplete, onVe
         return map;
     }, [uploadedRows]);
 
-    const { duplicadas, seenCounts } = useMemo(() => {
-        const seen = new Map<string, number>();
-        (uploadedRows ?? []).forEach(r => {
-            const mat = r['matricula']?.trim().replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-            if (mat) seen.set(mat, (seen.get(mat) ?? 0) + 1);
-        });
-        return {
-            duplicadas: Array.from(seen.entries()).filter(([, n]) => n > 1).map(([m]) => m),
-            seenCounts: seen,
-        };
-    }, [uploadedRows]);
-
-    // ── Download ───────────────────────────────────────────────────────────────
-    const handleDownload = async () => {
-        setDownloadLoading(true);
-        try {
-            const blob = await generarPlantillaExcel(
-                carpetaActiva ?? { nombre: header.tomador || 'Flota', header },
-                listarCorredores().map(c => c.nombre),
-            );
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `plantilla_${(carpetaActiva?.nombre || 'flota').replace(/[/\\:*?"<>|]/g, '')}.xlsx`;
-            a.click();
-            URL.revokeObjectURL(url);
-        } finally { setDownloadLoading(false); }
-    };
-
-    // ── File parse ─────────────────────────────────────────────────────────────
-    const handleFile = async (file: File) => {
-        setParseError('');
-        setUploadedRows(null);
-        try {
-            const XLSX = await import('xlsx');
-            const buf = await file.arrayBuffer();
-            const wb = XLSX.read(buf, { type: 'array', cellDates: true });
-            const ws = wb.Sheets[wb.SheetNames[0]];
-
-            // Convierte celda a string: fechas → dd/mm/yyyy, resto → texto formateado de Excel
-            type XlsxCell = { t?: string; v?: unknown; w?: string };
-            const cellStr = (cell: XlsxCell | undefined): string => {
-                if (!cell) return '';
-                if (cell.t === 'd' && cell.v instanceof Date) {
-                    return cell.v.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
-                }
-                // Numeric cells: use raw value to avoid locale-formatted thousands separators
-                if (cell.t === 'n') return String(cell.v ?? '');
-                return (cell.w ?? String(cell.v ?? '')).trim();
-            };
-
-            // Data starts at row 6 (1-indexed), headers at row 5
-            const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
-            const headers: string[] = [];
-            for (let c = range.s.c; c <= range.e.c; c++) {
-                const cell = ws[XLSX.utils.encode_cell({ r: 4, c })] as XlsxCell | undefined;
-                const clave = cell ? String(cell.v).toLowerCase().trim().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') : `col_${c}`;
-                // La columna AÑO de la plantilla («a_o» al quitar la Ñ) es el año de fabricación del vehículo: va antes que el de Silverdat
-                headers.push(/^(a_o|ano|anyo)$/.test(clave) ? 'anyo_fabricacion' : clave);
-            }
-
-            const rows: Record<string, string>[] = [];
-            for (let r = 5; r <= range.e.r; r++) {
-                const row: Record<string, string> = {};
-                let hasData = false;
-                for (let c = range.s.c; c <= range.e.c; c++) {
-                    const cell = ws[XLSX.utils.encode_cell({ r, c })] as XlsxCell | undefined;
-                    const val = cellStr(cell);
-                    row[headers[c - range.s.c]] = val;
-                    if (val) hasData = true;
-                }
-                if (hasData) rows.push(row);
-            }
-
-            const withPlate = rows.filter(r => r['matricula']?.trim());
-            if (withPlate.length === 0) throw new Error('No se encontraron matrículas en la plantilla');
-
-            const rawPer = cellStr(ws[XLSX.utils.encode_cell({ r: 2, c: 1 })] as XlsxCell).toLowerCase();
-            const parsedPer = rawPer.includes('mensual') ? 'mensual' :
-                              rawPer.includes('bimestral') ? 'bimestral' :
-                              rawPer.includes('trimestral') ? 'trimestral' :
-                              rawPer.includes('semestral') ? 'semestral' :
-                              rawPer.includes('anual') ? 'anual' : undefined;
-            const detectedHeader: Partial<FlotaHeader> = {
-                cif:      cellStr(ws[XLSX.utils.encode_cell({ r: 1, c: 1 })] as XlsxCell),
-                tomador:  cellStr(ws[XLSX.utils.encode_cell({ r: 1, c: 3 })] as XlsxCell),
-                actividad: cellStr(ws[XLSX.utils.encode_cell({ r: 1, c: 6 })] as XlsxCell),
-                efecto:   cellStr(ws[XLSX.utils.encode_cell({ r: 2, c: 3 })] as XlsxCell),
-                ...(parsedPer ? { periodicidad: parsedPer } : {}),
-            };
-            const labels = new Set(['cif:', 'tomador:', 'actividad:', 'periodicidad:', 'efecto:', 'estudio:']);
-            for (const k of Object.keys(detectedHeader) as (keyof FlotaHeader)[]) {
-                const v = detectedHeader[k] as string;
-                if (!v || labels.has(v.toLowerCase())) delete detectedHeader[k];
-            }
-            detectedHeaderRef.current = detectedHeader;
-
-            // Detectar si esta flota ya existe en el sistema
-            // eslint-disable-next-line no-misleading-character-class
-            const normalize = (s?: string) =>
-                (s ?? '').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-            const cifNorm     = normalize(detectedHeader.cif);
-            const tomadorNorm = normalize(detectedHeader.tomador);
-            const matches = listarCarpetas().filter(c => {
-                if (carpetaActiva && c.id === carpetaActiva.id) return false;
-                const cCif     = normalize(c.header.cif);
-                const cTomador = normalize(c.header.tomador);
-                const cNombre  = normalize(c.nombre);
-                const cifOk    = cifNorm.length > 3 && cCif.length > 3 && cifNorm === cCif;
-                const tomOk    = tomadorNorm.length > 3 && cTomador.length > 3 &&
-                    (cTomador.includes(tomadorNorm) || tomadorNorm.includes(cTomador));
-                const nombreOk = tomadorNorm.length > 3 && cNombre.length > 3 &&
-                    (cNombre.includes(tomadorNorm) || tomadorNorm.includes(cNombre));
-                return cifOk || tomOk || nombreOk;
-            });
-            setFlotasMatch(matches);
-            setUploadedRows(withPlate);
-        } catch (err: unknown) {
-            setParseError((err instanceof Error ? err.message : null) || 'Error al leer el archivo');
-        }
-    };
-
-    // ── Silverdat query ────────────────────────────────────────────────────────
-    const querySilverdat = async (mat: string): Promise<{ vehicle?: SilverdatVehicle; noSession?: boolean; fromCache?: boolean }> => {
-        const ctrl = new AbortController();
-        const poll = setInterval(() => { if (abortRef.current) ctrl.abort(); }, 200);
-        try {
-            const res = await fetch('/api/silverdat/enrich', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    matriculas: [mat],
-                    carpeta_id:     carpetaActiva?.id     ?? '',
-                    carpeta_nombre: carpetaActiva?.nombre ?? '',
-                    corredor_id:    carpetaActiva?.corredor_id ?? '',
-                }),
-                signal: ctrl.signal,
-            });
-            if (res.status === 401) return { noSession: true };
-            const data = await res.json();
-            if (data.ok && data.results?.[0]?.ok && data.results[0].vehicle) {
-                return { vehicle: data.results[0].vehicle as SilverdatVehicle, fromCache: !!data.results[0].fromCache };
-            }
-            return {};
-        } catch { return {}; }
-        finally { clearInterval(poll); }
-    };
-
-    const buildVehicle = (row: Record<string, string>, sd?: SilverdatVehicle, id_veh?: string): ProcessedVehicle => {
-        const matricula = row['matricula'].trim().replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-        const tipoRaw = sd?.tipo_vehiculo || row['tipo_vehiculo'] || inferTipoFromMat(matricula);
-        const tipo = normalizeTipoVehiculo(tipoRaw) || '';
-        const sinLunas = NO_LUNAS.has(tipo.toLowerCase());
-        const anioPlantilla = /(19|20)\d{2}/.test(row['anyo_fabricacion'] || '');
-        return {
-            matricula,
-            marca: sd?.marca || row['marca'] || '',
-            modelo: sd?.modelo || row['modelo'] || '',
-            tipo_vehiculo: tipo,
-            kw: sd?.kw || parseFloat(row['kw'] || '0') || 0,
-            cv: sd?.cv || parseFloat(row['cv'] || '0') || 0,
-            combustible: sd?.combustible || '',
-            fecha_matriculacion: sd?.fecha_matriculacion || '',
-            // Año: primero el de la plantilla del corredor; si no lo trae, el de Silverdat (con su origen)
-            anyo_fabricacion: anioPlantilla ? row['anyo_fabricacion'] : (sd?.anyo_fabricacion || ''),
-            anyo_fab_fuente: anioPlantilla ? 'fabricacion' : (sd?.anyo_fabricacion ? (sd.anyo_fab_fuente || 'fabricacion') : ''),
-            cif_nif: row['cif_nif'] || '',
-            tomador: row['tomador'] || '',
-            fecha_vencimiento: row['fecha_vencimiento'] || '',
-            cia_actual: row['cia_actual'] || '',
-            num_poliza_actual: row['num_poliza_actual'] || row['n_poliza_actual'] || '',
-            uso: row['uso'] || 'Particular',
-            adr: row['adr'] || 'No',
-            ambito: row['ambito'] || row['ámbito'] || 'Nacional',
-            coberturas_solicitadas: row['coberturas_solicitadas'] || '',
-            lunas: sinLunas ? 'No' : (row['lunas'] || 'No'),
-            frq: row['frq'] || '',
-            asistencia: row['asistencia'] || 'no',
-            prima_referencia: row['prima_referencia'] || row['prima referencia'] || '',
-            vin: sd?.vin || '',
-            etiqueta_dgt: sd?.etiqueta_dgt || '',
-            euro: sd?.euro || '',
-            co2: sd?.co2 != null ? String(sd.co2) : '',
-            precio_nuevo: sd?.precio_nuevo || 0,
-            valor_venta: sd?.valor_venta || 0,
-            id_veh,
-            sd_ok: !!sd,
-        };
-    };
-
-    const runProcess = async (rows: Record<string, string>[], mergeWith?: ProcessedVehicle[]) => {
-        abortRef.current = false;
-        setSdError('');
-        setSdFinished(false);
-
-        // Dedup: same plate only queried once even if duplicated in input
-        const seenMats = new Set<string>();
-        const uniqueRows = rows.filter(r => {
-            const mat = r['matricula']?.trim().replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-            if (!mat || seenMats.has(mat)) return false;
-            seenMats.add(mat);
-            return true;
-        });
-
-        const processed: ProcessedVehicle[] = mergeWith ? [...mergeWith] : [];
-        const mergeMap = new Map(processed.map(v => [v.matricula, v]));
-        let done = 0;
-        setProgress({ current: 0, total: uniqueRows.length, log: [] });
-
-        const processOne = async (row: Record<string, string>) => {
-            if (abortRef.current) return;
-            const matricula = row['matricula'].trim().replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-            let id_veh: string | undefined;
-
-            const result = await querySilverdat(matricula);
-            if (result.noSession) { setSdError('Sesión Silverdat expirada. Reinicia y vuelve a hacer login.'); abortRef.current = true; return; }
-            const sd: SilverdatVehicle | undefined = result.vehicle;
-            if (result.fromCache) setCacheCount(n => n + 1);
-            if (abortRef.current) return;
-
-            try {
-                const rowMarca = row['marca'] || '';
-                const rowModelo = row['modelo'] || '';
-                const body: Record<string, string | number> = {};
-                if (sd?.marca)      body.marca      = sd.marca;
-                else if (rowMarca)  body.rawText    = [rowMarca, rowModelo].filter(Boolean).join(' ');
-                if (sd?.modelo)     body.modelo     = sd.modelo;
-                if (sd?.kw)         body.kw         = sd.kw;
-                if (sd?.cilindrada) body.cilindrada = sd.cilindrada;
-                if (Object.keys(body).length > 0) {
-                    const catData = await (await fetch('/api/catalogo/search', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(body),
-                    })).json();
-                    const lista = catData.candidates ?? catData.candidatos ?? [];
-                    if (lista.length > 0) id_veh = lista[0].id_veh;
-                }
-            } catch { /* catálogo opcional */ }
-
-            const vehicle = buildVehicle(row, sd, id_veh);
-            mergeMap.set(matricula, vehicle);
-            done++;
-            setProgress(p => ({ current: done, total: uniqueRows.length, log: [...p.log, { plate: matricula, ok: !!sd, marca: sd?.marca, modelo: sd?.modelo?.split(' ')[0], fromCache: !!result.fromCache }] }));
-        };
-
-        // 3 workers en paralelo — cola compartida
-        let queueIdx = 0;
-        const worker = async () => {
-            while (!abortRef.current) {
-                const myIdx = queueIdx++;
-                if (myIdx >= uniqueRows.length) break;
-                await processOne(uniqueRows[myIdx]);
-                if (!abortRef.current && myIdx < uniqueRows.length - 1)
-                    await new Promise(r => setTimeout(r, 200));
-            }
-        };
-        await Promise.all([worker(), worker(), worker()]);
-
-        if (!abortRef.current) {
-            const all = Array.from(mergeMap.values());
-            allProcessedRef.current = all;
-            failedRowsRef.current = uniqueRows.filter(r => {
-                const mat = r['matricula'].trim().replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-                return !mergeMap.get(mat)?.sd_ok;
-            });
-            setSdFinished(true);
-        }
-    };
-
-    const checkAndRun = async (rows: Record<string, string>[]) => {
-        try {
-            const sessionData = await (await fetch('/api/silverdat/login')).json();
-            if (!sessionData.hasSession) { setShowSdModal(true); return; }
-        } catch { setShowSdModal(true); return; }
-        setPhase('processing');
-        runProcess(rows);
-    };
-
-    const handleProcesar = () => {
-        if (!uploadedRows) return;
-        if (detectedHeaderRef.current && Object.keys(detectedHeaderRef.current).length > 0) {
-            onHeaderUpdate?.(detectedHeaderRef.current);
-        }
-        if (mode === 'sin') {
-            const vehicles = rowsToVehicles(uploadedRows);
-            setProcessedVehicles(vehicles);
-            onVehiclesProcessed?.(vehicles);
-            setPhase('confirm');
-        } else {
-            checkAndRun(uploadedRows.filter(r => r['matricula']?.trim()));
-        }
-    };
-
-    const handleRetry = async () => {
-        const failed = failedRowsRef.current;
-        if (!failed.length) return;
-        setSdFinished(false);
-        try {
-            const sessionData = await (await fetch('/api/silverdat/login')).json();
-            if (!sessionData.hasSession) { setShowSdModal(true); return; }
-        } catch { setShowSdModal(true); return; }
-        runProcess(failed, allProcessedRef.current);
-    };
-
-    const handleConfirmProcessed = () => {
-        const all = allProcessedRef.current;
-        setProcessedVehicles(all);
-        onVehiclesProcessed?.(all);
-        setPhase('confirm');
-    };
-
-    // ── Derived ────────────────────────────────────────────────────────────────
-    const pct = progress.total > 0 ? Math.round((progress.current / progress.total) * 100) : 0;
-    const failedCount = failedRowsRef.current.length;
-    const okCount = allProcessedRef.current.filter(v => v.sd_ok).length;
-
-    // ── Render ─────────────────────────────────────────────────────────────────
     return (
-        <div className="flex flex-col h-full min-h-0">
-            {showSdModal && (
-                <SilverdatModal
-                    onClose={() => setShowSdModal(false)}
-                    onSuccess={() => {
-                        setShowSdModal(false);
-                        if (uploadedRows) {
-                            setPhase('processing');
-                            runProcess(uploadedRows.filter(r => r['matricula']?.trim()));
-                        }
-                    }}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '0 8px' }} className="custom-scrollbar">
+            {/* Breadcrumb steps */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '20px 0 0', marginBottom: 8 }}>
+                {[1, 2, 3].map((s, i) => (
+                    <React.Fragment key={s}>
+                        <div style={{
+                            width: 28, height: 28, borderRadius: '50%',
+                            background: step === s ? 'var(--t-blue)' : step > s ? 'rgba(81,184,138,0.15)' : 'var(--t-line-soft)',
+                            border: step === s ? 'none' : step > s ? '1px solid rgba(81,184,138,0.4)' : '1px solid var(--t-line)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: 11, fontWeight: 800,
+                            color: step === s ? '#fff' : step > s ? 'var(--t-green)' : 'var(--t-text-3)',
+                        }}>
+                            {step > s ? '✓' : s}
+                        </div>
+                        {i < 2 && (
+                            <div style={{
+                                width: 40, height: 1, borderRadius: 1,
+                                background: step > s ? 'rgba(81,184,138,0.4)' : 'var(--t-line)',
+                            }} />
+                        )}
+                    </React.Fragment>
+                ))}
+            </div>
+
+            {step === 1 && (
+                <Step1
+                    header={header}
+                    carpetaActiva={carpetaActiva}
+                    onNext={handleStep1Done}
                 />
             )}
-
-            {/* ── Cabecera ── */}
-            <div className="sh" style={{ flexShrink: 0 }}>
-                <div>
-                    <h2><b>02 ·</b>Automático</h2>
-                    <p>Camino rápido: de la plantilla a una oferta en un solo paso.</p>
-                </div>
-                <div className="acts">
-                    {phase === 'input' && uploadedRows && <span className="muted">{uploadedRows.length} vehículos cargados</span>}
-                    {phase === 'processing' && <span className="muted">{progress.current}/{progress.total}</span>}
-                    {phase !== 'confirm' && (
-                        <button className="mini" onClick={handleDownload} disabled={downloadLoading}>
-                            {downloadLoading ? 'Generando…' : 'Descargar plantilla'}
-                        </button>
-                    )}
-                </div>
-            </div>
-
-            <div className="stepscroll custom-scrollbar">
-                {phase === 'confirm' ? (
-                    <Step3
-                        vehicles={processedVehicles}
-                        onComplete={onComplete}
-                        onBack={() => setPhase('input')}
-                        polizaMap={polizaMap}
-                    />
-                ) : (
-                    <>
-                        {/* Aviso flota ya registrada */}
-                        {flotasMatch.length > 0 && (
-                            <div className="notice">
-                                <div className="rowline">
-                                    <div style={{ flex: 1 }}>
-                                        <b className="ttl">Esta flota ya está registrada</b>
-                                        {flotasMatch.map(c => (
-                                            <div key={c.id} className="rowline sm">
-                                                <span className="strong">{c.nombre}</span>
-                                                {c.header.tomador && <span className="muted">{c.header.tomador}</span>}
-                                                <EstadoBadge estado={c.estado} small />
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <button className="mini" onClick={() => setFlotasMatch([])}>Cerrar</button>
-                                </div>
-                            </div>
-                        )}
-
-                        <div className="tri">
-
-                            {/* 1 · Descargar */}
-                            <div>
-                                <span className="no">PASO 1 DE 3</span>
-                                <h3>Plantilla de vehículos</h3>
-                                <p>Descarga, cumplimenta e importa el Excel del estudio. El formato se mantiene sin cambios.</p>
-                                <button className="mini" onClick={handleDownload} disabled={downloadLoading}>
-                                    {downloadLoading ? 'Generando…' : 'Descargar plantilla'}
-                                </button>
-                            </div>
-
-                            {/* 2 · Subir */}
-                            <div>
-                                <span className="no">PASO 2 DE 3</span>
-                                <h3>Subir plantilla rellenada</h3>
-                                <p>Arrastra el archivo o selecciónalo desde tu equipo.</p>
-                                <div
-                                    className={`drop${uploadedRows ? ' ok' : ''}`}
-                                    role="button" tabIndex={0}
-                                    onClick={() => fileInputRef.current?.click()}
-                                    onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') fileInputRef.current?.click(); }}
-                                    onDragOver={e => e.preventDefault()}
-                                    onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
-                                >
-                                    {uploadedRows ? `${uploadedRows.length} vehículos cargados` : 'Suelta el archivo .xlsx aquí'}
-                                    <input ref={fileInputRef} type="file" accept=".xlsx,.xls" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = ''; }} />
-                                </div>
-                                <div className="rowline" style={{ marginTop: 12 }}>
-                                    <button className="mini" onClick={() => fileInputRef.current?.click()}>Seleccionar archivo</button>
-                                </div>
-                                {parseError && <p className="warnTxt">{parseError}</p>}
-                                {uploadedRows && duplicadas.length > 0 && (
-                                    <div className="notice" style={{ marginTop: 14 }}>
-                                        <div className="rowline">
-                                            <b className="ttl">{duplicadas.length} matrículas duplicadas</b>
-                                            <button
-                                                className="mini"
-                                                onClick={() => {
-                                                    const firstSeen = new Set<string>();
-                                                    setUploadedRows(uploadedRows!.filter(r => {
-                                                        const mat = r['matricula']?.trim().replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-                                                        if (!mat) return true;
-                                                        if (firstSeen.has(mat)) return false;
-                                                        firstSeen.add(mat); return true;
-                                                    }));
-                                                }}
-                                            >Eliminar duplicadas</button>
-                                        </div>
-                                        <div className="plates">
-                                            {duplicadas.slice(0, 4).map(m => <span key={m}>{m} ×{seenCounts.get(m)}</span>)}
-                                            {duplicadas.length > 4 && <span className="muted">+{duplicadas.length - 4}</span>}
-                                        </div>
-                                    </div>
-                                )}
-                                {uploadedRows && (
-                                    <div className="plates">
-                                        {uploadedRows.slice(0, 6).map((r, i) => <span key={i}>{r['matricula']}</span>)}
-                                        {uploadedRows.length > 6 && <span className="muted">+{uploadedRows.length - 6} más</span>}
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* 3 · Procesar */}
-                            <div>
-                                {phase === 'input' ? (
-                                    <>
-                                        <span className="no">PASO 3 DE 3</span>
-                                        <h3>Modo de procesado</h3>
-                                        <div className="modes">
-                                            {(['sin', 'con'] as const).map(m => (
-                                                <button key={m} role="radio" aria-checked={mode === m} className={`mode${m === 'con' ? ' sd' : ''}`} onClick={() => setMode(m)}>
-                                                    <b>{m === 'con' ? 'Con Silverdat' : 'Solo plantilla'}</b>
-                                                    <span>{m === 'con' ? 'Completa cada vehículo con los datos técnicos de DAT. Es un servicio externo: hay que conectarlo.' : 'Carga los datos tal cual, sin consultas externas.'}</span>
-                                                </button>
-                                            ))}
-                                        </div>
-                                        <div className="rowline" style={{ marginTop: 14 }}>
-                                            <button className="mini pri" onClick={handleProcesar} disabled={!uploadedRows}>
-                                                {mode === 'sin' ? 'Cargar vehículos' : 'Procesar con Silverdat'}
-                                            </button>
-                                        </div>
-                                    </>
-                                ) : (
-                                    <>
-                                        <span className="no">PASO 3 DE 3 · PROCESANDO</span>
-                                        <h3>Silverdat</h3>
-                                        <p>{progress.total} vehículos</p>
-                                        <div className="rowline between"><b>{pct} %</b><span className="muted">{progress.current}/{progress.total}</span></div>
-                                        <div className="pbar"><i style={{ width: `${pct}%` }} /></div>
-                                        <div className="sdlog">
-                                            {progress.log.slice(-10).map((entry, i) => (
-                                                <div key={i} className={entry.ok ? '' : 'bad'}>
-                                                    <span className="pl">{entry.plate}</span>
-                                                    <span className="muted">{entry.ok ? (entry.marca ?? '') : 'sin datos'}</span>
-                                                    {entry.ok && entry.fromCache && <span className="muted">histórico</span>}
-                                                </div>
-                                            ))}
-                                        </div>
-                                        {sdError && <p className="warnTxt">{sdError}</p>}
-                                        {!sdFinished ? (
-                                            <button className="mini" onClick={() => { abortRef.current = true; }}>Detener</button>
-                                        ) : (
-                                            <>
-                                                <div className="stat3 mini3">
-                                                    <button style={{ cursor: 'default' }}><label>Con datos</label><strong>{okCount}</strong></button>
-                                                    {cacheCount > 0 && <button style={{ cursor: 'default' }}><label>Caché</label><strong>{cacheCount}</strong></button>}
-                                                    <button style={{ cursor: 'default' }}><label>Sin datos</label><strong>{failedCount}</strong></button>
-                                                </div>
-                                                <div className="rowline wrap">
-                                                    {failedCount > 0 && <button className="mini" onClick={handleRetry}>Segunda barrida ({failedCount})</button>}
-                                                    <button className="mini" onClick={() => window.open('/api/silverdat/historial-txt', '_blank')}>Historial TXT</button>
-                                                    <button className="mini pri" onClick={handleConfirmProcessed}>Confirmar y continuar</button>
-                                                </div>
-                                            </>
-                                        )}
-                                    </>
-                                )}
-                            </div>
-
-                        </div>
-                    </>
-                )}
-            </div>
+            {step === 2 && (
+                <Step2
+                    uploadedRows={uploadedRows}
+                    carpetaActiva={carpetaActiva}
+                    onComplete={handleStep2Done}
+                />
+            )}
+            {step === 3 && (
+                <Step3
+                    vehicles={processedVehicles}
+                    onComplete={handleStep3Done}
+                    onBack={() => setStep(1)}
+                    polizaMap={polizaMap}
+                />
+            )}
         </div>
     );
 }

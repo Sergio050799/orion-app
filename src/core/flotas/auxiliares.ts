@@ -1,7 +1,6 @@
 // ─── FUNCIONES AUXILIARES — para dropdowns de Tom ────────────────────────────
 
 import { TipoVehiculo, Producto, VEH_META } from './primas';
-import { FRANQUICIAS_CAT1, FRANQUICIAS_CAT2 } from './catalogoCoberturas';
 
 /** Devuelve la categoría del vehículo (1 o 2). */
 export function getCategoria(tipoVehiculo: TipoVehiculo): 1 | 2 {
@@ -17,8 +16,8 @@ export function puedeCargarLunas(tipoVehiculo: TipoVehiculo): boolean {
 export function franquiciasValidas(tipoVehiculo: TipoVehiculo): number[] {
     if (tipoVehiculo === 'industrial_matriculado' || tipoVehiculo === 'industrial_no_matriculado') return [];
     const { categoria } = VEH_META[tipoVehiculo];
-    if (categoria === 1) return [...FRANQUICIAS_CAT1];
-    return [...FRANQUICIAS_CAT2];
+    if (categoria === 1) return [120, 180, 240, 300, 450, 600, 750];
+    return [1800];
 }
 
 /**

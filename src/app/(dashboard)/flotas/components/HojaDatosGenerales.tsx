@@ -345,7 +345,7 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
     const updated: FlotaCarpeta = {
       ...carpetaActiva,
       corredor_id: corredor_id || undefined,
-      comisionBase: carpetaActiva.comisionBase ?? corredor?.comisionBase,
+      porcentajeComision: carpetaActiva.porcentajeComision ?? corredor?.porcentajeComision,
     };
     guardarCarpeta(updated);
     onCarpetaChange(updated);
@@ -354,204 +354,249 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
   const handleComisionChange = (val: string) => {
     const updated: FlotaCarpeta = {
       ...carpetaActiva,
-      comisionBase: parseFloat(val) || 0,
+      porcentajeComision: parseFloat(val) || 0,
     };
     guardarCarpeta(updated);
     onCarpetaChange(updated);
   };
 
   const venceProximo = proximaRenovacion(header.fechaVencimiento);
-  const corrActual = corredores.find(c => c.id === carpetaActiva.corredor_id) ?? null;
-
-  // Comision base vs corredor
-  const cmBaseOrig = corrActual?.comisionBase ?? 0;
-  const cmBase = carpetaActiva.comisionBase;
-  const cmBaseWarn = cmBase != null && cmBase !== cmBaseOrig
-    ? `Distinta a la del corredor (base ${cmBaseOrig} %)` : '';
-  const cmExtra = carpetaActiva.comisionExtra;
-
-  // Próxima renovación y vencimiento ORION
-  const efDate = parseFechaHoja(header.fechaVencimiento);
-  const renovDias = efDate ? Math.round((efDate.getTime() - Date.now()) / 86400000) : null;
-  const renovTxt = renovDias == null ? '—'
-    : renovDias < 0 ? 'Vencida'
-    : renovDias === 0 ? 'Hoy'
-    : renovDias === 1 ? 'En 1 día'
-    : `En ${renovDias} días`;
-  const vencOrion = efDate
-    ? new Date(efDate.getFullYear() + 1, efDate.getMonth(), efDate.getDate()).toLocaleDateString('es-ES')
-    : '—';
+  const { results: historial, loading: histLoading } = useHistorial(header.cif ?? '', header.tomador ?? '');
 
   // Silence unused-variable lint for preserved state
   void tarifaToast; void datosToast;
 
-  const fldNum = (v: number | undefined, onChange: (n: number) => void, placeholder: string) => (
-    <input
-      inputMode="decimal"
-      className="dg-inp"
-      value={v ?? ''}
-      onChange={e => { const n = parseFloat(e.target.value); onChange(isNaN(n) ? 0 : n); }}
-      placeholder={placeholder}
-    />
-  );
-
   return (
-    <div className="dg-scroll">
-      {/* Hidden file inputs — logic preserved, not exposed in UI */}
+    <div style={{ flex: 1, overflowY: 'auto', padding: '24px 32px' }} className="custom-scrollbar">
+      {/* Hidden file inputs — logic preserved, not exposed in UI per T02 */}
       <input ref={datosFileRef}  type="file" accept=".xlsx,.xls,.csv" style={{ display: 'none' }} onChange={handleImportDatos} />
       <input ref={tarifaFileRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: 'none' }} onChange={handleImportTarifa} />
 
-      <div className="sh">
-        <div>
-          <h2><b>01 ·</b>Datos generales</h2>
-          <p>Quién es la flota, quién la media y cuándo vence.</p>
-        </div>
-      </div>
+      <div style={{ maxWidth: 1060, margin: '0 auto' }}>
 
-      <div className="twocol">
-
-        {/* ══ Columna izquierda ══════════════════════════════════════════════ */}
-        <section>
-
-          {/* Identificación */}
-          <p className="dg-h3">Identificación</p>
-          <p className="dg-sub">Información de la empresa y condiciones de la flota.</p>
-
-          <div className="formgrid">
-            <div className="dg-fld full">
-              <label>Nombre de la flota <span className="req">*</span></label>
-              <input className="dg-inp" value={carpetaActiva.nombre}
-                onChange={e => { const u = { ...carpetaActiva, nombre: e.target.value }; guardarCarpeta(u); onCarpetaChange(u); }}
-                placeholder="Nombre de la empresa, ej. FRILESA S.L." />
+        {/* ── 01 / Identificación ────────────────────────────────────────────── */}
+        <section style={sectionStyle}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 20 }}>
+            <h3 style={{ fontSize: 16, margin: 0, letterSpacing: '-0.01em', color: 'var(--t-text)', fontWeight: 700 }}>Identificación</h3>
+            <p style={{ fontSize: 12, color: 'var(--t-muted)', margin: '0 0 0 auto' }}>Información de la empresa y del tomador</p>
+          </div>
+          <div style={gridStyle}>
+            {/* Nombre de la flota — wide */}
+            <div style={{ gridColumn: 'span 12' }}>
+              <label style={fieldLabel}>Nombre de la flota</label>
+              <input
+                style={fieldInput}
+                value={carpetaActiva.nombre}
+                onChange={e => {
+                  const updated = { ...carpetaActiva, nombre: e.target.value };
+                  guardarCarpeta(updated);
+                  onCarpetaChange(updated);
+                }}
+                placeholder="Nombre de la flota"
+                onFocus={e => (e.currentTarget.style.borderColor = 'var(--t-blue)')}
+                onBlur={e => (e.currentTarget.style.borderColor = 'var(--t-line)')}
+              />
             </div>
-            <div className="dg-fld">
-              <label>CIF empresa</label>
-              <input className="dg-inp" value={header.cif ?? ''} onChange={e => set('cif', e.target.value)} placeholder="Ej. A12345678" />
+            {/* CIF empresa */}
+            <div style={{ gridColumn: 'span 4' }}>
+              <label style={fieldLabel}>CIF empresa</label>
+              <input
+                style={fieldInput}
+                value={header.cif ?? ''}
+                onChange={e => set('cif', e.target.value)}
+                placeholder="Ej. A12345678"
+                onFocus={e => (e.currentTarget.style.borderColor = 'var(--t-blue)')}
+                onBlur={e => (e.currentTarget.style.borderColor = 'var(--t-line)')}
+              />
             </div>
-            <div className="dg-fld">
-              <label>Compañía actual</label>
-              <input className="dg-inp" value={header.ciaActual ?? ''} onChange={e => set('ciaActual', e.target.value)} placeholder="Aseguradora actual" />
+            {/* Tomador */}
+            <div style={{ gridColumn: 'span 4' }}>
+              <label style={fieldLabel}>Tomador</label>
+              <input
+                style={fieldInput}
+                value={header.tomador ?? ''}
+                onChange={e => set('tomador', e.target.value)}
+                placeholder="Nombre o razón social"
+                onFocus={e => (e.currentTarget.style.borderColor = 'var(--t-blue)')}
+                onBlur={e => (e.currentTarget.style.borderColor = 'var(--t-line)')}
+              />
             </div>
-            <div className="dg-fld full">
-              <label>Actividad</label>
-              <select className="select dg-sel" value={header.actividad ?? ''} onChange={e => set('actividad', e.target.value)}>
-                <option value="">Sin actividad</option>
-                <option value="Transporte de mercancías">Transporte de mercancías</option>
-                <option value="Transporte de viajeros">Transporte de viajeros</option>
-                <option value="Construcción">Construcción</option>
-                <option value="Distribución">Distribución</option>
-                <option value="Servicios">Servicios</option>
-              </select>
+            {/* CIF tomador */}
+            <div style={{ gridColumn: 'span 4' }}>
+              <label style={fieldLabel}>CIF tomador</label>
+              <input
+                style={fieldInput}
+                value={header.cifTomador ?? ''}
+                onChange={e => set('cifTomador', e.target.value)}
+                placeholder="Ej. B12345678"
+                onFocus={e => (e.currentTarget.style.borderColor = 'var(--t-blue)')}
+                onBlur={e => (e.currentTarget.style.borderColor = 'var(--t-line)')}
+              />
             </div>
-            <div className="dg-fld">
-              <label>Periodicidad</label>
-              <select className="select dg-sel" value={header.periodicidad ?? ''} onChange={e => set('periodicidad', e.target.value)}>
-                <option value="">Sin periodicidad</option>
-                <option value="mensual">Mensual</option>
-                <option value="bimestral">Bimestral</option>
-                <option value="trimestral">Trimestral</option>
-                <option value="semestral">Semestral</option>
-                <option value="anual">Anual</option>
-              </select>
-            </div>
-            <div className="dg-fld">
-              <label>Forma de pago</label>
-              <select className="select dg-sel" value={header.formaPago ?? ''} onChange={e => set('formaPago', e.target.value)}>
-                <option value="">Sin especificar</option>
-                <option value="Interna">Interna</option>
-                <option value="Externa">Externa</option>
-              </select>
-              {header.formaPago === 'Externa' && (
-                <span className="hint">Externa: el corredor cobra al cliente y nos paga a nosotros.</span>
-              )}
-              {header.formaPago === 'Interna' && (
-                <span className="hint">Interna: cobramos nosotros directamente al cliente.</span>
-              )}
+            {/* Actividad — wide */}
+            <div style={{ gridColumn: 'span 12' }}>
+              <label style={fieldLabel}>Actividad</label>
+              <input
+                style={fieldInput}
+                value={header.actividad ?? ''}
+                onChange={e => set('actividad', e.target.value)}
+                placeholder="Ej. Transporte de mercancías"
+                onFocus={e => (e.currentTarget.style.borderColor = 'var(--t-blue)')}
+                onBlur={e => (e.currentTarget.style.borderColor = 'var(--t-line)')}
+              />
             </div>
           </div>
-
-          {/* Tomadores */}
-          <p className="dg-h3 sp">Tomadores</p>
-          <p className="dg-sub">El principal aparece en el informe y en la oferta.</p>
-          <div className="formgrid">
-            <div className="dg-fld">
-              <label>Tomador principal</label>
-              <input className="dg-inp" value={header.tomador ?? ''} onChange={e => set('tomador', e.target.value)} placeholder="Nombre o razón social" />
-            </div>
-            <div className="dg-fld">
-              <label>CIF tomador</label>
-              <input className="dg-inp" value={header.cifTomador ?? ''} onChange={e => set('cifTomador', e.target.value)} placeholder="Ej. B12345678" />
-            </div>
-          </div>
-
         </section>
 
-        {/* ══ Columna derecha ════════════════════════════════════════════════ */}
-        <section>
+        {/* ── Historial previo (condicional) ─────────────────────────────────── */}
+        {(histLoading || historial.length > 0) && (
+          <section style={sectionStyle}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 14 }}>
+              <span style={{ fontSize: 12, color: 'rgba(245,158,11,0.7)', fontWeight: 700 }}>
+                {histLoading ? 'Buscando en historial…' : `Historial previo · ${historial.length} resultado${historial.length !== 1 ? 's' : ''}`}
+              </span>
+            </div>
+            {!histLoading && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {historial.map(h => {
+                  const cfg = ESTADO_COLOR[h.estado] ?? ESTADO_COLOR['EN ESTUDIO'];
+                  return (
+                    <div key={h.id} style={{
+                      display: 'flex', alignItems: 'center', gap: 12,
+                      padding: '10px 14px', borderRadius: 8,
+                      background: 'var(--t-surface)', border: `1px solid ${cfg.border}`,
+                    }}>
+                      <span style={{
+                        fontSize: 9, fontWeight: 900, padding: '2px 8px', borderRadius: 4,
+                        background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}`,
+                        textTransform: 'uppercase', letterSpacing: '0.07em', flexShrink: 0,
+                      }}>
+                        {h.estado}
+                      </span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--t-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{h.nombre}</div>
+                        <div style={{ fontSize: 11, color: 'var(--t-muted)', marginTop: 2, display: 'flex', gap: 8 }}>
+                          {h.cif && <span style={{ fontFamily: 'monospace' }}>{h.cif}</span>}
+                          {h.corredor_nombre && <span>Corredor: {h.corredor_nombre}</span>}
+                        </div>
+                      </div>
+                      <a href="/emission" target="_blank" style={{
+                        fontSize: 10, fontWeight: 700, padding: '5px 10px', borderRadius: 5,
+                        background: 'transparent', color: 'var(--t-blue)',
+                        border: '1px solid var(--t-line)', textDecoration: 'none', flexShrink: 0,
+                      }}>
+                        Ver ficha
+                      </a>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        )}
 
-          {/* Corredor vinculado */}
-          <p className="dg-h3">Corredor vinculado</p>
-          <p className="dg-sub">Datos de mediación del expediente.</p>
-
-          <div className="dg-fld">
-            <label>Corredor</label>
-            <select className="select dg-sel" value={carpetaActiva.corredor_id ?? ''} onChange={e => handleCorredorChange(e.target.value)}>
-              <option value="">Sin corredor</option>
-              {corredores.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
-            </select>
+        {/* ── 02 / Corredor vinculado ────────────────────────────────────────── */}
+        <section style={sectionStyle}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 20 }}>
+            <h3 style={{ fontSize: 16, margin: 0, letterSpacing: '-0.01em', color: 'var(--t-text)', fontWeight: 700 }}>Corredor vinculado</h3>
+            <p style={{ fontSize: 12, color: 'var(--t-muted)', margin: '0 0 0 auto' }}>Datos de mediación del expediente</p>
           </div>
-
-          {corrActual && (
-            <div className="dg-kv">
-              <div className="krow"><label>Sucursal</label>     <span className={`val${corrActual.sucursal ? '' : ' em'}`}>{corrActual.sucursal ?? 'Sin sucursal'}</span></div>
-              <div className="krow"><label>Comercial</label>    <span className={`val${corrActual.comercial ? '' : ' em'}`}>{corrActual.comercial ?? 'Sin comercial'}</span></div>
-              <div className="krow"><label>Comisión base</label><span className="val">{corrActual.comisionBase} %{corrActual.comisionExtra ? ` + ${corrActual.comisionExtra} % extra` : ''}</span></div>
-              <div className="krow"><label>Periodicidad</label> <span className={`val${corrActual.periodicidad ? '' : ' em'}`}>{corrActual.periodicidad ?? '—'}</span></div>
+          <div style={gridStyle}>
+            {/* Corredor — two-thirds (8/12) */}
+            <div style={{ gridColumn: 'span 8' }}>
+              <label style={fieldLabel}>Corredor</label>
+              <select
+                style={{ ...fieldInput, cursor: 'pointer' }}
+                value={carpetaActiva.corredor_id ?? ''}
+                onChange={e => handleCorredorChange(e.target.value)}
+                onFocus={e => (e.currentTarget.style.borderColor = 'var(--t-blue)')}
+                onBlur={e => (e.currentTarget.style.borderColor = 'var(--t-line)')}
+              >
+                <option value="">Sin corredor</option>
+                {corredores.map(c => (
+                  <option key={c.id} value={c.id}>{c.nombre} · {c.porcentajeComision}%</option>
+                ))}
+              </select>
+              <small style={{ display: 'block', color: 'var(--t-muted)', fontSize: 11, marginTop: 7, lineHeight: 1.4 }}>
+                El listado procede del catálogo real de corredores.
+              </small>
             </div>
-          )}
-
-          <div className="pct2">
-            <div className="dg-fld">
-              <label>Comisión base %</label>
-              {fldNum(cmBase, n => { const u = { ...carpetaActiva, comisionBase: n }; guardarCarpeta(u); onCarpetaChange(u); }, `${cmBaseOrig} (corredor)`)}
-              {cmBaseWarn && <span className="warn">{cmBaseWarn}</span>}
+            {/* % Comisión — third (4/12) */}
+            <div style={{ gridColumn: 'span 4' }}>
+              <label style={fieldLabel}>
+                % Comisión flota
+                {(() => {
+                  const corredor = corredores.find(c => c.id === carpetaActiva.corredor_id);
+                  if (corredor && carpetaActiva.porcentajeComision != null && carpetaActiva.porcentajeComision !== corredor.porcentajeComision) {
+                    return <span style={{ marginLeft: 6, fontSize: 9, color: '#F59E0B', fontWeight: 600 }}>diferente al corredor ({corredor.porcentajeComision}%)</span>;
+                  }
+                  return null;
+                })()}
+              </label>
+              <input
+                inputMode="decimal"
+                style={fieldInput}
+                value={carpetaActiva.porcentajeComision ?? ''}
+                onChange={e => { const v = e.target.value; if (v === '' || /^\d*\.?\d*$/.test(v)) handleComisionChange(v); }}
+                placeholder={(() => {
+                  const c = corredores.find(x => x.id === carpetaActiva.corredor_id);
+                  return c ? `${c.porcentajeComision}% (corredor)` : '0';
+                })()}
+                onFocus={e => (e.currentTarget.style.borderColor = 'var(--t-blue)')}
+                onBlur={e => (e.currentTarget.style.borderColor = 'var(--t-line)')}
+              />
             </div>
-            <div className="dg-fld">
-              <label>Comisión extra %</label>
-              {fldNum(cmExtra, n => { const u = { ...carpetaActiva, comisionExtra: n }; guardarCarpeta(u); onCarpetaChange(u); }, corrActual?.comisionExtra != null ? String(corrActual.comisionExtra) : '0')}
-              <span className="hint">La extra se cobra si el corredor alcanza los objetivos.</span>
-            </div>
+            {/* Datos de contacto del corredor seleccionado */}
+            {carpetaActiva.corredor_id && (() => {
+              const c = corredores.find(x => x.id === carpetaActiva.corredor_id);
+              if (!c) return null;
+              return (
+                <div style={{ gridColumn: 'span 12' }}>
+                  <p style={{ margin: 0, fontSize: 11, color: 'var(--t-muted)' }}>
+                    {c.email && <span>{c.email}</span>}
+                    {c.email && c.telefono && <span> · </span>}
+                    {c.telefono && <span>{c.telefono}</span>}
+                  </p>
+                </div>
+              );
+            })()}
           </div>
-
-          {/* Fecha de efecto */}
-          <p className="dg-h3 sp">Fecha de efecto</p>
-          <p className="dg-sub">El vencimiento de la póliza actual, que es también el efecto de la nueva.</p>
-
-          <div className="dg-fld narrow">
-            <label>
-              Fecha de efecto
-              {venceProximo && <span className="tag" style={{ marginLeft: 8, '--c': 'var(--warn)' } as React.CSSProperties}>Próxima</span>}
-            </label>
-            <input type="date" className="dg-inp"
-              style={venceProximo ? { borderColor: 'var(--warn)' } : undefined}
-              value={toIsoDate(header.fechaVencimiento)}
-              onChange={e => set('fechaVencimiento', e.target.value)} />
-          </div>
-
-          <div className="dg-kv">
-            <div className="krow">
-              <label>Próxima renovación</label>
-              <span className="val" style={renovDias != null && renovDias <= 15 && renovDias >= 0 ? { color: 'var(--warn)', fontWeight: 600 } : undefined}>{renovTxt}</span>
-            </div>
-            <div className="krow">
-              <label>Vencimiento ORION</label>
-              <span className="val">{vencOrion}</span>
-            </div>
-          </div>
-
-          <p className="dg-note">Los informes muestran esta fecha como vencimiento. Dashboard y Flotas parten de ella para calcular el vencimiento interno de ORION, un año después.</p>
-
         </section>
+
+        {/* ── 03 / Vencimiento de la flota ───────────────────────────────────── */}
+        <section style={{ ...sectionStyle, borderBottom: 'none', marginBottom: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 20 }}>
+            <h3 style={{ fontSize: 16, margin: 0, letterSpacing: '-0.01em', color: 'var(--t-text)', fontWeight: 700 }}>Vencimiento de la flota</h3>
+            <p style={{ fontSize: 12, color: 'var(--t-muted)', margin: '0 0 0 auto' }}>Fecha común para todos los vehículos</p>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 18 }}>
+            <div style={{ width: 320 }}>
+              <label style={{ ...fieldLabel, display: 'flex', alignItems: 'center', gap: 8 }}>
+                Fecha de vencimiento
+                {venceProximo && (
+                  <span style={{
+                    fontSize: 9, fontWeight: 900, padding: '1px 6px', borderRadius: 4,
+                    background: 'rgba(234,179,8,0.15)', border: '1px solid rgba(234,179,8,0.35)',
+                    color: '#f0b94d', textTransform: 'uppercase', letterSpacing: '0.05em',
+                    whiteSpace: 'nowrap',
+                  }}>Próxima renovación</span>
+                )}
+              </label>
+              <input
+                type="date"
+                style={{ ...fieldInput, borderColor: venceProximo ? 'rgba(234,179,8,0.4)' : 'var(--t-line)' }}
+                value={toIsoDate(header.fechaVencimiento)}
+                onChange={e => set('fechaVencimiento', e.target.value)}
+                onFocus={e => (e.currentTarget.style.borderColor = 'var(--t-blue)')}
+                onBlur={e => (e.currentTarget.style.borderColor = venceProximo ? 'rgba(234,179,8,0.4)' : 'var(--t-line)')}
+              />
+            </div>
+            <p style={{ fontSize: 12, color: 'var(--t-muted)', maxWidth: 390, lineHeight: 1.55, marginBottom: 7 }}>
+              Esta fecha es la fuente canónica para Dashboard, Flotas contratadas e Informe.
+            </p>
+          </div>
+        </section>
+
       </div>
     </div>
   );

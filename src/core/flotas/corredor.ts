@@ -9,10 +9,7 @@ export interface Corredor {
   nombre: string;
   cif: string;
   domicilio?: string;
-  comisionBase: number;
-  /** @deprecated alias de comisionBase; usar comisionBase */
-  porcentajeComision?: number;
-  comisionExtra?: number;
+  porcentajeComision: number;
   periodicidad: Periodicidad;
   formaPago: string;
   contacto: string;
@@ -22,7 +19,7 @@ export interface Corredor {
   sucursal?: Sucursal;
   comercial?: string;
   idPerceptor?: string;
-  creado_por?: string;
+  creado_por?: string;   // username de quien lo creó
   creadoEn: string;
   actualizadoEn: string;
 }
@@ -73,7 +70,7 @@ export function listarCorredores(): Corredor[] {
 }
 
 export function crearCorredor(
-  datos: Omit<Corredor, 'id' | 'codigo' | 'creadoEn' | 'actualizadoEn'> & { codigo?: string; comisionExtra?: number }
+  datos: Omit<Corredor, 'id' | 'codigo' | 'creadoEn' | 'actualizadoEn'> & { codigo?: string }
 ): Corredor {
   const now = new Date().toISOString();
   const all = loadAll();
