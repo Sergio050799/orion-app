@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { DetailDrawer } from '@/components/saas/DetailDrawer';
+import { nf } from '@/lib/fmt';
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -17,7 +19,6 @@ interface Versiones {
 
 interface SectionProps {
   title: string;
-  icon: string;
   accept: string;
   file: File | null;
   inputRef: React.RefObject<HTMLInputElement | null>;
@@ -31,72 +32,48 @@ interface SectionProps {
 
 // ─── Section ──────────────────────────────────────────────────────────────────
 
-function Section({ title, icon, accept, file, inputRef, status, onFileChange, onUpload, versions, loadingVersiones, seedWarning }: SectionProps) {
+function Section({ title, accept, file, inputRef, status, onFileChange, onUpload, versions, loadingVersiones, seedWarning }: SectionProps) {
+  const busy = status.type === 'uploading';
   return (
-    <div className="glass-card rounded-2xl p-5 mb-4">
-      <p className="text-[11px] font-black uppercase tracking-widest mb-3" style={{ color: 'rgba(178,198,245,0.78)' }}>
-        {icon} {title}
-      </p>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-        <button
-          onClick={() => inputRef.current?.click()}
-          style={{ fontSize: 11, fontWeight: 700, padding: '6px 12px', borderRadius: 8, color: '#3366FF', background: 'rgba(18,64,204,0.1)', border: '1px solid rgba(18,64,204,0.25)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-          {file ? file.name : `Seleccionar ${accept.toUpperCase()}`}
+    <>
+      <h4>{title}</h4>
+      <div className="dacts" style={{ marginTop: 0 }}>
+        <button className="mini" onClick={() => inputRef.current?.click()}>
+          {file ? file.name : `Seleccionar ${accept}`}
         </button>
         <input ref={inputRef} type="file" accept={accept} style={{ display: 'none' }}
           onChange={e => { const f = e.target.files?.[0]; if (f) onFileChange(f); e.target.value = ''; }} />
-        <button
-          onClick={onUpload}
-          disabled={!file || status.type === 'uploading'}
-          style={{
-            fontSize: 11, fontWeight: 800, padding: '6px 16px', borderRadius: 8,
-            color: '#fff', background: (!file || status.type === 'uploading') ? 'rgba(18,64,204,0.3)' : '#1240CC',
-            border: 'none', cursor: (!file || status.type === 'uploading') ? 'not-allowed' : 'pointer',
-          }}>
-          {status.type === 'uploading' ? 'Subiendo...' : 'Subir'}
+        <button className="mini pri" onClick={onUpload} disabled={!file || busy}>
+          {busy ? 'Subiendo…' : 'Subir'}
         </button>
       </div>
       {status.type === 'ok' && (
-        <div style={{ marginBottom: 10, padding: '5px 10px', borderRadius: 6, background: seedWarning ? 'rgba(234,179,8,0.12)' : 'rgba(22,163,74,0.12)', border: `1px solid ${seedWarning ? 'rgba(234,179,8,0.3)' : 'rgba(22,163,74,0.3)'}`, fontSize: 11, fontWeight: 700, color: seedWarning ? '#fbbf24' : '#4ade80' }}>
-          {status.msg}
-        </div>
+        <div className="banner" style={{ ['--c' as string]: seedWarning ? 'var(--warn)' : 'var(--blue)' }}><span>{status.msg}</span></div>
       )}
       {status.type === 'error' && (
-        <div style={{ marginBottom: 10, padding: '5px 10px', borderRadius: 6, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', fontSize: 11, fontWeight: 700, color: '#f87171' }}>
-          {status.msg}
-        </div>
+        <div className="banner" style={{ ['--c' as string]: 'var(--sdoff)' }}><span>{status.msg}</span></div>
       )}
-      {seedWarning && (
-        <p style={{ fontSize: 10, color: 'rgba(178,198,245,0.5)', marginBottom: 10, fontWeight: 600 }}>
-          Activo tras reiniciar el servidor
-        </p>
-      )}
-      <div>
-        <p style={{ fontSize: 10, fontWeight: 800, color: 'rgba(178,198,245,0.42)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>
-          Versiones
-        </p>
-        {loadingVersiones && !versions && (
-          <p style={{ fontSize: 11, color: 'rgba(178,198,245,0.42)' }}>Cargando...</p>
+      {seedWarning && <p className="note" style={{ marginTop: 10 }}>Se activa tras reiniciar el servidor.</p>}
+
+      <div className="scroll" style={{ marginTop: 14 }}>
+        {loadingVersiones && !versions && <p className="note" style={{ marginTop: 0 }}>Cargando versiones…</p>}
+        {versions && versions.length === 0 && <p className="note" style={{ marginTop: 0 }}>Sin versiones registradas.</p>}
+        {versions && versions.length > 0 && (
+          <table className="dtbl">
+            <thead><tr><th>Versión</th><th>{accept === '.csv' ? 'Vehículos' : 'Entradas'}</th><th>Estado</th></tr></thead>
+            <tbody>
+              {versions.map((v, i) => (
+                <tr key={i}>
+                  <td className="nm">{v.fecha}</td>
+                  <td>{nf(v.count)}</td>
+                  <td><span className="tag" style={{ ['--c' as string]: v.activa ? 'var(--blue)' : 'var(--quiet)' }}>{v.activa ? 'Activa' : 'Anterior'}</span></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
-        {versions && versions.length === 0 && (
-          <p style={{ fontSize: 11, color: 'rgba(178,198,245,0.42)' }}>Sin versiones registradas.</p>
-        )}
-        {versions && versions.map((v, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0', borderBottom: i < versions.length - 1 ? '1px solid rgba(61,112,255,0.12)' : 'none' }}>
-            <span style={{ fontSize: 10, color: v.activa ? '#4ade80' : 'rgba(178,198,245,0.5)', fontWeight: 800 }}>{v.activa ? '●' : '○'}</span>
-            <span style={{ fontSize: 11, color: v.activa ? '#BDD4FF' : 'rgba(178,198,245,0.6)', fontWeight: v.activa ? 700 : 500, flex: 1 }}>{v.fecha}</span>
-            <span style={{ fontSize: 10, color: 'rgba(178,198,245,0.55)', fontWeight: 600 }}>
-              {v.count.toLocaleString('es-ES')} {accept === '.csv' ? 'veh.' : 'entradas'}
-            </span>
-            {v.activa && (
-              <span style={{ fontSize: 9, fontWeight: 900, padding: '1px 6px', borderRadius: 4, background: 'rgba(74,222,128,0.15)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                ACTIVA
-              </span>
-            )}
-          </div>
-        ))}
       </div>
-    </div>
+    </>
   );
 }
 
@@ -173,8 +150,8 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
       const data = await res.json();
       if (!res.ok) { setStatus({ type: 'error', msg: data?.error ?? `Error ${res.status}` }); return; }
       const msg = endpoint.includes('catalogo')
-        ? `Activo — ${data.count?.toLocaleString('es-ES') ?? '?'} vehículos cargados`
-        : 'Guardado — Activo tras reiniciar el servidor';
+        ? `Activo: ${data.count != null ? nf(data.count) : '?'} vehículos cargados`
+        : 'Guardado. Se activa tras reiniciar el servidor.';
       setStatus({ type: 'ok', msg });
       fetchVersiones();
     } catch (err: unknown) {
@@ -183,115 +160,52 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <>
-      {/* Overlay */}
-      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 90 }} />
+    <DetailDrawer isOpen onClose={onClose} data={null}>
+      <div className="over">Administración</div>
+      <h3>Base de datos</h3>
+      <p className="desc">Catálogo de vehículos y seed de matrículas. Cada subida crea una versión nueva.</p>
 
-      {/* Panel */}
-      <div style={{
-        position: 'fixed', top: 0, right: 0, bottom: 0, width: 560,
-        background: 'linear-gradient(180deg, rgba(8,22,72,0.95) 0%, rgba(0,7,45,0.98) 100%)',
-        border: '1px solid rgba(61,112,255,0.22)',
-        borderRight: 'none',
-        zIndex: 100,
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden',
-      }}>
-        {/* Header */}
-        <div style={{
-          padding: '16px 24px',
-          borderBottom: '1px solid rgba(61,112,255,0.16)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexShrink: 0,
-        }}>
-          <div>
-            <h2 style={{ margin: 0, fontSize: 14, fontWeight: 800, color: '#FFFFFF', textTransform: 'uppercase', letterSpacing: '0.12em', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ width: 6, height: 16, borderRadius: 3, background: '#1240CC', flexShrink: 0 }} />
-              Configuración — Base de Datos
-            </h2>
-            <p style={{ margin: '2px 0 0', fontSize: 10, color: 'rgba(178,198,245,0.5)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-              Panel de administración
-            </p>
+      {needsAuth && (
+        <form className="form" onSubmit={e => { e.preventDefault(); saveSecret(); }} noValidate>
+          <h4>Clave de administrador</h4>
+          <div className="fld">
+            <label htmlFor="adm_k">Clave</label>
+            <input id="adm_k" type="password" className="inp" value={secretInput} onChange={e => setSecretInput(e.target.value)} placeholder="Introduce la clave de administrador" autoFocus />
           </div>
-          <button onClick={onClose} style={{
-            background: 'none', border: 'none', cursor: 'pointer',
-            color: 'rgba(178,198,245,0.5)', fontSize: 22, lineHeight: 1, padding: 4,
-          }}>×</button>
-        </div>
+          <div className="fact"><button type="submit" className="btn" disabled={!secretInput.trim()}>Entrar</button></div>
+        </form>
+      )}
 
-        {/* Content */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px' }} className="custom-scrollbar">
+      <Section
+        title="Catálogo de vehículos"
+        accept=".csv"
+        file={catalogoFile}
+        inputRef={catalogoInputRef}
+        status={catalogoStatus}
+        onFileChange={f => { setCatalogoFile(f); setCatalogoStatus({ type: 'idle' }); }}
+        onUpload={() => catalogoFile && upload('/api/admin/catalogo', catalogoFile, setCatalogoStatus)}
+        versions={versiones?.catalogo}
+        loadingVersiones={loadingVersiones}
+      />
 
-          {needsAuth && (
-            <div className="glass-card rounded-2xl p-5 mb-5" style={{ border: '1px solid rgba(239,68,68,0.3)' }}>
-              <p className="text-[11px] font-black uppercase tracking-widest mb-3" style={{ color: '#fca5a5' }}>
-                Clave de administrador requerida
-              </p>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <input
-                  type="password"
-                  value={secretInput}
-                  onChange={e => setSecretInput(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter') saveSecret(); }}
-                  placeholder="Introduce la clave admin"
-                  className="orion-input"
-                  style={{ flex: 1, fontSize: 12 }}
-                  autoFocus
-                />
-                <button
-                  onClick={saveSecret}
-                  disabled={!secretInput.trim()}
-                  className="btn-primary"
-                  style={{ padding: '0 20px', fontSize: 11, fontWeight: 800, opacity: secretInput.trim() ? 1 : 0.4 }}>
-                  Entrar
-                </button>
-              </div>
-            </div>
-          )}
+      <Section
+        title="Seed de matrículas"
+        accept=".json"
+        file={matriculasFile}
+        inputRef={matriculasInputRef}
+        status={matriculasStatus}
+        onFileChange={f => { setMatriculasFile(f); setMatriculasStatus({ type: 'idle' }); }}
+        onUpload={() => matriculasFile && upload('/api/admin/matriculas', matriculasFile, setMatriculasStatus)}
+        versions={versiones?.matriculas}
+        loadingVersiones={loadingVersiones}
+        seedWarning
+      />
 
-          <Section
-            title="Catálogo de Vehículos"
-            icon="🗂"
-            accept=".csv"
-            file={catalogoFile}
-            inputRef={catalogoInputRef}
-            status={catalogoStatus}
-            onFileChange={f => { setCatalogoFile(f); setCatalogoStatus({ type: 'idle' }); }}
-            onUpload={() => catalogoFile && upload('/api/admin/catalogo', catalogoFile, setCatalogoStatus)}
-            versions={versiones?.catalogo}
-            loadingVersiones={loadingVersiones}
-          />
-
-          <Section
-            title="Seed Matrículas"
-            icon="📅"
-            accept=".json"
-            file={matriculasFile}
-            inputRef={matriculasInputRef}
-            status={matriculasStatus}
-            onFileChange={f => { setMatriculasFile(f); setMatriculasStatus({ type: 'idle' }); }}
-            onUpload={() => matriculasFile && upload('/api/admin/matriculas', matriculasFile, setMatriculasStatus)}
-            versions={versiones?.matriculas}
-            loadingVersiones={loadingVersiones}
-            seedWarning
-          />
-
-          <button
-            onClick={() => fetchVersiones()}
-            disabled={loadingVersiones || !secret}
-            style={{
-              fontSize: 10, fontWeight: 800, padding: '6px 16px', borderRadius: 8,
-              color: '#1240CC', background: 'rgba(18,64,204,0.08)',
-              border: '1px solid rgba(18,64,204,0.2)', cursor: 'pointer',
-              opacity: loadingVersiones ? 0.5 : 1,
-            }}>
-            {loadingVersiones ? 'Cargando...' : '↻ Refrescar versiones'}
-          </button>
-        </div>
+      <div className="dacts">
+        <button className="mini" onClick={() => fetchVersiones()} disabled={loadingVersiones || !secret}>
+          {loadingVersiones ? 'Cargando…' : 'Actualizar versiones'}
+        </button>
       </div>
-    </>
+    </DetailDrawer>
   );
 }

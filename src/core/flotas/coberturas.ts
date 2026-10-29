@@ -1,9 +1,10 @@
 // ─── VALIDACIÓN DE COBERTURAS ─────────────────────────────────────────────────
 
 import { TipoVehiculo, Producto, VEH_META } from './primas';
+import { FRANQUICIAS_CAT1, FRANQUICIAS_CAT2 } from './catalogoCoberturas';
+import { nf } from '../../lib/fmt';
 
-const FRANQUICIAS_CAT1 = [120, 180, 240, 300, 450, 600, 750] as const;
-const FRANQUICIA_CAT2  = 1800;
+// Las franquicias válidas viven en catalogoCoberturas.ts (fuente única de reglas).
 
 const INDUSTRIALES: TipoVehiculo[] = ['industrial_matriculado', 'industrial_no_matriculado'];
 
@@ -62,11 +63,11 @@ export function validarCobertura(params: ValidarCoberturaParams): ValidacionCobe
     if (franquicia !== undefined && franquicia > 0 && producto === 'todo_riesgo') {
         if (categoria === 1) {
             if (!(FRANQUICIAS_CAT1 as readonly number[]).includes(franquicia)) {
-                errores.push(`Franquicia no válida para cat.1. Valores permitidos: ${FRANQUICIAS_CAT1.join(', ')}€.`);
+                errores.push(`Franquicia no válida para 1.ª categoría. Valores permitidos: ${FRANQUICIAS_CAT1.map(nf).join(', ')} €.`);
             }
         } else {
-            if (franquicia !== FRANQUICIA_CAT2) {
-                errores.push(`En segunda categoría la única franquicia válida es ${FRANQUICIA_CAT2}€.`);
+            if (!(FRANQUICIAS_CAT2 as readonly number[]).includes(franquicia)) {
+                errores.push(`En 2.ª categoría las franquicias válidas son ${FRANQUICIAS_CAT2.map(nf).join(' y ')} €.`);
             }
         }
     }

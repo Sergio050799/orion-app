@@ -1,0 +1,4 @@
+Tipografías alojadas en el propio proyecto (sin depender de Google Fonts en el arranque ni en el build).
+- Inter (variable, latín) · SIL Open Font License 1.1 · https://github.com/rsms/inter
+- Space Grotesk (variable, latín) · SIL Open Font License 1.1 · https://github.com/floriankarsten/space-grotesk
+Fuente de los ficheros: paquetes npm @fontsource-variable/inter y @fontsource-variable/space-grotesk (solo los .woff2; no se añade ninguna dependencia).

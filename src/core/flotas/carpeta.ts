@@ -1,8 +1,9 @@
 // ─── CARPETA — Workspace principal del estudio de flotas ─────────────────────
 
 import type { Periodicidad } from './corredor';
+import type { ConfigCobertura } from './catalogoCoberturas';
 
-export type EstadoFlota = 'EN ESTUDIO' | 'OFERTADA' | 'CONTRATADA' | 'RECHAZADA';
+export type EstadoFlota = 'EN ESTUDIO' | 'ESTUDIADA' | 'OFERTADA' | 'CONTRATADA' | 'RECHAZADA';
 
 export interface HistoricoEntry {
   fecha: string;        // ISO
@@ -24,6 +25,16 @@ export interface DanosPropiosData {
   numSiniestros: number;
 }
 
+/** Datos de la emisión masiva que no se conocen al estudiar: se rellenan en el paso EMISIÓN. */
+export interface EmisionDatos {
+  idCliente?: string;      // ID_TOM
+  idFlota?: string;        // ID_FLOTA
+  idColectivo?: string;    // ID_COLECTIVO
+  fechaEfecto?: string;    // dd/mm/aaaa; si vacío se usa el efecto de DATOS GENERALES
+  /** Valores comunes a todos los vehículos (columna de la plantilla de emisión, valor). */
+  comunes?: Record<string, string>;
+}
+
 export interface FlotaCarpeta {
   id: string;
   nombre: string;
@@ -34,7 +45,8 @@ export interface FlotaCarpeta {
   estudiando_por?: string[];    // usernames con sesión activa (solo viene del servidor)
 
   corredor_id?: string;
-  porcentajeComision?: number;
+  comisionBase?: number;
+  comisionExtra?: number;
   estado: EstadoFlota;
   historico: HistoricoEntry[];
 
@@ -70,7 +82,14 @@ export interface FlotaCarpeta {
   danosPropios?:   DanosPropiosData;
   oferta:          Record<string, string>[];
   primasMmtInforme?: Record<string, number>;
+  /** Cobertura elegida en INFORME por grupo (clave `TIPO||COBERTURA SOLICITADA`). La leen OFERTA y EMISIÓN. */
+  configCoberturas?: Record<string, ConfigCobertura>;
+  emision?: EmisionDatos;
   catalogoSeleccion?: Record<string, string>;
+  /** matrícula limpia → id de catálogo cuya identificación se dio por buena pese a las discrepancias (PRE-EMISIÓN) */
+  verificacionOk?: Record<string, string>;
+  /** quién y cuándo dio por buena cada identificación (matrícula limpia → registro) */
+  verificacionRegistro?: Record<string, { por: string; fecha: string }>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   automaticoVehicles?: Record<string, any>[];
 }
@@ -155,7 +174,12 @@ export function sesionHeartbeat(carpeta_id: string): void {
 export async function cargarCarpetasDelServidor(signal?: AbortSignal): Promise<FlotaCarpeta[]> {
   const res = await fetch('/api/flotas/carpetas', { signal });
   if (!res.ok) throw new Error('Server error');
-  const data: FlotaCarpeta[] = await res.json();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const raw: any[] = await res.json();
+  const data: FlotaCarpeta[] = raw.map(c => ({
+    ...c,
+    comisionBase: c.comisionBase ?? c.porcentajeComision,
+  }));
   initMemCache(data);
   return data;
 }

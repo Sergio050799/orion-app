@@ -225,6 +225,8 @@ export interface SilverdatVehicle {
   tara?: number;           // kg
   // Fechas
   anyo_fabricacion?: string;  // "09/2020"
+  /** de dónde sale anyo_fabricacion: dato real de fabricación de Silverdat, o el año de matriculación como sustituto */
+  anyo_fab_fuente?: 'fabricacion' | 'matriculacion';
   fecha_matriculacion?: string;
   // Valoración
   kilometraje?: number;
@@ -595,11 +597,12 @@ function parseVehicleData(
     } else {
       v.anyo_fabricacion = undefined;
     }
+    if (v.anyo_fabricacion) v.anyo_fab_fuente = 'fabricacion';
   }
   // Fallback: derive year from fecha_matriculacion
   if (!v.anyo_fabricacion && v.fecha_matriculacion) {
     const yMatch = v.fecha_matriculacion.match(/(\d{4})/);
-    if (yMatch) v.anyo_fabricacion = yMatch[1];
+    if (yMatch) { v.anyo_fabricacion = yMatch[1]; v.anyo_fab_fuente = 'matriculacion'; }
   }
 
   return v;
