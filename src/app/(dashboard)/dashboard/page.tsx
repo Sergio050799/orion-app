@@ -35,6 +35,19 @@ function diasHasta(fecha: Date): number {
   return Math.floor((fecha.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24));
 }
 
+/** Fecha límite para "renovaciones próximas": hoy + 2 meses (calendario, no días fijos). */
+function fechaLimiteRenovaciones(): Date {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  d.setMonth(d.getMonth() + 2);
+  return d;
+}
+
+/** dd/mm/yyyy en es-ES — usado para la columna de vencimiento. */
+function fechaCorta(d: Date): string {
+  return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
 function displayName(email: string | null): string {
   if (!email) return 'Usuario';
   const local = email.split('@')[0];
@@ -107,10 +120,10 @@ function buildSeries(cs: FlotaCarpeta[]): Series {
     if (isNaN(d.getTime())) continue;
     const idx = 23 - (base - (d.getFullYear() * 12 + d.getMonth()));
     if (idx < 0 || idx > 23) continue;
-    const rows = c.trabajo?.length > 0 ? c.trabajo : c.original;
+    const vehCount = c.vehiculosCount ?? (c.trabajo?.length > 0 ? c.trabajo.length : (c.original?.length ?? 0));
     const primaOferta = (c.oferta ?? []).reduce((t, r) => t + (parseFloat(r['oferta_prima_mmt']) || 0), 0);
     acc.flotas[idx] += 1;
-    acc.vehiculos[idx] += (rows ?? []).length;
+    acc.vehiculos[idx] += vehCount;
     acc.primas[idx] += primaOferta > 0 ? primaOferta : (c.primaClienteTotal ?? 0);
   }
   const labels = Array.from({ length: 12 }, (_, j) => MES_CORTO[(((hoy.getMonth() - 11 + j) % 12) + 12) % 12]);
@@ -537,7 +550,9 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const ac = new AbortController();
-    cargarCarpetasDelServidor(ac.signal).then(setCarpetas).catch(() => {});
+    // summary=true: payload ~25× más ligero (sin trabajo/original crudos).
+    // Trae vehiculosCount y vehiculosTipos pre-calculados — suficiente para dashboard.
+    cargarCarpetasDelServidor(ac.signal, true).then(setCarpetas).catch(() => {});
     cargarCorredoresDelServidor(ac.signal).then(setCorredores).catch(() => {});
     return () => ac.abort();
   }, []);
@@ -587,8 +602,7 @@ export default function DashboardPage() {
   const totalVehiculos = useMemo(() => {
     let total = 0;
     for (const c of scopedCarpetas) {
-      const rows = c.trabajo?.length > 0 ? c.trabajo : c.original;
-      total += (rows ?? []).length;
+      total += c.vehiculosCount ?? ((c.trabajo?.length ?? 0) > 0 ? c.trabajo.length : (c.original?.length ?? 0));
     }
     return total;
   }, [scopedCarpetas]);
@@ -615,8 +629,10 @@ export default function DashboardPage() {
       .sort((a, b) => a.dias - b.dias);
   }, [carpetas, scope, corredorMap]);
 
-  // Solo pendientes de vencer (aparecen en la tabla del dashboard)
-  const renovacionesProximas = renovaciones.filter(r => r.dias >= 0 && r.dias <= 60);
+  // Flotas que vencen entre hoy y los próximos 2 meses de calendario (inclusive).
+  // Antes era `dias <= 60`, pero quedaban fuera flotas que vencen al cambiar de mes largo.
+  const limiteRenov = useMemo(() => fechaLimiteRenovaciones(), []);
+  const renovacionesProximas = renovaciones.filter(r => r.dias >= 0 && r.fecha <= limiteRenov);
   // Ya vencidas: solo visibles en el drawer / informe
   const flotasVencidas       = renovaciones.filter(r => r.dias < 0);
   const vencidasUrgentes     = flotasVencidas.filter(r => r.fecha.getFullYear() < CURRENT_YEAR);
@@ -678,10 +694,13 @@ export default function DashboardPage() {
       '1ª Categoría': {}, '2ª Categoría': {}, '3ª Categoría': {}, 'Sin clasificar': {},
     };
     for (const carpeta of scopedCarpetas) {
-      const rows   = carpeta.trabajo?.length > 0 ? carpeta.trabajo : carpeta.original;
       const estado = carpeta.estado;
-      for (const row of (rows ?? [])) {
-        const raw = row['tipo_vehiculo']?.trim();
+      // Preferir vehiculosTipos (viene pre-calculado en summary); si no, leer de las filas crudas.
+      const tipos: string[] = carpeta.vehiculosTipos
+        ?? ((carpeta.trabajo?.length ?? 0) > 0 ? carpeta.trabajo : (carpeta.original ?? []))
+            .map(r => (r['tipo_vehiculo'] ?? '').trim())
+            .filter(Boolean);
+      for (const raw of tipos) {
         if (!raw) continue;
         const cat = getCategoria(raw);
         const tip = getTipologia(raw);
@@ -778,26 +797,29 @@ export default function DashboardPage() {
     };
 
     if (key === 'renovaciones') {
-      const vehProx  = sum(renovacionesProximas.map(r => (r.carpeta.trabajo?.length ?? 0) > 0 ? r.carpeta.trabajo.length : (r.carpeta.original?.length ?? 0)));
-      const vencRows = flotasVencidas.map(r => {
-        const fechaStr = r.fecha.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
-        return [r.carpeta.nombre, r.corredor?.nombre ?? 'Sin corredor', `Venció ${fechaStr}`];
-      });
-      const proxRows = renovacionesProximas.map(r => [r.carpeta.nombre, r.corredor?.nombre ?? 'Sin corredor', `${r.dias} días`]);
+      const vehProx  = sum(renovacionesProximas.map(r =>
+        r.carpeta.vehiculosCount ?? ((r.carpeta.trabajo?.length ?? 0) > 0 ? r.carpeta.trabajo.length : (r.carpeta.original?.length ?? 0))
+      ));
+      const vencRows = flotasVencidas.map(r =>
+        [r.carpeta.nombre, r.corredor?.nombre ?? 'Sin corredor', fechaCorta(r.fecha), `Venció ${fechaCorta(r.fecha)}`]
+      );
+      const proxRows = renovacionesProximas.map(r =>
+        [r.carpeta.nombre, r.corredor?.nombre ?? 'Sin corredor', fechaCorta(r.fecha), `${r.dias} días`]
+      );
       return {
         over: 'Renovaciones' + ctx,
         title: 'Renovaciones próximas',
-        desc: 'Flotas contratadas con vencimiento en los próximos 60 días. Las flotas ya vencidas se muestran al final para seguimiento.',
-        stats: [['Próximas (60d)', String(renovacionesProximas.length)], ['Urgentes (≤15d)', String(renovacionesUrgentes.length)], ['Vencidas', String(flotasVencidas.length)], ['Vehículos', nf(vehProx)]],
-        head: ['Flota', 'Corredor', 'Vence en'],
+        desc: 'Flotas contratadas con vencimiento en los próximos 2 meses. Las flotas ya vencidas se muestran al final para seguimiento.',
+        stats: [['Próximas (2m)', String(renovacionesProximas.length)], ['Urgentes (≤15d)', String(renovacionesUrgentes.length)], ['Vencidas', String(flotasVencidas.length)], ['Vehículos', nf(vehProx)]],
+        head: ['Flota', 'Corredor', 'Vencimiento', 'Vence en'],
         rows: [
           ...proxRows,
-          ...(vencRows.length > 0 ? [['── Vencidas / renovar ──', '', '']] : []),
+          ...(vencRows.length > 0 ? [['── Vencidas / renovar ──', '', '', '']] : []),
           ...vencRows,
         ],
         fx: [
           ['Días hasta vencimiento', 'fecha de vencimiento − fecha actual'],
-          ['Próxima', '0 ≤ días ≤ 60 (aparece en la tabla del dashboard)'],
+          ['Próxima', 'desde hoy hasta hoy + 2 meses de calendario'],
           ['Urgente', '0 ≤ días ≤ 15'],
           ['Vencida', 'días < 0 (solo en este detalle e informe)'],
         ],
@@ -902,17 +924,17 @@ export default function DashboardPage() {
       const idx = parseInt(key.slice(4));
       const r   = renovacionesProximas[idx];
       if (!r) return null;
-      const veh = (r.carpeta.trabajo?.length ?? 0) > 0 ? r.carpeta.trabajo.length : (r.carpeta.original?.length ?? 0);
+      const veh = r.carpeta.vehiculosCount ?? ((r.carpeta.trabajo?.length ?? 0) > 0 ? r.carpeta.trabajo.length : (r.carpeta.original?.length ?? 0));
       return {
         over: 'Renovación',
         title: r.carpeta.nombre,
         desc: 'Próximo vencimiento de la flota.',
-        stats: [['Vence en', `${r.dias} días`], ['Vehículos', String(veh)]],
+        stats: [['Vence en', `${r.dias} días`], ['Fecha', fechaCorta(r.fecha)], ['Vehículos', String(veh)]],
         head: ['Concepto', 'Valor'],
         rows: [
           ['Corredor', r.corredor?.nombre ?? 'Sin corredor'],
           ['Vehículos', String(veh)],
-          ['Vencimiento', `En ${r.dias} días`],
+          ['Vencimiento', `${fechaCorta(r.fecha)} · en ${r.dias} días`],
         ],
         fx: [['Días hasta vencimiento', `fecha de vencimiento − fecha actual = ${r.dias} días`]],
       };
@@ -1187,7 +1209,7 @@ export default function DashboardPage() {
           },
           {
             id: 'renovaciones',
-            l: 'Renovaciones · 60 días',
+            l: 'Renovaciones · 2 meses',
             v: String(renovacionesProximas.length),
             n: renovacionesUrgentes.length > 0 ? `<b>${renovacionesUrgentes.length}</b> vencen en ≤ 15 días` : 'Solo flotas contratadas',
             urgent: renovacionesUrgentes.length > 0,
@@ -1371,13 +1393,13 @@ export default function DashboardPage() {
         <section>
           <div className="db-shead">
             <h2 className="db-h2">Renovaciones próximas</h2>
-            <p className="db-sub">Vencimientos en los siguientes 60 días</p>
+            <p className="db-sub">Vencimientos en los próximos 2 meses</p>
           </div>
           {renovacionesProximas.length === 0 ? (
             <div className="db-empty">
               {scope !== 'all' && scope !== 'CONTRATADA'
                 ? `Las renovaciones son de flotas contratadas, no de «${sName}».`
-                : 'Sin flotas contratadas con vencimiento en los próximos 60 días.'}
+                : 'Sin flotas contratadas con vencimiento en los próximos 2 meses.'}
             </div>
           ) : (
             <div style={{ overflowX: 'auto' }}>
@@ -1386,12 +1408,13 @@ export default function DashboardPage() {
                   <tr>
                     <th style={{ textAlign: 'left' }}>Flota</th>
                     <th>Vehículos</th>
+                    <th style={{ textAlign: 'center' }}>Vencimiento</th>
                     <th style={{ textAlign: 'right' }}>Vence en</th>
                   </tr>
                 </thead>
                 <tbody>
                   {renovacionesProximas.map((r, idx) => {
-                    const veh = (r.carpeta.trabajo?.length ?? 0) > 0 ? r.carpeta.trabajo.length : (r.carpeta.original?.length ?? 0);
+                    const veh = r.carpeta.vehiculosCount ?? ((r.carpeta.trabajo?.length ?? 0) > 0 ? r.carpeta.trabajo.length : (r.carpeta.original?.length ?? 0));
                     return (
                       <tr key={r.carpeta.id} tabIndex={0} onClick={() => handleDetail(`ren:${idx}`)}
                         onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && handleDetail(`ren:${idx}`)}>
@@ -1400,6 +1423,7 @@ export default function DashboardPage() {
                           <div className="db-muted">{r.corredor?.nombre ?? 'Sin corredor'}</div>
                         </td>
                         <td style={{ textAlign: 'center' }}>{nf(veh)}</td>
+                        <td style={{ textAlign: 'center', color: 'var(--sub)', whiteSpace: 'nowrap' }}>{fechaCorta(r.fecha)}</td>
                         <td style={{ textAlign: 'right', paddingRight: 0 }}>
                           <span className="db-tag" style={{ ['--c' as string]: r.dias <= 15 ? 'var(--warn)' : 'var(--blue)' }}>
                             {r.dias} días

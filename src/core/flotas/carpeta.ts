@@ -92,6 +92,10 @@ export interface FlotaCarpeta {
   verificacionRegistro?: Record<string, { por: string; fecha: string }>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   automaticoVehicles?: Record<string, any>[];
+  /** Solo cuando viene de `?summary=true`: nº de vehículos sin cargar las filas enteras. */
+  vehiculosCount?: number;
+  /** Solo cuando viene de `?summary=true`: tipo_vehiculo de cada fila, para clasificar en el dashboard. */
+  vehiculosTipos?: string[];
 }
 
 // ─── Session cache (in-memory, lives while the tab is open) ──────────────────
@@ -170,9 +174,12 @@ export function sesionHeartbeat(carpeta_id: string): void {
 
 // ─── Public API ──────────────────────────────────────────────────────────────
 
-/** Carga carpetas desde el servidor e inicializa el caché en memoria. */
-export async function cargarCarpetasDelServidor(signal?: AbortSignal): Promise<FlotaCarpeta[]> {
-  const res = await fetch('/api/flotas/carpetas', { signal });
+/** Carga carpetas desde el servidor e inicializa el caché en memoria.
+ *  Si `summary=true`, el payload se reduce ~25× (sin trabajo/original/sinco crudos);
+ *  solo incluye vehiculosCount y vehiculosTipos — suficientes para dashboard, portfolio y KPIs. */
+export async function cargarCarpetasDelServidor(signal?: AbortSignal, summary?: boolean): Promise<FlotaCarpeta[]> {
+  const url = summary ? '/api/flotas/carpetas?summary=true' : '/api/flotas/carpetas';
+  const res = await fetch(url, { signal });
   if (!res.ok) throw new Error('Server error');
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const raw: any[] = await res.json();
@@ -180,7 +187,8 @@ export async function cargarCarpetasDelServidor(signal?: AbortSignal): Promise<F
     ...c,
     comisionBase: c.comisionBase ?? c.porcentajeComision,
   }));
-  initMemCache(data);
+  // Solo el payload completo alimenta el memCache (el summary no tiene trabajo/original para edición).
+  if (!summary) initMemCache(data);
   return data;
 }
 

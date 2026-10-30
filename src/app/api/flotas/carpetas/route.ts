@@ -20,22 +20,33 @@ export async function GET(req: NextRequest) {
     // Reduce el payload de ~5MB a ~200KB para la vista portfolio
     if (isSummary && Array.isArray(data)) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const stripped = data.map((c: any) => ({
-        id: c.id, nombre: c.nombre, estado: c.estado,
-        creadaEn: c.creadaEn, actualizadaEn: c.actualizadaEn,
-        corredor_id: c.corredor_id, comisionBase: c.comisionBase ?? c.porcentajeComision,
-        primaClienteTotal: c.primaClienteTotal, descuentoOferta: c.descuentoOferta,
-        header: c.header, historico: c.historico, observaciones: c.observaciones,
-        tarifaFlota: c.tarifaFlota,
-        // oferta solo con los campos que necesita el portfolio (prima calc)
-        oferta: Array.isArray(c.oferta)
-          ? c.oferta.map((r: any) => ({
-              matricula: r.matricula,
-              coberturas: r.coberturas ?? r.coberturas_solicitadas,
-              oferta_prima_mmt: r.oferta_prima_mmt,
-            }))
-          : [],
-      }));
+      const stripped = data.map((c: any) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const rows: Record<string, string>[] = (Array.isArray(c.trabajo) && c.trabajo.length > 0)
+          ? c.trabajo
+          : (Array.isArray(c.original) ? c.original : []);
+        const vehiculosCount = rows.length;
+        const vehiculosTipos = rows
+          .map((r) => (r['tipo_vehiculo'] ?? '').trim())
+          .filter(Boolean);
+        return {
+          id: c.id, nombre: c.nombre, estado: c.estado,
+          creadaEn: c.creadaEn, actualizadaEn: c.actualizadaEn,
+          corredor_id: c.corredor_id, comisionBase: c.comisionBase ?? c.porcentajeComision,
+          primaClienteTotal: c.primaClienteTotal, descuentoOferta: c.descuentoOferta,
+          header: c.header, historico: c.historico, observaciones: c.observaciones,
+          tarifaFlota: c.tarifaFlota, creado_por: c.creado_por,
+          vehiculosCount, vehiculosTipos,
+          // oferta solo con los campos que necesita el portfolio (prima calc)
+          oferta: Array.isArray(c.oferta)
+            ? c.oferta.map((r: Record<string, string>) => ({
+                matricula: r.matricula,
+                coberturas: r.coberturas ?? r.coberturas_solicitadas,
+                oferta_prima_mmt: r.oferta_prima_mmt,
+              }))
+            : [],
+        };
+      });
       setCarpetasCache(true, stripped);
       return NextResponse.json(stripped);
     }
