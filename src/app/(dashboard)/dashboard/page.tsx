@@ -35,11 +35,13 @@ function diasHasta(fecha: Date): number {
   return Math.floor((fecha.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-/** Fecha límite para "renovaciones próximas": hoy + 2 meses (calendario, no días fijos). */
+/** Fecha límite para "renovaciones próximas": último instante del último día del mes +2.
+ *  Ejemplo: hoy 30/10 → corte 31/12 23:59:59; hoy 15/11 → corte 31/01.
+ *  Así entran los vencimientos del mes +2 completo, independientemente del día de hoy. */
 function fechaLimiteRenovaciones(): Date {
   const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  d.setMonth(d.getMonth() + 2);
+  d.setMonth(d.getMonth() + 3, 0); // día 0 del mes +3 = último día del mes +2
+  d.setHours(23, 59, 59, 999);
   return d;
 }
 
