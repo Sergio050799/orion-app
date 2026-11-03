@@ -57,7 +57,7 @@ interface Props {
 
 const normTipo = (t: string) => {
   const u = t.toUpperCase().trim();
-  return u === 'DERIVADO DE TURISMO' ? 'TURISMO' : u || 'SIN TIPO';
+  return u || 'SIN TIPO';
 };
 
 const fmtEur = (n: number) => eur(n, 2);
@@ -193,21 +193,6 @@ function buildPdfHtml(data: {
     `<td class="cnt">${nf(pivot.tipos.reduce((a, t) => a + (pivot.counts[t]?.[c] ?? 0), 0))}</td>`
   ).join('');
 
-  const primasRows = primasSol.map((r, i) => {
-    const mmt    = mmtRows[i];
-    const difRow = (mmt?.total ?? 0) - r.total;
-    const difCls = difRow < 0 ? ' neg' : difRow > 0 ? ' pos' : '';
-    return `<tr>
-      <td><strong>${r.tipo}</strong><span class="minor">${r.cob}</span></td>
-      <td class="cnt">${nf(r.count)}</td>
-      <td class="num">${r.media ? fmtEur2(r.media) : '—'}</td>
-      <td class="num">${r.total ? fmtEur(r.total) : '—'}</td>
-      <td class="num">${mmt?.prima != null ? fmtEur2(mmt.prima) : '—'}</td>
-      <td class="num">${mmt?.total != null ? fmtEur(mmt.total) : '—'}</td>
-      <td class="num${difCls}">${mmt?.total != null ? (difRow >= 0 ? '+' : '') + fmtEur(difRow) : '—'}</td>
-    </tr>`;
-  }).join('');
-
   // Hero strip (vencimiento / ámbito / tomadores / observaciones)
   const obsLine = corredorLabel
     ? `${corredorLabel} · que ${adrActivo ? 'SÍ' : 'NO'} lleva ADR`
@@ -274,8 +259,39 @@ function buildPdfHtml(data: {
   </div>
   <p class="method">Diferencia calculada como prima MMT menos prima solicitada.</p>` : '';
 
-  const primasSection = `<section class="report-section section-break">
-    <h2 class="sec-title">Comparativa de primas <em>Importes anuales</em></h2>
+  // La tabla de primas se pagina: cada página A4 admite ~14 filas sin desbordar el pie.
+  // El TOTAL + economía solo aparecen en la última página de este bloque.
+  const CPPRIMAS = 14;
+  const primasRowsArr = primasSol.map((_, i) => i);
+  const primaChunks: number[][] = [];
+  for (let i = 0; i < primasRowsArr.length; i += CPPRIMAS) primaChunks.push(primasRowsArr.slice(i, i + CPPRIMAS));
+  const buildPrimasSection = (chunk: number[], isLast: boolean, pageIdx: number, totalChunks: number) => {
+    const rowsHtml = chunk.map(i => {
+      const r = primasSol[i], mmt = mmtRows[i];
+      const difRow = (mmt?.total ?? 0) - r.total;
+      const difCls = difRow < 0 ? ' neg' : difRow > 0 ? ' pos' : '';
+      return `<tr>
+        <td><strong>${r.tipo}</strong><span class="minor">${r.cob}</span></td>
+        <td class="cnt">${nf(r.count)}</td>
+        <td class="num">${r.media ? fmtEur2(r.media) : '—'}</td>
+        <td class="num">${r.total ? fmtEur(r.total) : '—'}</td>
+        <td class="num">${mmt?.prima != null ? fmtEur2(mmt.prima) : '—'}</td>
+        <td class="num">${mmt?.total != null ? fmtEur(mmt.total) : '—'}</td>
+        <td class="num${difCls}">${mmt?.total != null ? (difRow >= 0 ? '+' : '') + fmtEur(difRow) : '—'}</td>
+      </tr>`;
+    }).join('');
+    const totalRow = isLast ? `<tbody><tr class="total">
+        <td>TOTAL</td>
+        <td class="cnt">${nf(primasSol.reduce((a, r) => a + r.count, 0))}</td>
+        <td class="num">—</td>
+        <td class="num">${totalSol ? fmtEur(totalSol) : '—'}</td>
+        <td class="num">—</td>
+        <td class="num">${totalMmt ? fmtEur(totalMmt) : '—'}</td>
+        <td class="num ${dif < 0 ? 'neg' : dif > 0 ? 'pos' : ''}">${totalMmt ? (dif >= 0 ? '+' : '') + fmtEur(dif) : '—'}</td>
+      </tr></tbody>` : '';
+    const cont = totalChunks > 1 ? ` <em>(${pageIdx + 1}/${totalChunks})</em>` : '';
+    return `<section class="report-section section-break">
+    <h2 class="sec-title">Comparativa de primas${cont} <em>Importes anuales</em></h2>
     <table class="table">
       <colgroup><col style="width:28%"><col style="width:7%"><col style="width:12%"><col style="width:13%"><col style="width:12%"><col style="width:13%"><col style="width:15%"></colgroup>
       <thead><tr>
@@ -287,26 +303,20 @@ function buildPdfHtml(data: {
         <th class="num">Total MMT</th>
         <th class="num">Diferencia</th>
       </tr></thead>
-      <tbody>${primasRows}</tbody>
-      <tbody><tr class="total">
-        <td>TOTAL</td>
-        <td class="cnt">${nf(primasSol.reduce((a, r) => a + r.count, 0))}</td>
-        <td class="num">—</td>
-        <td class="num">${totalSol ? fmtEur(totalSol) : '—'}</td>
-        <td class="num">—</td>
-        <td class="num">${totalMmt ? fmtEur(totalMmt) : '—'}</td>
-        <td class="num ${dif < 0 ? 'neg' : dif > 0 ? 'pos' : ''}">${totalMmt ? (dif >= 0 ? '+' : '') + fmtEur(dif) : '—'}</td>
-      </tr></tbody>
+      <tbody>${rowsHtml}</tbody>
+      ${totalRow}
     </table>
-    ${economyHtml}
+    ${isLast ? economyHtml : ''}
   </section>`;
+  };
 
   // Coverage — páginas dinámicas (máx 4 secciones por página)
   const CPCOV = 4;
   const covChunks: typeof cobAnexo[] = [];
   for (let i = 0; i < cobAnexo.length; i += CPCOV) covChunks.push(cobAnexo.slice(i, i + CPCOV));
   const hasPrimasData = primasSol.length > 0;
-  const totalPages = 1 + (hasPrimasData ? 1 : 0) + covChunks.length;
+  const nPrimasPages = hasPrimasData ? primaChunks.length : 0;
+  const totalPages = 1 + nPrimasPages + covChunks.length;
 
   return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
 <title>Informe — ${fleetName || header?.tomador || 'MMT Seguros'}</title>
@@ -424,17 +434,17 @@ ${sinco ? `<section class="report-section section-break">
 </div>
 </article>
 
-${hasPrimasData ? `<article class="page">
+${primaChunks.map((chunk, pi) => `<article class="page">
 ${brandrow(true)}
 <div class="kicker">ANÁLISIS ECONÓMICO</div>
 <h1 class="report-title">${fleetName || 'Comparativa de primas'}</h1>
-<p class="subtitle">Importes anuales — Prima solicitada vs Prima MMT de referencia</p>
-${primasSection}
+${pi === 0 ? `<p class="subtitle">Importes anuales — Prima solicitada vs Prima MMT de referencia</p>` : ''}
+${buildPrimasSection(chunk, pi === primaChunks.length - 1, pi, primaChunks.length)}
 <div class="footer">
   <span>Documento confidencial</span>
-  <span>Página 2 de ${totalPages}</span>
+  <span>Página ${2 + pi} de ${totalPages}</span>
 </div>
-</article>` : ''}
+</article>`).join('')}
 
 ${covChunks.map((chunk, ci) => `<article class="page">
 ${brandrow(true)}
@@ -451,7 +461,7 @@ ${ci === 0 ? `<p class="subtitle">Relación de garantías declaradas según moda
 ${ci === covChunks.length - 1 ? `<div class="note">Las coberturas mostradas proceden del informe de referencia aportado. Condiciones sujetas a la póliza definitiva emitida por MMT Seguros.</div>` : ''}
 <div class="footer">
   <span>Documento confidencial</span>
-  <span>Página ${(hasPrimasData ? 3 : 2) + ci} de ${totalPages}</span>
+  <span>Página ${2 + nPrimasPages + ci} de ${totalPages}</span>
 </div>
 </article>`).join('\n')}
 
@@ -630,17 +640,19 @@ export default function HojaInforme({
 
   // ── Motor ORION — constantes y handler (post tipoCobGrupos) ─────────────────
   const ORION_TO_MMT: Record<string, string> = {
-    'CABEZA TRACTORA':     'TRACTOCAMION',
-    'SEMIRREMOLQUE':       'REMOLQUE-SEMI',
-    'CAMION RIGIDO':       'CAMION',
-    'FURGONETA':           'FURGON',
-    'TURISMO':             'TRUISMOS -1000',
-    'MOTOCICLETA':         'MOTOCICLETAS',
-    'FURGON PESADO':       'FURGON PESADO',
-    'CAMION LIGERO':       'CAMION LIGERO',
-    'DERIVADO TT':         'DERIVADO TT',
-    'VH-AGRICOLA':         'VH-AGRICOLA',
-    'VEHICULO INDUSTRIAL': 'VEHICULO INDUSTRIAL',
+    'CABEZA TRACTORA':         'TRACTOCAMION',
+    'SEMIRREMOLQUE':           'REMOLQUE-SEMI',
+    'CAMION RIGIDO':           'CAMION',
+    'FURGONETA':               'FURGON',
+    'TURISMO':                 'TRUISMOS -1000',
+    'DERIVADO DE TURISMO':     'DERIVADO DE TURISMO',
+    'DERIVADO DE TODOTERRENO': 'DERIVADO TT',
+    'MOTOCICLETA':             'MOTOCICLETAS',
+    'FURGON PESADO':           'FURGON PESADO',
+    'CAMION LIGERO':           'CAMION LIGERO',
+    'DERIVADO TT':             'DERIVADO TT',
+    'VH-AGRICOLA':             'VH-AGRICOLA',
+    'VEHICULO INDUSTRIAL':     'VEHICULO INDUSTRIAL',
   };
 
   const TIPOLOGIA_DEF_MAP: Record<string, string> = {

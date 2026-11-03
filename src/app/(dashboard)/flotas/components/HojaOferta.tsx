@@ -63,7 +63,11 @@ interface Props {
 
 const TIPO_MAP: Record<string, TipoVehiculo> = {
   'turismo': 'turismo',
+  'derivado de turismo': 'derivado_turismo',
+  'derivado de todoterreno': 'derivado_todoterreno',
   'furgoneta': 'furgoneta',
+  'furgón': 'furgon', 'furgon': 'furgon',
+  'motocicleta': 'moto', 'moto': 'moto',
   'cabeza tractora': 'cabeza_tractora',
   'camión rígido': 'camion_rigido',
   'camion rigido': 'camion_rigido',
@@ -92,7 +96,11 @@ const AMBITO_MAP: Record<string, CalcPrimaParams['ambito']> = {
 
 // Tipos que aplican a cada checkbox
 const NO_LUNAS_TIPOS = new Set(['semirremolque', 'industrial no matriculado']);
-const ANIMALES_TIPOS = new Set(['turismo', 'furgoneta']);
+const ANIMALES_TIPOS = new Set<TipoVehiculo>([
+  'turismo', 'derivado_turismo', 'derivado_todoterreno', 'furgoneta', 'furgon', 'moto',
+  // 2.ª cat.: hoy el motor también lo cobra (ajuste plano 25 €).
+  'cabeza_tractora', 'camion_rigido', 'semirremolque',
+]);
 const ISOTERMO_TIPOS = new Set(['camion_rigido', 'semirremolque']);
 const PERDIDA_TOTAL_TIPOS = new Set(['cabeza_tractora', 'camion_rigido', 'semirremolque']);
 
@@ -111,9 +119,13 @@ function rowToPrimaParams(row: OfertaRow): CalcPrimaParams | null {
   let producto = PRODUCTO_MAP[cobLower];
   if (!producto) return null;
 
-  // Terceros + Lunas Sí → terceros_con_luna
+  // Terceros + Lunas Sí: en 2.ª cat. existe fila `terceros_con_luna` (dato histórico). En 1.ª y 3.ª cat.
+  // las lunas son un suplemento sobre Terceros (D11 03/11/2026).
   const lunasActive = ['sí', 'si', 'true', 's', 'oro'].includes((row.lunas ?? '').toLowerCase());
-  if (producto === 'terceros' && lunasActive) {
+  const esCat2 = !!(tipoVehiculo === 'cabeza_tractora' || tipoVehiculo === 'camion_rigido' ||
+                     tipoVehiculo === 'semirremolque' || tipoVehiculo === 'industrial_matriculado' ||
+                     tipoVehiculo === 'industrial_no_matriculado');
+  if (producto === 'terceros' && lunasActive && esCat2) {
     producto = 'terceros_con_luna';
   }
 
@@ -121,10 +133,14 @@ function rowToPrimaParams(row: OfertaRow): CalcPrimaParams | null {
   const ambito = AMBITO_MAP[row.ambito.toLowerCase()];
   const franquicia = producto === 'todo_riesgo' ? (parseFloat(row.frq) || undefined) : undefined;
 
-  // Asistencia: 'oro' | 'oro_plus' | 'no'
+  // Asistencia: 1.ª cat + moto → no/oro/oro_plus/platino · 2.ª cat → no/nacional/internacional.
   const asistVal = (row.asistencia ?? '').toLowerCase();
-  const asistencia: 'no' | 'oro' | 'oro_plus' =
-    asistVal === 'oro_plus' ? 'oro_plus' :
+  type Niv = 'no' | 'oro' | 'oro_plus' | 'platino' | 'nacional' | 'internacional';
+  const asistencia: Niv =
+    asistVal === 'oro_plus'     ? 'oro_plus' :
+    asistVal === 'platino'      ? 'platino' :
+    asistVal === 'nacional'     ? 'nacional' :
+    asistVal === 'internacional'? 'internacional' :
     ['oro', 'sí', 'si', 'true', 's'].includes(asistVal) ? 'oro' : 'no';
 
   return {
@@ -135,6 +151,7 @@ function rowToPrimaParams(row: OfertaRow): CalcPrimaParams | null {
     franquicia,
     asistencia,
     animales: row.animales === 'true',
+    lunas: lunasActive && !esCat2,          // 1.ª / 3.ª cat.: suplemento
     isotermo: row.isotermo === 'true',
     perdidaTotal: row.perdida_total === 'true',
   };
@@ -159,11 +176,12 @@ const frqTexto = (r: Pick<OfertaRow, 'coberturas' | 'frq'>) => {
 
 // ─── PDF builder ─────────────────────────────────────────────────────────────
 
+// Base de la oferta (03/11/2026, D4): Seguro del Conductor ya no viaja por defecto, se añade solo si se
+// contrata explícitamente.
 const BASE_GARANTIAS_OFERTA = [
   'Responsabilidad civil obligatoria',
   'Responsabilidad civil voluntaria (hasta 50 millones)',
   'Defensa jurídica y reclamación de daños',
-  'Seguro del Conductor (22.550 €)',
 ];
 
 function buildOfertaPdfHtml(data: {
@@ -511,10 +529,7 @@ const ORDEN_PRODUCTO: Record<ConfigCobertura['producto'], number> = {
 };
 
 // Clave de INFORME de una fila: «TIPO||Cobertura solicitada».
-const tipoNormDe = (tv: string) => {
-  const u = (tv || '').toUpperCase().trim() || 'SIN TIPO';
-  return u === 'DERIVADO DE TURISMO' ? 'TURISMO' : u;
-};
+const tipoNormDe = (tv: string) => (tv || '').toUpperCase().trim() || 'SIN TIPO';
 const claveInforme = (row: Pick<OfertaRow, 'tipo_vehiculo' | 'cob_solicitada' | 'coberturas'>) =>
   `${tipoNormDe(row.tipo_vehiculo)}||${row.cob_solicitada || row.coberturas || 'Sin cobertura'}`;
 
@@ -749,7 +764,8 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
   // ── Coberturas para el anexo ──────────────────────────────────────────────
   const cobAnexo = useMemo(() => {
     const TIPOS_REMOLQUE = new Set(['semirremolque', 'remolque']);
-    const BASE_NO_CONDUCTOR = BASE_GARANTIAS_OFERTA.filter(g => !g.includes('Conductor'));
+    // Base común también para remolques desde que Seguro del Conductor salió de la base.
+    const BASE_NO_CONDUCTOR = BASE_GARANTIAS_OFERTA;
     const makeCobMap = () => new Map<string, { nonRem: Set<string>; rem: Set<string>; hasLunas: boolean }>();
     const cobMapSin = makeCobMap();
     const cobMapCon = makeCobMap();

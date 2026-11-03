@@ -6,7 +6,8 @@
 // ─── Opciones canónicas ───────────────────────────────────────────────────────
 
 export const TIPO_VEHICULO_OPTS = [
-  'Turismo', 'Todoterreno', 'Furgoneta', 'Cabeza tractora', 'Camión rígido',
+  'Turismo', 'Todoterreno', 'Derivado de Turismo', 'Derivado de Todoterreno',
+  'Furgoneta', 'Cabeza tractora', 'Camión rígido',
   'Semirremolque', 'Industrial matriculado', 'Industrial no matriculado', 'Motocicleta',
 ];
 
@@ -36,8 +37,7 @@ function addAliases(canonical: string, aliases: string[]) {
 
 addAliases('Turismo', [
   'turismo', 'turismos', 'turis', 'tur', 'turism',
-  'derivado de turismo', 'derivado turismo', 'deriv turismo', 'deriv. turismo',
-  'turismo derivado', 'automovil', 'automóvil', 'auto', 'coche', 'pkw',
+  'automovil', 'automóvil', 'auto', 'coche', 'pkw',
   'berlina', 'sedan', 'familiar', 'coupe', 'descapotable', 'cabrio', 'cabriolet',
   'hatchback', 'microcar', 'microcoche', 'cuadriciclo', 'quad',
 ]);
@@ -45,7 +45,19 @@ addAliases('Turismo', [
 addAliases('Todoterreno', [
   'todoterreno', 'todo terreno', 'todo-terreno', 'suv', 'monovolumen',
   'crossover', 'offroad', 'off-road', '4x4', '4wd', 'awd',
-  'jeep', 'pickup', 'pick up', 'pick-up',
+  'jeep',
+]);
+
+addAliases('Derivado de Turismo', [
+  'derivado de turismo', 'derivado turismo', 'deriv turismo', 'deriv. turismo',
+  'turismo derivado', 'derivado tur', 'dtur', 'cdtur',
+]);
+
+addAliases('Derivado de Todoterreno', [
+  'derivado de todoterreno', 'derivado todoterreno', 'derivado de todo terreno',
+  'derivado todo terreno', 'deriv todoterreno', 'deriv. todoterreno',
+  'todoterreno derivado', 'cdtt', 'derivado todo-terreno',
+  'pickup', 'pick up', 'pick-up',
 ]);
 
 addAliases('Furgoneta', [
@@ -53,7 +65,7 @@ addAliases('Furgoneta', [
   'furgón', 'van', 'combi', 'mixto', 'mixta', 'furgon mixto',
   'furgoneta mixta', 'vehiculo mixto', 'vehículo mixto',
   'derivado de camion', 'derivado camion', 'deriv camion', 'deriv. camion',
-  'derivado de furgoneta', 'pick up', 'pickup', 'pick-up',
+  'derivado de furgoneta',
   'vehiculo comercial', 'vehículo comercial', 'comercial',
 ]);
 

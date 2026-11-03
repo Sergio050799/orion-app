@@ -3,8 +3,8 @@
 import { TipoVehiculo, Producto, VEH_META } from './primas';
 import { FRANQUICIAS_CAT1, FRANQUICIAS_CAT2 } from './catalogoCoberturas';
 
-/** Devuelve la categoría del vehículo (1 o 2). */
-export function getCategoria(tipoVehiculo: TipoVehiculo): 1 | 2 {
+/** Devuelve la categoría del vehículo (1, 2 o 3). */
+export function getCategoria(tipoVehiculo: TipoVehiculo): 1 | 2 | 3 {
     return VEH_META[tipoVehiculo].categoria;
 }
 

@@ -194,7 +194,7 @@ export async function generarPlantillaExcel(
   // ── Filas de datos (100 filas) ───────────────────────────────────────────
   // Tipo → Cobertura → Franquicia: tres desplegables encadenados que salen del catálogo único de coberturas
   // (catalogoCoberturas.ts). La tipología limita la cobertura y la cobertura limita la franquicia.
-  const TIPOS_PLANTILLA = ['Turismo', 'Furgoneta', 'Cabeza tractora', 'Camion rigido', 'Semirremolque', 'Industrial matriculado', 'Industrial no matriculado', 'Motocicleta'];
+  const TIPOS_PLANTILLA = ['Turismo', 'Derivado de Turismo', 'Derivado de Todoterreno', 'Furgoneta', 'Cabeza tractora', 'Camion rigido', 'Semirremolque', 'Industrial matriculado', 'Industrial no matriculado', 'Motocicleta'];
   const GRUPOS: GrupoCob[] = ['a1', 'a2', 'ind', 'a3'];
   const NO_APLICA = 'No aplica';
   const wsL = wb.addWorksheet('_LISTAS', { state: 'veryHidden' });

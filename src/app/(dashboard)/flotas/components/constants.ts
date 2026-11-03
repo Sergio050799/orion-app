@@ -11,7 +11,7 @@ import type { ColDef } from './types';
 // ─── Opciones estáticas ──────────────────────────────────────────────────────
 
 export const TIPO_VEHICULO_OPTIONS = [
-  'Turismo', 'Furgoneta', 'Cabeza tractora', 'Camión rígido',
+  'Turismo', 'Derivado de Turismo', 'Derivado de Todoterreno', 'Furgoneta', 'Cabeza tractora', 'Camión rígido',
   'Semirremolque', 'Industrial matriculado', 'Industrial no matriculado',
 ];
 export const USO_OPTIONS = ['Particular', 'Servicio público', 'Transportes propios'];
@@ -20,8 +20,11 @@ export const ADR_OPTIONS = ['No', 'Sí'];
 
 // ─── Mapas de conversión ─────────────────────────────────────────────────────
 
+// Derivado de Turismo / Todoterreno: motor legacy los trata como turismo (1.ª cat, grupo a1); el motor nuevo
+// (orion-api) ya los diferencia con tarifa propia cuando el jefe la cargue en Admin.
 export const TIPO_VEH_MAP: Record<string, TipoVehiculo> = {
-  'Turismo': 'turismo', 'Furgoneta': 'furgoneta', 'Cabeza tractora': 'cabeza_tractora',
+  'Turismo': 'turismo', 'Derivado de Turismo': 'turismo', 'Derivado de Todoterreno': 'turismo',
+  'Furgoneta': 'furgoneta', 'Cabeza tractora': 'cabeza_tractora',
   'Camión rígido': 'camion_rigido', 'Semirremolque': 'semirremolque',
   'Industrial matriculado': 'industrial_matriculado', 'Industrial no matriculado': 'industrial_no_matriculado',
 };

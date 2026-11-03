@@ -81,7 +81,8 @@ export const PRODUCTO_DEF: Record<ProductoKey, ProductoDef> =
 
 // ─── Franquicias (decididas por suscripción) ─────────────────────────────────
 
-export const FRANQUICIAS_CAT1 = [120, 180, 240, 300, 450, 600, 750, 950, 1200] as const;
+// Franq. 1.200 € retirada de 1.ª cat. el 2026-11-03 (D10).
+export const FRANQUICIAS_CAT1 = [120, 180, 240, 300, 450, 600, 750, 950] as const;
 export const FRANQUICIAS_CAT2 = [1800, 2400] as const;
 export const FRANQUICIAS_MOTO = [300, 400, 500, 600, 800, 1000, 2000, 2500, 3000] as const;
 
@@ -100,13 +101,17 @@ export function tipoKeyDesdeEtiqueta(label: string): TipoKey {
     if (/industrial|especial|agricola/.test(u)) return 'industrial';
     if (/camion|rigido/.test(u)) return 'camion';
     if (/furgon/.test(u)) return 'furgoneta';
-    if (/turismo|todoterreno|todo terreno|suv|derivado/.test(u)) return 'turismo';
+    // Derivado de turismo / todoterreno: tipología propia (categoría 1, grupo a1).
+    if (/derivado.*todo\s*terreno|derivado.*todoterreno|todoterreno.*derivado/.test(u)) return 'derivado_todoterreno';
+    if (/derivado.*turismo|turismo.*derivado/.test(u)) return 'derivado_turismo';
+    if (/turismo|todoterreno|todo terreno|suv/.test(u)) return 'turismo';
     return 'sin_clasificar';
 }
 
 export function grupoCob(tipo: TipoKey): GrupoCob | null {
     switch (tipo) {
-        case 'turismo': case 'furgoneta': case 'furgon': return 'a1';
+        case 'turismo': case 'derivado_turismo': case 'derivado_todoterreno':
+        case 'furgoneta': case 'furgon': return 'a1';
         case 'camion': case 'cabeza_tractora': case 'remolque': return 'a2';
         case 'industrial': return 'ind';
         case 'moto': return 'a3';
@@ -196,30 +201,30 @@ function opcDefensa(g: GrupoCob): { opciones: Opcion[]; defecto: string } {
 }
 
 function opcAsistencia(g: GrupoCob): { opciones: Opcion[]; defecto: string } {
+    // D6 (03/11/2026): 1.ª → NO/Oro/Oro Plus/Platino; 2.ª → NO/Nacional/Internacional; moto → NO/Oro. Default NO.
     if (g === 'a1') return {
         opciones: [
-            { value: 'NO',     label: 'No',                                   id: 'NO' },
-            { value: 'AV_1_1', label: 'AV Oro',                               id: 'AV_1_1' },
-            { value: 'AV_1_2', label: 'AV Platino',                           id: 'AV_1_2' },
-            { value: 'AV_1_3', label: 'Limitada (máx. 4 asistencias al año)', id: 'AV_1_3' },
+            { value: 'NO',     label: 'No',           id: 'NO'     },
+            { value: 'AV_1_1', label: 'AV Oro',       id: 'AV_1_1' },
+            { value: 'AV_1_4', label: 'AV Oro Plus',  id: 'AV_1_4' },
+            { value: 'AV_1_2', label: 'AV Platino',   id: 'AV_1_2' },
         ],
-        defecto: 'AV_1_2',
+        defecto: 'NO',
     };
     if (g === 'a2') return {
         opciones: [
-            { value: 'NO',     label: 'No',                           id: 'NO' },
-            { value: 'AV_1_1', label: 'AV Oro',                       id: 'AV_1_1' },
-            { value: 'AV_4_1', label: 'Transporte local y nacional',  id: 'AV_4_1' },
-            { value: 'AV_4_2', label: 'Transporte internacional',     id: 'AV_4_2' },
+            { value: 'NO',     label: 'No',                          id: 'NO'     },
+            { value: 'AV_4_1', label: 'Transporte local y nacional', id: 'AV_4_1' },
+            { value: 'AV_4_2', label: 'Transporte internacional',    id: 'AV_4_2' },
         ],
         defecto: 'NO',
     };
     return {
         opciones: [
-            { value: 'NO',      label: 'No',            id: 'NO' },
+            { value: 'NO',      label: 'No',            id: 'NO'      },
             { value: 'AVM_1_1', label: 'AV Oro (moto)', id: 'AVM_1_1' },
         ],
-        defecto: 'AVM_1_1',
+        defecto: 'NO',
     };
 }
 
@@ -235,7 +240,7 @@ function opcSeguroConductor(g: GrupoCob): { opciones: Opcion[]; defecto: string 
             { value: 'OCA_1_6', label: 'XO · hasta 30.055 €', id: 'OCA_1_6' },
             no,
         ],
-        defecto: 'OCA_1_1',
+        defecto: 'NO',
     };
     if (g === 'a2') return {
         opciones: [
@@ -246,7 +251,7 @@ function opcSeguroConductor(g: GrupoCob): { opciones: Opcion[]; defecto: string 
             { value: 'OC_1_5', label: 'XM · hasta 18.035 €', id: 'OC_1_5' },
             no,
         ],
-        defecto: 'OC_1_3',
+        defecto: 'NO',
     };
     return {
         opciones: [
@@ -254,7 +259,7 @@ function opcSeguroConductor(g: GrupoCob): { opciones: Opcion[]; defecto: string 
             { value: 'OCM_1_2', label: 'YB · hasta 12.000 €', id: 'OCM_1_2' },
             no,
         ],
-        defecto: 'OCM_1_1',
+        defecto: 'NO',
     };
 }
 
@@ -274,10 +279,10 @@ export function camposDe(tipo: TipoKey, producto: ProductoKey, franquicia?: numb
     add({ id: 'rco_dc', grupo: 'Responsabilidad civil obligatoria', label: 'Daños corporales', kind: 'fijo', fijo: 'Incluida' });
     if (g === 'ind') return out;                  // industriales: solo Terceros, sin extras
 
-    // Responsabilidad civil voluntaria (sin columna en la plantilla de emisión; la de reposo, ID pendiente)
+    // Responsabilidad civil voluntaria (D2 03/11/2026: base = solo circulación; reposo/carga/híbridos/remolque → No).
     const RCV = 'Responsabilidad civil voluntaria';
     add({ id: 'rcv_circ', grupo: RCV, label: 'Vehículo en circulación', kind: 'select', opciones: siNo('Incluida (hasta 50 millones €)'), defecto: 'si', sinId: SIN_COLUMNA });
-    add({ id: 'rcv_reposo', grupo: RCV, label: 'Vehículo en reposo', kind: 'select', opciones: siNo('Incluida (hasta 1 millón €)'), defecto: g === 'a1' ? 'si' : 'no', sinId: PENDIENTE_REPOSO });
+    add({ id: 'rcv_reposo', grupo: RCV, label: 'Vehículo en reposo', kind: 'select', opciones: siNo('Incluida (hasta 1 millón €)'), defecto: 'no', sinId: PENDIENTE_REPOSO });
     if (g === 'a1') add({ id: 'rcv_carga', grupo: RCV, label: 'De la carga', kind: 'select', opciones: siNo('Incluida'), defecto: 'no', sinId: SIN_COLUMNA });
     add({ id: 'rcv_hibridos', grupo: RCV, label: 'En vehículos híbridos enchufables y eléctricos', kind: 'select', opciones: siNo('Incluida'), defecto: 'no', sinId: SIN_COLUMNA });
     if (g === 'a1') add({ id: 'rcv_remolque', grupo: RCV, label: 'Por remolque y caravana ligera menor de 750 kg', kind: 'select', opciones: siNo('Incluida'), defecto: 'no', sinId: SIN_COLUMNA });
@@ -325,10 +330,11 @@ export function camposDe(tipo: TipoKey, producto: ProductoKey, franquicia?: numb
     // Defensa jurídica y reclamación de daños
     const D = 'Defensa jurídica y reclamación de daños';
     const dj = opcDefensa(g);
+    // D5: la defensa principal sigue incluida con el nivel actual; las tres complementarias pasan a opcional No.
     add({ id: 'def_jur', grupo: D, label: 'Defensa jurídica y reclamación de daños al vehículo y como peatón', kind: 'select', opciones: dj.opciones, defecto: dj.defecto, col: 'ID_DEF_JUR' });
-    add({ id: 'ajt', grupo: D, label: 'Asesoramiento jurídico telefónico y gestión documental', kind: 'select', opciones: siNo('Incluida'), defecto: 'si', col: 'AJT' });
-    add({ id: 'multas', grupo: D, label: 'Defensa de infracciones de tráfico', kind: 'select', opciones: siNo('Incluida (límite 5 al año)'), defecto: 'si', col: 'MULTAS' });
-    add({ id: 'curso', grupo: D, label: 'Curso de recuperación total de puntos', kind: 'select', opciones: siNo('Incluida (hasta 500 € al año)'), defecto: 'si', col: 'CURSO_PUNTOS' });
+    add({ id: 'ajt', grupo: D, label: 'Asesoramiento jurídico telefónico y gestión documental', kind: 'select', opciones: siNo('Incluida'), defecto: 'no', col: 'AJT' });
+    add({ id: 'multas', grupo: D, label: 'Defensa de infracciones de tráfico', kind: 'select', opciones: siNo('Incluida (límite 5 al año)'), defecto: 'no', col: 'MULTAS' });
+    add({ id: 'curso', grupo: D, label: 'Curso de recuperación total de puntos', kind: 'select', opciones: siNo('Incluida (hasta 500 € al año)'), defecto: 'no', col: 'CURSO_PUNTOS' });
 
     // Asistencia en viaje, seguro del conductor y subsidio
     const av = opcAsistencia(g);
@@ -423,8 +429,15 @@ export function aOfertaRow(tipo: TipoKey, cfg: ConfigCobertura): { coberturas: s
     };
     const lunasFijas = campos.some(c => c.id === 'lunas_rotura' && c.kind === 'fijo');
     const av = val('asistencia');
-    // El motor de primas solo conoce oro / oro_plus / no: Platino y Limitada se tratan como Oro hasta que tengan ajuste propio.
-    const asistencia = !av ? '' : av === 'NO' ? 'no' : 'oro';
+    // 1.ª cat.: NO / AV_1_1 oro / AV_1_4 oro_plus / AV_1_2 platino.
+    // 2.ª cat.: NO / AV_4_1 nacional / AV_4_2 internacional (depende de la opción, no del ámbito del vehículo).
+    // 3.ª cat.: NO / AVM_1_1 oro.
+    const AV_MAP: Record<string, string> = {
+        AV_1_1: 'oro', AV_1_4: 'oro_plus', AV_1_2: 'platino',
+        AV_4_1: 'nacional', AV_4_2: 'internacional',
+        AVM_1_1: 'oro',
+    };
+    const asistencia = !av ? '' : av === 'NO' ? 'no' : (AV_MAP[av] ?? 'oro');
     return {
         coberturas: p.etiquetaHoja,
         frq: cfg.franquicia ? String(cfg.franquicia) : '',
@@ -538,8 +551,9 @@ export function garantiasOferta(tipo: TipoKey, cfg: ConfigCobertura): string[] {
     return out;
 }
 
-/** Etiqueta de tipo del estudio normalizada (la misma que usa INFORME): «DERIVADO DE TURISMO» cuenta como «TURISMO». */
+/** Etiqueta de tipo del estudio normalizada (la misma que usa INFORME). «Derivado de turismo» y «Derivado de
+ * todoterreno» son tipologías propias (categoría 1, grupo a1) y aparecen como filas separadas en el configurador. */
 export const tipoNormEtiqueta = (t: string) => {
     const u = (t || '').toUpperCase().trim();
-    return u === 'DERIVADO DE TURISMO' ? 'TURISMO' : u || 'SIN TIPO';
+    return u || 'SIN TIPO';
 };

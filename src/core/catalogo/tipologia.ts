@@ -12,7 +12,8 @@
 // El motor de primas (src/core/flotas/primas.ts) hoy solo conoce las categorías 1 y 2.
 
 export type TipoKey =
-    | 'turismo' | 'furgoneta' | 'furgon' | 'camion' | 'cabeza_tractora'
+    | 'turismo' | 'derivado_turismo' | 'derivado_todoterreno'
+    | 'furgoneta' | 'furgon' | 'camion' | 'cabeza_tractora'
     | 'remolque' | 'industrial' | 'minibus_autocar' | 'moto' | 'sin_clasificar';
 
 export interface TipoInfo {
@@ -25,8 +26,10 @@ export interface TipoInfo {
 }
 
 export const TIPOS: TipoInfo[] = [
-    { key: 'turismo',         label: 'Turismo / todoterreno',    categoria: 1, admitido: true },
-    { key: 'furgoneta',       label: 'Furgoneta',                categoria: 1, admitido: true },
+    { key: 'turismo',              label: 'Turismo / todoterreno',    categoria: 1, admitido: true },
+    { key: 'derivado_turismo',     label: 'Derivado de turismo',      categoria: 1, admitido: true },
+    { key: 'derivado_todoterreno', label: 'Derivado de todoterreno',  categoria: 1, admitido: true },
+    { key: 'furgoneta',            label: 'Furgoneta',                categoria: 1, admitido: true },
     { key: 'furgon',          label: 'Furgón',                   categoria: 1, admitido: true },
     { key: 'camion',          label: 'Camión rígido',            categoria: 2, admitido: true },
     { key: 'cabeza_tractora', label: 'Cabeza tractora',          categoria: 2, admitido: true },
@@ -52,7 +55,7 @@ export const CLASE_TIPO: Record<string, TipoKey> = {
     // Turismo / todoterreno (categoría 1)
     PO: 'turismo', BE: 'turismo', FA: 'turismo', TT: 'turismo',
     CO: 'turismo', CA: 'turismo', TA: 'turismo',
-    CDTUR: 'turismo', CDTT: 'turismo', MV: 'turismo',
+    CDTUR: 'derivado_turismo', CDTT: 'derivado_todoterreno', MV: 'turismo',
 
     // Furgoneta (categoría 1; PMA > 3.500 kg → camion vía clasificar())
     FUR: 'furgoneta',
