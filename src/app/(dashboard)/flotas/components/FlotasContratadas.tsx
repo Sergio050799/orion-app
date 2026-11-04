@@ -72,8 +72,9 @@ export default function FlotasContratadas({ onSelect }: Props) {
 
   const cargar = async () => {
     try {
+      // Portfolio: payload ligero (~25× menor). El detalle completo se pide al abrir la carpeta.
       const [c, corr] = await Promise.all([
-        cargarCarpetasDelServidor(),
+        cargarCarpetasDelServidor(undefined, true),
         cargarCorredoresDelServidor(),
       ]);
       setCarpetas(c);

@@ -383,14 +383,11 @@ export default function FlotasPage() {
     // so it's always newer than what CarpetaScreen's state might have (race condition).
     const fromCache = cargarCarpeta(raw.id);
     let carpeta = normalizarCarpeta(fromCache ?? raw);
-    // Si la carpeta ya no está «EN ESTUDIO» (OFERTADA, ESTUDIADA, CONTRATADA, RECHAZADA)
-    // pero llega sin datos reales, pedimos el detalle completo al servidor.
-    // Las listas en portfolio pueden venir en modo ligero (summary) sin original/trabajo/sinco.
-    const sinDatos = (carpeta.original?.length ?? 0) === 0
-                   && (carpeta.trabajo?.length ?? 0) === 0
-                   && (carpeta.oferta?.length ?? 0) === 0
-                   && (carpeta.sincoResultados?.length ?? 0) === 0;
-    if (sinDatos && carpeta.estado && carpeta.estado !== 'EN ESTUDIO') {
+    // Detectar «carpeta ligera» (viene del portfolio con summary=true): summary nunca trae original ni
+    // trabajo, aunque sí header/oferta reducida. Si está vacía de esos dos y el estado implica que ha
+    // tenido actividad (no es una EN ESTUDIO recién creada), pedimos el detalle completo al servidor.
+    const parece_summary = (carpeta.original?.length ?? 0) === 0 && (carpeta.trabajo?.length ?? 0) === 0;
+    if (parece_summary && carpeta.estado && carpeta.estado !== 'EN ESTUDIO') {
       const fresh = await cargarCarpetaDelServidor(carpeta.id);
       if (fresh) carpeta = normalizarCarpeta(fresh);
     }
