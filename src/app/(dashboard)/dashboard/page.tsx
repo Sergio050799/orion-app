@@ -105,11 +105,23 @@ const MES_CORTO = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep'
 const CHART_DATA = {
   flotas:    { name: 'Flotas',    what: 'Flotas dadas de alta',  fmt: nf,  note: 'Cada flota se cuenta en el mes de su fecha de creación.' },
   vehiculos: { name: 'Vehículos', what: 'Vehículos incorporados', fmt: nf, note: 'Cada flota aporta sus vehículos en el mes de su fecha de creación.' },
-  primas:    { name: 'Primas',    what: 'Prima ofertada',         fmt: eur, note: 'Cada flota aporta su prima ofertada en el mes de su fecha de creación.' },
+  primas:    { name: 'Primas',    what: 'Prima en estudio',       fmt: eur, note: 'En estudio = prima ofertada de las flotas En estudio, Estudiada u Ofertada, en el mes en que se crearon. Contratada = prima de las flotas Contratadas, en el mes en que pasaron a Contratada. Las rechazadas no cuentan.' },
 };
 type MetricKey = keyof typeof CHART_DATA;
 type SerieMes = { now: number[]; prev: number[] };
-type Series = { labels: string[]; data: Record<MetricKey, SerieMes> };
+type Series = { labels: string[]; data: Record<MetricKey, SerieMes>; contratada: SerieMes };
+
+/** Prima de una flota: la ofertada por MMT y, si aún no hay oferta, la prima cliente. */
+function primaDeFlota(c: FlotaCarpeta): number {
+  const o = (c.oferta ?? []).reduce((t, r) => t + (parseFloat(r['oferta_prima_mmt']) || 0), 0);
+  return o > 0 ? o : (c.primaClienteTotal ?? 0);
+}
+
+/** Fecha en la que la flota pasó a Contratada (último cambio a ese estado; si no consta, su última actualización). */
+function fechaContratacion(c: FlotaCarpeta): string {
+  const h = [...(c.historico ?? [])].reverse().find(e => e.estadoNuevo === 'CONTRATADA');
+  return h?.fecha ?? c.actualizadaEn ?? c.creadaEn;
+}
 
 /** Serie de 12 meses (mes en curso incluido) y del mismo periodo un año antes, calculada con las flotas reales. */
 function buildSeries(cs: FlotaCarpeta[]): Series {
@@ -117,20 +129,30 @@ function buildSeries(cs: FlotaCarpeta[]): Series {
   const base = hoy.getFullYear() * 12 + hoy.getMonth();
   const zero = () => Array.from({ length: 24 }, () => 0);
   const acc: Record<MetricKey, number[]> = { flotas: zero(), vehiculos: zero(), primas: zero() };
+  const contr = zero();
+  const idxDe = (iso: string) => {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return -1;
+    const i = 23 - (base - (d.getFullYear() * 12 + d.getMonth()));
+    return i < 0 || i > 23 ? -1 : i;
+  };
   for (const c of cs) {
-    const d = new Date(c.creadaEn);
-    if (isNaN(d.getTime())) continue;
-    const idx = 23 - (base - (d.getFullYear() * 12 + d.getMonth()));
-    if (idx < 0 || idx > 23) continue;
+    // Primas contratadas: se cuentan en el mes de la contratación.
+    if (c.estado === 'CONTRATADA') {
+      const ic = idxDe(fechaContratacion(c));
+      if (ic >= 0) contr[ic] += primaDeFlota(c);
+    }
+    const idx = idxDe(c.creadaEn);
+    if (idx < 0) continue;
     const vehCount = c.vehiculosCount ?? (c.trabajo?.length > 0 ? c.trabajo.length : (c.original?.length ?? 0));
-    const primaOferta = (c.oferta ?? []).reduce((t, r) => t + (parseFloat(r['oferta_prima_mmt']) || 0), 0);
     acc.flotas[idx] += 1;
     acc.vehiculos[idx] += vehCount;
-    acc.primas[idx] += primaOferta > 0 ? primaOferta : (c.primaClienteTotal ?? 0);
+    // Primas en estudio: solo flotas aún sin contratar ni rechazar.
+    if (c.estado !== 'CONTRATADA' && c.estado !== 'RECHAZADA') acc.primas[idx] += primaDeFlota(c);
   }
   const labels = Array.from({ length: 12 }, (_, j) => MES_CORTO[(((hoy.getMonth() - 11 + j) % 12) + 12) % 12]);
   const cut = (arr: number[]): SerieMes => ({ prev: arr.slice(0, 12), now: arr.slice(12) });
-  return { labels, data: { flotas: cut(acc.flotas), vehiculos: cut(acc.vehiculos), primas: cut(acc.primas) } };
+  return { labels, data: { flotas: cut(acc.flotas), vehiculos: cut(acc.vehiculos), primas: cut(acc.primas) }, contratada: cut(contr) };
 }
 
 // ─── Category classification ──────────────────────────────────────────────────
@@ -286,8 +308,9 @@ function EvolutionChart({
   }, []);
 
   const S    = CHART_DATA[metric];
+  const dual = metric === 'primas';   // primas: en estudio frente a contratada (en vez de «año anterior»)
   const now  = series.data[metric].now.slice(-period);
-  const prev = series.data[metric].prev.slice(-period);
+  const prev = (dual ? series.contratada.now : series.data[metric].prev).slice(-period);
   const labels = series.labels.slice(-period);
 
   const { W, H } = dims;
@@ -335,11 +358,16 @@ function EvolutionChart({
     const tx = X(idx) * k + (svgRect.left - containerRect.left);
     const flip = tx > containerRect.width - 200;
     setCrosshair({ x: X(idx), pn: pn[idx], pp: pp[idx] });
-    const d = prev[idx] ? ((now[idx] - prev[idx]) / prev[idx] * 100) : null;
-    setTipContent(`<b>${labels[idx]}</b><br><span class="db-tip-k"></span>${S.fmt(now[idx])}<br><span class="db-tip-k db-tip-kp"></span>${S.fmt(prev[idx])}<br><span style="color:var(--quiet)">${d === null ? '—' : sgn(d)} interanual</span>`);
+    if (dual) {
+      const t = now[idx] + prev[idx];
+      setTipContent(`<b>${labels[idx]}</b><br><span class="db-tip-k"></span>En estudio ${S.fmt(now[idx])}<br><span class="db-tip-k" style="border-top-color:var(--ok)"></span>Contratada ${S.fmt(prev[idx])}<br><span style="color:var(--quiet)">${t > 0 ? pc(prev[idx] / t * 100, 0) + ' contratado' : '—'}</span>`);
+    } else {
+      const d = prev[idx] ? ((now[idx] - prev[idx]) / prev[idx] * 100) : null;
+      setTipContent(`<b>${labels[idx]}</b><br><span class="db-tip-k"></span>${S.fmt(now[idx])}<br><span class="db-tip-k db-tip-kp"></span>${S.fmt(prev[idx])}<br><span style="color:var(--quiet)">${d === null ? '—' : sgn(d)} interanual</span>`);
+    }
     setTipPos({ left: flip ? tx - 180 : tx + 14, top: 8 });
     setTipVisible(true);
-  }, [now, prev, pn, pp, labels, S, W, X]);
+  }, [now, prev, pn, pp, labels, S, W, X, dual]);
 
   const handleMouseLeave = useCallback(() => {
     setCrosshair(null);
@@ -349,9 +377,27 @@ function EvolutionChart({
   const totalNow  = sum(now);
   const totalPrev = sum(prev);
   const delta     = totalPrev ? (totalNow - totalPrev) / totalPrev * 100 : null;
+  const totalGest = totalNow + totalPrev;                     // solo en modo primas
+  const pesoContr = totalGest > 0 ? totalPrev / totalGest * 100 : null;
 
   return (
     <div>
+      {dual ? (
+        <div className="db-hero">
+          <div>
+            <div className="db-big">{S.fmt(totalNow)}</div>
+            <div className="db-cap"><i className="db-ln" /> En estudio · {period} meses</div>
+          </div>
+          <div>
+            <div className="db-big" style={{ color: 'var(--ok)' }}>{S.fmt(totalPrev)}</div>
+            <div className="db-cap"><i className="db-ln" style={{ borderTopColor: 'var(--ok)' }} /> Contratada · {period} meses</div>
+          </div>
+          <div>
+            <div className="db-big">{pesoContr === null ? '—' : pc(pesoContr, 0)}</div>
+            <div className="db-cap">contratado sobre el total</div>
+          </div>
+        </div>
+      ) : (
       <div className="db-hero">
         <div>
           <div className="db-big">{S.fmt(totalNow)}</div>
@@ -362,6 +408,7 @@ function EvolutionChart({
           <div className="db-cap">frente al año anterior</div>
         </div>
       </div>
+      )}
 
       <div ref={containerRef} className="db-chart" onClick={onDetailClick} style={{ cursor: 'pointer' }}>
         <div
@@ -372,6 +419,10 @@ function EvolutionChart({
         <svg viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', width: '100%', height: 'auto', overflow: 'visible' }}
           role="img" aria-label={`Evolución de ${S.name.toLowerCase()}`}>
           <defs>
+            <linearGradient id="dbGradB" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stopColor="var(--ok)" stopOpacity="0.22" />
+              <stop offset="1" stopColor="var(--ok)" stopOpacity="0" />
+            </linearGradient>
             <linearGradient id="dbGradA" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0" stopColor="var(--blue)" stopOpacity="0.26" />
               <stop offset="1" stopColor="var(--blue)" stopOpacity="0" />
@@ -390,19 +441,23 @@ function EvolutionChart({
           ))}
 
           <path d={`${dn} L${last[0]},${T + ih} L${pn[0][0]},${T + ih}Z`} fill="url(#dbGradA)" />
-          <path d={dp} fill="none" stroke="var(--prev)" strokeWidth="2" strokeDasharray="1 5" strokeLinecap="round" />
+          {dual && <path d={`${dp} L${pp[pp.length - 1][0]},${T + ih} L${pp[0][0]},${T + ih}Z`} fill="url(#dbGradB)" />}
+          {dual
+            ? <path className="db-draw" pathLength={1} d={dp} fill="none" stroke="var(--ok)" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />
+            : <path d={dp} fill="none" stroke="var(--prev)" strokeWidth="2" strokeDasharray="1 5" strokeLinecap="round" />}
           <path className="db-draw" pathLength={1} d={dn} fill="none" stroke="var(--blue)" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />
 
           {pn.map((p, i) => i === pn.length - 1 ? null : (
             <circle key={i} cx={p[0]} cy={p[1]} r="3.6" fill="var(--bg)" stroke="var(--blue)" strokeWidth="2" />
           ))}
           <circle cx={last[0]} cy={last[1]} r="5.5" fill="var(--blue)" stroke="var(--bg)" strokeWidth="2" />
+          {dual && <circle cx={pp[pp.length - 1][0]} cy={pp[pp.length - 1][1]} r="5.5" fill="var(--ok)" stroke="var(--bg)" strokeWidth="2" />}
 
           {crosshair && (
             <>
               <line x1={crosshair.x} x2={crosshair.x} y1={T} y2={T + ih} stroke="var(--quiet)" strokeWidth="1" strokeDasharray="3 4" opacity="0.7" />
               <circle cx={crosshair.pn[0]} cy={crosshair.pn[1]} r="5.5" fill="var(--blue)" stroke="var(--bg)" strokeWidth="2" />
-              <circle cx={crosshair.pp[0]} cy={crosshair.pp[1]} r="4.5" fill="var(--prev)" stroke="var(--bg)" strokeWidth="2" />
+              <circle cx={crosshair.pp[0]} cy={crosshair.pp[1]} r="4.5" fill={dual ? 'var(--ok)' : 'var(--prev)'} stroke="var(--bg)" strokeWidth="2" />
             </>
           )}
 
@@ -416,8 +471,17 @@ function EvolutionChart({
       </div>
 
       <div className="db-legend">
-        <span><i className="db-ln" /> Periodo actual</span>
-        <span><i className="db-ln db-ln-p" /> Mismo periodo del año anterior</span>
+        {dual ? (
+          <>
+            <span><i className="db-ln" /> Prima en estudio</span>
+            <span><i className="db-ln" style={{ borderTopColor: 'var(--ok)' }} /> Prima contratada</span>
+          </>
+        ) : (
+          <>
+            <span><i className="db-ln" /> Periodo actual</span>
+            <span><i className="db-ln db-ln-p" /> Mismo periodo del año anterior</span>
+          </>
+        )}
       </div>
       {CHART_DATA[metric].note && (
         <p className="db-note">{CHART_DATA[metric].note}</p>
@@ -825,6 +889,28 @@ export default function DashboardPage() {
           ['Urgente', '0 ≤ días ≤ 15'],
           ['Vencida', 'días < 0 (solo en este detalle e informe)'],
         ],
+      };
+    }
+
+    if (key === 'evolucion' && metric === 'primas') {
+      const S    = CHART_DATA.primas;
+      const est  = series.data.primas.now.slice(-period);
+      const con  = series.contratada.now.slice(-period);
+      const labels = series.labels.slice(-period);
+      const A = sum(est), C = sum(con), T = A + C;
+      return {
+        over: `Serie histórica · Primas${ctx}`,
+        title: 'Prima en estudio frente a contratada',
+        desc: 'Prima ofertada de las flotas aún en estudio y prima de las flotas contratadas, mes a mes.',
+        stats: [['En estudio', S.fmt(A)], ['Contratada', S.fmt(C)], ['Contratado sobre el total', T > 0 ? pc(C / T * 100, 0) : '—']],
+        head: ['Mes', 'En estudio', 'Contratada', '% contratado'],
+        rows: labels.map((m, j) => [m, S.fmt(est[j]), S.fmt(con[j]), est[j] + con[j] > 0 ? pc(con[j] / (est[j] + con[j]) * 100, 0) : '—']),
+        fx: [
+          ['En estudio', 'Σ prima ofertada de flotas En estudio / Estudiada / Ofertada, en el mes de creación'],
+          ['Contratada', 'Σ prima de flotas Contratadas, en el mes en que pasaron a Contratada (histórico de la flota)'],
+          ['Contratado sobre el total', `contratada ÷ (en estudio + contratada) × 100 = ${T > 0 ? pc(C / T * 100, 0) : '—'}`],
+        ],
+        note: 'Las flotas rechazadas no cuentan. Una flota contratada deja de contar como «en estudio» y pasa a la serie contratada.',
       };
     }
 

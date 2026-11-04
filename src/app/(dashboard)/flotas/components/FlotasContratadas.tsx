@@ -5,9 +5,20 @@ import * as XLSX from 'xlsx';
 import {
   listarCarpetas, listarCorredores,
   cargarCarpetasDelServidor, cargarCorredoresDelServidor,
-  type FlotaCarpeta, type Corredor,
+  type FlotaCarpeta, type Corredor, type EstadoFlota,
 } from '@/core/flotas';
 import { EstadoBadge } from './CarpetaScreen';
+
+// Pills de filtro por estado. '' = todas.
+type FiltroEstado = '' | EstadoFlota;
+const ESTADOS_PILL: { key: FiltroEstado; label: string }[] = [
+  { key: '',            label: 'Todas'      },
+  { key: 'EN ESTUDIO',  label: 'En estudio' },
+  { key: 'ESTUDIADA',   label: 'Estudiadas' },
+  { key: 'OFERTADA',    label: 'Ofertadas'  },
+  { key: 'CONTRATADA',  label: 'Contratadas'},
+  { key: 'RECHAZADA',   label: 'Rechazadas' },
+];
 
 interface Props {
   onSelect: (carpeta: FlotaCarpeta) => void;
@@ -54,7 +65,7 @@ export default function FlotasContratadas({ onSelect }: Props) {
   const [carpetas, setCarpetas]     = useState<FlotaCarpeta[]>([]);
   const [corredores, setCorredores] = useState<Corredor[]>([]);
   const [query, setQuery]           = useState('');
-  const estadoFilter = 'EN ESTUDIO';
+  const [estadoFilter, setEstadoFilter] = useState<FiltroEstado>('');
   const [uploading, setUploading]   = useState(false);
   const [uploadResult, setUploadResult] = useState<{ created: number; updated: number; errors: string[] } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -82,17 +93,19 @@ export default function FlotasContratadas({ onSelect }: Props) {
   }, [corredores]);
 
   const counts = useMemo(() => ({
-    TODAS:        carpetas.length,
+    '':           carpetas.length,
     'EN ESTUDIO': carpetas.filter(c => c.estado === 'EN ESTUDIO').length,
-    CONTRATADA:   carpetas.filter(c => c.estado === 'CONTRATADA').length,
+    ESTUDIADA:    carpetas.filter(c => c.estado === 'ESTUDIADA').length,
     OFERTADA:     carpetas.filter(c => c.estado === 'OFERTADA').length,
+    CONTRATADA:   carpetas.filter(c => c.estado === 'CONTRATADA').length,
     RECHAZADA:    carpetas.filter(c => c.estado === 'RECHAZADA').length,
-  }), [carpetas]);
+  }) as Record<FiltroEstado, number>, [carpetas]);
 
   const filtered = useMemo(() => {
     return carpetas
       .filter(c => {
-        if (c.estado !== 'EN ESTUDIO') return false;
+        // Filtro por estado activo (vacío = todas)
+        if (estadoFilter && c.estado !== estadoFilter) return false;
         const q = query.trim().toLowerCase();
         if (q) {
           const cif     = (c.header?.cif     ?? '').toLowerCase();
@@ -104,6 +117,7 @@ export default function FlotasContratadas({ onSelect }: Props) {
         return true;
       })
       .sort((a, b) => {
+        // Las carpetas con fecha de vencimiento se ordenan por ella. Las que no tienen van al final por nombre.
         const va = a.header?.fechaVencimiento ?? '';
         const vb = b.header?.fechaVencimiento ?? '';
         if (va && vb) return va.localeCompare(vb);
@@ -185,7 +199,7 @@ export default function FlotasContratadas({ onSelect }: Props) {
           <div>
             <h1 style={{ margin: 0, fontSize: 22, color: '#FFFFFF', fontFamily: 'var(--font-display), Inter, sans-serif', fontWeight: 700, letterSpacing: '-0.01em' }}>Flotas</h1>
             <p style={{ margin: '4px 0 0', fontSize: 12, color: 'rgba(178,198,245,0.6)' }}>
-              {counts['EN ESTUDIO']} en estudio · {carpetas.length} total
+              {counts['EN ESTUDIO']} en estudio · {counts.CONTRATADA} contratadas · {carpetas.length} total
             </p>
           </div>
         </div>
@@ -231,6 +245,32 @@ export default function FlotasContratadas({ onSelect }: Props) {
           <button onClick={() => setUploadResult(null)} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'rgba(178,198,245,0.4)', cursor: 'pointer', fontSize: 16, lineHeight: 1 }}>×</button>
         </div>
       )}
+
+      {/* Pills de filtro por estado */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+        {ESTADOS_PILL.map(p => {
+          const active = estadoFilter === p.key;
+          const n = counts[p.key] ?? 0;
+          return (
+            <button key={p.key || 'todas'} onClick={() => setEstadoFilter(p.key)} style={{
+              background: active ? 'linear-gradient(135deg, #059669, #10b981)' : 'rgba(6,14,50,0.5)',
+              border: `1px solid ${active ? 'rgba(16,185,129,0.6)' : 'rgba(61,112,255,0.22)'}`,
+              borderRadius: 999, padding: '6px 14px',
+              color: active ? '#fff' : '#BDD4FF', fontSize: 11, fontWeight: active ? 700 : 500,
+              cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6,
+              boxShadow: active ? '0 0 16px rgba(16,185,129,0.25)' : 'none',
+              transition: 'background 160ms, border-color 160ms',
+            }}>
+              {p.label}
+              <span style={{
+                fontSize: 10, fontWeight: 700,
+                background: active ? 'rgba(255,255,255,0.18)' : 'rgba(61,112,255,0.18)',
+                borderRadius: 999, padding: '1px 7px',
+              }}>{n}</span>
+            </button>
+          );
+        })}
+      </div>
 
       {/* Search */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
