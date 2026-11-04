@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import {
-  listarCarpetas, crearCarpeta, guardarCarpeta, cargarCarpeta, eliminarCarpeta,
+  listarCarpetas, crearCarpeta, guardarCarpeta, cargarCarpeta, cargarCarpetaDelServidor, eliminarCarpeta,
   cambiarEstado, listarCorredores, sesionJoin, sesionLeave, sesionHeartbeat,
   cargarCarpetasDelServidor, consolidarSinco, filtrarFilasReales,
   type FlotaCarpeta, type EstadoFlota,
@@ -378,11 +378,22 @@ export default function FlotasPage() {
 
   // ─── Handlers ─────────────────────────────────────────────────────────────
 
-  const handleSelectCarpeta = useCallback((raw: FlotaCarpeta) => {
+  const handleSelectCarpeta = useCallback(async (raw: FlotaCarpeta) => {
     // Always read from memCache — it's updated synchronously by guardarCarpeta,
     // so it's always newer than what CarpetaScreen's state might have (race condition).
     const fromCache = cargarCarpeta(raw.id);
-    const carpeta = normalizarCarpeta(fromCache ?? raw);
+    let carpeta = normalizarCarpeta(fromCache ?? raw);
+    // Si la carpeta ya no está «EN ESTUDIO» (OFERTADA, ESTUDIADA, CONTRATADA, RECHAZADA)
+    // pero llega sin datos reales, pedimos el detalle completo al servidor.
+    // Las listas en portfolio pueden venir en modo ligero (summary) sin original/trabajo/sinco.
+    const sinDatos = (carpeta.original?.length ?? 0) === 0
+                   && (carpeta.trabajo?.length ?? 0) === 0
+                   && (carpeta.oferta?.length ?? 0) === 0
+                   && (carpeta.sincoResultados?.length ?? 0) === 0;
+    if (sinDatos && carpeta.estado && carpeta.estado !== 'EN ESTUDIO') {
+      const fresh = await cargarCarpetaDelServidor(carpeta.id);
+      if (fresh) carpeta = normalizarCarpeta(fresh);
+    }
     // Si trabajo está vacío pero hay vehículos procesados guardados, reconstruir filas
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const savedVehicles = (carpeta as any).automaticoVehicles;

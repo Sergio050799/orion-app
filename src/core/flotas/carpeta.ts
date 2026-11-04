@@ -259,6 +259,19 @@ export function cargarCarpeta(id: string): FlotaCarpeta | null {
   return loadAll().find(c => c.id === id) ?? null;
 }
 
+/** Pide el detalle completo de una carpeta al servidor (original, trabajo, oferta, sinco…). Devuelve null si falla. */
+export async function cargarCarpetaDelServidor(id: string): Promise<FlotaCarpeta | null> {
+  try {
+    const res = await fetch(`/api/flotas/carpetas/${encodeURIComponent(id)}`);
+    if (!res.ok) return null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const c: any = await res.json();
+    return { ...c, comisionBase: c.comisionBase ?? c.porcentajeComision } as FlotaCarpeta;
+  } catch {
+    return null;
+  }
+}
+
 export function eliminarCarpeta(id: string): void {
   saveAll(loadAll().filter(c => c.id !== id));
   syncDelete(id);
