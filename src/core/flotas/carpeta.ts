@@ -96,6 +96,15 @@ export interface FlotaCarpeta {
   vehiculosCount?: number;
   /** Solo cuando viene de `?summary=true`: tipo_vehiculo de cada fila, para clasificar en el dashboard. */
   vehiculosTipos?: string[];
+  /** Solo en summary: flags precalculados para determinar en qué paso está la carpeta sin bajar trabajo/sinco/etc. */
+  avance?: {
+    original: boolean;
+    trabajo: boolean;
+    sinco: boolean;
+    informe: boolean;
+    oferta: boolean;
+    preemision: boolean;
+  };
 }
 
 // ─── Session cache (in-memory, lives while the tab is open) ──────────────────
@@ -131,6 +140,7 @@ export function initMemCache(carpetas: FlotaCarpeta[]): void {
 // ─── Server sync ─────────────────────────────────────────────────────────────
 
 function syncUpsert(carpeta: FlotaCarpeta): void {
+  invalidarCacheCarpetasSafe();
   fetch('/api/flotas/carpetas', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -139,11 +149,18 @@ function syncUpsert(carpeta: FlotaCarpeta): void {
 }
 
 function syncDelete(id: string): void {
+  invalidarCacheCarpetasSafe();
   fetch('/api/flotas/carpetas', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ action: 'delete', id }),
   }).catch(() => {});
+}
+
+// Wrapper seguro para invalidar el TTL cache; llamado desde syncUpsert/syncDelete que están
+// definidos antes que la function invalidarCacheCarpetas (hoisting-safe).
+function invalidarCacheCarpetasSafe(): void {
+  try { invalidarCacheCarpetas(); } catch { /* todavía no inicializado, no pasa nada */ }
 }
 
 // ─── Session tracking ─────────────────────────────────────────────────────────
@@ -174,22 +191,94 @@ export function sesionHeartbeat(carpeta_id: string): void {
 
 // ─── Public API ──────────────────────────────────────────────────────────────
 
+// Cache TTL compartido entre pantallas para evitar re-fetchs al cambiar de zona rápido
+// (Dashboard → Corredores → Flotas en pocos segundos pedía 3 veces lo mismo).
+// Un cache por modo (summary vs full). 5s de TTL es suficiente — si cambia algo importante,
+// el SSE o el próximo fetch tras 5s lo refresca.
+const FETCH_TTL_MS = 5000;
+const inflight: { summary: Promise<FlotaCarpeta[]> | null; full: Promise<FlotaCarpeta[]> | null } = { summary: null, full: null };
+const lastFetch: { summary: { data: FlotaCarpeta[]; ts: number } | null; full: { data: FlotaCarpeta[]; ts: number } | null } = { summary: null, full: null };
+
+// Cache persistente en sessionStorage: vive hasta logout o cierre del navegador.
+// Permite que al navegar entre zonas los KPIs aparezcan al instante sin esperar al servidor.
+const SS_KEY_SUMMARY = 'orion:carpetas:summary';
+const SS_KEY_FULL = 'orion:carpetas:full';
+
+export function leerCarpetasDeSessionStorage(summary = true): FlotaCarpeta[] | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.sessionStorage.getItem(summary ? SS_KEY_SUMMARY : SS_KEY_FULL);
+    if (!raw) return null;
+    const data = JSON.parse(raw) as FlotaCarpeta[];
+    // Hidratar también memCache y TTL con lo que venga de SS, así el resto del sistema aprovecha.
+    lastFetch[summary ? 'summary' : 'full'] = { data, ts: Date.now() };
+    if (!summary) initMemCache(data);
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+function guardarCarpetasEnSessionStorage(data: FlotaCarpeta[], summary: boolean): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.sessionStorage.setItem(summary ? SS_KEY_SUMMARY : SS_KEY_FULL, JSON.stringify(data));
+  } catch {
+    // Quota exceeded (poco probable con summary ~230 KB): limpiamos y seguimos.
+    try { window.sessionStorage.removeItem(summary ? SS_KEY_SUMMARY : SS_KEY_FULL); } catch { /* */ }
+  }
+}
+
+/** Limpia todo cache persistente. Llamar en logout. */
+export function limpiarCacheCarpetasSesion(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.sessionStorage.removeItem(SS_KEY_SUMMARY);
+    window.sessionStorage.removeItem(SS_KEY_FULL);
+  } catch { /* */ }
+  lastFetch.summary = null;
+  lastFetch.full = null;
+  memCache = null;
+}
+
 /** Carga carpetas desde el servidor e inicializa el caché en memoria.
  *  Si `summary=true`, el payload se reduce ~25× (sin trabajo/original/sinco crudos);
  *  solo incluye vehiculosCount y vehiculosTipos — suficientes para dashboard, portfolio y KPIs. */
 export async function cargarCarpetasDelServidor(signal?: AbortSignal, summary?: boolean): Promise<FlotaCarpeta[]> {
+  const key = summary ? 'summary' : 'full';
+  // 1. Si hay fetch en curso del mismo tipo, reutilizamos la misma promesa (dedup).
+  const pending = inflight[key];
+  if (pending) return pending;
+  // 2. Si hay resultado reciente (<5s), devolverlo sin red.
+  const cached = lastFetch[key];
+  if (cached && (Date.now() - cached.ts) < FETCH_TTL_MS) return cached.data;
+  // 3. Fetch real.
   const url = summary ? '/api/flotas/carpetas?summary=true' : '/api/flotas/carpetas';
-  const res = await fetch(url, { signal });
-  if (!res.ok) throw new Error('Server error');
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const raw: any[] = await res.json();
-  const data: FlotaCarpeta[] = raw.map(c => ({
-    ...c,
-    comisionBase: c.comisionBase ?? c.porcentajeComision,
-  }));
-  // Solo el payload completo alimenta el memCache (el summary no tiene trabajo/original para edición).
-  if (!summary) initMemCache(data);
-  return data;
+  const p = (async () => {
+    try {
+      const res = await fetch(url, { signal });
+      if (!res.ok) throw new Error('Server error');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const raw: any[] = await res.json();
+      const data: FlotaCarpeta[] = raw.map(c => ({ ...c, comisionBase: c.comisionBase ?? c.porcentajeComision }));
+      lastFetch[key] = { data, ts: Date.now() };
+      // Solo el payload completo alimenta el memCache editable (summary no tiene trabajo/original).
+      if (!summary) initMemCache(data);
+      // Persistir en sessionStorage para arranques instantáneos en próximos cambios de zona.
+      guardarCarpetasEnSessionStorage(data, !!summary);
+      return data;
+    } finally {
+      inflight[key] = null;
+    }
+  })();
+  inflight[key] = p;
+  return p;
+}
+
+/** Invalida el cache TTL (usar tras un guardarCarpeta, cambio de estado, etc.). */
+export function invalidarCacheCarpetas(): void {
+  lastFetch.summary = null;
+  lastFetch.full = null;
 }
 
 export function listarCarpetas(): FlotaCarpeta[] {

@@ -5,6 +5,7 @@ import * as XLSX from 'xlsx';
 import {
   listarCarpetas, listarCorredores,
   cargarCarpetasDelServidor, cargarCorredoresDelServidor,
+  leerCarpetasDeSessionStorage, leerCorredoresDeSessionStorage,
   type FlotaCarpeta, type Corredor, type EstadoFlota,
 } from '@/core/flotas';
 import { EstadoBadge } from './CarpetaScreen';
@@ -64,6 +65,11 @@ function vencColor(dias: number | null): string {
 export default function FlotasContratadas({ onSelect }: Props) {
   const [carpetas, setCarpetas]     = useState<FlotaCarpeta[]>([]);
   const [corredores, setCorredores] = useState<Corredor[]>([]);
+  // Arranque instantáneo desde sessionStorage (en useEffect para no romper hidratación SSR).
+  useEffect(() => {
+    const c = leerCarpetasDeSessionStorage(true);  if (c) setCarpetas(c);
+    const b = leerCorredoresDeSessionStorage();    if (b) setCorredores(b);
+  }, []);
   const [query, setQuery]           = useState('');
   const [estadoFilter, setEstadoFilter] = useState<FiltroEstado>('');
   const [uploading, setUploading]   = useState(false);

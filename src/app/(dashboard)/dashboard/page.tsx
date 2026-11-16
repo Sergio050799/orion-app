@@ -4,6 +4,7 @@ import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link';
 import {
   cargarCarpetasDelServidor, cargarCorredoresDelServidor,
+  leerCarpetasDeSessionStorage, leerCorredoresDeSessionStorage,
   type FlotaCarpeta, type Corredor, type EstadoFlota,
 } from '@/core/flotas';
 import type { CatStats } from './components/VehiculosCategorias';
@@ -607,6 +608,12 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const [carpetas,   setCarpetas]   = useState<FlotaCarpeta[]>([]);
   const [corredores, setCorredores] = useState<Corredor[]>([]);
+  // Arranque instantáneo desde sessionStorage: evita que los KPIs parpadeen en gris al cambiar de zona.
+  // Se hace en useEffect (no en useState inicial) para no romper la hidratación SSR.
+  useEffect(() => {
+    const c = leerCarpetasDeSessionStorage(true); if (c) setCarpetas(c);
+    const b = leerCorredoresDeSessionStorage();    if (b) setCorredores(b);
+  }, []);
   const [scope,      setScope]      = useState<string>('all');
   const [metric,     setMetric]     = useState<MetricKey>('vehiculos');
   const [period,     setPeriod]     = useState<number>(12);
@@ -1281,7 +1288,7 @@ export default function DashboardPage() {
       </section>
 
       {/* KPIs */}
-      <section className="db-kpis" aria-label="Indicadores principales">
+      <section className={`db-kpis${carpetas.length === 0 ? ' is-loading' : ''}`} aria-label="Indicadores principales">
         {(() => {
           // Trends YoY: delta % entre total 12m actuales y 12m año anterior + sparkline 12m.
           const flotasNow = sum(series.data.flotas.now), flotasPrev = sum(series.data.flotas.prev);

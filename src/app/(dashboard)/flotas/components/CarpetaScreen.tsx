@@ -6,6 +6,7 @@ import {
   listarCarpetas, crearCarpeta, guardarCarpeta, eliminarCarpeta, generarPlantillaExcel,
   listarCorredores, crearCorredor, cambiarEstado,
   cargarCarpetasDelServidor, cargarCorredoresDelServidor,
+  leerCarpetasDeSessionStorage, leerCorredoresDeSessionStorage,
   type FlotaCarpeta, type Corredor, type EstadoFlota,
 } from '@/core/flotas';
 import { useAuth } from '@/context/AuthContext';
@@ -41,8 +42,24 @@ function normalizarCarpeta(c: FlotaCarpeta): FlotaCarpeta {
 }
 
 function stepFlags(c: FlotaCarpeta): boolean[] {
+  // Preferimos los flags del summary (precalculados en el backend) para que la UI
+  // de Estudio refleje el avance real sin bajar los arrays pesados.
+  const a = c.avance;
+  const datosGenerales = !!(c.header?.cif?.trim() || c.header?.tomador?.trim());
+  if (a) {
+    return [
+      datosGenerales,
+      false,
+      a.original,
+      a.trabajo,
+      a.sinco,
+      a.informe || a.sinco,
+      a.oferta,
+      a.preemision || (c.estado !== 'EN ESTUDIO' && c.estado !== 'ESTUDIADA'),
+    ];
+  }
   return [
-    !!(c.header?.cif?.trim() || c.header?.tomador?.trim()),
+    datosGenerales,
     false,
     ((c.original?.length ?? 0) > 0),
     ((c.trabajo?.length ?? 0) > 0),
@@ -58,6 +75,8 @@ function avanceCarpeta(c: FlotaCarpeta): number {
 }
 
 function numVehiculos(c: FlotaCarpeta): number {
+  // Con summary=true, trabajo/original llegan vacíos pero vehiculosCount sí viene precalculado.
+  if (typeof c.vehiculosCount === 'number') return c.vehiculosCount;
   return (c.trabajo?.length > 0 ? c.trabajo : c.original)
     ?.filter((r: Record<string, unknown>) => (r['matricula'] as string)?.trim()).length ?? 0;
 }
@@ -235,7 +254,7 @@ function NuevaDrawer({ corredores: initCors, onCrear, onClose }: {
               <label htmlFor="nc_c">Corredor</label>
               <select id="nc_c" className="select" value={showCrear ? '__crear__' : corredorId} onChange={e => handleCorChange(e.target.value)}>
                 <option value="">Sin corredor</option>
-                {cors.map(c => <option key={c.id} value={c.id}>{c.nombre}{c.cif ? ` — ${c.cif}` : ''}</option>)}
+                {cors.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
                 <option value="__crear__">+ Crear nuevo corredor</option>
               </select>
             </div>
@@ -261,6 +280,8 @@ interface Props { onSelect: (carpeta: FlotaCarpeta) => void; }
 export default function CarpetaScreen({ onSelect }: Props) {
   const { user } = useAuth();
   const [carpetas, setCarpetas] = useState<FlotaCarpeta[]>([]);
+  // Arranque instantáneo desde sessionStorage (en useEffect para no romper hidratación SSR).
+  useEffect(() => { const c = leerCarpetasDeSessionStorage(true); if (c) setCarpetas(c); }, []);
   const [confirmDel, setConfirmDel] = useState<string | null>(null);
   const [corredores, setCorredores] = useState<Corredor[]>([]);
   const [query, setQuery] = useState('');
@@ -313,7 +334,9 @@ export default function CarpetaScreen({ onSelect }: Props) {
       .then(data => { if (!ctrl.signal.aborted) setCorredores(data); })
       .catch(() => { if (!ctrl.signal.aborted) setCorredores(listarCorredores()); });
     try {
-      const serverCarpetas = await cargarCarpetasDelServidor(ctrl.signal);
+      // Fase 1 opt: summary=true baja 227 KB en vez de 17,7 MB. El detalle completo se carga al abrir
+      // cada carpeta vía handleSelectCarpeta → cargarCarpetaDelServidor(id) (patrón portfolio-summary).
+      const serverCarpetas = await cargarCarpetasDelServidor(ctrl.signal, true);
       if (!ctrl.signal.aborted) {
         if (serverCarpetas.length > 0) setCarpetas(serverCarpetas.map(normalizarCarpeta));
         else { const local = listarCarpetas(); if (local.length === 0) setCarpetas([]); }
@@ -624,7 +647,7 @@ export default function CarpetaScreen({ onSelect }: Props) {
       </section>
 
       {/* ── KPIs ────────────────────────────────────────────────────────── */}
-      <div className="kpis">
+      <div className={`kpis${carpetas.length === 0 ? ' is-loading' : ''}`}>
         <button className="kpi" onClick={() => setDrawerMode('flotas')}>
           <span className="l">Carpetas</span>
           <span className="v">{nf(scope.length)}</span>

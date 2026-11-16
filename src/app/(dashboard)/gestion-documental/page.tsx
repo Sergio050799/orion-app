@@ -515,7 +515,7 @@ export default function GestionDocumentalPage() {
                   <label style={labelSt}>Corredor</label>
                   <select style={selectSt} value={corredorId} onChange={e => { setCorredorId(e.target.value); setFlotaId(""); }}>
                     <option value="">Seleccionar corredor...</option>
-                    {corredores.map(c => <option key={c.id} value={c.id}>{c.nombre} &middot; {c.comisionBase}%</option>)}
+                    {corredores.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
                   </select>
                 </div>
                 <div>

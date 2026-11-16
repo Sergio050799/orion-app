@@ -383,14 +383,20 @@ export default function FlotasPage() {
     // so it's always newer than what CarpetaScreen's state might have (race condition).
     const fromCache = cargarCarpeta(raw.id);
     let carpeta = normalizarCarpeta(fromCache ?? raw);
-    // Detectar «carpeta ligera» (viene del portfolio con summary=true): summary nunca trae original ni
-    // trabajo, aunque sí header/oferta reducida. Si está vacía de esos dos y el estado implica que ha
-    // tenido actividad (no es una EN ESTUDIO recién creada), pedimos el detalle completo al servidor.
-    const parece_summary = (carpeta.original?.length ?? 0) === 0 && (carpeta.trabajo?.length ?? 0) === 0;
-    if (parece_summary && carpeta.estado && carpeta.estado !== 'EN ESTUDIO') {
+    // Con CarpetaScreen cargando summary=true, TODAS las carpetas llegan aquí sin
+    // original/trabajo/sincoResultados/oferta crudos. Siempre pedimos detalle on open
+    // (salvo que ya venga con trabajo/original poblados por memCache).
+    const necesita_detalle = !carpeta.trabajo?.length && !carpeta.original?.length;
+    if (necesita_detalle) {
       const fresh = await cargarCarpetaDelServidor(carpeta.id);
       if (fresh) carpeta = normalizarCarpeta(fresh);
     }
+    // Defensa extra: si el detalle aún viene sin arrays (carpeta vacía recién creada),
+    // garantizamos arrays vacíos para que los .length no revienten.
+    carpeta.trabajo = carpeta.trabajo ?? [];
+    carpeta.original = carpeta.original ?? [];
+    carpeta.oferta = carpeta.oferta ?? [];
+    carpeta.sincoResultados = carpeta.sincoResultados ?? [];
     // Si trabajo está vacío pero hay vehículos procesados guardados, reconstruir filas
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const savedVehicles = (carpeta as any).automaticoVehicles;
@@ -556,8 +562,9 @@ export default function FlotasPage() {
     if (!carpetaActiva || isRefreshing) return;
     setIsRefreshing(true);
     try {
-      const serverCarpetas = await cargarCarpetasDelServidor();
-      const fresh = normalizarCarpeta(serverCarpetas.find(c => c.id === carpetaActiva.id) ?? carpetaActiva);
+      // Fase 1 opt: endpoint individual /carpetas/{id} evita bajar las 364 flotas enteras.
+      const indiv = await cargarCarpetaDelServidor(carpetaActiva.id);
+      const fresh = normalizarCarpeta(indiv ?? carpetaActiva);
       if (fresh.oferta.length > 0) ofertaRef.current?.setData(fresh.oferta);
       if (fresh.original.length > 0) originalRef.current?.setData(fresh.original);
       if (fresh.trabajo.length > 0) trabajoRef.current?.setData(fresh.trabajo);

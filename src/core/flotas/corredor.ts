@@ -57,12 +57,39 @@ function syncDelete(id: string): void {
   }).catch(() => {});
 }
 
+// Cache persistente en sessionStorage, mismo patrón que carpetas.
+const SS_KEY_CORREDORES = 'orion:corredores';
+
+export function leerCorredoresDeSessionStorage(): Corredor[] | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.sessionStorage.getItem(SS_KEY_CORREDORES);
+    if (!raw) return null;
+    const data = JSON.parse(raw) as Corredor[];
+    memCache = data;
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+/** Limpia el cache persistente de corredores. Llamar en logout. */
+export function limpiarCacheCorredoresSesion(): void {
+  if (typeof window === 'undefined') return;
+  try { window.sessionStorage.removeItem(SS_KEY_CORREDORES); } catch { /* */ }
+  memCache = null;
+}
+
 /** Carga corredores desde el servidor e inicializa el caché en memoria. */
 export async function cargarCorredoresDelServidor(signal?: AbortSignal): Promise<Corredor[]> {
   const res = await fetch('/api/flotas/corredores', { signal });
   if (!res.ok) throw new Error('Server error');
   const data: Corredor[] = await res.json();
   memCache = data;
+  // Persistir en sessionStorage para arranques instantáneos.
+  if (typeof window !== 'undefined') {
+    try { window.sessionStorage.setItem(SS_KEY_CORREDORES, JSON.stringify(data)); } catch { /* quota */ }
+  }
   return data;
 }
 

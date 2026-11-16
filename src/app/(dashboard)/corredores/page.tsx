@@ -4,10 +4,10 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import {
   listarCorredores, crearCorredor, guardarCorredor, eliminarCorredor,
-  cargarCorredoresDelServidor, type Corredor, type Periodicidad, type Sucursal,
+  cargarCorredoresDelServidor, leerCorredoresDeSessionStorage, type Corredor, type Periodicidad, type Sucursal,
 } from '@/core/flotas';
 import {
-  listarCarpetas, guardarCarpeta, cargarCarpetasDelServidor, type FlotaCarpeta,
+  listarCarpetas, guardarCarpeta, cargarCarpetasDelServidor, leerCarpetasDeSessionStorage, type FlotaCarpeta,
 } from '@/core/flotas';
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
@@ -77,6 +77,8 @@ function normalizeEstado(estado: string | undefined): StateId {
 }
 
 function getVehicleCount(carpeta: FlotaCarpeta): number {
+  // Con summary=true trabajo/original llegan vacíos pero vehiculosCount viene precalculado.
+  if (typeof carpeta.vehiculosCount === 'number') return carpeta.vehiculosCount;
   const rows = (carpeta.trabajo?.length > 0 ? carpeta.trabajo : carpeta.original) ?? [];
   return rows.filter((r: Record<string, string>) => r?.['matricula']?.trim()).length;
 }
@@ -498,6 +500,11 @@ export default function CorredoresPage() {
   useEffect(() => setMounted(true), []);
   const [corredores, setCorredores] = useState<Corredor[]>([]);
   const [carpetas, setCarpetas]     = useState<FlotaCarpeta[]>([]);
+  // Arranque instantáneo desde sessionStorage (en useEffect para no romper la hidratación SSR).
+  useEffect(() => {
+    const b = leerCorredoresDeSessionStorage();    if (b) setCorredores(b);
+    const c = leerCarpetasDeSessionStorage(true);  if (c) setCarpetas(c);
+  }, []);
   const [scope, setScope]           = useState('all');
   const [fSuc, setFSuc]             = useState('');
   const [fCom, setFCom]             = useState('');
@@ -518,7 +525,7 @@ export default function CorredoresPage() {
     let cancelled = false;
     const cargar = () => {
       if (cancelled) return;
-      Promise.all([cargarCorredoresDelServidor(), cargarCarpetasDelServidor()]).then(([cs, fs]) => {
+      Promise.all([cargarCorredoresDelServidor(), cargarCarpetasDelServidor(undefined, true)]).then(([cs, fs]) => {
         if (cancelled) return;
         setCorredores([...cs].sort((a, b) => a.nombre.localeCompare(b.nombre)));
         setCarpetas(fs);

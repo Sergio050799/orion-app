@@ -29,6 +29,19 @@ export async function GET(req: NextRequest) {
         const vehiculosTipos = rows
           .map((r) => (r['tipo_vehiculo'] ?? '').trim())
           .filter(Boolean);
+        // Flags de avance precalculados: el front los usa en stepFlags() sin bajarse trabajo/sinco/etc.
+        const trabajoLen  = Array.isArray(c.trabajo) ? c.trabajo.length : 0;
+        const originalLen = Array.isArray(c.original) ? c.original.length : 0;
+        const sincoLen    = Array.isArray(c.sincoResultados) ? c.sincoResultados.length : 0;
+        const ofertaLen   = Array.isArray(c.oferta) ? c.oferta.length : 0;
+        const avance = {
+          original:   originalLen > 0,
+          trabajo:    trabajoLen > 0,
+          sinco:      sincoLen > 0,
+          informe:    Array.isArray(c.automaticoVehicles) && c.automaticoVehicles.length > 0,
+          oferta:     ofertaLen > 0,
+          preemision: !!(c.catalogoSeleccion && Object.keys(c.catalogoSeleccion).length > 0),
+        };
         return {
           id: c.id, nombre: c.nombre, estado: c.estado,
           creadaEn: c.creadaEn, actualizadaEn: c.actualizadaEn,
@@ -36,7 +49,7 @@ export async function GET(req: NextRequest) {
           primaClienteTotal: c.primaClienteTotal, descuentoOferta: c.descuentoOferta,
           header: c.header, historico: c.historico, observaciones: c.observaciones,
           tarifaFlota: c.tarifaFlota, creado_por: c.creado_por,
-          vehiculosCount, vehiculosTipos,
+          vehiculosCount, vehiculosTipos, avance,
           // oferta solo con los campos que necesita el portfolio (prima calc)
           oferta: Array.isArray(c.oferta)
             ? c.oferta.map((r: Record<string, string>) => ({
