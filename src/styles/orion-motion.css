@@ -1,0 +1,47 @@
+/* ORION · capa de animación (login excluido: vive en GradientASCII.css y globals.css).
+   Importar DESPUÉS de orion-ui.css. No cambia colores, tamaños ni estructura de ninguna página. */
+
+/* ── KPIs: barra azul superior al pasar el ratón (mismo diseño en todas las páginas) ───────── */
+.db-kpis .db-kpi, .pg .kpis .kpi { position: relative; overflow: hidden; }
+.db-kpis .db-kpi::before, .pg .kpis .kpi::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--blue);
+  transform: scaleX(0); transform-origin: left; transition: transform .45s cubic-bezier(.2,.8,.2,1);
+}
+.db-kpis .db-kpi:hover::before, .db-kpis .db-kpi:focus-visible::before,
+.pg .kpis .kpi:hover::before,   .pg .kpis .kpi:focus-visible::before { transform: scaleX(1); }
+.db-kpis .db-kpi:hover, .pg .kpis .kpi:hover { background: transparent; }
+
+/* ── FASE 2: chip de variación + sparkline (KpiTrend.tsx) ───────── */
+.kpi .n.has-trend, .db-kpi .n.has-trend { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.kpi-delta { display: inline-flex; align-items: center; gap: 3px; font-size: 12px; font-weight: 600; padding: 2px 7px; border-radius: 4px; font-variant-numeric: tabular-nums; }
+.kpi-delta.good { color: var(--ok);     background: color-mix(in srgb, var(--ok) 14%, transparent); }
+.kpi-delta.bad  { color: var(--danger); background: color-mix(in srgb, var(--danger) 14%, transparent); }
+.kpi-spark { width: 100%; height: 30px; margin-top: auto; padding-top: 12px; box-sizing: content-box; overflow: visible; color: var(--blue); }
+.kpi-spark.urgent { color: var(--danger); }
+.kpi-spark .ln { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset 1.4s .3s cubic-bezier(.2,.8,.2,1); }
+.kpi-spark .ar { stroke: none; opacity: 0; transition: opacity 1s 1s; }
+[data-rv="in"] .kpi-spark .ln { stroke-dashoffset: 0; }
+[data-rv="in"] .kpi-spark .ar { opacity: 1; }
+
+/* ── Aparición al hacer scroll (KpiMotion pone data-rv) ───────── */
+[data-rv] { opacity: 0; transform: translateY(18px); transition: opacity .8s cubic-bezier(.2,.8,.2,1), transform .8s cubic-bezier(.2,.8,.2,1); }
+[data-rv="in"] { opacity: 1; transform: none; }
+
+/* ── Cambio de pestaña: la página nueva entra suave ───────── */
+@keyframes orionViewIn { from { opacity: 0; transform: translateY(14px); } }
+.app-main > * { animation: orionViewIn .5s cubic-bezier(.2,.8,.2,1) backwards; }
+
+/* ── Saludo (Letters.tsx) ───────── */
+.orion-letters .ch { display: inline-block; opacity: 0; transform: translateY(.5em); filter: blur(6px); transition: opacity .7s cubic-bezier(.2,.8,.2,1), transform .7s cubic-bezier(.2,.8,.2,1), filter .7s cubic-bezier(.2,.8,.2,1); }
+.orion-letters.in .ch { opacity: 1; transform: none; filter: none; }
+
+/* ── Cambio de tema claro/oscuro ───────── */
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: .45s; }
+
+/* ── Subrayado deslizante del menú (Topbar) ───────── */
+.tb-ul { position: absolute; bottom: 8px; height: 2px; background: var(--blue); pointer-events: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  [data-rv], .orion-letters .ch { opacity: 1 !important; transform: none !important; filter: none !important; transition: none !important; }
+  .app-main > * { animation: none; }
+}

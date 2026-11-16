@@ -10,6 +10,8 @@ import type { CatStats } from './components/VehiculosCategorias';
 import { useAuth } from '@/context/AuthContext';
 import { DetailDrawer, type DetailDrawerData } from '@/components/saas/DetailDrawer';
 import { dec, nf, eur, pc } from '@/lib/fmt';
+import Letters from "@/components/ui/Letters";
+import { KpiDelta, KpiSpark } from "@/components/ui/KpiTrend";
 
 // ─── Formatters ───────────────────────────────────────────────────────────────
 
@@ -360,7 +362,7 @@ function EvolutionChart({
     setCrosshair({ x: X(idx), pn: pn[idx], pp: pp[idx] });
     if (dual) {
       const t = now[idx] + prev[idx];
-      setTipContent(`<b>${labels[idx]}</b><br><span class="db-tip-k"></span>En estudio ${S.fmt(now[idx])}<br><span class="db-tip-k" style="border-top-color:var(--ok)"></span>Contratada ${S.fmt(prev[idx])}<br><span style="color:var(--quiet)">${t > 0 ? pc(prev[idx] / t * 100, 0) + ' contratado' : '—'}</span>`);
+      setTipContent(`<b>${labels[idx]}</b><br><span class="db-tip-k"></span>En estudio ${S.fmt(now[idx])}<br><span class="db-tip-k" style="border-top-color:var(--ok)"></span>Contratada ${S.fmt(prev[idx])}<br><span style="color:var(--quiet)">${t > 0 ? pc(prev[idx] / t * 100, 1) + ' contratado' : '—'}</span>`);
     } else {
       const d = prev[idx] ? ((now[idx] - prev[idx]) / prev[idx] * 100) : null;
       setTipContent(`<b>${labels[idx]}</b><br><span class="db-tip-k"></span>${S.fmt(now[idx])}<br><span class="db-tip-k db-tip-kp"></span>${S.fmt(prev[idx])}<br><span style="color:var(--quiet)">${d === null ? '—' : sgn(d)} interanual</span>`);
@@ -393,7 +395,7 @@ function EvolutionChart({
             <div className="db-cap"><i className="db-ln" style={{ borderTopColor: 'var(--ok)' }} /> Contratada · {period} meses</div>
           </div>
           <div>
-            <div className="db-big">{pesoContr === null ? '—' : pc(pesoContr, 0)}</div>
+            <div className="db-big">{pesoContr === null ? '—' : pc(pesoContr, 1)}</div>
             <div className="db-cap">contratado sobre el total</div>
           </div>
         </div>
@@ -615,12 +617,22 @@ export default function DashboardPage() {
   const toastTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
-    const ac = new AbortController();
     // summary=true: payload ~25× más ligero (sin trabajo/original crudos).
     // Trae vehiculosCount y vehiculosTipos pre-calculados — suficiente para dashboard.
-    cargarCarpetasDelServidor(ac.signal, true).then(setCarpetas).catch(() => {});
-    cargarCorredoresDelServidor(ac.signal).then(setCorredores).catch(() => {});
-    return () => ac.abort();
+    let cancelled = false;
+    const cargar = () => {
+      if (cancelled) return;
+      cargarCarpetasDelServidor(undefined, true).then(d => { if (!cancelled) setCarpetas(d); }).catch(() => {});
+      cargarCorredoresDelServidor().then(d => { if (!cancelled) setCorredores(d); }).catch(() => {});
+    };
+    cargar();
+    // Sincronización cross-pestañas: SSE empuja cambios (cambio de estado, upsert de carpeta,
+    // actualización de corredor). Fallback por polling cada 30s si el SSE no está disponible.
+    const es = new EventSource('/api/flotas/eventos');
+    es.onmessage = (e) => { if (e.data === 'update') cargar(); };
+    es.onerror = () => es.close();
+    const interval = setInterval(cargar, 30_000);
+    return () => { cancelled = true; clearInterval(interval); es.close(); };
   }, []);
 
   const showToast = useCallback((msg: string) => {
@@ -902,13 +914,13 @@ export default function DashboardPage() {
         over: `Serie histórica · Primas${ctx}`,
         title: 'Prima en estudio frente a contratada',
         desc: 'Prima ofertada de las flotas aún en estudio y prima de las flotas contratadas, mes a mes.',
-        stats: [['En estudio', S.fmt(A)], ['Contratada', S.fmt(C)], ['Contratado sobre el total', T > 0 ? pc(C / T * 100, 0) : '—']],
+        stats: [['En estudio', S.fmt(A)], ['Contratada', S.fmt(C)], ['Contratado sobre el total', T > 0 ? pc(C / T * 100, 1) : '—']],
         head: ['Mes', 'En estudio', 'Contratada', '% contratado'],
-        rows: labels.map((m, j) => [m, S.fmt(est[j]), S.fmt(con[j]), est[j] + con[j] > 0 ? pc(con[j] / (est[j] + con[j]) * 100, 0) : '—']),
+        rows: labels.map((m, j) => [m, S.fmt(est[j]), S.fmt(con[j]), est[j] + con[j] > 0 ? pc(con[j] / (est[j] + con[j]) * 100, 1) : '—']),
         fx: [
           ['En estudio', 'Σ prima ofertada de flotas En estudio / Estudiada / Ofertada, en el mes de creación'],
           ['Contratada', 'Σ prima de flotas Contratadas, en el mes en que pasaron a Contratada (histórico de la flota)'],
-          ['Contratado sobre el total', `contratada ÷ (en estudio + contratada) × 100 = ${T > 0 ? pc(C / T * 100, 0) : '—'}`],
+          ['Contratado sobre el total', `contratada ÷ (en estudio + contratada) × 100 = ${T > 0 ? pc(C / T * 100, 1) : '—'}`],
         ],
         note: 'Las flotas rechazadas no cuentan. Una flota contratada deja de contar como «en estudio» y pasa a la serie contratada.',
       };
@@ -1235,7 +1247,7 @@ export default function DashboardPage() {
       <section style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 20, flexWrap: 'wrap', marginBottom: 'clamp(22px,3cqw,38px)' }}>
         <div>
           <h1 style={{ fontSize: 'clamp(26px,3.2cqw,44px)', fontWeight: 600, letterSpacing: '-0.05em', lineHeight: 1.1, margin: '0 0 7px', fontFamily: 'var(--font-display)' }}>
-            {saludo}, {displayName(user)}
+            <Letters key={`${saludo}, ${displayName(user)}`} text={`${saludo}, ${displayName(user)}`} />
           </h1>
           <p style={{ margin: 0, color: 'var(--sub)', fontSize: 14 }}>{fechaHoy.charAt(0).toUpperCase() + fechaHoy.slice(1)}</p>
         </div>
@@ -1270,43 +1282,57 @@ export default function DashboardPage() {
 
       {/* KPIs */}
       <section className="db-kpis" aria-label="Indicadores principales">
-        {([
-          {
-            id: 'flotas',
-            l: scope === 'all' ? 'Flotas en cartera' : `Flotas · ${sName}`,
-            v: nf(totalPortfolio),
-            n: scope === 'all' ? 'Total de expedientes' : `<b>${nf(totalCartera)}</b> en cartera total`,
-          },
-          {
-            id: 'vehiculos',
-            l: 'Vehículos',
-            v: nf(totalVehiculos),
-            n: totalVehiculos > 0 ? 'Flotas con detalle cargado' : 'Sin vehículos asociados',
-          },
-          {
-            id: 'tasa',
-            l: 'Tasa de contratación',
-            v: totalCartera > 0 ? pc(tasaContratacion, 0) : '—',
-            n: `<b>${nf(contratadas)}</b> contratadas de ${nf(totalCartera)} flotas`,
-          },
-          {
-            id: 'corredores',
-            l: 'Corredores activos',
-            v: String(corredoresActivos),
-            n: scope === 'all' ? 'Con flotas asociadas' : 'En este ámbito',
-          },
-          {
-            id: 'renovaciones',
-            l: 'Renovaciones · 2 meses',
-            v: String(renovacionesProximas.length),
-            n: renovacionesUrgentes.length > 0 ? `<b>${renovacionesUrgentes.length}</b> vencen en ≤ 15 días` : 'Solo flotas contratadas',
-            urgent: renovacionesUrgentes.length > 0,
-          },
-        ] as Array<{ id: string; l: string; v: string; n: string; urgent?: boolean }>).map(kpi => (
+        {(() => {
+          // Trends YoY: delta % entre total 12m actuales y 12m año anterior + sparkline 12m.
+          const flotasNow = sum(series.data.flotas.now), flotasPrev = sum(series.data.flotas.prev);
+          const vehNow    = sum(series.data.vehiculos.now), vehPrev    = sum(series.data.vehiculos.prev);
+          const flotasDelta = flotasPrev > 0 ? (flotasNow - flotasPrev) / flotasPrev * 100 : null;
+          const vehDelta    = vehPrev    > 0 ? (vehNow    - vehPrev)    / vehPrev    * 100 : null;
+          return ([
+            {
+              id: 'flotas',
+              l: scope === 'all' ? 'Flotas en cartera' : `Flotas · ${sName}`,
+              v: nf(totalPortfolio),
+              n: scope === 'all' ? 'Total de expedientes' : `<b>${nf(totalCartera)}</b> en cartera total`,
+              delta: flotasDelta,
+              spark: series.data.flotas.now,
+            },
+            {
+              id: 'vehiculos',
+              l: 'Vehículos',
+              v: nf(totalVehiculos),
+              n: totalVehiculos > 0 ? 'Flotas con detalle cargado' : 'Sin vehículos asociados',
+              delta: vehDelta,
+              spark: series.data.vehiculos.now,
+            },
+            {
+              id: 'tasa',
+              l: 'Tasa de contratación',
+              v: totalCartera > 0 ? pc(tasaContratacion, 0) : '—',
+              n: `<b>${nf(contratadas)}</b> contratadas de ${nf(totalCartera)} flotas`,
+            },
+            {
+              id: 'corredores',
+              l: 'Corredores activos',
+              v: String(corredoresActivos),
+              n: scope === 'all' ? 'Con flotas asociadas' : 'En este ámbito',
+            },
+            {
+              id: 'renovaciones',
+              l: 'Renovaciones · 2 meses',
+              v: String(renovacionesProximas.length),
+              n: renovacionesUrgentes.length > 0 ? `<b>${renovacionesUrgentes.length}</b> vencen en ≤ 15 días` : 'Solo flotas contratadas',
+              urgent: renovacionesUrgentes.length > 0,
+            },
+          ] as Array<{ id: string; l: string; v: string; n: string; urgent?: boolean; delta?: number | null; spark?: number[] }>);
+        })().map(kpi => (
           <button key={kpi.id} className="db-kpi" onClick={() => handleDetail(kpi.id)} tabIndex={0}>
             <div className="l">{kpi.l}</div>
             <div className="v" style={{ color: kpi.urgent ? 'var(--danger)' : undefined }}>{kpi.v}</div>
-            <div className="n" dangerouslySetInnerHTML={{ __html: kpi.n }} />
+            {kpi.delta != null && isFinite(kpi.delta)
+              ? <div className="n has-trend"><KpiDelta pct={kpi.delta} /> <span dangerouslySetInnerHTML={{ __html: kpi.n }} /></div>
+              : <div className="n" dangerouslySetInnerHTML={{ __html: kpi.n }} />}
+            {kpi.spark && kpi.spark.length > 1 && <KpiSpark data={kpi.spark} urgent={kpi.urgent} />}
           </button>
         ))}
       </section>

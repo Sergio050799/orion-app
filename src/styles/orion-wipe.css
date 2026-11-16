@@ -1,0 +1,13 @@
+/* Cortina circular login ⇄ app. La importa lib/wipe.ts, así carga también en /login. */
+/* ── Cortina circular login ⇄ app (lib/wipe.ts) ───────── */
+#orion-wipe { position: fixed; inset: 0; z-index: 2147483000; background: #0d111b; clip-path: circle(0 at 50% 50%); pointer-events: none; display: grid; place-items: center; }
+#orion-wipe .orion-wipe-logo { width: 72px; height: 78px; background: #f3f6fc; -webkit-mask: url(/ORION_LOGO.png) center/contain no-repeat; mask: url(/ORION_LOGO.png) center/contain no-repeat; opacity: 0; transform: scale(.8); }
+#orion-wipe.go { pointer-events: auto; animation: orionWipe 1.1s cubic-bezier(.65,0,.35,1) forwards; }
+#orion-wipe.go .orion-wipe-logo { animation: orionWipeLogo 1.1s ease forwards; }
+#orion-wipe.held { clip-path: circle(150vmax at 50% 50%); }
+#orion-wipe.out { animation: orionWipeOut .7s cubic-bezier(.65,0,.35,1) forwards; }
+@keyframes orionWipe { to { clip-path: circle(150vmax at var(--x, 50%) var(--y, 50%)); } }
+@keyframes orionWipeOut { from { clip-path: circle(150vmax at 50% 50%); } to { clip-path: circle(0 at 50% 50%); } }
+@keyframes orionWipeLogo { 0%, 35% { opacity: 0; transform: scale(.8); } 65% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1.15); } }
+
+@media (prefers-reduced-motion: reduce) { #orion-wipe { display: none; } }

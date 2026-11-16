@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
+import GradientASCII from "@/components/ui/GradientASCII";
+import { wipeIn, wipeOutIfPending } from "@/lib/wipe";
 
 /* ── tipos internos ───────────────────────────────────────────── */
 type Star = {
@@ -149,6 +151,10 @@ export default function LoginPage() {
   const ringRef = useRef<HTMLCanvasElement>(null);
   const panelRef = useRef<HTMLElement>(null);
   const usernameRef = useRef<HTMLInputElement>(null);
+  const asciiRef = useRef<{ pulse: (x: number, y: number) => void } | null>(null);
+
+  /* si venimos de cerrar sesión, cierra la cortina circular */
+  useEffect(() => { wipeOutIfPending(); }, []);
 
   /* estado interno de animación (nunca causa re-renders) */
   const anim = useRef<Anim>({
@@ -442,7 +448,10 @@ export default function LoginPage() {
   }, [open]);
 
   /* ── toggle acceso ────────────────────────────────────────── */
-  const handleToggleOpen = () => {
+  const handleToggleOpen = (e: React.MouseEvent<HTMLButtonElement>) => {
+    /* onda circular sutil del fondo, desde el centro del logo */
+    const r = e.currentTarget.getBoundingClientRect();
+    asciiRef.current?.pulse(r.left + r.width / 2, r.top + r.height / 2);
     const a = anim.current;
     if (!open && a.tt < T_READY) a.target = 3.2;
     setOpen(o => !o);
@@ -476,6 +485,8 @@ export default function LoginPage() {
       });
       const data = await res.json();
       if (data.success) {
+        const g = document.querySelector('.lp-go')?.getBoundingClientRect();
+        await wipeIn(g ? g.left + g.width / 2 : undefined, g ? g.top + g.height / 2 : undefined);
         login(username.trim());
       } else {
         setError(data.error || 'Usuario o contraseña incorrectos');
@@ -497,14 +508,23 @@ export default function LoginPage() {
 
   return (
     <div className="lp-root" onKeyDown={handleKeyDown}>
-      {/* cielo de estrellas */}
-      <canvas ref={skyRef} id="lp-sky" aria-hidden="true" />
+      {/* fondo: GradientASCII (React Bits) · el clic en pantalla NO lanza onda; solo el logo */}
+      <GradientASCII
+        ref={asciiRef}
+        colors={['#002F82', '#265fc9', '#4989ff', '#9cc2ff']}
+        shape="horizon"
+        characters=" =+xX0S8#@"
+        cellSize={18}
+        density={0.8}
+        windowClicks={false}
+        aria-hidden="true"
+        style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none' }}
+      />
 
       <div className={sceneClass} id="lp-scene" onClick={handleSceneClick}>
 
         {/* orbe con aro y logo */}
         <div className="lp-orb" id="lp-orb">
-          <canvas ref={ringRef} id="lp-ring" aria-hidden="true" />
           <button
             className="lp-logo"
             id="lp-logo"

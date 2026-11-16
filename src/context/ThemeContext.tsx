@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { flushSync } from 'react-dom';
 
 export type Theme = 'dark' | 'light';
 
@@ -22,12 +23,17 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const toggle = useCallback(() => {
-    setTheme(prev => {
+    const apply = () => setTheme(prev => {
       const next: Theme = prev === 'dark' ? 'light' : 'dark';
       document.documentElement.setAttribute('data-theme', next);
       localStorage.setItem('orion-theme', next);
       return next;
     });
+    /* transición suave entre temas (View Transitions API; si no existe, cambio directo) */
+    const d = document as Document & { startViewTransition?: (cb: () => void) => unknown };
+    if (d.startViewTransition && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      d.startViewTransition(() => { flushSync(apply); });
+    } else apply();
   }, []);
 
   return (

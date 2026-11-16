@@ -878,7 +878,20 @@ export default function FlotasPage() {
                           ? [corredor.comercial, corredor.nombre].filter(Boolean).join(' · ')
                           : undefined;
                         return (
-                          <HojaInforme header={flotaHeader} carpetaNombre={carpetaActiva?.nombre} trabajoRows={trabajoRows} coberturas={coberturas} sincoResultRows={sincoResultRows} sincoManual={carpetaActiva?.sincoManual ?? []} sincoGlobal={carpetaActiva?.sincoGlobal ?? null} primasMmtValues={carpetaActiva?.primasMmtInforme} onPrimasMmtChange={(primas) => { const cur = carpetaActivaRef.current; if (cur) { const updated = { ...cur, primasMmtInforme: primas }; setCarpetaActiva(updated); guardarCarpeta(updated); } }} configCoberturas={carpetaActiva?.configCoberturas} onConfigCoberturasChange={(cfg) => { const cur = carpetaActivaRef.current; if (cur) { const updated = { ...cur, configCoberturas: cfg }; setCarpetaActiva(updated); guardarCarpeta(updated); } }} tarifaFlota={carpetaActiva?.tarifaFlota} corredorLabel={corredorLabel} danosPropios={carpetaActiva?.danosPropios} observacion={motivoCarpeta} />
+                          <HojaInforme header={flotaHeader} carpetaNombre={carpetaActiva?.nombre} trabajoRows={trabajoRows} coberturas={coberturas} sincoResultRows={sincoResultRows} sincoManual={carpetaActiva?.sincoManual ?? []} sincoGlobal={carpetaActiva?.sincoGlobal ?? null} primasMmtValues={carpetaActiva?.primasMmtInforme} onPrimasMmtChange={(primas) => { const cur = carpetaActivaRef.current; if (cur) { const updated = { ...cur, primasMmtInforme: primas }; setCarpetaActiva(updated); guardarCarpeta(updated); } }} configCoberturas={carpetaActiva?.configCoberturas} onConfigCoberturasChange={(cfg) => { const cur = carpetaActivaRef.current; if (cur) { const updated = { ...cur, configCoberturas: cfg }; setCarpetaActiva(updated); guardarCarpeta(updated); } }} onTrabajoRowChange={(matricula, patch) => {
+                            const m = (matricula || '').trim().toUpperCase();
+                            if (!m) return;
+                            const cur = carpetaActivaRef.current;
+                            if (!cur) return;
+                            const nuevo = trabajoRowsRef.current.map(r =>
+                              (r['matricula'] ?? '').trim().toUpperCase() === m ? { ...r, ...patch } : r
+                            );
+                            setTrabajoRows(nuevo);
+                            trabajoRef.current?.setData(nuevo);
+                            const updated = { ...cur, trabajo: nuevo };
+                            setCarpetaActiva(updated);
+                            guardarCarpeta(updated);
+                          }} tarifaFlota={carpetaActiva?.tarifaFlota} corredorLabel={corredorLabel} corredorNombre={corredor?.nombre} corredorComercial={corredor?.comercial} danosPropios={carpetaActiva?.danosPropios} observacion={motivoCarpeta} />
                         );
                       })()}
                       {tab === 'OFERTA' && (
@@ -887,6 +900,7 @@ export default function FlotasPage() {
                             ref={ofertaRef}
                             trabajoRows={trabajoRows}
                             header={flotaHeader}
+                            carpetaId={carpetaActiva?.id}
                             carpetaNombre={carpetaActiva?.nombre}
                             primasMmt={carpetaActiva?.primasMmtInforme}
                             configCoberturas={carpetaActiva?.configCoberturas}

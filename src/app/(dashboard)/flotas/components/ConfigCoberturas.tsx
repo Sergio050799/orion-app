@@ -5,7 +5,7 @@
 // todas las garantías de esa tipología, con los códigos que se emitirán. Todo sale del catálogo único
 // (core/flotas/catalogoCoberturas.ts). Lo confirmado aquí es lo que ve la OFERTA y lo que emite la EMISIÓN.
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { DetailDrawer } from '@/components/saas/DetailDrawer';
 import { nf } from '@/lib/fmt';
 import { TIPO_INFO } from '@/core/catalogo/tipologia';
@@ -40,6 +40,8 @@ export default function ConfigCoberturas({ grupos, configs, onChange }: Props) {
   const [masProd, setMasProd] = useState('');
   const [masFrq, setMasFrq] = useState('');
   const [aviso, setAviso] = useState('');
+  // Draft de la cobertura abierta en el drawer: se edita en memoria hasta que el usuario pulsa Confirmar.
+  const [draftCfg, setDraftCfg] = useState<ConfigCobertura | null>(null);
 
   // Configuración efectiva de cada grupo: la confirmada o, si no hay, la propuesta que deduce ORION.
   const filas = useMemo(() => grupos.map(g => {
@@ -57,6 +59,24 @@ export default function ConfigCoberturas({ grupos, configs, onChange }: Props) {
   const nPendientes = filas.filter(f => f.estado === 'propuesta' || f.estado === 'falta').length;
 
   const guardar = (cambios: Record<string, ConfigCobertura>) => onChange({ ...configs, ...cambios });
+
+  // Al cargar una carpeta sin configs confirmadas, persistir las propuestas inferidas de la plantilla.
+  // Esto garantiza que lo que trae la plantilla Excel manda sobre el default predeterminado y queda
+  // reflejado en los cálculos de primas. Solo se dispara una vez por montaje de carpeta.
+  const autoPersistedRef = useRef(false);
+  useEffect(() => {
+    if (autoPersistedRef.current) return;
+    if (filas.length === 0) return;
+    if (Object.keys(configs).length > 0) { autoPersistedRef.current = true; return; }
+    const propuestas: Record<string, ConfigCobertura> = {};
+    for (const f of filas) {
+      if (f.estado === 'propuesta' && f.cfg) propuestas[f.g.key] = f.cfg;
+    }
+    if (Object.keys(propuestas).length > 0) {
+      onChange(propuestas);
+      autoPersistedRef.current = true;
+    }
+  }, [filas, configs, onChange]);
 
   const setProducto = (key: string, p: ProductoKey) => {
     const f = porClave.get(key); if (!f) return;
@@ -134,6 +154,37 @@ export default function ConfigCoberturas({ grupos, configs, onChange }: Props) {
 
   const fAbierta = abierto ? porClave.get(abierto) : null;
   const marcadasOtras = abierto ? marcadas.filter(f => f.g.key !== abierto).length : 0;
+
+  // Al abrir el drawer, inicializar el draft con la cobertura efectiva de la fila (confirmada o propuesta).
+  useEffect(() => {
+    if (fAbierta?.cfg) setDraftCfg({ producto: fAbierta.cfg.producto, franquicia: fAbierta.cfg.franquicia, opciones: { ...fAbierta.cfg.opciones } });
+    else setDraftCfg(null);
+  }, [abierto, fAbierta]);
+
+  const setDraftProducto = (p: ProductoKey) => {
+    if (!fAbierta) return;
+    const base = draftCfg ?? { producto: p, opciones: {} };
+    const nueva = normalizarConfig(fAbierta.tipo, { producto: p, franquicia: base.franquicia, opciones: base.opciones });
+    if (nueva) setDraftCfg(nueva);
+  };
+  const setDraftFranquicia = (v: string) => {
+    if (!draftCfg) return;
+    setDraftCfg({ ...draftCfg, franquicia: v ? Number(v) : undefined });
+  };
+  const setDraftOpcion = (campo: string, v: string) => {
+    if (!draftCfg) return;
+    setDraftCfg({ ...draftCfg, opciones: { ...draftCfg.opciones, [campo]: v } });
+  };
+  const confirmarDraft = () => {
+    if (!fAbierta || !draftCfg) { setAbierto(null); return; }
+    guardar({ [fAbierta.g.key]: draftCfg });
+    setAviso(`Cobertura de ${titulo(fAbierta.g.tipoNorm)} actualizada.`);
+    setAbierto(null);
+  };
+  const cancelarDraft = () => {
+    setDraftCfg(null);
+    setAbierto(null);
+  };
 
   const estadoTxt: Record<Estado, string> = { confirmada: 'Confirmada', propuesta: 'Propuesta', falta: 'Falta franquicia', no_admitida: 'No admitida' };
 
@@ -237,15 +288,15 @@ export default function ConfigCoberturas({ grupos, configs, onChange }: Props) {
         <span>{nf(nConfirmadas)} de {nf(filas.length)} confirmadas{nPendientes > 0 ? ` · ${nf(nPendientes)} por revisar` : ''}. Franquicias: 1.ª categoría de 120 a 1.200 €, 2.ª categoría 1.800 o 2.400 €, motos de 300 a 3.000 €.</span>
       </div>
 
-      <DetailDrawer isOpen={!!fAbierta} onClose={() => setAbierto(null)} data={null}>
-        {fAbierta && fAbierta.cfg && (() => {
-          const { g, tipo, cfg } = fAbierta;
-          const campos = camposDe(tipo, cfg.producto, cfg.franquicia);
+      <DetailDrawer isOpen={!!fAbierta} onClose={cancelarDraft} data={null}>
+        {fAbierta && draftCfg && (() => {
+          const { g, tipo } = fAbierta;
+          const campos = camposDe(tipo, draftCfg.producto, draftCfg.franquicia);
           const grupoNombres: string[] = [];
           campos.forEach(c => { if (!grupoNombres.includes(c.grupo)) grupoNombres.push(c.grupo); });
-          const frqs = franquiciasPermitidas(tipo, cfg.producto);
-          const pend = pendientesEmision(tipo, cfg);
-          const codigos = Object.entries(aEmision(tipo, cfg));
+          const frqs = franquiciasPermitidas(tipo, draftCfg.producto);
+          const pend = pendientesEmision(tipo, draftCfg);
+          const codigos = Object.entries(aEmision(tipo, draftCfg));
           return (
             <div className="cfgdr">
               <div className="over">Coberturas</div>
@@ -255,14 +306,14 @@ export default function ConfigCoberturas({ grupos, configs, onChange }: Props) {
               <h4>Cobertura y franquicia</h4>
               <div className="cfrow">
                 <label htmlFor="cfg-prod">Cobertura</label>
-                <select id="cfg-prod" className="select" value={cfg.producto} onChange={e => setProducto(g.key, e.target.value as ProductoKey)}>
+                <select id="cfg-prod" className="select" value={draftCfg.producto} onChange={e => setDraftProducto(e.target.value as ProductoKey)}>
                   {productosPermitidos(tipo).map(p => <option key={p} value={p}>{PRODUCTO_DEF[p].label}</option>)}
                 </select>
               </div>
               {frqs.length > 0 && (
                 <div className="cfrow">
                   <label htmlFor="cfg-frq">Franquicia</label>
-                  <select id="cfg-frq" className="select" value={cfg.franquicia ?? ''} onChange={e => setFranquicia(g.key, e.target.value)}>
+                  <select id="cfg-frq" className="select" value={draftCfg.franquicia ?? ''} onChange={e => setDraftFranquicia(e.target.value)}>
                     <option value="">Elegir…</option>
                     {frqs.map(n => <option key={n} value={n}>{eurTxt(n)}</option>)}
                   </select>
@@ -278,7 +329,7 @@ export default function ConfigCoberturas({ grupos, configs, onChange }: Props) {
                       {c.kind === 'fijo' ? (
                         <span className="cffix" id={`cfg-${c.id}`}>{c.fijo}</span>
                       ) : (
-                        <select id={`cfg-${c.id}`} className="select" value={cfg.opciones[c.id] ?? c.defecto ?? ''} onChange={e => setOpcion(g.key, c.id, e.target.value)}>
+                        <select id={`cfg-${c.id}`} className="select" value={draftCfg.opciones[c.id] ?? c.defecto ?? ''} onChange={e => setDraftOpcion(c.id, e.target.value)}>
                           {c.opciones?.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                         </select>
                       )}
@@ -301,9 +352,14 @@ export default function ConfigCoberturas({ grupos, configs, onChange }: Props) {
 
               {marcadasOtras > 0 && (
                 <div className="dacts">
-                  <button type="button" className="mini pri" onClick={() => copiarA(g.key)}>Copiar a las {nf(marcadasOtras)} filas marcadas</button>
+                  <button type="button" className="mini" onClick={() => copiarA(g.key)}>Copiar a las {nf(marcadasOtras)} filas marcadas</button>
                 </div>
               )}
+
+              <div className="dacts" style={{ marginTop: 16, display: 'flex', gap: 8, justifyContent: 'flex-end', borderTop: '1px solid var(--line)', paddingTop: 14 }}>
+                <button type="button" className="mini" onClick={cancelarDraft}>Cancelar</button>
+                <button type="button" className="mini pri" onClick={confirmarDraft}>Confirmar</button>
+              </div>
             </div>
           );
         })()}

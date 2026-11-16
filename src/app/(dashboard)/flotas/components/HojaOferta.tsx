@@ -7,7 +7,9 @@ import 'react-data-grid/lib/styles.css';
 import { COBERTURA_OPTS, LUNAS_OPTS, AMBITO_OPTS } from '@/core/flotas';
 import { nf, dec, eur } from '@/lib/fmt';
 import { calcularPrima, type CalcPrimaParams, type TipoVehiculo, type Producto } from '@/core/flotas/primas';
-import { aOfertaRow, garantiasOferta, normalizarConfig, tipoKeyDesdeEtiqueta, type ConfigCobertura } from '@/core/flotas/catalogoCoberturas';
+import { aEmision, aOfertaRow, camposDe, franquiciasPermitidas, garantiasOferta, grupoCob, inferirConfig, normalizarConfig, pendientesEmision, productosPermitidos, resumenConfig, tipoKeyDesdeEtiqueta, PRODUCTO_DEF, type ConfigCobertura, type ProductoKey } from '@/core/flotas/catalogoCoberturas';
+import { TIPO_INFO, type TipoKey } from '@/core/catalogo/tipologia';
+import { DetailDrawer } from '@/components/saas/DetailDrawer';
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -48,6 +50,7 @@ interface OfertaFields {
 interface Props {
   trabajoRows: Record<string, string>[];
   header?: { cif: string; tomador: string; actividad: string; formaPago: string; efecto: string; periodicidad?: string };
+  carpetaId?: string;
   carpetaNombre?: string;
   primasMmt?: Record<string, number>;  // key: "TIPO||COBERTURA", value: prima media (from Informe)
   configCoberturas?: Record<string, ConfigCobertura>; // coberturas confirmadas en INFORME, key: "TIPO||COBERTURA SOLICITADA"
@@ -536,7 +539,7 @@ const claveInforme = (row: Pick<OfertaRow, 'tipo_vehiculo' | 'cob_solicitada' | 
 // ─── HojaOferta ───────────────────────────────────────────────────────────────
 
 const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
-  { trabajoRows, header, carpetaNombre, primasMmt, configCoberturas, onDataChange, primaClienteTotal, descuentoOferta, descuentosCoberturas, onOfertaFieldsChange },
+  { trabajoRows, header, carpetaId, carpetaNombre, primasMmt, configCoberturas, onDataChange, primaClienteTotal, descuentoOferta, descuentosCoberturas, onOfertaFieldsChange },
   ref,
 ) {
   const [rows, setRows] = useState<OfertaRow[]>([]);
@@ -553,8 +556,22 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
   const onOfertaFieldsRef = useRef(onOfertaFieldsChange);
   onOfertaFieldsRef.current = onOfertaFieldsChange;
 
-  // Sync props → local state cuando cambia la carpeta
+  // ─── Cambio de coberturas por matrícula ──────────────────────────────────
+  // Mismo drawer que el Informe (producto, franquicia, defensa, asistencia con
+  // sus variantes, seguro conductor, lunas, animales). Se aplica a las matrículas
+  // seleccionadas de la tipología mostrada en el drawer.
+  const [selMats, setSelMats] = useState<Set<number>>(new Set());
+  const [drawerTipo, setDrawerTipo] = useState<TipoKey | null>(null);
+  const [drawerDraft, setDrawerDraft] = useState<ConfigCobertura | null>(null);
+  const [drawerAviso, setDrawerAviso] = useState('');
+
+  // Sync props → local state SOLO cuando cambia la carpeta activa.
+  // Antes se resincronizaba en cada cambio de las props de descuento, lo que pisaba lo que el usuario
+  // estaba escribiendo cuando el padre re-renderizaba (heartbeat, refetch de carpetas, etc.).
+  const lastCarpetaIdRef = useRef<string | undefined>(undefined);
   useEffect(() => {
+    if (lastCarpetaIdRef.current === carpetaId) return;
+    lastCarpetaIdRef.current = carpetaId;
     setLocalDescuento(descuentoOferta != null ? String(descuentoOferta) : '');
     const cobMap: Record<string, string> = {};
     if (descuentosCoberturas) {
@@ -562,7 +579,7 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
     }
     setLocalDescCob(cobMap);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [descuentoOferta, descuentosCoberturas]);
+  }, [carpetaId]);
 
   const emitAjustes = useCallback((fields: OfertaFields) => {
     onOfertaFieldsRef.current?.(fields);
@@ -748,18 +765,29 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
     }, 0);
   }, [rows]);
 
-  // Prima ajustada: positivo = sube, negativo = baja
-  const primaNetaTotal = useMemo(() => {
+  // Ajuste aplicable a una fila: cobertura (si hay) prioriza sobre global.
+  // Las primas con override manual (precio propio) NO se ajustan — el override es inmutable.
+  const ajusteAplicable = useCallback((r: OfertaRow): number => {
+    if (r._primaOverride === 'true') return 0;
     const ajusteG = parseFloat(localDescuento) || 0;
-    if (ajusteG === 0 && Object.values(localDescCob).every(v => !v || parseFloat(v) === 0)) return primaTotal;
+    const ajusteCob = parseFloat(localDescCob[r.coberturas] ?? '') || 0;
+    return ajusteCob !== 0 ? ajusteCob : ajusteG;
+  }, [localDescuento, localDescCob]);
+
+  const primaAjustadaDe = useCallback((r: OfertaRow): number => {
+    const v = parseFloat(r.oferta_prima_mmt);
+    if (isNaN(v)) return NaN;
+    const aj = ajusteAplicable(r);
+    return aj === 0 ? v : v * (1 + aj / 100);
+  }, [ajusteAplicable]);
+
+  // Prima ajustada total: suma de primaAjustadaDe por fila
+  const primaNetaTotal = useMemo(() => {
     return rows.reduce((sum, r) => {
-      const v = parseFloat(r.oferta_prima_mmt);
-      if (isNaN(v)) return sum;
-      const ajusteCob = parseFloat(localDescCob[r.coberturas] ?? '') || 0;
-      const ajuste = ajusteCob !== 0 ? ajusteCob : ajusteG;
-      return sum + v * (1 + ajuste / 100);
+      const v = primaAjustadaDe(r);
+      return sum + (isNaN(v) ? 0 : v);
     }, 0);
-  }, [rows, localDescuento, localDescCob, primaTotal]);
+  }, [rows, primaAjustadaDe]);
 
   // ── Coberturas para el anexo ──────────────────────────────────────────────
   const cobAnexo = useMemo(() => {
@@ -844,13 +872,22 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
   }, [primasMmt]);
 
   // ── Exportar PDF ──────────────────────────────────────────────────────────
+  // El PDF refleja los ajustes aplicados (columna + totales). Las filas se clonan con la prima
+  // ajustada en oferta_prima_mmt, así el detalle y el total ajustados son consistentes.
   const handleExportPdf = useCallback(() => {
-    const html = buildOfertaPdfHtml({ rows, header, carpetaNombre, cobAnexo, primaTotal });
+    const rowsExport = rows.map(r => {
+      const aj = ajusteAplicable(r);
+      if (aj === 0) return r;
+      const v = parseFloat(r.oferta_prima_mmt);
+      if (isNaN(v)) return r;
+      return { ...r, oferta_prima_mmt: (v * (1 + aj / 100)).toFixed(2) };
+    });
+    const html = buildOfertaPdfHtml({ rows: rowsExport, header, carpetaNombre, cobAnexo, primaTotal: primaNetaTotal });
     const w = window.open('', '_blank', 'width=960,height=720');
     if (!w) return;
     w.document.write(html);
     w.document.close();
-  }, [rows, header, carpetaNombre, cobAnexo, primaTotal, primaNetaTotal, localDescuento]);
+  }, [rows, header, carpetaNombre, cobAnexo, primaNetaTotal, ajusteAplicable]);
 
   // ─── Generar Oferta Excel (via endpoint con formato MMT) ───────────────────
   const [exporting, setExporting] = useState(false);
@@ -862,6 +899,8 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
       const vehiculos = rows.map(r => {
         const marcaModelo = r.marca_modelo ?? '';
         const [marca, ...modeloParts] = marcaModelo.split(' ');
+        // El Excel refleja la prima ajustada (igual que la tabla y el PDF).
+        const primaAjustada = primaAjustadaDe(r);
         return {
           tomador: (r.tomador ?? '').toUpperCase(),
           tipologia: (r.tipo_vehiculo ?? '').toUpperCase(),
@@ -872,7 +911,7 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
           franquicia: /franquicia/i.test(r.coberturas ?? '') ? (parseFloat(String(r.frq).replace(',', '.')) || 0) : 0,
           periodicidad: (header?.periodicidad ?? 'anual').toUpperCase(),
           fecha_vencimiento: parseFecha(header?.efecto),
-          prima_ofertada: parseFloat(r.oferta_prima_mmt) || 0,
+          prima_ofertada: isNaN(primaAjustada) ? 0 : primaAjustada,
         };
       });
 
@@ -1054,6 +1093,105 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
   const filledRows = rows.filter(r => r.matricula.trim()).length;
   const noAdmitidos = rows.filter(r => r.matricula.trim() && tipoKeyDesdeEtiqueta(tipoNormDe(r.tipo_vehiculo)) === 'minibus_autocar').length;
 
+  // ── Cambio de coberturas: selección + drawer idéntico al del Informe ──────
+  const toggleSel = useCallback((id: number) => {
+    setSelMats(prev => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  }, []);
+  const toggleAllSel = useCallback((ids: number[]) => {
+    setSelMats(prev => {
+      const todos = ids.every(id => prev.has(id));
+      return todos ? new Set() : new Set(ids);
+    });
+  }, []);
+
+  // Tipologías presentes en la selección actual (en orden de aparición).
+  const tiposEnSeleccion = useMemo<TipoKey[]>(() => {
+    const vistos = new Set<TipoKey>();
+    const orden: TipoKey[] = [];
+    rows.forEach(r => {
+      if (!selMats.has(r._id)) return;
+      const t = tipoKeyDesdeEtiqueta(tipoNormDe(r.tipo_vehiculo));
+      if (!vistos.has(t) && grupoCob(t)) { vistos.add(t); orden.push(t); }
+    });
+    return orden;
+  }, [rows, selMats]);
+
+  const abrirDrawerCobertura = useCallback(() => {
+    if (tiposEnSeleccion.length === 0) return;
+    const primera = tiposEnSeleccion[0];
+    const cuentaCob: Record<string, number> = {};
+    rows.forEach(r => {
+      if (!selMats.has(r._id)) return;
+      const t = tipoKeyDesdeEtiqueta(tipoNormDe(r.tipo_vehiculo));
+      if (t !== primera) return;
+      const cob = r.cob_solicitada || r.coberturas || '';
+      cuentaCob[cob] = (cuentaCob[cob] ?? 0) + 1;
+    });
+    const cobDominante = Object.entries(cuentaCob).sort((a, b) => b[1] - a[1])[0]?.[0] ?? '';
+    const filasInfer = rows.filter(r => selMats.has(r._id) && tipoKeyDesdeEtiqueta(tipoNormDe(r.tipo_vehiculo)) === primera)
+      .map(r => ({ frq: r.frq, lunas: r.lunas, animales: r.animales }));
+    const propuesta = inferirConfig(primera, cobDominante, filasInfer)
+      ?? { producto: productosPermitidos(primera)[0] ?? 'terceros', opciones: {} };
+    setDrawerTipo(primera);
+    setDrawerDraft(normalizarConfig(primera, propuesta) ?? propuesta);
+    setDrawerAviso('');
+  }, [tiposEnSeleccion, rows, selMats]);
+
+  const cambiarTipoDrawer = useCallback((t: TipoKey) => {
+    const filasT = rows.filter(r => selMats.has(r._id) && tipoKeyDesdeEtiqueta(tipoNormDe(r.tipo_vehiculo)) === t);
+    const cuentaCob: Record<string, number> = {};
+    filasT.forEach(r => {
+      const cob = r.cob_solicitada || r.coberturas || '';
+      cuentaCob[cob] = (cuentaCob[cob] ?? 0) + 1;
+    });
+    const cobDominante = Object.entries(cuentaCob).sort((a, b) => b[1] - a[1])[0]?.[0] ?? '';
+    const filasInfer = filasT.map(r => ({ frq: r.frq, lunas: r.lunas, animales: r.animales }));
+    const propuesta = inferirConfig(t, cobDominante, filasInfer)
+      ?? { producto: productosPermitidos(t)[0] ?? 'terceros', opciones: {} };
+    setDrawerTipo(t);
+    setDrawerDraft(normalizarConfig(t, propuesta) ?? propuesta);
+    setDrawerAviso('');
+  }, [rows, selMats]);
+
+  const cerrarDrawer = useCallback(() => { setDrawerTipo(null); setDrawerDraft(null); setDrawerAviso(''); }, []);
+
+  const confirmarDrawer = useCallback(() => {
+    if (!drawerTipo || !drawerDraft) return;
+    const cfg = drawerDraft;
+    const ofRow = aOfertaRow(drawerTipo, cfg);
+    let aplicadas = 0;
+    setRows(prev => prev.map(r => {
+      if (!selMats.has(r._id)) return r;
+      const t = tipoKeyDesdeEtiqueta(tipoNormDe(r.tipo_vehiculo));
+      if (t !== drawerTipo) return r;
+      const primaInforme = primasMmt?.[claveInforme(r)];
+      let primaFinal: string | null = null;
+      let fromInforme = false;
+      if (primaInforme != null) {
+        primaFinal = String(primaInforme);
+        fromInforme = true;
+      } else {
+        const simulada: OfertaRow = { ...r, coberturas: ofRow.coberturas, frq: ofRow.frq, lunas: ofRow.lunas, asistencia: ofRow.asistencia, animales: ofRow.animales, _primaOverride: '' };
+        const calc = calcPrimaForRow(simulada);
+        if (calc !== '') primaFinal = calc;
+      }
+      if (primaFinal === null) return r;
+      aplicadas++;
+      return {
+        ...r,
+        coberturas: ofRow.coberturas,
+        frq: ofRow.frq,
+        lunas: ofRow.lunas,
+        asistencia: ofRow.asistencia,
+        animales: ofRow.animales,
+        oferta_prima_mmt: primaFinal,
+        _primaOverride: fromInforme ? '' : 'true',
+        _cfg: 'true',
+      };
+    }));
+    setDrawerAviso(`${nf(aplicadas)} ${aplicadas === 1 ? 'matrícula actualizada' : 'matrículas actualizadas'}.`);
+  }, [drawerTipo, drawerDraft, selMats, primasMmt]);
+
   // ─── Vista: tabla de trabajo · documento del cliente · edición de datos ────
   const [vista, setVista] = useState<'tabla' | 'cliente' | 'datos'>('tabla');
   const [shown, setShown] = useState(15);
@@ -1155,6 +1293,7 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
                   value={localDescCob[cob] ?? ''}
                   onChange={e => setLocalDescCob(prev => ({ ...prev, [cob]: e.target.value }))}
                   onBlur={emitirAjustes}
+                  onKeyDown={e => { if (e.key === 'Enter') { (e.target as HTMLInputElement).blur(); } }}
                 />
               </div>
             ))}
@@ -1165,6 +1304,7 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
                 value={localDescuento}
                 onChange={e => setLocalDescuento(e.target.value)}
                 onBlur={emitirAjustes}
+                onKeyDown={e => { if (e.key === 'Enter') { (e.target as HTMLInputElement).blur(); } }}
               />
             </div>
           </div>
@@ -1207,10 +1347,27 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
                   {nf(noAdmitidos)} {noAdmitidos === 1 ? 'vehículo es' : 'vehículos son'} de una tipología que MMT no admite en flotas (minibús, autocar). No debería ofertarse; revísalo en el trabajo.
                 </div>
               )}
+              {selMats.size > 0 && (
+                <div style={{ marginTop: 12, padding: '10px 14px', background: 'var(--soft, #f7f9fd)', border: '1px solid var(--line, #d6deea)', borderRadius: 8, display: 'flex', gap: 10, alignItems: 'center' }}>
+                  <strong style={{ fontSize: 13 }}>{nf(selMats.size)} {selMats.size === 1 ? 'matrícula seleccionada' : 'matrículas seleccionadas'}</strong>
+                  {tiposEnSeleccion.length > 1 && (
+                    <span style={{ fontSize: 11, color: '#6b7280' }}>· {tiposEnSeleccion.length} tipologías distintas</span>
+                  )}
+                  <div style={{ flex: 1 }} />
+                  <button className="mini pri" onClick={abrirDrawerCobertura} disabled={tiposEnSeleccion.length === 0}>Cambiar cobertura</button>
+                  <button className="mini" onClick={() => setSelMats(new Set())}>Quitar selección</button>
+                </div>
+              )}
               <div className="xwrap" style={{ marginTop: 14, maxHeight: 'none' }}>
                 <table className="xg">
                   <thead>
                     <tr>
+                      <th style={{ width: 32 }}>
+                        <input type="checkbox" aria-label="Seleccionar todos"
+                          checked={visibles.length > 0 && visibles.slice(0, shown).every(r => selMats.has(r._id))}
+                          onChange={() => toggleAllSel(visibles.slice(0, shown).map(r => r._id))}
+                        />
+                      </th>
                       <th>Matrícula</th><th>Tipología</th><th>Cobertura</th><th className="n">Franquicia</th>
                       <th>Periodicidad</th><th>Vencimiento</th>
                       <th className="n">Prima solicitada</th><th className="n">Prima ofertada MMT</th><th className="n">Diferencia</th>
@@ -1219,10 +1376,18 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
                   <tbody>
                     {visibles.slice(0, shown).map(r => {
                       const sol = parseFloat(r.prima_referencia);
-                      const ofe = parseFloat(r.oferta_prima_mmt);
                       const ov = r._primaOverride === 'true';
+                      const aj = ajusteAplicable(r);
+                      const primaFinal = primaAjustadaDe(r);
+                      const hasAj = aj !== 0 && !isNaN(primaFinal);
                       return (
-                        <tr key={r._id}>
+                        <tr key={r._id} style={selMats.has(r._id) ? { background: 'rgba(0,47,130,0.04)' } : undefined}>
+                          <td>
+                            <input type="checkbox" aria-label={`Seleccionar ${r.matricula}`}
+                              checked={selMats.has(r._id)}
+                              onChange={() => toggleSel(r._id)}
+                            />
+                          </td>
                           <td>{r.matricula.toUpperCase()}</td>
                           <td>{r.tipo_vehiculo || '—'}</td>
                           <td>{r.coberturas || <span className="em">—</span>}</td>
@@ -1232,26 +1397,31 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
                           <td className="n">{isNaN(sol) ? <span className="em">—</span> : eur(sol, 2)}</td>
                           <td className={`n${ov ? ' ov' : ''}`}>
                             <PrimaInput value={r.oferta_prima_mmt} onCommit={v => handlePreviewPrimaChange(r._id, v)} label={`Prima ofertada de ${r.matricula}`} />
+                            {hasAj && (
+                              <div style={{ fontSize: 10, color: aj < 0 ? '#15803d' : '#b84b56', marginTop: 2, fontWeight: 600 }}>
+                                → {eur(primaFinal, 2)} ({aj > 0 ? '+' : ''}{dec(aj, 1)} %)
+                              </div>
+                            )}
                           </td>
-                          <td className="n">{isNaN(sol) || isNaN(ofe) ? <span className="em">—</span> : sg(ofe - sol)}</td>
+                          <td className="n">{isNaN(sol) || isNaN(primaFinal) ? <span className="em">—</span> : sg(primaFinal - sol)}</td>
                         </tr>
                       );
                     })}
                   </tbody>
                   <tfoot>
                     <tr>
+                      <td></td>
                       <td>Totales</td>
                       <td colSpan={5}>{nf(filledRows)} vehículos</td>
                       <td className="n">{eur(primaSolTotal, 2)}</td>
-                      <td className="n">{eur(primaTotal, 2)}</td>
-                      <td className="n">{primaSolTotal > 0 ? sg(primaTotal - primaSolTotal) : '—'}</td>
+                      <td className="n">{eur(primaNetaTotal, 2)}</td>
+                      <td className="n">{primaSolTotal > 0 ? sg(primaNetaTotal - primaSolTotal) : '—'}</td>
                     </tr>
                   </tfoot>
                 </table>
               </div>
               <div className="note">
-                Prima ofertada = tarifa MMT, salvo en los vehículos con precio propio (fondo ámbar). Diferencia = ofertada − solicitada.
-                {hayAjustes && <> Con los ajustes indicados (el de la cobertura, si lo hay; si no, el global) la prima total sería {fmtEUR(primaNetaTotal)}.</>}
+                Prima ofertada = tarifa MMT ajustada con los porcentajes de arriba (los precios propios no se ajustan). Diferencia = ofertada ajustada − solicitada.
               </div>
               <div className="note" style={{ marginTop: 6 }}>Mostrando {nf(Math.min(shown, visibles.length))} de {nf(visibles.length)}</div>
               {shown < visibles.length && (
@@ -1411,6 +1581,179 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
           />
         </div>
       )}
+
+      <DetailDrawer isOpen={!!drawerTipo && !!drawerDraft} onClose={cerrarDrawer} data={null}>
+        {drawerTipo && drawerDraft && (() => {
+          const campos = camposDe(drawerTipo, drawerDraft.producto, drawerDraft.franquicia);
+          const grupoNombres: string[] = [];
+          campos.forEach(c => { if (!grupoNombres.includes(c.grupo)) grupoNombres.push(c.grupo); });
+          const frqs = franquiciasPermitidas(drawerTipo, drawerDraft.producto);
+          const pend = pendientesEmision(drawerTipo, drawerDraft);
+          const codigos = Object.entries(aEmision(drawerTipo, drawerDraft));
+          const tipoInfo = TIPO_INFO[drawerTipo];
+          const mats = rows.filter(r => selMats.has(r._id) && tipoKeyDesdeEtiqueta(tipoNormDe(r.tipo_vehiculo)) === drawerTipo);
+          const setProd = (p: ProductoKey) => {
+            const nuevo = normalizarConfig(drawerTipo, { producto: p, franquicia: drawerDraft.franquicia, opciones: drawerDraft.opciones });
+            if (nuevo) setDrawerDraft(nuevo);
+          };
+          const setFrq = (v: string) => setDrawerDraft({ ...drawerDraft, franquicia: v ? Number(v) : undefined });
+          const setOpc = (campo: string, v: string) => setDrawerDraft({ ...drawerDraft, opciones: { ...drawerDraft.opciones, [campo]: v } });
+          return (
+            <div className="cfgdr">
+              <div className="over">Cambiar cobertura</div>
+              <h3>{tipoInfo ? tipoInfo.label : drawerTipo}</h3>
+              <p className="desc">{nf(mats.length)} {mats.length === 1 ? 'matrícula' : 'matrículas'} de esta tipología en la selección.</p>
+
+              {tiposEnSeleccion.length > 1 && (
+                <>
+                  <h4>Tipología</h4>
+                  <div className="cfrow">
+                    <label htmlFor="cob-tipo">Configurar</label>
+                    <select id="cob-tipo" className="select" value={drawerTipo} onChange={e => cambiarTipoDrawer(e.target.value as TipoKey)}>
+                      {tiposEnSeleccion.map(t => <option key={t} value={t}>{TIPO_INFO[t]?.label ?? t}</option>)}
+                    </select>
+                  </div>
+                </>
+              )}
+
+              <h4>Cobertura y franquicia</h4>
+              <div className="cfrow">
+                <label htmlFor="cob-prod">Cobertura</label>
+                <select id="cob-prod" className="select" value={drawerDraft.producto} onChange={e => setProd(e.target.value as ProductoKey)}>
+                  {productosPermitidos(drawerTipo).map(p => <option key={p} value={p}>{PRODUCTO_DEF[p].label}</option>)}
+                </select>
+              </div>
+              {frqs.length > 0 && (
+                <div className="cfrow">
+                  <label htmlFor="cob-frq">Franquicia</label>
+                  <select id="cob-frq" className="select" value={drawerDraft.franquicia ?? ''} onChange={e => setFrq(e.target.value)}>
+                    <option value="">Elegir…</option>
+                    {frqs.map(n => <option key={n} value={n}>{nf(n)} €</option>)}
+                  </select>
+                </div>
+              )}
+
+              {grupoNombres.map(gn => (
+                <React.Fragment key={gn}>
+                  <h4>{gn}</h4>
+                  {campos.filter(c => c.grupo === gn).map(c => (
+                    <div className="cfrow" key={c.id}>
+                      <label htmlFor={`cob-${c.id}`}>{c.label}</label>
+                      {c.kind === 'fijo' ? (
+                        <span className="cffix" id={`cob-${c.id}`}>{c.fijo}</span>
+                      ) : (
+                        <select id={`cob-${c.id}`} className="select" value={drawerDraft.opciones[c.id] ?? c.defecto ?? ''} onChange={e => setOpc(c.id, e.target.value)}>
+                          {c.opciones?.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                        </select>
+                      )}
+                    </div>
+                  ))}
+                </React.Fragment>
+              ))}
+
+              {pend.length > 0 && (
+                <>
+                  <h4>Avisos para la emisión</h4>
+                  <ul className="cfwarn">{pend.map(p => <li key={p}>{p}</li>)}</ul>
+                </>
+              )}
+
+              <h4>Resumen y códigos</h4>
+              <p className="desc">{resumenConfig(drawerTipo, drawerDraft)}</p>
+              <div className="kv">
+                {codigos.map(([k, v]) => <div key={k}><label>{k.replace(/_/g, ' ')}</label><span>{v}</span></div>)}
+              </div>
+
+              {(() => {
+                const ofRowPrev = aOfertaRow(drawerTipo, drawerDraft);
+                let totalAnt = 0, totalNue = 0, noAdmite = 0, desdeInforme = 0, desdeCalc = 0;
+                const detalle: { matricula: string; ant: number; nue: number | null; fuente: 'informe' | 'calc' | 'nada' }[] = [];
+                for (const r of mats) {
+                  const ant = parseFloat(r.oferta_prima_mmt) || 0;
+                  const primaInforme = primasMmt?.[claveInforme(r)];
+                  let nue: number | null = null;
+                  let fuente: 'informe' | 'calc' | 'nada' = 'nada';
+                  if (primaInforme != null) {
+                    nue = primaInforme;
+                    fuente = 'informe';
+                    desdeInforme++;
+                  } else {
+                    const simulada: OfertaRow = { ...r, coberturas: ofRowPrev.coberturas, frq: ofRowPrev.frq, lunas: ofRowPrev.lunas, asistencia: ofRowPrev.asistencia, animales: ofRowPrev.animales, _primaOverride: '' };
+                    const calc = calcPrimaForRow(simulada);
+                    if (calc !== '') { nue = parseFloat(calc); fuente = 'calc'; desdeCalc++; }
+                    else { noAdmite++; }
+                  }
+                  totalAnt += ant;
+                  if (nue != null) totalNue += nue;
+                  detalle.push({ matricula: r.matricula, ant, nue, fuente });
+                }
+                const dif = totalNue - totalAnt;
+                const pct = totalAnt > 0 ? (dif / totalAnt) * 100 : 0;
+                return (
+                  <>
+                    <h4>Diferencia de precios</h4>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, background: '#f7f9fd', padding: 10, borderRadius: 6, border: '1px solid #e5e7eb' }}>
+                      <div>
+                        <div style={{ fontSize: 10, textTransform: 'uppercase', color: '#6b7280', fontWeight: 700 }}>Prima actual</div>
+                        <div style={{ fontSize: 15, fontWeight: 800, color: '#002F82', fontVariantNumeric: 'tabular-nums' }}>{eur(totalAnt, 2)}</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 10, textTransform: 'uppercase', color: '#6b7280', fontWeight: 700 }}>Prima nueva</div>
+                        <div style={{ fontSize: 15, fontWeight: 800, color: '#002F82', fontVariantNumeric: 'tabular-nums' }}>{eur(totalNue, 2)}</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 10, textTransform: 'uppercase', color: '#6b7280', fontWeight: 700 }}>Diferencia</div>
+                        <div style={{ fontSize: 15, fontWeight: 800, fontVariantNumeric: 'tabular-nums', color: dif > 0 ? '#b84b56' : dif < 0 ? '#15803d' : '#6b7280' }}>
+                          {(dif > 0 ? '+' : '') + eur(dif, 2)}
+                          {totalAnt > 0 && <span style={{ fontSize: 11, marginLeft: 6, fontWeight: 600 }}>({dif > 0 ? '+' : ''}{dec(pct, 1)} %)</span>}
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{ fontSize: 10, color: '#6b7280', marginTop: 6 }}>
+                      {desdeInforme > 0 && <span>{nf(desdeInforme)} desde Informe</span>}
+                      {desdeInforme > 0 && desdeCalc > 0 && <span> · </span>}
+                      {desdeCalc > 0 && <span>{nf(desdeCalc)} por cálculo local</span>}
+                      {noAdmite > 0 && <span style={{ color: '#b84b56', fontWeight: 600 }}> · {nf(noAdmite)} no admite esta cobertura y se saltará</span>}
+                    </div>
+                    {mats.length <= 20 && (
+                      <details style={{ marginTop: 8 }}>
+                        <summary style={{ fontSize: 11, color: '#6b7280', cursor: 'pointer' }}>Ver detalle por matrícula</summary>
+                        <table className="xg" style={{ marginTop: 6, width: '100%', fontSize: 11 }}>
+                          <thead>
+                            <tr><th>Matrícula</th><th className="n">Actual</th><th className="n">Nueva</th><th className="n">Δ</th></tr>
+                          </thead>
+                          <tbody>
+                            {detalle.map(d => {
+                              const delta = d.nue != null ? d.nue - d.ant : null;
+                              return (
+                                <tr key={d.matricula}>
+                                  <td>{d.matricula.toUpperCase()}</td>
+                                  <td className="n">{eur(d.ant, 2)}</td>
+                                  <td className="n">{d.nue != null ? eur(d.nue, 2) : <span style={{ color: '#b84b56' }}>No admite</span>}</td>
+                                  <td className="n" style={{ color: delta == null ? undefined : delta > 0 ? '#b84b56' : delta < 0 ? '#15803d' : undefined, fontWeight: 600 }}>
+                                    {delta == null ? '—' : (delta > 0 ? '+' : '') + eur(delta, 2)}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </details>
+                    )}
+                  </>
+                );
+              })()}
+
+              {drawerAviso && <div className="cfgaviso" role="status" style={{ marginTop: 10 }}>{drawerAviso}</div>}
+
+              <div className="dacts" style={{ marginTop: 16, display: 'flex', gap: 8, justifyContent: 'flex-end', borderTop: '1px solid var(--line)', paddingTop: 14 }}>
+                <button type="button" className="mini" onClick={cerrarDrawer}>Cancelar</button>
+                <button type="button" className="mini pri" onClick={confirmarDrawer} disabled={mats.length === 0}>Aplicar a {nf(mats.length)}</button>
+              </div>
+            </div>
+          );
+        })()}
+      </DetailDrawer>
     </div>
   );
 });

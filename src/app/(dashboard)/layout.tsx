@@ -1,6 +1,8 @@
 "use client";
 
 import "@/styles/orion-ui.css";
+import "@/styles/orion-motion.css";
+import KpiMotion from "@/components/ui/KpiMotion";
 import Topbar from "@/components/saas/layout/Topbar";
 import { LayoutProvider } from "@/context/LayoutContext";
 import { ToastProvider } from "@/components/ui/Toast";
@@ -19,6 +21,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         <main className="app-scroll custom-scrollbar">
                             <div className="app-main">{children}</div>
                         </main>
+                        <KpiMotion />
                     </div>
                 </ToastProvider>
             </NotificationProvider>

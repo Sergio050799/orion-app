@@ -85,7 +85,15 @@ export default function FlotasContratadas({ onSelect }: Props) {
     }
   };
 
-  useEffect(() => { cargar(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    cargar();
+    // Sincronización cross-pestañas: SSE empuja cambios; fallback polling cada 30s.
+    const es = new EventSource('/api/flotas/eventos');
+    es.onmessage = (e) => { if (e.data === 'update') cargar(); };
+    es.onerror = () => es.close();
+    const interval = setInterval(cargar, 30_000);
+    return () => { clearInterval(interval); es.close(); };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const corredorMap = useMemo(() => {
     const m = new Map<string, Corredor>();

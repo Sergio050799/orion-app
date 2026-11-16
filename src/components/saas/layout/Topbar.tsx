@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useLayoutEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/context/AuthContext";
@@ -8,6 +8,7 @@ import { usePathname } from "next/navigation";
 import { useNotifications } from "@/context/NotificationContext";
 import { useTheme } from "@/context/ThemeContext";
 import AdminPanel from "@/components/saas/admin/AdminPanel";
+import { wipeIn } from "@/lib/wipe";
 
 const navItems = [
     { href: "/dashboard",          label: "Dashboard" },
@@ -92,6 +93,26 @@ export default function Topbar() {
 
     useEffect(() => { setMounted(true); }, []);
 
+    /* subrayado deslizante del menú: se mide el enlace activo y se anima entre secciones */
+    const innerRef = useRef<HTMLDivElement>(null);
+    const navRef = useRef<HTMLElement>(null);
+    const prevL = useRef<number | null>(null);
+    const [ul, setUl] = useState<{ l: number; r: number; fwd: boolean; first: boolean } | null>(null);
+    useLayoutEffect(() => {
+        const measure = () => {
+            const a = navRef.current?.querySelector('.topbar-nav-link.active') as HTMLElement | null;
+            const c = innerRef.current;
+            if (!a || !c) { setUl(null); prevL.current = null; return; }
+            const ar = a.getBoundingClientRect(), cr = c.getBoundingClientRect();
+            const l = ar.left - cr.left, r = cr.right - ar.right;
+            setUl({ l, r, fwd: prevL.current === null || l >= prevL.current, first: prevL.current === null });
+            prevL.current = l;
+        };
+        measure();
+        window.addEventListener('resize', measure);
+        return () => window.removeEventListener('resize', measure);
+    }, [pathname]);
+
     const [bellOpen, setBellOpen] = useState(false);
     const bellRef = useRef<HTMLDivElement>(null);
     const { notifications, unreadCount, markAsRead, markAllAsRead, refresh } = useNotifications();
@@ -129,10 +150,6 @@ export default function Topbar() {
                 @media (max-width:640px){.tb-word{display:none}}
                 .topbar-nav-link:hover{color:var(--text)}
                 .topbar-nav-link.active{color:var(--text);font-weight:600}
-                .topbar-nav-link.active::after{
-                    content:"";position:absolute;left:0;right:0;bottom:-15px;
-                    height:2px;background:var(--blue);
-                }
                 .topbar-icon-btn{
                     width:36px;height:36px;border-radius:6px;
                     display:grid;place-items:center;
@@ -150,7 +167,8 @@ export default function Topbar() {
                 background: 'var(--bg)',
                 borderBottom: '1px solid var(--line)',
             }}>
-                <div style={{
+                <div ref={innerRef} style={{
+                    position: 'relative',
                     height: '100%', maxWidth: 1640, margin: '0 auto',
                     padding: '0 clamp(18px,3cqw,48px)',
                     display: 'flex', alignItems: 'center',
@@ -171,6 +189,7 @@ export default function Topbar() {
 
                     {/* Nav */}
                     <nav
+                        ref={navRef}
                         aria-label="Principal"
                         style={{
                             display: 'flex', alignItems: 'center', gap: 'clamp(16px,2.2cqw,34px)',
@@ -191,6 +210,14 @@ export default function Topbar() {
                             );
                         })}
                     </nav>
+                    {ul && (
+                        <span className="tb-ul" style={{
+                            left: ul.l, right: ul.r,
+                            transition: ul.first ? 'none'
+                                : ul.fwd ? 'right .3s cubic-bezier(.2,.8,.2,1), left .5s .06s cubic-bezier(.2,.8,.2,1)'
+                                         : 'left .3s cubic-bezier(.2,.8,.2,1), right .5s .06s cubic-bezier(.2,.8,.2,1)',
+                        }} />
+                    )}
 
                     {/* Right actions */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
@@ -310,7 +337,11 @@ export default function Topbar() {
 
                         {/* Logout */}
                         <button
-                            onClick={logout}
+                            onClick={async (e) => {
+                                const r = e.currentTarget.getBoundingClientRect();
+                                await wipeIn(r.left + r.width / 2, r.top + r.height / 2);
+                                logout();
+                            }}
                             className="topbar-icon-btn danger"
                             title="Cerrar sesión"
                             aria-label="Cerrar sesión"

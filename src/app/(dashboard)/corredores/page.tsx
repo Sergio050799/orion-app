@@ -56,9 +56,10 @@ const nf  = (n: number) => dec(Math.round(n), 0);
 const eur = (n: number) => nf(n) + ' €';
 const pc  = (n: number, d = 1) => dec(n, d) + ' %';
 const pcs = (n: number) => dec(n, Number.isInteger(n) ? 0 : 1) + ' %';
-const sum = (a: number[]) => a.reduce((s, x) => s + x, 0);
+const num = (v: unknown) => { const n = Number(v); return Number.isFinite(n) ? n : 0; };
+const sum = (a: number[]) => a.reduce((s, x) => s + num(x), 0);
 const mean = (a: number[]) => a.length ? sum(a) / a.length : 0;
-const wmean = (R: CorredorRow[]) => { const t = sum(R.map(b => b.n)); return t ? sum(R.map(b => b.comisionBase * b.n)) / t : 0; };
+const wmean = (R: CorredorRow[]) => { const t = sum(R.map(b => b.n)); return t ? sum(R.map(b => num(b.comisionBase) * b.n)) / t : 0; };
 const norm = (t: string) => String(t).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 const sucName = (k: string) => SUC[k] ?? 'Sin asignar';
 
@@ -80,6 +81,12 @@ function getVehicleCount(carpeta: FlotaCarpeta): number {
   return rows.filter((r: Record<string, string>) => r?.['matricula']?.trim()).length;
 }
 
+// Suma de primas ofertadas de una flota: MMT por vehículo si existe, si no prima cliente total.
+function primaDeFlota(f: FlotaCarpeta): number {
+  const mmt = (f.oferta ?? []).reduce((t, r) => t + (parseFloat((r as Record<string, string>)['oferta_prima_mmt']) || 0), 0);
+  return mmt > 0 ? mmt : (f.primaClienteTotal ?? 0);
+}
+
 function enrichCorredor(c: Corredor, allCarpetas: FlotaCarpeta[], scope: string): CorredorRow {
   const mias = allCarpetas.filter(f => f.corredor_id === c.id);
   const inScope = (st: StateId) => scope === 'all' || scope === st;
@@ -95,7 +102,7 @@ function enrichCorredor(c: Corredor, allCarpetas: FlotaCarpeta[], scope: string)
     cT,
     ss,
     veh: flotas.reduce((s, f) => s + getVehicleCount(f), 0),
-    prima: flotas.reduce((s, f) => s + (Number((f.header as Record<string, unknown>)?.['primaOfertadaMMT']) || 0), 0),
+    prima: flotas.reduce((s, f) => s + primaDeFlota(f), 0),
     tasa: nT > 0 ? cT / nT * 100 : 0,
     ext: (c as unknown as Record<string, number>)['comisionExtra'] ?? 0,
   };
@@ -200,9 +207,9 @@ function DrawerKpi({ kpiKey, rows, n, totalFlotasN }: {
     );
   }
   if (kpiKey === 'comision') {
-    const mm = mean(R.map(b => b.comisionBase));
+    const mm = mean(R.map(b => num(b.comisionBase)));
     const w = wmean(R);
-    const extMedia = mean(R.map(b => b.ext || 0));
+    const extMedia = mean(R.map(b => num(b.ext || 0)));
     const nFlotasTotal = sum(R.map(b => b.n));
     return (
       <>
@@ -218,11 +225,11 @@ function DrawerKpi({ kpiKey, rows, n, totalFlotasN }: {
         <table className="dtbl">
           <thead><tr><th>Corredor</th><th>Base</th><th>Extra</th><th>Flotas</th></tr></thead>
           <tbody>
-            {[...R].sort((x, y) => y.comisionBase - x.comisionBase).slice(0, 20).map(b => (
+            {[...R].sort((x, y) => num(y.comisionBase) - num(x.comisionBase)).slice(0, 20).map(b => (
               <tr key={b.id}>
                 <td className="nm">{b.nombre}</td>
-                <td>{pcs(b.comisionBase)}</td>
-                <td>{pcs(b.ext || 0)}</td>
+                <td>{pcs(num(b.comisionBase))}</td>
+                <td>{pcs(num(b.ext || 0))}</td>
                 <td>{nf(b.n)}</td>
               </tr>
             ))}
@@ -230,9 +237,9 @@ function DrawerKpi({ kpiKey, rows, n, totalFlotasN }: {
         </table>
         <h4>Anexo · cómo calcula ORION</h4>
         <div className="annex">
-          <div className="fx"><b>Media simple</b><code>Σ % comisión ÷ nº de corredores = {dec(sum(R.map(b => b.comisionBase)), 1)} ÷ {nf(R.length)} = {R.length ? pc(mm, 2) : '—'}</code></div>
-          <div className="fx"><b>Media ponderada</b><code>Σ (% comisión × flotas) ÷ Σ flotas = {dec(sum(R.map(b => b.comisionBase * b.n)), 1)} ÷ {nf(nFlotasTotal)} = {nFlotasTotal ? pc(w, 2) : '—'}</code></div>
-          <div className="fx"><b>Comisión extra media</b><code>Σ extra ÷ corredores = {dec(sum(R.map(b => b.ext || 0)), 1)} ÷ {nf(R.length)} = {R.length ? pc(extMedia, 2) : '—'}</code></div>
+          <div className="fx"><b>Media simple</b><code>Σ % comisión ÷ nº de corredores = {dec(sum(R.map(b => num(b.comisionBase))), 1)} ÷ {nf(R.length)} = {R.length ? pc(mm, 2) : '—'}</code></div>
+          <div className="fx"><b>Media ponderada</b><code>Σ (% comisión × flotas) ÷ Σ flotas = {dec(sum(R.map(b => num(b.comisionBase) * b.n)), 1)} ÷ {nf(nFlotasTotal)} = {nFlotasTotal ? pc(w, 2) : '—'}</code></div>
+          <div className="fx"><b>Comisión extra media</b><code>Σ extra ÷ corredores = {dec(sum(R.map(b => num(b.ext || 0))), 1)} ÷ {nf(R.length)} = {R.length ? pc(extMedia, 2) : '—'}</code></div>
         </div>
       </>
     );
@@ -504,14 +511,25 @@ export default function CorredoresPage() {
 
   const showToast = useCallback((m: string) => setToastMsg(m), []);
 
-  // Cargar datos
+  // Cargar datos + sincronización cross-pestañas por SSE / polling.
   useEffect(() => {
     setCorredores(listarCorredores());
     setCarpetas(listarCarpetas());
-    Promise.all([cargarCorredoresDelServidor(), cargarCarpetasDelServidor()]).then(([cs, fs]) => {
-      setCorredores([...cs].sort((a, b) => a.nombre.localeCompare(b.nombre)));
-      setCarpetas(fs);
-    }).catch(() => {});
+    let cancelled = false;
+    const cargar = () => {
+      if (cancelled) return;
+      Promise.all([cargarCorredoresDelServidor(), cargarCarpetasDelServidor()]).then(([cs, fs]) => {
+        if (cancelled) return;
+        setCorredores([...cs].sort((a, b) => a.nombre.localeCompare(b.nombre)));
+        setCarpetas(fs);
+      }).catch(() => {});
+    };
+    cargar();
+    const es = new EventSource('/api/flotas/eventos');
+    es.onmessage = (e) => { if (e.data === 'update') cargar(); };
+    es.onerror = () => es.close();
+    const interval = setInterval(cargar, 30_000);
+    return () => { cancelled = true; clearInterval(interval); es.close(); };
   }, []);
 
   // Derivar filas enriquecidas
@@ -553,7 +571,7 @@ export default function CorredoresPage() {
   const kpiC = sum(kpiRows.map(b => b.cT));
   const kpiT = sum(kpiRows.map(b => b.nT));
   const kpiPrima = sum(kpiRows.map(b => b.prima));
-  const kpiMm = mean(kpiRows.map(b => b.comisionBase));
+  const kpiMm = mean(kpiRows.map(b => num(b.comisionBase)));
   const kpiWm = wmean(kpiRows);
   const kpiExtMedia = mean(kpiRows.map(b => b.ext || 0));
   const countSuc = (s: string) => kpiRows.filter(b => b.sucursal === s).length;
@@ -736,7 +754,7 @@ export default function CorredoresPage() {
           <button className="kpi" onClick={() => openDrawer({ mode: 'kpi', key: 'corredores' })}>
             <div className="l">Corredores</div>
             <div className="v">{nf(kpiRows.length)}</div>
-            <div className="n"><b>Titán</b> {nf(countSuc('TITAN'))} · <b>Mediación</b> {nf(countSuc('MEDIACION'))}</div>
+            <div className="n"><b>Titán</b> {nf(countSuc('TITAN'))} · <b>Mediación</b> {nf(countSuc('MEDIACION'))}{(() => { const sinSuc = kpiRows.filter(b => !b.sucursal).length; return sinSuc > 0 ? <> · <b>{nf(sinSuc)}</b> sin asignar</> : null; })()}</div>
           </button>
           <button className="kpi" onClick={() => openDrawer({ mode: 'kpi', key: 'flotas' })}>
             <div className="l">Flotas asignadas</div>

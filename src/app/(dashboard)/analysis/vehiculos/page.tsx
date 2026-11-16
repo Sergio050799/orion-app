@@ -5,9 +5,9 @@ import { resolvePlateFromSeed } from "@/core/_source_of_truth/plates/resolver";
 import SilverdatChip from '@/components/saas/SilverdatChip';
 import SilverdatModal from '@/components/saas/SilverdatModal';
 import CatalogCascade, { type CascadaVersion } from '@/components/saas/CatalogCascade';
-import { nf, eur } from '@/lib/fmt';
+import { nf, eur, pc } from '@/lib/fmt';
 import ConsultasGuardadas from './ConsultasGuardadas';
-import { guardarConsulta, cargarConsulta, nuevoIdConsulta, type ConsultaCompleta, type ConsultaResumen } from '@/lib/consultasVehiculos';
+import { guardarConsulta, cargarConsulta, listarConsultas, nuevoIdConsulta, type ConsultaCompleta, type ConsultaResumen } from '@/lib/consultasVehiculos';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -317,6 +317,17 @@ export default function VehiculosPage() {
     const [tab, setTab] = useState<'identificar' | 'masivo' | 'guardadas'>('identificar');
     const [abrirMasiva, setAbrirMasiva] = useState<ConsultaCompleta | null>(null);
     const [refrescarGuardadas, setRefrescarGuardadas] = useState(0);
+
+    /* KPIs de Vehículos: salen del directorio de consultas guardadas (sin tocar el backend) */
+    const [kpiCons, setKpiCons] = useState<ConsultaResumen[]>([]);
+    useEffect(() => {
+        let vivo = true;
+        listarConsultas().then(l => { if (vivo) setKpiCons(l); }).catch(() => { if (vivo) setKpiCons([]); });
+        return () => { vivo = false; };
+    }, [refrescarGuardadas]);
+    const kV = kpiCons.reduce((a, c) => a + (c.n_vehiculos || 0), 0);
+    const kI = kpiCons.reduce((a, c) => a + (c.n_identificados || 0), 0);
+    const kM = kpiCons.filter(c => c.tipo === 'masiva').length;
     const consultaIdRef = useRef<string>('');
     const [input, setInput] = useState('');
     const [cards, setCards] = useState<PlateCard[]>([]);
@@ -592,6 +603,34 @@ export default function VehiculosPage() {
                 <div className="actions">
                     <SilverdatChip onSessionChange={ok => setSdSession(ok ? 'ok' : 'none')} />
                 </div>
+            </section>
+
+            <section className="kpis" aria-label="Indicadores principales" style={{ marginBottom: 28 }}>
+                <button className="kpi" onClick={() => setTab('guardadas')}>
+                    <div className="l">Consultas guardadas</div>
+                    <div className="v">{nf(kpiCons.length)}</div>
+                    <div className="n"><b>{nf(kpiCons.length - kM)}</b> normales · <b>{nf(kM)}</b> masivas</div>
+                </button>
+                <button className="kpi" onClick={() => setTab('guardadas')}>
+                    <div className="l">Vehículos consultados</div>
+                    <div className="v">{nf(kV)}</div>
+                    <div className="n">Suma de todas las consultas</div>
+                </button>
+                <button className="kpi" onClick={() => setTab('guardadas')}>
+                    <div className="l">Tasa de identificación</div>
+                    <div className="v">{kV ? pc(kI / kV * 100, 1) : '—'}</div>
+                    <div className="n"><b>{nf(kI)}</b> identificados de {nf(kV)}</div>
+                </button>
+                <button className="kpi" onClick={() => setTab('masivo')}>
+                    <div className="l">Consultas masivas</div>
+                    <div className="v">{nf(kM)}</div>
+                    <div className="n">{kpiCons.length ? <>{pc(kM / kpiCons.length * 100, 0)} de las guardadas</> : 'Sin consultas guardadas'}</div>
+                </button>
+                <button className="kpi" onClick={() => setTab('guardadas')}>
+                    <div className="l">Sin identificar</div>
+                    <div className="v" style={{ color: kV - kI > 0 ? 'var(--danger)' : undefined }}>{nf(kV - kI)}</div>
+                    <div className="n">{kV - kI > 0 ? 'Requieren revisión manual' : 'Todo identificado'}</div>
+                </button>
             </section>
 
             <section className="vzone" aria-labelledby="vzT">

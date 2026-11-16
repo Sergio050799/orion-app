@@ -8,7 +8,7 @@ import type { DanosPropiosData } from '@/core/flotas';
 import { nf, dec, eur, signedPc } from '@/lib/fmt';
 import { DetailDrawer, type DetailDrawerData } from '@/components/saas/DetailDrawer';
 import ConfigCoberturas, { type GrupoConfig } from './ConfigCoberturas';
-import { garantiasOferta, normalizarConfig, tipoKeyDesdeEtiqueta, type ConfigCobertura } from '@/core/flotas/catalogoCoberturas';
+import { PRODUCTOS, PRODUCTO_DEF, aOfertaRow, garantiasOferta, inferirConfig, normalizarConfig, tipoKeyDesdeEtiqueta, type ConfigCobertura } from '@/core/flotas/catalogoCoberturas';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -47,8 +47,14 @@ interface Props {
   onPrimasMmtChange?: (primas: Record<string, number>) => void;
   configCoberturas?: Record<string, ConfigCobertura>;
   onConfigCoberturasChange?: (cfg: Record<string, ConfigCobertura>) => void;
+  /** Permite cambiar la cobertura solicitada de una matrícula concreta (feature pedida 15/11). */
+  onTrabajoRowChange?: (matricula: string, patch: Record<string, string>) => void;
   tarifaFlota?: TarifaEntry[];
   corredorLabel?: string;
+  /** Nombre del corredor para mostrar junto al ámbito/ADR en la línea de info del Informe. */
+  corredorNombre?: string;
+  /** Comercial asignado al corredor; aparece junto al nombre del corredor. */
+  corredorComercial?: string;
   danosPropios?: DanosPropiosData;
   observacion?: string;
 }
@@ -157,6 +163,9 @@ function buildPdfHtml(data: {
   primasSol: { tipo: string; cob: string; count: number; media: number; total: number }[];
   mmtRows: { tipo: string; cob: string; count: number; prima: number | null; total: number | null }[];
   corredorLabel?: string;
+  corredorNombre?: string;
+  corredorComercial?: string;
+  formaPago?: string;
   cobAnexo: { titulo: string; tipologias?: string[]; garantias: string[] }[];
   sincoPorTipo?: { tipologia: string; resumen: ResumenSinco }[];
   fechaVctoDisplay?: string | null;
@@ -165,7 +174,7 @@ function buildPdfHtml(data: {
   carpetaNombre?: string;
   observacion?: string;
 }): string {
-  const { header, pivot, totalVehiculos, ambitoLabel, numTomadores, adrActivo, sinco, danosPropiosPdf, primasSol, mmtRows, corredorLabel, cobAnexo, sincoPorTipo } = data;
+  const { header, pivot, totalVehiculos, ambitoLabel, numTomadores, adrActivo, sinco, danosPropiosPdf, primasSol, mmtRows, corredorLabel, corredorNombre, corredorComercial, formaPago, cobAnexo, sincoPorTipo } = data;
   const escObs = data.observacion ? data.observacion.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : '';
   const totalSol = primasSol.reduce((a, r) => a + r.total, 0);
   const totalMmt = mmtRows.reduce((a, r) => a + (r.total ?? 0), 0);
@@ -193,16 +202,16 @@ function buildPdfHtml(data: {
     `<td class="cnt">${nf(pivot.tipos.reduce((a, t) => a + (pivot.counts[t]?.[c] ?? 0), 0))}</td>`
   ).join('');
 
-  // Hero strip (vencimiento / ámbito / tomadores / observaciones)
-  const obsLine = corredorLabel
-    ? `${corredorLabel} · que ${adrActivo ? 'SÍ' : 'NO'} lleva ADR`
-    : adrActivo ? 'ADR SÍ' : null;
+  // Hero strip: todos los datos relevantes del estudio en una única tira.
   const heroHtml = `<div class="hero">
     ${data.fechaVctoDisplay ? `<div><small>Vencimiento</small><strong>${data.fechaVctoDisplay}</strong></div>` : ''}
     ${ambitoLabel           ? `<div><small>Ámbito</small><strong>${ambitoLabel}</strong></div>` : ''}
     ${header?.cif           ? `<div><small>CIF / NIF</small><strong>${header.cif}</strong></div>` : ''}
-    ${numTomadores > 1      ? `<div><small>Composición</small><strong>${nf(numTomadores)} tomadores</strong></div>` : ''}
-    ${obsLine               ? `<div style="flex:2"><small>Observaciones</small><strong>${obsLine}</strong></div>` : ''}
+    ${numTomadores > 1      ? `<div><small>Tomadores</small><strong>${nf(numTomadores)}</strong></div>` : ''}
+    ${formaPago             ? `<div><small>Forma de pago</small><strong>${formaPago}</strong></div>` : ''}
+    <div><small>ADR</small><strong>${adrActivo ? 'Sí' : 'No'}</strong></div>
+    ${corredorNombre        ? `<div><small>Correduría</small><strong>${corredorNombre}</strong></div>` : ''}
+    ${corredorComercial     ? `<div><small>Comercial</small><strong>${corredorComercial}</strong></div>` : ''}
   </div>`;
 
   // SINCO — metricstrip global + tabla tipología en una sola sección (igual que V4)
@@ -469,12 +478,112 @@ ${ci === covChunks.length - 1 ? `<div class="note">Las coberturas mostradas proc
 </body></html>`;
 }
 
+// ─── OverrideMatricula ───────────────────────────────────────────────────────
+// Buscador por matrícula + selector de cobertura para cambiar la cobertura solicitada
+// de un vehículo concreto. Al aplicar, el cambio se propaga a trabajoRows y recorre
+// toda la cadena de cálculos (tipoCobGrupos, primasSol, mmtRows, ConfigCoberturas).
+
+function OverrideMatricula({
+  trabajoRows, pivotCobs, onApply,
+}: {
+  trabajoRows: Record<string, string>[];
+  pivotCobs: string[];
+  onApply: (matricula: string, patch: Record<string, string>) => void;
+}) {
+  const [query, setQuery] = useState('');
+  const [nuevaCob, setNuevaCob] = useState('');
+  const [aviso, setAviso] = useState('');
+
+  const sugerencias = useMemo(() => {
+    const vals = new Set<string>();
+    pivotCobs.forEach(c => c && vals.add(c));
+    PRODUCTOS.forEach(p => vals.add(p.etiquetaHoja));
+    return [...vals].sort();
+  }, [pivotCobs]);
+
+  const matches = useMemo(() => {
+    const q = query.trim().toUpperCase();
+    if (!q) return [];
+    return trabajoRows
+      .filter(r => (r['matricula'] ?? '').toUpperCase().includes(q))
+      .slice(0, 8);
+  }, [trabajoRows, query]);
+
+  const aplicarA = (matricula: string) => {
+    if (!nuevaCob.trim()) { setAviso('Elige una cobertura antes de aplicar.'); return; }
+    onApply(matricula, { coberturas_solicitadas: nuevaCob.trim() });
+    setAviso(`Cobertura de ${matricula.toUpperCase()} actualizada a «${nuevaCob.trim()}».`);
+  };
+
+  return (
+    <section className="cfgcob paper wide" aria-label="Cambiar cobertura por matrícula" style={{ marginTop: 14 }}>
+      <div className="sh" style={{ marginBottom: 10 }}>
+        <div>
+          <h3 className="cfgh">Cambiar cobertura por matrícula</h3>
+          <p>Busca una matrícula para cambiar su cobertura solicitada. La prima del grupo se recalcula al aplicar.</p>
+        </div>
+      </div>
+      <div className="cfgbar" style={{ gap: 10, flexWrap: 'wrap' }}>
+        <label className="cfgl" style={{ flex: '1 1 220px' }}>Matrícula
+          <input
+            className="inp" type="text" placeholder="ej. 1234ABC"
+            value={query}
+            onChange={e => { setQuery(e.target.value); setAviso(''); }}
+            autoComplete="off"
+          />
+        </label>
+        <label className="cfgl" style={{ flex: '1 1 260px' }}>Nueva cobertura
+          <input
+            className="inp" type="text" list="override-cob-sug" placeholder="ej. Todo Riesgo con Franquicia"
+            value={nuevaCob}
+            onChange={e => setNuevaCob(e.target.value)}
+          />
+          <datalist id="override-cob-sug">
+            {sugerencias.map(s => <option key={s} value={s} />)}
+          </datalist>
+        </label>
+      </div>
+      {matches.length > 0 && (
+        <div className="xwrap" style={{ marginTop: 10 }}>
+          <table className="xg cfgt">
+            <thead>
+              <tr>
+                <th>Matrícula</th><th>Tipología</th><th>Cobertura actual</th><th className="n"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {matches.map(r => (
+                <tr key={r['matricula']}>
+                  <td><b>{(r['matricula'] ?? '').toUpperCase()}</b></td>
+                  <td>{r['tipo_vehiculo'] || '—'}</td>
+                  <td>{r['coberturas_solicitadas'] || '—'}</td>
+                  <td className="n">
+                    <button
+                      type="button" className="mini pri"
+                      onClick={() => aplicarA(r['matricula'] ?? '')}
+                      disabled={!nuevaCob.trim()}
+                    >Aplicar</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {query.trim() && matches.length === 0 && (
+        <div className="cfgaviso" role="status">Sin matrículas que coincidan con «{query.trim()}».</div>
+      )}
+      {aviso && <div className="cfgaviso" role="status">{aviso}</div>}
+    </section>
+  );
+}
+
 // ─── HojaInforme ─────────────────────────────────────────────────────────────
 
 export default function HojaInforme({
   header, carpetaNombre,
   trabajoRows, coberturas, sincoResultRows, sincoManual, sincoGlobal,
-  primasMmtValues, onPrimasMmtChange, configCoberturas, onConfigCoberturasChange, tarifaFlota, corredorLabel, danosPropios, observacion,
+  primasMmtValues, onPrimasMmtChange, configCoberturas, onConfigCoberturasChange, onTrabajoRowChange, tarifaFlota, corredorLabel, corredorNombre, corredorComercial, danosPropios, observacion,
 }: Props) {
 
   // ── Pivot tipo × cobertura ──────────────────────────────────────────────────
@@ -603,27 +712,6 @@ export default function HojaInforme({
   // ── Primas agrupadas ─────────────────────────────────────────────────────────
   const isYes = (v?: string) => { const u = (v ?? '').trim().toUpperCase(); return u !== '' && u !== 'NO' && u !== 'N' && u !== '0'; };
 
-  const tipoCobGrupos = useMemo(() => {
-    const grupos: Record<string, { tipo: string; cob: string; cobLabel: string; count: number; sumaSol: number; hasAsistencia: boolean; hasLunas: boolean; hasAnimales: boolean; hasSeguroConductor: boolean }> = {};
-    trabajoRows.filter(r => r['matricula']?.trim()).forEach(r => {
-      const tipo = normTipo(r['tipo_vehiculo'] || '');
-      const cob  = r['coberturas_solicitadas'] || 'Sin cobertura';
-      const key  = `${tipo}||${cob}`;                                  // clave estable para saved primas
-      const prima = parseFloat(r['prima_referencia'] ?? '');
-      if (!grupos[key]) grupos[key] = { tipo, cob, cobLabel: cob, count: 0, sumaSol: 0, hasAsistencia: false, hasLunas: false, hasAnimales: false, hasSeguroConductor: false };
-      // Actualizar cobLabel si este vehículo tiene extras
-      const extras: string[] = [];
-      if (isYes(r['lunas']))            { extras.push('LUNAS');           grupos[key].hasLunas = true; }
-      if (isYes(r['asistencia']))       { extras.push('ASISTENCIA');      grupos[key].hasAsistencia = true; }
-      if (isYes(r['animales']))         { extras.push('ANIMALES');        grupos[key].hasAnimales = true; }
-      if (isYes(r['seguro_conductor'])) { extras.push('SEGURO CONDUCTOR');grupos[key].hasSeguroConductor = true; }
-      if (extras.length > 0) grupos[key].cobLabel = `${cob} (${extras.join(', ')})`;
-      grupos[key].count++;
-      if (!isNaN(prima)) grupos[key].sumaSol += prima;
-    });
-    return grupos;
-  }, [trabajoRows]);
-
   // Grupos (tipología × cobertura solicitada) para el configurador de coberturas, con lo que pidió el corredor
   const gruposConfig = useMemo<GrupoConfig[]>(() => {
     const out: Record<string, GrupoConfig> = {};
@@ -637,6 +725,75 @@ export default function HojaInforme({
     });
     return Object.values(out);
   }, [trabajoRows]);
+
+  // Configuración efectiva por grupo: la confirmada o, si no hay, la propuesta inferida de la plantilla.
+  // Garantiza que lo que se muestra en el configurador manda sobre los cálculos de este informe.
+  const configEfectivos = useMemo<Record<string, ConfigCobertura>>(() => {
+    const out: Record<string, ConfigCobertura> = {};
+    for (const g of gruposConfig) {
+      const tipoKey = tipoKeyDesdeEtiqueta(g.tipoNorm);
+      const guardada = normalizarConfig(tipoKey, configCoberturas?.[g.key]);
+      if (guardada) { out[g.key] = guardada; continue; }
+      const propuesta = inferirConfig(tipoKey, g.cob, g.filas);
+      if (propuesta) out[g.key] = propuesta;
+    }
+    return out;
+  }, [gruposConfig, configCoberturas]);
+
+  const tipoCobGrupos = useMemo(() => {
+    const grupos: Record<string, { tipo: string; cob: string; cobLabel: string; cobMotor: string; count: number; sumaSol: number; hasAsistencia: boolean; hasLunas: boolean; hasAnimales: boolean; hasSeguroConductor: boolean }> = {};
+    trabajoRows.filter(r => r['matricula']?.trim()).forEach(r => {
+      const tipo = normTipo(r['tipo_vehiculo'] || '');
+      const cob  = r['coberturas_solicitadas'] || 'Sin cobertura';
+      const key  = `${tipo}||${cob}`;                                  // clave estable para saved primas
+      const prima = parseFloat(r['prima_referencia'] ?? '');
+      const cfg = configEfectivos[key];
+
+      if (!grupos[key]) {
+        // Cuando hay config efectiva (guardada o propuesta), prima sobre lo que pidió el corredor:
+        // label = producto + franquicia; cobMotor = etiqueta del catálogo; extras vienen del propio config.
+        if (cfg) {
+          const tipoKey = tipoKeyDesdeEtiqueta(tipo);
+          const prod = PRODUCTO_DEF[cfg.producto];
+          const ofRow = aOfertaRow(tipoKey, cfg);
+          const extrasCfg: string[] = [];
+          const hasLunasCfg = ofRow.lunas === 'Sí';
+          const hasAsistenciaCfg = ofRow.asistencia !== 'no' && ofRow.asistencia !== '';
+          const hasAnimalesCfg = ofRow.animales === 'true';
+          if (hasLunasCfg) extrasCfg.push('LUNAS');
+          if (hasAsistenciaCfg) extrasCfg.push('ASISTENCIA');
+          if (hasAnimalesCfg) extrasCfg.push('ANIMALES');
+          const baseLabel = cfg.franquicia ? `${prod.label} · ${cfg.franquicia}€` : prod.label;
+          grupos[key] = {
+            tipo, cob,
+            cobLabel: extrasCfg.length > 0 ? `${baseLabel} (${extrasCfg.join(', ')})` : baseLabel,
+            cobMotor: prod.etiquetaHoja,
+            count: 0, sumaSol: 0,
+            hasAsistencia: hasAsistenciaCfg, hasLunas: hasLunasCfg, hasAnimales: hasAnimalesCfg,
+            hasSeguroConductor: false,
+          };
+        } else {
+          grupos[key] = { tipo, cob, cobLabel: cob, cobMotor: cob, count: 0, sumaSol: 0, hasAsistencia: false, hasLunas: false, hasAnimales: false, hasSeguroConductor: false };
+        }
+      }
+
+      // Si no hay config efectiva, caer al modo original: leer extras por fila de la plantilla.
+      if (!cfg) {
+        const extras: string[] = [];
+        if (isYes(r['lunas']))            { extras.push('LUNAS');           grupos[key].hasLunas = true; }
+        if (isYes(r['asistencia']))       { extras.push('ASISTENCIA');      grupos[key].hasAsistencia = true; }
+        if (isYes(r['animales']))         { extras.push('ANIMALES');        grupos[key].hasAnimales = true; }
+        if (isYes(r['seguro_conductor'])) { extras.push('SEGURO CONDUCTOR');grupos[key].hasSeguroConductor = true; }
+        if (extras.length > 0) grupos[key].cobLabel = `${cob} (${extras.join(', ')})`;
+      } else if (isYes(r['seguro_conductor'])) {
+        // Seguro del conductor: no está en el catálogo de productos, lo mantenemos por fila
+        grupos[key].hasSeguroConductor = true;
+      }
+      grupos[key].count++;
+      if (!isNaN(prima)) grupos[key].sumaSol += prima;
+    });
+    return grupos;
+  }, [trabajoRows, configEfectivos]);
 
   // ── Motor ORION — constantes y handler (post tipoCobGrupos) ─────────────────
   const ORION_TO_MMT: Record<string, string> = {
@@ -734,7 +891,7 @@ export default function HojaInforme({
       const sinco_n_exposicion = sincoEntry
         ? (sincoEntry.resumen.vehiculosConExposicion * sincoEntry.resumen.antiguedadMedia) || null
         : null;
-      const { garantias, pendientes } = cobToGarantias(g.cob, mmtTip, g.hasLunas, g.hasAsistencia);
+      const { garantias, pendientes } = cobToGarantias(g.cobMotor || g.cob, mmtTip, g.hasLunas, g.hasAsistencia);
 
       try {
         const res = await fetch('/api/flotas/motor', {
@@ -1016,6 +1173,9 @@ export default function HojaInforme({
       primasSol,
       mmtRows,
       corredorLabel,
+      corredorNombre,
+      corredorComercial,
+      formaPago: header?.formaPago,
       cobAnexo,
       sincoPorTipo,
       fechaVctoDisplay,
@@ -1032,7 +1192,7 @@ export default function HojaInforme({
     } finally {
       setPdfLoading(false);
     }
-  }, [header, pivot, totalVehiculos, ambito, adrActivo, primasSol, mmtRows, resumenAuto, resumenManual, sincoGlobal, danosPropios, cobAnexo, sincoPorTipo, fechaVctoDisplay]);
+  }, [header, pivot, totalVehiculos, ambito, adrActivo, primasSol, mmtRows, resumenAuto, resumenManual, sincoGlobal, danosPropios, cobAnexo, sincoPorTipo, fechaVctoDisplay, corredorLabel, corredorNombre, corredorComercial]);
 
   // ── Detalle (panel lateral de los KPIs) ──────────────────────────────────────
   const [infKey, setInfKey] = useState<string | null>(null);
@@ -1136,6 +1296,9 @@ export default function HojaInforme({
         {/* ── Configurador de coberturas por tipología ── */}
         <ConfigCoberturas grupos={gruposConfig} configs={configCoberturas ?? {}} onChange={cfg => onConfigCoberturasChange?.(cfg)} />
 
+        {/* ── Override por matrícula ── */}
+        {onTrabajoRowChange && <OverrideMatricula trabajoRows={trabajoRows} pivotCobs={pivot.cobs} onApply={onTrabajoRowChange} />}
+
         {/* ── Hoja del informe ── */}
         <article className="paper wide" aria-label="Vista previa del informe">
           <div className="ph">
@@ -1154,7 +1317,15 @@ export default function HojaInforme({
             {[header?.cif ? `CIF ${header.cif}` : null, header?.actividad || null].filter(Boolean).join(' · ') || ' '}
           </p>
           <p>
-            {[fechaVctoDisplay ? `Fecha de vencimiento: ${fechaVctoDisplay}` : null, `Nº de tomadores: ${nf(Math.max(1, tomadores.size))}`, totalVehiculos > 0 ? `Ámbito: ${ambito.label ?? 'Nacional'}` : null, adrActivo ? 'ADR: sí' : null].filter(Boolean).join(' · ')}
+            {[
+              fechaVctoDisplay ? `Fecha de vencimiento: ${fechaVctoDisplay}` : null,
+              `Nº de tomadores: ${nf(Math.max(1, tomadores.size))}`,
+              totalVehiculos > 0 ? `Ámbito: ${ambito.label ?? 'Nacional'}` : null,
+              header?.formaPago ? `Forma de pago: ${header.formaPago}` : null,
+              adrActivo ? 'ADR: sí' : null,
+              corredorNombre ? `Correduría: ${corredorNombre}` : null,
+              corredorComercial ? `Comercial: ${corredorComercial}` : null,
+            ].filter(Boolean).join(' · ')}
           </p>
 
           <div className="kb">
