@@ -844,6 +844,30 @@ export default function HojaPreEmision({ trabajoRows, initialSeleccion, onCatalo
     setCheckedRows(new Set());
   }, [checkedRows, applyToMultiple]);
 
+  // Fix 18/11: botón "Mejor versión por %". Para cada matrícula marcada, elige automáticamente
+  // el candidato con mayor score (el 1º del array si viene ordenado, o busca el max).
+  const handleBulkMejorMatch = useCallback(() => {
+    setVehicles(prev => {
+      const updated = [...prev];
+      let aplicados = 0;
+      for (const idx of checkedRows) {
+        const v = updated[idx];
+        if (!v || v.seleccionado) continue;
+        const cands = v.candidatos ?? [];
+        if (cands.length === 0) continue;
+        // Elegir el candidato con mayor score (o el primero si todos tienen el mismo score)
+        const mejor = [...cands].sort((a, b) => (b.score ?? 0) - (a.score ?? 0))[0];
+        if (!mejor) continue;
+        updated[idx] = { ...v, seleccionado: mejor, status: 'listo', searching: false, aproximada: false };
+        aplicados++;
+      }
+      if (aplicados === 0) return prev;
+      pendingNotifyRef.current = true;
+      return updated;
+    });
+    setCheckedRows(new Set());
+  }, [checkedRows]);
+
   const handleBulkDirectId = useCallback(async (idVeh: string) => {
     try {
       const res  = await fetch(`/api/catalogo/${encodeURIComponent(idVeh)}`);
@@ -918,6 +942,22 @@ export default function HojaPreEmision({ trabajoRows, initialSeleccion, onCatalo
     });
     pendingNotifyRef.current = true;
   }, []);
+
+  // Fix 19/11: desasignar en lote los vehículos marcados con el checkbox.
+  // Útil cuando el usuario asignó por error la misma versión a todos y quiere empezar de cero.
+  const handleBulkClear = useCallback(() => {
+    if (checkedRows.size === 0) return;
+    setVehicles(prev => {
+      const n = [...prev];
+      for (const i of checkedRows) {
+        if (!n[i]) continue;
+        n[i] = { ...n[i], seleccionado: null, aproximada: false, status: n[i].candidatos.length > 0 ? 'pendiente' : 'sin_catalogo' };
+      }
+      return n;
+    });
+    pendingNotifyRef.current = true;
+    setCheckedRows(new Set());
+  }, [checkedRows]);
 
   const displayVehicles = useMemo(() => {
     if (!sortConfig) return vehicles;
@@ -1040,6 +1080,23 @@ export default function HojaPreEmision({ trabajoRows, initialSeleccion, onCatalo
                       ))}
                     </select>
                   )}
+                  {(() => {
+                    // Botón "Mejor versión %" visible si al menos uno de los seleccionados
+                    // tiene candidatos (versiones del catálogo con score).
+                    const conCandidatos = [...checkedRows].filter(i => {
+                      const v = vehicles[i];
+                      return v && !v.seleccionado && (v.candidatos?.length ?? 0) > 0;
+                    }).length;
+                    if (conCandidatos === 0) return null;
+                    return (
+                      <button
+                        className="mini"
+                        title="Elige automáticamente la versión del catálogo con mayor porcentaje de coincidencia para cada matrícula."
+                        onClick={handleBulkMejorMatch}>
+                        Mejor versión por % ({nf(conCandidatos)})
+                      </button>
+                    );
+                  })()}
                   <BulkIdInput onSubmit={handleBulkDirectId} />
                   {(() => {
                     const aConfirmar = [...checkedRows].map(i => vehicles[i]).filter(v => { const r = v && revisiones[v.matricula]; return r && r.bloq.length > 0 && !r.confirmada && !r.imposible; });
@@ -1047,6 +1104,22 @@ export default function HojaPreEmision({ trabajoRows, initialSeleccion, onCatalo
                       <button className="mini" title="Da por buena la identificación de los seleccionados que tienen discrepancias graves. Queda registrado quién y cuándo."
                         onClick={() => { if (window.confirm(`¿Dar por buena la identificación de ${aConfirmar.length} vehículo${aConfirmar.length > 1 ? 's' : ''} con discrepancias graves? Quedará registrado con tu usuario y la fecha.`)) darPorBuenoVarios(aConfirmar); }}>
                         Dar por bueno ({nf(aConfirmar.length)})
+                      </button>
+                    );
+                  })()}
+                  {(() => {
+                    const asignados = [...checkedRows].filter(i => vehicles[i]?.seleccionado).length;
+                    if (asignados === 0) return null;
+                    return (
+                      <button
+                        className="mini"
+                        title="Desasigna el catálogo de los vehículos marcados para poder volver a elegir desde cero."
+                        onClick={() => {
+                          if (window.confirm(`Desasignar el catálogo de ${asignados} vehículo${asignados > 1 ? 's' : ''}? Podrás volver a elegirlos uno a uno o con "Mejor versión por %".`)) {
+                            handleBulkClear();
+                          }
+                        }}>
+                        Quitar catálogo ({nf(asignados)})
                       </button>
                     );
                   })()}

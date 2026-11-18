@@ -91,17 +91,19 @@ export default function HojaEmision({
   const [errDescarga, setErrDescarga] = useState('');
 
   const em = emision ?? {};
+  // Fix 18/11: si hay override manual en la emisión, prevalece sobre el del corredor.
+  const idPerceptorEfectivo = (em.idPerceptorOverride?.trim()) || idPerceptor || '';
   const res = useMemo(() => prepararEmision({
     trabajoRows,
     catalogoSeleccion: catalogoSeleccion ?? {},
     configCoberturas: configCoberturas ?? {},
     ofertaRows,
     emision,
-    idPerceptor,
+    idPerceptor: idPerceptorEfectivo,
     efectoGenerales,
     periodicidadGenerales,
     verificacion,
-  }), [trabajoRows, catalogoSeleccion, configCoberturas, ofertaRows, emision, idPerceptor, efectoGenerales, periodicidadGenerales, verificacion]);
+  }), [trabajoRows, catalogoSeleccion, configCoberturas, ofertaRows, emision, idPerceptorEfectivo, efectoGenerales, periodicidadGenerales, verificacion]);
 
   const setCampo = (campo: 'idCliente' | 'idFlota' | 'idColectivo' | 'fechaEfecto', v: string) => onEmisionChange({ ...em, [campo]: v });
   const setComun = (col: string, v: string) => {
@@ -206,8 +208,20 @@ export default function HojaEmision({
           </div>
           <div className="dg-fld full">
             <label htmlFor="em-per">ID de perceptor (ID_INTERVINIENTE)</label>
-            <input id="em-per" className="dg-inp" value={idPerceptor ?? ''} readOnly placeholder="Sin asignar" />
-            <div className="hint">{idPerceptor ? `Se toma de la ficha del corredor${corredorNombre ? ` (${corredorNombre})` : ''} y se arrastra siempre.` : 'El corredor de esta flota no tiene ID de perceptor. Se asigna en CORREDORES.'}</div>
+            <input
+              id="em-per"
+              className="dg-inp"
+              value={em.idPerceptorOverride ?? idPerceptor ?? ''}
+              placeholder="Sin asignar — escribir aquí para forzar un ID manual"
+              onChange={e => onEmisionChange({ ...em, idPerceptorOverride: e.target.value })}
+            />
+            <div className="hint">
+              {em.idPerceptorOverride
+                ? `Override manual activo. Prevalece sobre el del corredor${corredorNombre ? ` (${corredorNombre})` : ''}. Vacía el campo para volver al del corredor.`
+                : idPerceptor
+                  ? `Se toma de la ficha del corredor${corredorNombre ? ` (${corredorNombre})` : ''}. Puedes sobrescribirlo aquí si necesitas otro.`
+                  : 'El corredor de esta flota no tiene ID de perceptor. Rellénalo aquí a mano o asígnalo en CORREDORES.'}
+            </div>
           </div>
         </div>
 

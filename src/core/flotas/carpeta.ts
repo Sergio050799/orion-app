@@ -31,6 +31,8 @@ export interface EmisionDatos {
   idFlota?: string;        // ID_FLOTA
   idColectivo?: string;    // ID_COLECTIVO
   fechaEfecto?: string;    // dd/mm/aaaa; si vacío se usa el efecto de DATOS GENERALES
+  /** Override manual del ID_INTERVINIENTE (perceptor). Si está, prevalece sobre el del corredor. */
+  idPerceptorOverride?: string;
   /** Valores comunes a todos los vehículos (columna de la plantilla de emisión, valor). */
   comunes?: Record<string, string>;
 }

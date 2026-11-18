@@ -270,6 +270,12 @@ function vehiclesToTrabajoRows(vehicles: any[]): Record<string, string>[] {
     etiqueta_dgt:         v.etiqueta_dgt          || '',
     euro:                 v.euro                  || '',
     co2:                  v.co2                   || '',
+    // Fix 19/11: estos campos ya vienen del catálogo en automaticoVehicles pero antes no se
+    // propagaban a trabajoRows. Emision necesita plazas (NUM_PLAZAS) y tara (TARA/TN).
+    plazas:               v.plazas > 0 ? String(v.plazas) : '',
+    tn:                   v.tara > 0 ? String(v.tara) : (v.tn || ''),
+    cilindrada:           v.cilindrada            || '',
+    puertas:              v.puertas > 0 ? String(v.puertas) : (v.puertas || ''),
   }));
 }
 
@@ -324,7 +330,31 @@ export default function FlotasPage() {
   const verifCarpetaRef = useRef<string | null>(null);
   if (verifCarpetaRef.current !== (carpetaActiva?.id ?? null)) {
     verifCarpetaRef.current = carpetaActiva?.id ?? null;
-    if (Object.keys(verifInfo).length > 0) setVerifInfo({});
+    // Fix 18/11: al cambiar de carpeta, re-hidratar verifInfo desde lo que guardó
+    // PRE-EMISIÓN en carpetaActiva.verificacionOk. Antes se vaciaba y, si el usuario
+    // iba directo a EMISIÓN sin pasar por PRE-EMISIÓN, bloqueaba todos los vehículos
+    // con "Identificación sin verificar". Los datos ya están guardados por fila.
+    const okMap = carpetaActiva?.verificacionOk ?? {};
+    const registroMap = carpetaActiva?.verificacionRegistro ?? {};
+    const rehidratado: Record<string, InfoVerificacion> = {};
+    for (const [matricula, idVeh] of Object.entries(okMap)) {
+      if (!idVeh) continue;
+      const reg = registroMap[matricula];
+      rehidratado[matricula] = {
+        bloquea: [],
+        avisos: [],
+        confirmada: true,
+        anio: null,
+        anioFab: null,
+        anioMat: null,
+        confirmadaPor: reg?.por,
+        confirmadaFecha: reg?.fecha,
+      };
+    }
+    // Solo actualizar si realmente cambia (evita render loop).
+    if (JSON.stringify(verifInfo) !== JSON.stringify(rehidratado)) {
+      setVerifInfo(rehidratado);
+    }
   }
   const guardaCatalogoRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -841,7 +871,13 @@ export default function FlotasPage() {
                   {TABS.map(tab => (
                     <div key={tab} className="pane" style={{ display: activeTab === tab ? 'flex' : 'none' }}>
                       {tab === 'DATOS GENERALES' && carpetaActiva && (
-                        <HojaDatosGenerales carpetaActiva={carpetaActiva} header={flotaHeader} onHeaderChange={setFlotaHeader} onCarpetaChange={handleCarpetaChange} />
+                        <HojaDatosGenerales
+                          carpetaActiva={carpetaActiva}
+                          header={flotaHeader}
+                          onHeaderChange={setFlotaHeader}
+                          onCarpetaChange={handleCarpetaChange}
+                          onConfirmar={() => setActiveTab('AUTOMÁTICO')}
+                        />
                       )}
                       {tab === 'AUTOMÁTICO' && (
                         <HojaAutomatico
@@ -930,6 +966,64 @@ export default function FlotasPage() {
                           initialSeleccion={carpetaActiva?.catalogoSeleccion}
                           initialVerificacionOk={carpetaActiva?.verificacionOk}
                           initialVerificacionRegistro={carpetaActiva?.verificacionRegistro}
+                          // Fix 19/11: propagar plazas/kw/combustible/tara del catálogo seleccionado a trabajoRows.
+                          // SOBREESCRIBE lo que haya en la plantilla original cuando hay catálogo asignado —
+                          // el dato oficial MMT prevalece sobre lo que puso el cliente. También actualiza
+                          // automaticoVehicles (fuente de trabajoRows cuando la plantilla está vacía).
+                          onVehiclesUpdate={(exports) => {
+                            const cur = carpetaActivaRef.current;
+                            if (!cur) return;
+                            const porMatricula = new Map(exports.map(e => [e.matricula.replace(/[\s-]/g, '').toUpperCase(), e]));
+                            const setFromCat = (next: Record<string, string>, k: string, v: string | number) => {
+                              const vStr = String(v ?? '').trim();
+                              if (!vStr || vStr === '0') return false;
+                              if (String(next[k] ?? '').trim() === vStr) return false;
+                              next[k] = vStr;
+                              return true;
+                            };
+                            let cambios = 0;
+                            const trabajoNuevo = (cur.trabajo ?? []).map(r => {
+                              const mat = String(r['matricula'] ?? '').replace(/[\s-]/g, '').toUpperCase();
+                              const ex = porMatricula.get(mat);
+                              if (!ex || !ex.id_catalogo) return r;
+                              const next = { ...r };
+                              let dirty = false;
+                              if (setFromCat(next, 'plazas', ex.plazas)) dirty = true;
+                              if (setFromCat(next, 'kw', ex.kw)) dirty = true;
+                              if (setFromCat(next, 'cv', ex.cv)) dirty = true;
+                              if (setFromCat(next, 'combustible', ex.combustible)) dirty = true;
+                              if (setFromCat(next, 'tn', ex.tara)) dirty = true;
+                              if (dirty) cambios++;
+                              return next;
+                            });
+                            // También automaticoVehicles (si existe). trabajoRows lo deriva de ahí
+                            // cuando la plantilla está vacía.
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            const autoOriginales = (cur as any).automaticoVehicles as any[] | undefined;
+                            let autoNuevo = autoOriginales;
+                            if (autoOriginales && autoOriginales.length > 0) {
+                              autoNuevo = autoOriginales.map(v => {
+                                const mat = String(v.matricula ?? '').replace(/[\s-]/g, '').toUpperCase();
+                                const ex = porMatricula.get(mat);
+                                if (!ex || !ex.id_catalogo) return v;
+                                const next = { ...v };
+                                let dirty = false;
+                                if (ex.plazas > 0 && v.plazas !== ex.plazas) { next.plazas = ex.plazas; dirty = true; }
+                                if (ex.kw > 0 && v.kw !== ex.kw) { next.kw = ex.kw; dirty = true; }
+                                if (ex.cv > 0 && v.cv !== ex.cv) { next.cv = ex.cv; dirty = true; }
+                                if (ex.tara > 0 && v.tara !== ex.tara) { next.tara = ex.tara; dirty = true; }
+                                if (ex.combustible && v.combustible !== ex.combustible) { next.combustible = ex.combustible; dirty = true; }
+                                if (dirty) cambios++;
+                                return next;
+                              });
+                            }
+                            if (cambios === 0) return;
+                            const updated = { ...cur, trabajo: trabajoNuevo, ...(autoNuevo ? { automaticoVehicles: autoNuevo } : {}) };
+                            carpetaActivaRef.current = updated;
+                            setCarpetaActiva(updated);
+                            if (guardaCatalogoRef.current) clearTimeout(guardaCatalogoRef.current);
+                            guardaCatalogoRef.current = setTimeout(() => { const c = carpetaActivaRef.current; if (c) guardarCarpeta(c); }, 800);
+                          }}
                           onCatalogoChange={(selecciones) => {
                             const cur = carpetaActivaRef.current;
                             if (!cur) return;

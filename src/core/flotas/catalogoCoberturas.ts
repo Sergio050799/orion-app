@@ -470,13 +470,21 @@ export const COLUMNAS_COBERTURA_EMISION: ColEmision[] = [
 
 // ─── Configuración inicial a partir de lo que pidió el corredor ──────────────
 
-export interface FilaSolicitada { frq?: string; lunas?: string; animales?: string }
+export interface FilaSolicitada {
+    frq?: string;
+    lunas?: string;
+    animales?: string;
+    asistencia?: string;
+    seguro_conductor?: string;
+    ambito?: string;
+}
 
 const esSi = (v?: string) => { const u = (v ?? '').trim().toUpperCase(); return u !== '' && u !== 'NO' && u !== 'N' && u !== '0' && u !== 'FALSE'; };
 
 /**
  * Configuración de partida para un grupo (tipología × cobertura solicitada), deducida de la plantilla del
- * corredor: producto por la etiqueta, franquicia más repetida si es válida, lunas y animales si los pidió.
+ * corredor: producto por la etiqueta, franquicia más repetida si es válida, lunas, animales, asistencia,
+ * seguro del conductor y ámbito si vinieron en la plantilla.
  * Devuelve null si la tipología no admite coberturas (minibús, sin clasificar) o la etiqueta no se reconoce.
  */
 export function inferirConfig(tipo: TipoKey, etiquetaCobertura: string, filas: FilaSolicitada[]): ConfigCobertura | null {
@@ -499,6 +507,64 @@ export function inferirConfig(tipo: TipoKey, etiquetaCobertura: string, filas: F
     // Solo se activa lo que el corredor pidió; si no pidió nada, vale el valor por defecto del sistema
     if (hayLunas && campos.some(c => c.id === 'lunas_rotura' && c.kind === 'select')) cfg.opciones.lunas_rotura = 'si';
     if (hayAnim && campos.some(c => c.id === 'animales')) cfg.opciones.animales = 'si';
+
+    // ─── Fix 18/11 — asistencia, seguro del conductor y ámbito vienen de la plantilla por fila ─────────
+    // Antes INFORME ignoraba estos valores y siempre usaba los defaults, por eso tras subir la plantilla
+    // había que volver a configurarlas aunque ya estuvieran en Excel.
+    // Normalizamos y escogemos el valor dominante entre las filas del grupo.
+    const dominantePorFila = (getter: (f: FilaSolicitada) => string): string => {
+        const cuenta = new Map<string, number>();
+        for (const f of filas) {
+            const v = (getter(f) ?? '').trim();
+            if (!v) continue;
+            cuenta.set(v, (cuenta.get(v) ?? 0) + 1);
+        }
+        const best = [...cuenta.entries()].sort((a, b) => b[1] - a[1])[0];
+        return best ? best[0] : '';
+    };
+
+    // Asistencia: la plantilla puede traer 'oro'/'oro_plus'/'platino' (1.ª cat) o 'nacional'/'internacional' (2.ª cat).
+    const asistenciaRaw = dominantePorFila(f => (f.asistencia ?? '').toLowerCase());
+    if (asistenciaRaw) {
+        // Si hay un campo 'asistencia' de tipo select en la config, intentar matchear valor o 'si'
+        const campoAsist = campos.find(c => c.id === 'asistencia' || c.id === 'asistencia_viaje' || c.id === 'asistencia_en_viaje');
+        if (campoAsist && campoAsist.kind === 'select' && campoAsist.opciones) {
+            const match = campoAsist.opciones.find(o =>
+                o.value.toLowerCase() === asistenciaRaw ||
+                o.label.toLowerCase().includes(asistenciaRaw)
+            );
+            if (match) cfg.opciones[campoAsist.id] = match.value;
+            else if (asistenciaRaw !== 'no') cfg.opciones[campoAsist.id] = 'si';
+        }
+    }
+
+    // Seguro del conductor
+    const segCondRaw = dominantePorFila(f => (f.seguro_conductor ?? '').toLowerCase());
+    if (segCondRaw) {
+        const campoSC = campos.find(c => c.id === 'seguro_conductor' || c.id === 'conductor');
+        if (campoSC && campoSC.kind === 'select' && campoSC.opciones) {
+            const match = campoSC.opciones.find(o =>
+                o.value.toLowerCase() === segCondRaw ||
+                o.label.toLowerCase().includes(segCondRaw)
+            );
+            if (match) cfg.opciones[campoSC.id] = match.value;
+            else if (esSi(segCondRaw)) cfg.opciones[campoSC.id] = 'si';
+        }
+    }
+
+    // Ámbito (nacional/internacional) — relevante sobre todo para 2.ª cat.
+    const ambitoRaw = dominantePorFila(f => (f.ambito ?? '').toLowerCase());
+    if (ambitoRaw) {
+        const campoAmb = campos.find(c => c.id === 'ambito' || c.id === 'ambito_circulacion');
+        if (campoAmb && campoAmb.kind === 'select' && campoAmb.opciones) {
+            const match = campoAmb.opciones.find(o =>
+                o.value.toLowerCase() === ambitoRaw ||
+                o.label.toLowerCase().includes(ambitoRaw)
+            );
+            if (match) cfg.opciones[campoAmb.id] = match.value;
+        }
+    }
+
     return cfg;
 }
 

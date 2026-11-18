@@ -155,7 +155,9 @@ function buildPdfHtml(data: {
   header?: FlotaHeader;
   pivot: { tipos: string[]; cobs: string[]; counts: Record<string, Record<string, number>> };
   totalVehiculos: number;
+  /** label combinado + desglose numérico. Si hay ambos, PDF muestra "Nacional N · Internacional M". */
   ambitoLabel: string | null;
+  ambitoDesglose?: { nacional: number; internacional: number; sinDato: number } | null;
   numTomadores: number;
   adrActivo: boolean;
   sinco: { label: string; values: [string, string][] } | null;
@@ -174,7 +176,17 @@ function buildPdfHtml(data: {
   carpetaNombre?: string;
   observacion?: string;
 }): string {
-  const { header, pivot, totalVehiculos, ambitoLabel, numTomadores, adrActivo, sinco, danosPropiosPdf, primasSol, mmtRows, corredorLabel, corredorNombre, corredorComercial, formaPago, cobAnexo, sincoPorTipo } = data;
+  const { header, pivot, totalVehiculos, ambitoLabel, ambitoDesglose, numTomadores, adrActivo, sinco, danosPropiosPdf, primasSol, mmtRows, corredorLabel, corredorNombre, corredorComercial, formaPago, cobAnexo, sincoPorTipo } = data;
+
+  // Texto Ámbito mejorado: si hay nacional + internacional desglosa; si no, el label original.
+  const ambitoTxt = (() => {
+    if (!ambitoDesglose) return ambitoLabel;
+    const { nacional, internacional } = ambitoDesglose;
+    if (nacional > 0 && internacional > 0) return `Nacional ${nf(nacional)} · Internacional ${nf(internacional)}`;
+    if (internacional > 0 && nacional === 0) return `Internacional (${nf(internacional)})`;
+    if (nacional > 0 && internacional === 0) return `Nacional (${nf(nacional)})`;
+    return ambitoLabel;
+  })();
   const escObs = data.observacion ? data.observacion.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : '';
   const totalSol = primasSol.reduce((a, r) => a + r.total, 0);
   const totalMmt = mmtRows.reduce((a, r) => a + (r.total ?? 0), 0);
@@ -205,7 +217,7 @@ function buildPdfHtml(data: {
   // Hero strip: todos los datos relevantes del estudio en una única tira.
   const heroHtml = `<div class="hero">
     ${data.fechaVctoDisplay ? `<div><small>Vencimiento</small><strong>${data.fechaVctoDisplay}</strong></div>` : ''}
-    ${ambitoLabel           ? `<div><small>Ámbito</small><strong>${ambitoLabel}</strong></div>` : ''}
+    ${ambitoTxt             ? `<div><small>Ámbito</small><strong>${ambitoTxt}</strong></div>` : ''}
     ${header?.cif           ? `<div><small>CIF / NIF</small><strong>${header.cif}</strong></div>` : ''}
     ${numTomadores > 1      ? `<div><small>Tomadores</small><strong>${nf(numTomadores)}</strong></div>` : ''}
     ${formaPago             ? `<div><small>Forma de pago</small><strong>${formaPago}</strong></div>` : ''}
@@ -266,7 +278,7 @@ function buildPdfHtml(data: {
     <div><small>Diferencia</small><strong class="${dif >= 0 ? 'pos' : 'neg'}">${dif >= 0 ? '+' : ''}${fmtEur(dif)}</strong></div>
     <div><small>Variación</small><strong class="${dif >= 0 ? 'pos' : 'neg'}">${totalSol ? (dif >= 0 ? '+' : '') + dec(pctDif, 1) + ' %' : '—'}</strong></div>
   </div>
-  <p class="method">Diferencia calculada como prima MMT menos prima solicitada.</p>` : '';
+  <p class="method">Diferencia calculada como prima dada (ORION base) menos prima pedida (corredor).</p>` : '';
 
   // La tabla de primas se pagina: cada página A4 admite ~14 filas sin desbordar el pie.
   // El TOTAL + economía solo aparecen en la última página de este bloque.
@@ -447,7 +459,7 @@ ${primaChunks.map((chunk, pi) => `<article class="page">
 ${brandrow(true)}
 <div class="kicker">ANÁLISIS ECONÓMICO</div>
 <h1 class="report-title">${fleetName || 'Comparativa de primas'}</h1>
-${pi === 0 ? `<p class="subtitle">Importes anuales — Prima solicitada vs Prima MMT de referencia</p>` : ''}
+${pi === 0 ? `<p class="subtitle">Importes anuales — Prima solicitada (corredor) vs Prima MMT (ORION base)</p>` : ''}
 ${buildPrimasSection(chunk, pi === primaChunks.length - 1, pi, primaChunks.length)}
 <div class="footer">
   <span>Documento confidencial</span>
@@ -616,12 +628,20 @@ export default function HojaInforme({
   const ambito = useMemo(() => {
     const rows = trabajoRows.filter(r => r['matricula']?.trim());
     const getAmb = (r: Record<string, string>) => (r['ambito'] || r['ámbito'] || '').toLowerCase();
-    const nacional = rows.filter(r => getAmb(r).includes('nac')).length;
-    const internacional = rows.filter(r => getAmb(r).includes('int')).length;
-    const sinDato = rows.length - nacional - internacional;
-    // Si hay vehículos pero ninguno tiene ámbito explícito → Nacional por defecto
-    const label: string | null = internacional > 0 ? 'Internacional' : (nacional > 0 || rows.length > 0) ? 'Nacional' : null;
-    return { nacional, internacional, sinDato, label };
+    // Clasificación mutuamente excluyente: si contiene "int" → internacional; resto nacional.
+    // Antes se filtraba con .includes('nac') y .includes('int') por separado y una celda
+    // tipo "nacional/internacional" se contaba en los dos (bug "44 nac + 44 int" para 44 totales).
+    let internacional = 0;
+    let nacional = 0;
+    for (const r of rows) {
+      const a = getAmb(r);
+      if (a.includes('int')) internacional++;
+      else nacional++;  // nacional por defecto (si no hay dato, el negocio es Nacional)
+    }
+    const label: string | null = internacional > 0
+      ? (nacional > 0 ? 'Mixto' : 'Internacional')
+      : (rows.length > 0 ? 'Nacional' : null);
+    return { nacional, internacional, sinDato: 0, label };
   }, [trabajoRows]);
 
   // ── Tomadores ────────────────────────────────────────────────────────────────
@@ -721,7 +741,14 @@ export default function HojaInforme({
       const key = `${tipoNorm}||${cob}`;
       if (!out[key]) out[key] = { key, tipoNorm, cob, count: 0, filas: [] };
       out[key].count++;
-      out[key].filas.push({ frq: r['frq'], lunas: r['lunas'], animales: r['animales'] });
+      out[key].filas.push({
+        frq: r['frq'],
+        lunas: r['lunas'],
+        animales: r['animales'],
+        asistencia: r['asistencia'],
+        seguro_conductor: r['seguro_conductor'],
+        ambito: r['ambito'],
+      });
     });
     return Object.values(out);
   }, [trabajoRows]);
@@ -1166,6 +1193,7 @@ export default function HojaInforme({
       pivot,
       totalVehiculos,
       ambitoLabel: totalVehiculos > 0 ? (ambito.label ?? 'Nacional') : null,
+      ambitoDesglose: totalVehiculos > 0 ? { nacional: ambito.nacional, internacional: ambito.internacional, sinDato: ambito.sinDato } : null,
       numTomadores: tomadores.size,
       adrActivo,
       sinco: sincoValues ? { label: 'SINCO', values: sincoValues } : null,
@@ -1200,8 +1228,9 @@ export default function HojaInforme({
 
   const sincoItems = (() => {
     const r = resumenAuto ?? resumenManual;
+    // Fix 18/11: NO incluir ['Vehículos', ...] aquí porque fuera (línea 1367) ya se renderiza
+    // un botón explícito "Vehículos" antes del map → se duplicaba "Vehículos 44 / Vehículos 44".
     const items: [string, string, string?][] = r ? [
-      ['Vehículos', nf(r.totalVehiculos)],
       ['Con SINCO', nf(r.vehiculosConSinco)],
       ['Siniestros', nf(r.totalSiniestros)],
       ['Antigüedad', `${fmt2(r.antiguedadMedia)} años`],
@@ -1226,7 +1255,11 @@ export default function HojaInforme({
       case 'veh':
         return {
           over: 'Informe · Composición', title: 'Vehículos informados', desc: 'Vehículos con matrícula en Trabajo, por tipo.',
-          stats: [['Vehículos', nf(totalVehiculos)], ['Ámbito', totalVehiculos > 0 ? (ambito.label ?? 'Nacional') : '—']],
+          stats: [['Vehículos', nf(totalVehiculos)], ['Ámbito', totalVehiculos > 0
+            ? (ambito.nacional > 0 && ambito.internacional > 0
+                ? `Nac ${nf(ambito.nacional)} · Int ${nf(ambito.internacional)}`
+                : (ambito.label ?? 'Nacional'))
+            : '—']],
           head: ['Tipo', 'Vehículos'],
           rows: pivot.tipos.map(t => [t, nf(pivot.cobs.reduce((a, c) => a + (pivot.counts[t]?.[c] ?? 0), 0))]),
           fx: [['Total', `Σ vehículos de cada tipo = ${nf(totalVehiculos)}`]],
@@ -1237,11 +1270,11 @@ export default function HojaInforme({
           stats: [['Prima solicitada', fmtEur(totalSol)], ['Grupos', nf(nPrimas)]],
           head: ['Tipología y cobertura', 'Veh.', 'Sol./veh.', 'Total'],
           rows: primasSol.map(p => [`${p.tipo} · ${p.cob}`, nf(p.count), p.media ? fmtEur2(p.media) : '—', p.total ? fmtEur(p.total) : '—']),
-          fx: [['Total por grupo', 'Prima solicitada por vehículo × Nº de vehículos'], ['Prima solicitada total', `Σ totales de los grupos = ${fmtEur(totalSol)}`]],
+          fx: [['Total por grupo', 'Prima solicitada por vehículo × Nº de vehículos (prima que pide el corredor)'], ['Prima solicitada total', `Σ totales de los grupos = ${fmtEur(totalSol)}`]],
         };
       case 'mmt':
         return {
-          over: 'Informe · Primas', title: 'Prima MMT', desc: 'Prima ofertada por MMT, por tipología y cobertura.',
+          over: 'Informe · Primas', title: 'Prima MMT', desc: 'Prima base de ORION por tipología y cobertura.',
           stats: [['Prima MMT', fmtEur(totalMmt)], ['Grupos con prima', nf(mmtRows.filter(r => r.total != null).length)]],
           head: ['Tipología y cobertura', 'Veh.', 'MMT/veh.', 'Total'],
           rows: rowsTip.map(({ p, m }) => [`${p.tipo} · ${p.cob}`, nf(p.count), m?.prima != null ? fmtEur2(m.prima) : '—', m?.total != null ? fmtEur(m.total) : '—']),
@@ -1250,7 +1283,7 @@ export default function HojaInforme({
       case 'dif':
       case 'var':
         return {
-          over: 'Informe · Primas', title: k === 'dif' ? 'Diferencia' : 'Variación', desc: 'Prima MMT frente a la solicitada.',
+          over: 'Informe · Primas', title: k === 'dif' ? 'Diferencia' : 'Variación', desc: 'Prima MMT (ORION base) frente a la pedida (corredor).',
           stats: [['Diferencia', `${dif >= 0 ? '+' : '−'}${fmtEur(Math.abs(dif))}`], ['Variación', signedPc(pctDif, 1)]],
           head: ['Tipología y cobertura', 'Solicitada', 'MMT', 'Diferencia'],
           rows: rowsTip.map(({ p, m }) => {
@@ -1320,7 +1353,11 @@ export default function HojaInforme({
             {[
               fechaVctoDisplay ? `Fecha de vencimiento: ${fechaVctoDisplay}` : null,
               `Nº de tomadores: ${nf(Math.max(1, tomadores.size))}`,
-              totalVehiculos > 0 ? `Ámbito: ${ambito.label ?? 'Nacional'}` : null,
+              totalVehiculos > 0
+                ? (ambito.nacional > 0 && ambito.internacional > 0
+                    ? `Ámbito: Nacional ${nf(ambito.nacional)} · Internacional ${nf(ambito.internacional)}`
+                    : `Ámbito: ${ambito.label ?? 'Nacional'}`)
+                : null,
               header?.formaPago ? `Forma de pago: ${header.formaPago}` : null,
               adrActivo ? 'ADR: sí' : null,
               corredorNombre ? `Correduría: ${corredorNombre}` : null,

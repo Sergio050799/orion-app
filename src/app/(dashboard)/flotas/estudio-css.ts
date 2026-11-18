@@ -83,6 +83,12 @@ export const ESTUDIO_CSS = `
 .es .dg-sel{min-width:0}
 .es .pct2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 18px;margin-top:14px}
 .es .dg-note{font-size:13px;color:var(--quiet);line-height:1.6;padding:10px 0 0;border-top:1px solid var(--line);margin-top:12px}
+.es .dg-confirm-bar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:28px;padding-top:20px;border-top:1px solid var(--line);flex-wrap:wrap}
+.es .dg-confirm-err{color:var(--danger);font-size:13px;font-weight:600}
+.es .dg-confirm-ok{color:var(--ok);font-size:13px;font-weight:600}
+.es .dg-confirm-btn{background:var(--blue);color:#fff;border:0;border-radius:6px;padding:12px 22px;font-size:14px;font-weight:600;cursor:pointer;letter-spacing:.01em;transition:background .16s,transform .16s}
+.es .dg-confirm-btn:hover{background:var(--blue-2)}
+.es .dg-confirm-btn:active{transform:scale(.98)}
 .es .lock{display:flex;gap:6px 14px;flex-wrap:wrap;align-items:baseline;border:1px solid var(--line);border-left:3px solid var(--blue);border-radius:5px;background:var(--soft);padding:12px 16px;margin:0 0 18px;font-size:14px;line-height:1.6;color:var(--sub)}
 .es .lock b{color:var(--text);letter-spacing:.07em;text-transform:uppercase;font-size:12px;flex-shrink:0}
 .es .notice{margin:0 0 18px;padding:12px 16px;border:1px solid var(--warn);border-radius:5px;font-size:14px;line-height:1.6;color:var(--sub)}

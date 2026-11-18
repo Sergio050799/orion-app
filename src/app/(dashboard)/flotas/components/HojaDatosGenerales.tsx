@@ -141,9 +141,14 @@ interface Props {
   header: FlotaHeader;
   onHeaderChange: (h: FlotaHeader) => void;
   onCarpetaChange: (c: FlotaCarpeta) => void;
+  /** Si se pasa, aparece un botón "Confirmar y continuar" al final.
+   *  Guarda explícitamente el header + carpeta y llama al callback (ej. pasar al paso 2). */
+  onConfirmar?: () => void;
 }
 
-export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChange, onCarpetaChange }: Props) {
+export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChange, onCarpetaChange, onConfirmar }: Props) {
+  const [confirmErr, setConfirmErr] = useState('');
+  const [confirmedFlash, setConfirmedFlash] = useState(false);
   const [corredores, setCorredores] = useState<Corredor[]>([]);
   const [tarifaToast, setTarifaToast] = useState('');
   const tarifaFileRef = useRef<HTMLInputElement>(null);
@@ -553,6 +558,40 @@ export default function HojaDatosGenerales({ carpetaActiva, header, onHeaderChan
 
         </section>
       </div>
+
+      {/* ── Botón Confirmar y continuar al paso 2 ─────────────────────────── */}
+      {onConfirmar && (
+        <div className="dg-confirm-bar">
+          <div>
+            {confirmErr && <span className="dg-confirm-err">{confirmErr}</span>}
+            {confirmedFlash && <span className="dg-confirm-ok">Datos guardados, la plantilla los llevará incluidos.</span>}
+          </div>
+          <button
+            type="button"
+            className="dg-confirm-btn"
+            onClick={() => {
+              setConfirmErr('');
+              const nombre = (carpetaActiva.nombre || '').trim();
+              if (!nombre) {
+                setConfirmErr('Falta el nombre de la flota antes de continuar.');
+                return;
+              }
+              // Guardado explícito sincrónico: garantiza que header + nombre + corredor estén
+              // persistidos antes de que el paso 2 genere la plantilla.
+              const u = { ...carpetaActiva, nombre };
+              guardarCarpeta(u);
+              onCarpetaChange(u);
+              onHeaderChange({ ...header });
+              setConfirmedFlash(true);
+              setTimeout(() => setConfirmedFlash(false), 2200);
+              // Pequeño setTimeout para que el state de React commitee antes de navegar
+              setTimeout(() => onConfirmar(), 60);
+            }}
+          >
+            Confirmar y continuar →
+          </button>
+        </div>
+      )}
     </div>
   );
 }

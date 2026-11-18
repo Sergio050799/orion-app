@@ -6,7 +6,8 @@ import type { Column, RenderCellProps, RenderEditCellProps } from 'react-data-gr
 import 'react-data-grid/lib/styles.css';
 import { COBERTURA_OPTS, LUNAS_OPTS, AMBITO_OPTS } from '@/core/flotas';
 import { nf, dec, eur } from '@/lib/fmt';
-import { calcularPrima, type CalcPrimaParams, type TipoVehiculo, type Producto } from '@/core/flotas/primas';
+import { calcularPrima, type CalcPrimaParams, type TipoVehiculo, type Producto, type PrimasConfig } from '@/core/flotas/primas';
+import { usePrimasConfig } from '@/core/flotas/primasContext';
 import { aEmision, aOfertaRow, camposDe, franquiciasPermitidas, garantiasOferta, grupoCob, inferirConfig, normalizarConfig, pendientesEmision, productosPermitidos, resumenConfig, tipoKeyDesdeEtiqueta, PRODUCTO_DEF, type ConfigCobertura, type ProductoKey } from '@/core/flotas/catalogoCoberturas';
 import { TIPO_INFO, type TipoKey } from '@/core/catalogo/tipologia';
 import { DetailDrawer } from '@/components/saas/DetailDrawer';
@@ -137,14 +138,24 @@ function rowToPrimaParams(row: OfertaRow): CalcPrimaParams | null {
   const franquicia = producto === 'todo_riesgo' ? (parseFloat(row.frq) || undefined) : undefined;
 
   // Asistencia: 1.ª cat + moto → no/oro/oro_plus/platino · 2.ª cat → no/nacional/internacional.
+  // Fix 18/11: si en 2.ª cat llega 'sí/oro' genérico, mapear según el ÁMBITO del vehículo.
+  // Antes se quedaba en 'oro' y el motor cat2 lo ignoraba (devolvía 0, no sumaba asistencia).
+  // Fix 18/11 bis: en 2.ª cat, si la asistencia viene como valor específico 'nacional'/'internacional',
+  // RESPETAR el ÁMBITO del vehículo aunque el texto diga otra cosa. Así, si una fila trae
+  // ambito=internacional pero asistencia='nacional' (porque el corredor puso todo igual),
+  // se corrige automáticamente a internacional (regla de negocio del jefe 18/11).
   const asistVal = (row.asistencia ?? '').toLowerCase();
+  const asistenciaMarcada = ['oro', 'sí', 'si', 'true', 's', 'nacional', 'internacional'].includes(asistVal);
   type Niv = 'no' | 'oro' | 'oro_plus' | 'platino' | 'nacional' | 'internacional';
   const asistencia: Niv =
     asistVal === 'oro_plus'     ? 'oro_plus' :
     asistVal === 'platino'      ? 'platino' :
-    asistVal === 'nacional'     ? 'nacional' :
-    asistVal === 'internacional'? 'internacional' :
-    ['oro', 'sí', 'si', 'true', 's'].includes(asistVal) ? 'oro' : 'no';
+    esCat2 && asistenciaMarcada
+      ? (ambito === 'internacional' ? 'internacional' : 'nacional')   // 2.ª cat → siempre según ámbito del vehículo
+      : asistVal === 'nacional'     ? 'nacional'
+      : asistVal === 'internacional'? 'internacional'
+      : asistenciaMarcada            ? 'oro'                           // 1.ª cat / moto default
+      : 'no';
 
   return {
     tipoVehiculo,
@@ -162,10 +173,10 @@ function rowToPrimaParams(row: OfertaRow): CalcPrimaParams | null {
 
 // ─── Calcula prima para una fila ────────────────────────────────────────────
 
-function calcPrimaForRow(row: OfertaRow): string {
+function calcPrimaForRow(row: OfertaRow, config?: PrimasConfig | null): string {
   const params = rowToPrimaParams(row);
   if (!params) return '';
-  const result = calcularPrima(params);
+  const result = calcularPrima(params, config);
   if (result === null) return '';
   return String(result);
 }
@@ -542,6 +553,11 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
   { trabajoRows, header, carpetaId, carpetaNombre, primasMmt, configCoberturas, onDataChange, primaClienteTotal, descuentoOferta, descuentosCoberturas, onOfertaFieldsChange },
   ref,
 ) {
+  // Primas config del admin (Bug fix 18/11: calcPrimaForRow ignoraba el config y siempre usaba fallback hardcoded)
+  const primasConfig = usePrimasConfig();
+  const primasConfigRef = useRef<PrimasConfig | null>(primasConfig);
+  primasConfigRef.current = primasConfig;
+
   const [rows, setRows] = useState<OfertaRow[]>([]);
   const [seeded, setSeeded] = useState(false);
   const onDataChangeRef = useRef(onDataChange);
@@ -655,7 +671,7 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
       // 2. Solo auto-calc si no hay ninguna prima guardada en absoluto
       const hasSavedPrima = !!(saved?.oferta_prima_mmt || existing?.oferta_prima_mmt);
       if (!hasSavedPrima) {
-        const auto = calcPrimaForRow(row);
+        const auto = calcPrimaForRow(row, primasConfigRef.current);
         if (auto) {
           row.oferta_prima_mmt = auto;
         } else {
@@ -729,7 +745,7 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
         // User typed in the prima field manually
         if (row.oferta_prima_mmt.trim() === '') {
           // User cleared → back to auto
-          const auto = calcPrimaForRow(row);
+          const auto = calcPrimaForRow(row, primasConfigRef.current);
           return { ...row, oferta_prima_mmt: auto, _primaOverride: '' };
         }
         return { ...row, _primaOverride: 'true' };
@@ -737,7 +753,7 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
 
       if (primaFieldsChanged && row._primaOverride !== 'true') {
         // Auto-recalc
-        const auto = calcPrimaForRow(row);
+        const auto = calcPrimaForRow(row, primasConfigRef.current);
         return { ...row, oferta_prima_mmt: auto };
       }
 
@@ -752,7 +768,7 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
     const updated = { ...row, [key]: current ? '' : 'true' };
     // Recalc prima if not overridden
     if (updated._primaOverride !== 'true') {
-      updated.oferta_prima_mmt = calcPrimaForRow(updated);
+      updated.oferta_prima_mmt = calcPrimaForRow(updated, primasConfigRef.current);
     }
     setRows(prev => prev.map(r => r._id === row._id ? updated : r));
   }, []);
@@ -1172,7 +1188,7 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
         fromInforme = true;
       } else {
         const simulada: OfertaRow = { ...r, coberturas: ofRow.coberturas, frq: ofRow.frq, lunas: ofRow.lunas, asistencia: ofRow.asistencia, animales: ofRow.animales, _primaOverride: '' };
-        const calc = calcPrimaForRow(simulada);
+        const calc = calcPrimaForRow(simulada, primasConfigRef.current);
         if (calc !== '') primaFinal = calc;
       }
       if (primaFinal === null) return r;
@@ -1210,7 +1226,7 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
       if (r._id !== id) return r;
       if (value.trim() === '') {
         const informe = r._cfg === 'true' ? primasMmt?.[claveInforme(r)] : undefined;
-        const auto = informe ? String(informe) : calcPrimaForRow(r);
+        const auto = informe ? String(informe) : calcPrimaForRow(r, primasConfigRef.current);
         return { ...r, oferta_prima_mmt: auto, _primaOverride: '' };
       }
       return { ...r, oferta_prima_mmt: value, _primaOverride: 'true' };
@@ -1240,7 +1256,7 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
   }, [poTipo, poCob, poValor]);
   const handleQuitarPropios = useCallback(() => {
     setRows(prev => prev.map(r => r._primaOverride === 'true'
-      ? { ...r, oferta_prima_mmt: calcPrimaForRow(r), _primaOverride: '' }
+      ? { ...r, oferta_prima_mmt: calcPrimaForRow(r, primasConfigRef.current), _primaOverride: '' }
       : r));
   }, []);
 
@@ -1679,7 +1695,7 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
                     desdeInforme++;
                   } else {
                     const simulada: OfertaRow = { ...r, coberturas: ofRowPrev.coberturas, frq: ofRowPrev.frq, lunas: ofRowPrev.lunas, asistencia: ofRowPrev.asistencia, animales: ofRowPrev.animales, _primaOverride: '' };
-                    const calc = calcPrimaForRow(simulada);
+                    const calc = calcPrimaForRow(simulada, primasConfigRef.current);
                     if (calc !== '') { nue = parseFloat(calc); fuente = 'calc'; desdeCalc++; }
                     else { noAdmite++; }
                   }

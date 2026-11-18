@@ -209,7 +209,7 @@ const HojaOriginal = forwardRef<FlotaGridHandle, Props>(function HojaOriginal(
                 Subir Excel
               </button>
               <button
-                onClick={() => descargarPlantillaRellena()}
+                onClick={() => descargarPlantillaRellena(undefined, carpeta, corredorNombre)}
                 style={{ fontSize: 12, color: 'var(--blue)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 3 }}
               >
                 Descargar plantilla vacía
