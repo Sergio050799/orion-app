@@ -166,6 +166,9 @@
 /* ── UTILITY CLASSES ────────────────────────────────────────────── */
 @layer components {
 
+  /* Logo ORION — PNG es blanco; en tema claro invertimos a negro para contraste */
+  [data-theme="light"] .tb-logo img { filter: brightness(0); }
+
   /* Input blanco con texto oscuro — para paneles que siempre son oscuros */
   .panel-input {
     display: block;

@@ -176,8 +176,17 @@ export default function Topbar() {
                 }}>
                     {/* Brand */}
                     <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 11, textDecoration: 'none', flexShrink: 0 }}>
-                        <div style={{ position: 'relative', width: 25, height: 27, flexShrink: 0 }}>
-                            <Image src="/ORION_LOGO.png" alt="ORION" fill sizes="40px" className="object-contain" priority />
+                        <div className="tb-logo" style={{ position: 'relative', width: 25, height: 27, flexShrink: 0 }}>
+                            {/* Logo blanco en dark; en light lo invertimos a negro con filter para que haga contraste.
+                                 Clase CSS (no prop style) porque Next.js Image no re-renderiza style al cambiar tema. */}
+                            <Image
+                                src="/ORION_LOGO.png"
+                                alt="ORION"
+                                fill
+                                sizes="40px"
+                                className="object-contain"
+                                priority
+                            />
                         </div>
                         <span className="tb-word" style={{
                             fontWeight: 600, letterSpacing: '0.14em', fontSize: 20,

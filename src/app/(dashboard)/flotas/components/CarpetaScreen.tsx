@@ -674,7 +674,7 @@ export default function CarpetaScreen({ onSelect }: Props) {
         <button className="kpi" onClick={() => setDrawerMode('prima')}>
           <span className="l">Prima ofertada</span>
           <span className="v mny">{totalPrima > 0 ? eur(totalPrima) : '—'}</span>
-          <span className="n">suma de las carpetas</span>
+          <span className="n">suma de todas las carpetas del ámbito</span>
         </button>
       </div>
 

@@ -781,7 +781,7 @@ export default function CorredoresPage() {
           <button className="kpi" onClick={() => openDrawer({ mode: 'kpi', key: 'prima' })}>
             <div className="l">Prima ofertada</div>
             <div className="v mny">{eur(kpiPrima)}</div>
-            <div className="n">Suma de las flotas del ámbito</div>
+            <div className="n">Suma de flotas asignadas · excluye las sin corredor</div>
           </button>
         </section>
 

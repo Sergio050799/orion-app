@@ -895,7 +895,7 @@ export default function DashboardPage() {
         over: 'Renovaciones' + ctx,
         title: 'Renovaciones próximas',
         desc: 'Flotas contratadas con vencimiento en los próximos 2 meses. Las flotas ya vencidas se muestran al final para seguimiento.',
-        stats: [['Próximas (2m)', String(renovacionesProximas.length)], ['Urgentes (≤15d)', String(renovacionesUrgentes.length)], ['Vencidas', String(flotasVencidas.length)], ['Vehículos', nf(vehProx)]],
+        stats: [['Próximas (2m)', String(renovacionesProximas.length)], ['Urgentes (≤15d)', String(renovacionesUrgentes.length)], ['Vencidas', String(flotasVencidas.length)]],
         head: ['Flota', 'Corredor', 'Vencimiento', 'Vence en'],
         rows: [
           ...proxRows,
@@ -1314,9 +1314,9 @@ export default function DashboardPage() {
             },
             {
               id: 'tasa',
-              l: 'Tasa de contratación',
+              l: 'Tasa contratación · cartera',
               v: totalCartera > 0 ? pc(tasaContratacion, 0) : '—',
-              n: `<b>${nf(contratadas)}</b> contratadas de ${nf(totalCartera)} flotas`,
+              n: `<b>${nf(contratadas)}</b> contratadas de ${nf(totalCartera)} flotas totales`,
             },
             {
               id: 'corredores',
@@ -1528,14 +1528,12 @@ export default function DashboardPage() {
                 <thead>
                   <tr>
                     <th style={{ textAlign: 'left' }}>Flota</th>
-                    <th>Vehículos</th>
                     <th style={{ textAlign: 'center' }}>Vencimiento</th>
                     <th style={{ textAlign: 'right' }}>Vence en</th>
                   </tr>
                 </thead>
                 <tbody>
                   {renovacionesProximas.map((r, idx) => {
-                    const veh = r.carpeta.vehiculosCount ?? ((r.carpeta.trabajo?.length ?? 0) > 0 ? r.carpeta.trabajo.length : (r.carpeta.original?.length ?? 0));
                     return (
                       <tr key={r.carpeta.id} tabIndex={0} onClick={() => handleDetail(`ren:${idx}`)}
                         onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && handleDetail(`ren:${idx}`)}>
@@ -1543,7 +1541,6 @@ export default function DashboardPage() {
                           <span style={{ display: 'block', fontWeight: 500 }}>{r.carpeta.nombre}</span>
                           <div className="db-muted">{r.corredor?.nombre ?? 'Sin corredor'}</div>
                         </td>
-                        <td style={{ textAlign: 'center' }}>{nf(veh)}</td>
                         <td style={{ textAlign: 'center', color: 'var(--sub)', whiteSpace: 'nowrap' }}>{fechaCorta(r.fecha)}</td>
                         <td style={{ textAlign: 'right', paddingRight: 0 }}>
                           <span className="db-tag" style={{ ['--c' as string]: r.dias <= 15 ? 'var(--warn)' : 'var(--blue)' }}>

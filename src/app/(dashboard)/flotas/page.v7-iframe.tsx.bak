@@ -1,0 +1,35 @@
+/**
+ * V5 /flotas — rediseño del jefe (HTML v7) conectado a datos reales V5.
+ *
+ * La pantalla v7 es un HTML autocontenido (CSS + JS vanilla) complejo. En lugar de
+ * portarlo a React (semanas de trabajo), se renderiza en un iframe que apunta al endpoint
+ * server-side `/api/v5/flotas-page`, que devuelve el HTML v7 con los datos reales
+ * ya substituidos.
+ *
+ * Pros: fidelidad 100% al diseño del jefe. Scripts JS vanilla intactos.
+ * Contras: la integración con el flujo de "estudio" (CarpetaScreen tabs) va en siguiente
+ * iteración — por ahora el drawer del v7 muestra toda la info.
+ *
+ * El page.tsx original de V4.5 (CarpetaScreen + flujo estudio) queda en page.v45.tsx.bak
+ * para portarlo progresivamente cuando el jefe valide el diseño v7.
+ */
+export default function FlotasPage() {
+    return (
+        <iframe
+            src="/api/v5/flotas-page"
+            style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                width: '100vw',
+                height: '100vh',
+                border: 0,
+                margin: 0,
+                padding: 0,
+                background: '#0d111b',
+            }}
+            title="ORION Flotas v7"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-downloads allow-modals"
+        />
+    );
+}
