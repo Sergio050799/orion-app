@@ -8,16 +8,20 @@
 .dr-drawer {
   position:fixed; top:0; right:0; bottom:0; width:min(680px,100%); z-index:9991;
   background:var(--bg); border-left:1px solid var(--line); color:var(--text);
-  overflow-y:auto; padding:28px clamp(20px,3.6cqw,52px) 48px;
+  overflow-y:auto; padding:28px 36px 48px;
   font:15px/1.55 var(--font-body); letter-spacing:-.005em; -webkit-font-smoothing:antialiased;
-  transform:translateX(102%); transition:transform .35s var(--ease-out); container-type:inline-size;
+  transform:translateX(102%); transition:transform .35s var(--ease-out);
+  /* fix 20/11: quitado container-type:inline-size + cqw del padding/h3.
+     Al abrir un combo/select dentro, el browser recalculaba el ancho del container
+     y el drawer parecía encogerse. Afectaba a TODOS los drawers de la app:
+     CarpetaScreen (Estudio), Corredores y Flotas v7. */
 }
 .dr-drawer.open { transform:none; box-shadow:-25px 0 80px #0006; }
 .dr-drawer:focus { outline:none; }
 .dr-drawer .x { position:absolute; right:14px; top:14px; font-size:24px; line-height:1; background:none; border:none; color:var(--quiet); cursor:pointer; width:36px; height:36px; display:grid; place-items:center; border-radius:6px; transition:background .16s; }
 .dr-drawer .x:hover { background:var(--hover); }
 .dr-drawer .over { margin-top:40px; font-size:12px; font-weight:600; letter-spacing:.15em; text-transform:uppercase; color:var(--blue-2); }
-.dr-drawer h3 { font: 600 clamp(28px,3cqw,36px)/1.12 var(--font-display); letter-spacing:-.045em; margin:10px 0 12px; text-wrap:balance; }
+.dr-drawer h3 { font: 600 32px/1.12 var(--font-display); letter-spacing:-.045em; margin:10px 0 12px; text-wrap:balance; }
 .dr-drawer .desc { color:var(--sub); font-size:15px; line-height:1.7; margin:0; }
 .dr-drawer h4 { font-size:12px; font-weight:600; letter-spacing:.15em; text-transform:uppercase; color:var(--quiet); margin:30px 0 12px; padding-bottom:10px; border-bottom:1px solid var(--line); }
 

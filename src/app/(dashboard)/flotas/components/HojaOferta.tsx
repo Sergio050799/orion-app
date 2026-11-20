@@ -1453,7 +1453,7 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
       )}
 
       {vista === 'cliente' && (
-        <div className="flex-1 min-h-0" style={{ overflow: 'auto', padding: '24px clamp(12px,2cqw,28px)', background: 'var(--soft)', borderRadius: 6 }}>
+        <div className="flex-1 min-h-0" style={{ overflow: 'auto', padding: '24px 20px', background: 'var(--soft)', borderRadius: 6 }}>
           <div style={{ maxWidth: 1400, margin: '0 auto', boxShadow: '0 8px 40px rgba(0,0,0,0.18)', borderRadius: 10, overflow: 'hidden', background: '#fff' }}>
 
             {/* Header azul */}
