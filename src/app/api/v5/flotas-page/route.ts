@@ -80,23 +80,24 @@ export async function GET(req: NextRequest) {
 
         const hoy = new Date().toISOString().substring(0, 10);
 
+        // Mapa v7 ID → ID real (para persistir cambios: edición de corredor en v7)
+        const corRealById: Record<string, string> = {};
+        corFiltrados.forEach((c, i) => { corRealById[`c${i + 1}`] = c.id; });
+
         const RAW = carpetasR.map(c => {
             const corId = c.corredor_id ? (corIdMap.get(c.corredor_id) || null) : null;
-            // Sucursal de la flota = sucursal del corredor (si lo tiene).
-            // Si no hay corredor, NO contamos como Mediación: marcamos SIN_ASIGNAR
-            // para que el v7 lo pinte en una categoría aparte.
             const sucFlota = (c.corredor_id && sucursalCorredor.get(c.corredor_id)) || (corId ? 'MEDIACION' : 'SIN_ASIGNAR');
             const cmId  = sucFlota === 'TITAN' ? DEFAULT_CM_TITAN
                         : sucFlota === 'SIN_ASIGNAR' ? DEFAULT_CM_NA
                         : DEFAULT_CM_MED;
             const estado = ESTADO_MAP[(c.estado || '').toUpperCase()] || 'EN ESTUDIO';
             const fechaEst = (c.actualizada || hoy).substring(0, 10);
-            // prima_total la asignamos como prima ofertada o emitida según estado — así cuadra con Dashboard
             const pof = estado === 'CONTRATADA' ? 0 : Math.round(c.prima_total);
             const pem = estado === 'CONTRATADA' ? Math.round(c.prima_total) : 0;
             const vto = c.fecha_vcto || '';
             const est = [[estado, fechaEst, c.num_vehiculos, pof, pem, vto]];
-            return [c.nombre || 'Sin nombre', c.cif || '', c.actividad || '', corId, cmId, est];
+            // 7º elemento: realId de carpeta para poder persistir cambios desde v7
+            return [c.nombre || 'Sin nombre', c.cif || '', c.actividad || '', corId, cmId, est, c.id];
         });
 
         // Leer plantilla y substituir mocks
@@ -126,7 +127,7 @@ window.addEventListener('message', function(e){
         );
 
         html = html
-            .replace(/var COM=\[[\s\S]*?\}\);/, `var COM=${JSON.stringify(COM)};`)
+            .replace(/var COM=\[[\s\S]*?\}\);/, `var COM=${JSON.stringify(COM)};\nvar COR_REAL_BY_V7=${JSON.stringify(corRealById)};`)
             .replace(/var CN=\[[\s\S]*?\];/, `var CN=${JSON.stringify(COR.map(c => c.n))};`)
             .replace(/var COR=CN\.map\([\s\S]*?\}\);/, `var COR=${JSON.stringify(COR)};`)
             .replace(/var RAW=\[[\s\S]*?\];\n/, `var RAW=${JSON.stringify(RAW)};\n`)

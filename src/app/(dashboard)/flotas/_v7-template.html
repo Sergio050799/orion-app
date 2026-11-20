@@ -63,16 +63,18 @@ h1,h2,h3{font-family:var(--font-display);margin:0}
 .dr-drawer {
   position:fixed; top:0; right:0; bottom:0; width:min(680px,100%); z-index:9991;
   background:var(--bg); border-left:1px solid var(--line); color:var(--text);
-  overflow-y:auto; padding:28px clamp(20px,3.6cqw,52px) 48px;
+  overflow-y:auto; padding:28px 36px 48px;
   font:15px/1.55 var(--font-body); letter-spacing:-.005em; -webkit-font-smoothing:antialiased;
-  transform:translateX(102%); transition:transform .35s var(--ease-out); container-type:inline-size;
+  transform:translateX(102%); transition:transform .35s var(--ease-out);
+  /* fix 20/11: quitado container-type:inline-size + cqw del padding/h3.
+     Al abrir un combo dentro, se recalculaba el container size y el drawer parecía encogerse. */
 }
 .dr-drawer.open { transform:none; box-shadow:-25px 0 80px #0006; }
 .dr-drawer:focus { outline:none; }
 .dr-drawer .x { position:absolute; right:14px; top:14px; font-size:24px; line-height:1; background:none; border:none; color:var(--quiet); cursor:pointer; width:36px; height:36px; display:grid; place-items:center; border-radius:6px; transition:background .16s; }
 .dr-drawer .x:hover { background:var(--hover); }
 .dr-drawer .over { margin-top:40px; font-size:12px; font-weight:600; letter-spacing:.15em; text-transform:uppercase; color:var(--blue-2); }
-.dr-drawer h3 { font: 600 clamp(28px,3cqw,36px)/1.12 var(--font-display); letter-spacing:-.045em; margin:10px 0 12px; text-wrap:balance; }
+.dr-drawer h3 { font: 600 32px/1.12 var(--font-display); letter-spacing:-.045em; margin:10px 0 12px; text-wrap:balance; }
 .dr-drawer .desc { color:var(--sub); font-size:15px; line-height:1.7; margin:0; }
 .dr-drawer h4 { font-size:12px; font-weight:600; letter-spacing:.15em; text-transform:uppercase; color:var(--quiet); margin:30px 0 12px; padding-bottom:10px; border-bottom:1px solid var(--line); }
 
@@ -1530,7 +1532,8 @@ var OBS={1:'Renovación anual el 1 de diciembre.',15:'Pendiente de que el corred
 var nextId=100,nextSt=1000;
 var F=RAW.map(function(r,i){
   var id=i+1,c=byC(r[4]);
-  var f={id:id,nombre:r[0],cif:r[1],act:r[2],cor:r[3],cT:r[4],suc:c.s,obs:OBS[id]||'',arch:false,tp:TP[PRO[id]||'log'],st:[],em:[],log:[]};
+  // r[6] = realId de carpeta BD (inyectado server-side para persistir cambios)
+  var f={id:id,realId:r[6]||null,nombre:r[0],cif:r[1],act:r[2],cor:r[3],cT:r[4],suc:c.s,obs:OBS[id]||'',arch:false,tp:TP[PRO[id]||'log'],st:[],em:[],log:[]};
   r[5].forEach(function(s,j){
     var st={id:nextSt++,v:j+1,e:s[0],f:s[1],veh:s[2],pof:s[3],pem:s[4],vto:s[5]||'',mot:s[6]||'',cm:s[7]||r[4],ppe:s[3]?Math.round(s[3]*.94/100)*100:0};
     f.st.push(st);
@@ -1546,6 +1549,34 @@ var canFormal=function(f){return reqs(f).every(function(r){return r.ok})};
 var created=function(f){return f.st.slice().sort(function(a,b){return a.v-b.v})[0].f};
 var visible=function(){return F.filter(function(f){return !f.arch})};
 var byId=function(id){for(var i=0;i<F.length;i++)if(F[i].id===+id)return F[i]};
+
+/* ── Persistencia al backend (fix 20/11 bug guardado no persistía) ── */
+function syncCarpeta(f){
+  if(!f || !f.realId) return; // flota sin realId (no creada desde server) → no persiste
+  var l = last(f) || {};
+  var corReal = f.cor && typeof COR_REAL_BY_V7!=='undefined' ? (COR_REAL_BY_V7[f.cor]||null) : null;
+  var payload = {
+    action: 'upsert',
+    carpeta: {
+      id: f.realId,
+      nombre: f.nombre,
+      cif: f.cif,
+      actividad: f.act || '',
+      estado: l.e || 'EN ESTUDIO',
+      corredor_id: corReal,
+      header: { cif: f.cif, tomador: f.nombre, actividad: f.act || '', fechaVencimiento: l.vto || '' },
+      observaciones: f.obs || '',
+    }
+  };
+  fetch('/api/flotas/carpetas', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+    credentials: 'same-origin'
+  }).then(function(r){
+    if(!r.ok) console.warn('[v7 sync] HTTP', r.status);
+  }).catch(function(e){ console.warn('[v7 sync] error', e); });
+}
 function tips(f,st){
   var ti=f.tp.map(function(x){return {t:x[0],v:Math.floor(st.veh*x[1]),w:x[2],r:st.veh*x[1]-Math.floor(st.veh*x[1])}});
   var left=st.veh-ti.reduce(function(s,x){return s+x.v},0);
@@ -1942,6 +1973,7 @@ function saveEdit(f){
     f.nombre=n;f.cif=c;f.act=$('#eA').value.trim()||'Sin indicar';f.cor=ed.cor||null;f.obs=$('#eO').value.trim();
     var S=ed.S;S.veh=v;S.pof=pof;S.ppe=pof?Math.round(pof*.94/100)*100:0;S.cm=$('#eM').value;S.f=TODAY_ISO;delete S.draft;
     f.log.push({d:TODAY_ISO,t:ed.inPlace?'<b>Borrador editado</b>':'<b>v'+S.v+' creada</b> (copia de v'+(S.v-1)+')'});
+    syncCarpeta(f); // persistir al backend (fix 20/11)
     ed=null;closeModal();newId=f.id;render();ficha(f);toast(nv>1?'Versión v'+nv+' guardada':'Borrador actualizado');
   });
 }
@@ -1974,6 +2006,7 @@ function formalizar(f,resp){
     if(sel0==='OFERTADA'){l.vto=vt;f.log.push({d:TODAY_ISO,t:'<b>Oferta enviada</b>'+(byR(f.cor)?' a '+esc(byR(f.cor).mail):'')})}
     if(sel0==='CONTRATADA'){l.pem=num('xPe');l.vto=vt;f.em.push({pol:$('#xNp',md).value.trim(),fe:TODAY_ISO,vto:vt,prima:l.pem,veh:l.veh,v:l.v});f.log.push({d:TODAY_ISO,t:'<b>Contratada</b> · póliza '+esc($('#xNp',md).value.trim())})}
     if(sel0==='RECHAZADA'){l.mot=$('#xMo',md).value.trim();l.vto='';f.log.push({d:TODAY_ISO,t:'<b>Rechazada</b> · motivo: '+esc(l.mot)})}
+    syncCarpeta(f); // persistir cambio de estado al backend (fix 20/11)
     closeModal();newId=f.id;render();ficha(f);toast('«'+f.nombre+'» → '+cap(sel0));
   });
 }
