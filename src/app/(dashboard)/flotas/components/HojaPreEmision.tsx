@@ -411,6 +411,10 @@ export default function HojaPreEmision({ trabajoRows, initialSeleccion, onCatalo
 
   const setV = useCallback((i: number, patch: Partial<VehicleEmision>) => {
     setVehicles(prev => { const n = [...prev]; n[i] = { ...n[i], ...patch }; return n; });
+    // Fix 23/11: marcar notify SIEMPRE para que la edición manual (año, marca, modelo…)
+    // se propague al padre y se persista. Antes solo las acciones de catálogo marcaban notify
+    // y el año editado a mano se perdía al recargar → bloqueaba la emisión.
+    pendingNotifyRef.current = true;
   }, []);
 
   // Pre-cargar IDs del catálogo guardadas en sesiones anteriores
