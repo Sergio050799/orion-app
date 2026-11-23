@@ -213,8 +213,26 @@ export function prepararEmision(e: EntradaEmision): ResultadoEmision {
             }
             if (ver) for (const a of ver.avisos) avisos.push(`Identificación: ${a}`);
         }
+        // Plazas: 1) del catálogo (via PreEmisión), 2) de la plantilla original, 3) fallback por tipo
+        // Fix 23/11: antes solo avisaba cuando faltaban → emisión fallaba. Ahora pone defecto
+        // sensato por tipo para que la emisión no se bloquee por ese dato (el usuario puede
+        // corregirlo en PreEmisión o directamente en el Excel generado si no es correcto).
         const plazas = (r['plazas'] ?? '').trim();
-        if (plazas) v.NUM_PLAZAS = plazas; else avisos.push('Sin número de plazas.');
+        if (plazas) {
+            v.NUM_PLAZAS = plazas;
+        } else {
+            const tv = quitaTildes((r['tipo_vehiculo'] ?? '').toLowerCase());
+            let fallback = '';
+            if (/camion|tractor|remolque|semirremolque|furgon|industrial|autobus|autocar|microbus/.test(tv)) fallback = '2';
+            else if (/moto|ciclomotor|microcar/.test(tv)) fallback = '2';
+            else if (/turismo|todoterreno|furgoneta|derivado|berlina|familiar/.test(tv)) fallback = '5';
+            if (fallback) {
+                v.NUM_PLAZAS = fallback;
+                avisos.push(`Plazas por defecto ${fallback} (tipo ${r['tipo_vehiculo'] || 'sin clasificar'}): verifica en PreEmisión.`);
+            } else {
+                avisos.push('Sin número de plazas y tipo no identificado: obligatorio corregir en PreEmisión.');
+            }
+        }
 
         // Uso y ámbito: el del estudio manda; si no lo trae, el valor común
         v.ID_USO = USO_ESTUDIO[quitaTildes(r['uso'] ?? '')] ?? comunes.ID_USO ?? '';
