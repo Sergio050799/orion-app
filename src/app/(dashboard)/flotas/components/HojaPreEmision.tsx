@@ -817,7 +817,10 @@ export default function HojaPreEmision({ trabajoRows, initialSeleccion, onCatalo
       kw:          v.seleccionado?.kw ?? 0,
       cv:          v.seleccionado?.cv ?? 0,
       tara:        v.seleccionado?.tara ?? 0,
-      plazas:      v.seleccionado?.plazas ?? 0,
+      // Fix 23/11: solo enviar plazas si HAY ID catálogo seleccionada. Si no, -1 (sentinel)
+      // para que el padre NO sobreescriba lo que ya tiene trabajo[].plazas (plantilla original).
+      // Los remolques tienen plazas=0 en catálogo — es válido y debe propagarse.
+      plazas:      v.seleccionado ? (typeof v.seleccionado.plazas === 'number' ? v.seleccionado.plazas : 0) : -1,
       status:      v.status,
       revision:    etiquetaRevision(revisiones[v.matricula]),
       motivos:     (revisiones[v.matricula]?.hall ?? []).map(h => h.texto).join(' | '),

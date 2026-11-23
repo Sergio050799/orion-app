@@ -272,7 +272,7 @@ function vehiclesToTrabajoRows(vehicles: any[]): Record<string, string>[] {
     co2:                  v.co2                   || '',
     // Fix 19/11: estos campos ya vienen del catálogo en automaticoVehicles pero antes no se
     // propagaban a trabajoRows. Emision necesita plazas (NUM_PLAZAS) y tara (TARA/TN).
-    plazas:               v.plazas > 0 ? String(v.plazas) : '',
+    plazas:               typeof v.plazas === 'number' && v.plazas >= 0 ? String(v.plazas) : (typeof v.plazas === 'string' ? v.plazas : ''),
     tn:                   v.tara > 0 ? String(v.tara) : (v.tn || ''),
     cilindrada:           v.cilindrada            || '',
     puertas:              v.puertas > 0 ? String(v.puertas) : (v.puertas || ''),
@@ -975,8 +975,13 @@ export default function FlotasPage() {
                             if (!cur) return;
                             const porMatricula = new Map(exports.map(e => [e.matricula.replace(/[\s-]/g, '').toUpperCase(), e]));
                             const setFromCat = (next: Record<string, string>, k: string, v: string | number) => {
+                              // Fix 23/11: 0 es VÁLIDO para plazas (remolques/semirremolques tienen 0).
+                              // -1 es sentinel "no tocar" (PreEmisión envía -1 cuando no hay catálogo asignado).
+                              // Antes se descartaba el 0 por error y los remolques quedaban sin plazas o con 2 fallback.
+                              if (typeof v === 'number' && v === -1) return false; // sentinel, no tocar
                               const vStr = String(v ?? '').trim();
-                              if (!vStr || vStr === '0') return false;
+                              if (vStr === '') return false;
+                              if (vStr === '0' && k !== 'plazas') return false;
                               if (String(next[k] ?? '').trim() === vStr) return false;
                               next[k] = vStr;
                               return true;
@@ -1008,7 +1013,8 @@ export default function FlotasPage() {
                                 if (!ex || !ex.id_catalogo) return v;
                                 const next = { ...v };
                                 let dirty = false;
-                                if (ex.plazas > 0 && v.plazas !== ex.plazas) { next.plazas = ex.plazas; dirty = true; }
+                                // Fix 23/11: 0 plazas (remolques) es válido; -1 es sentinel "no tocar"
+                                if (ex.plazas !== -1 && v.plazas !== ex.plazas) { next.plazas = ex.plazas; dirty = true; }
                                 if (ex.kw > 0 && v.kw !== ex.kw) { next.kw = ex.kw; dirty = true; }
                                 if (ex.cv > 0 && v.cv !== ex.cv) { next.cv = ex.cv; dirty = true; }
                                 if (ex.tara > 0 && v.tara !== ex.tara) { next.tara = ex.tara; dirty = true; }
