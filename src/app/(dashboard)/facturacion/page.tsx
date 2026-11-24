@@ -136,12 +136,14 @@ export default function FacturacionPage() {
 
   return (
     <div className="pg fa">
-      <section className="intro" style={{ marginTop: 0, paddingTop: 0 }}>
-        <div>
-          <h1>Facturación</h1>
-          <p>{flota ? 'Recibos de cobro de la flota: emisión y regularización, cada una por separado.' : 'Recibos de cobro de las flotas contratadas. Abre una flota para facturarla.'}</p>
-        </div>
-      </section>
+      {!flota && (
+        <section className="intro" style={{ marginTop: 0, paddingTop: 0 }}>
+          <div>
+            <h1>Facturación</h1>
+            <p>Recibos de cobro de las flotas contratadas. Abre una flota para facturarla.</p>
+          </div>
+        </section>
+      )}
 
       {flota ? (
         <FlotaFacturacion key={flota.id} flota={flota} corredor={corredores.find(c => c.id === flota.corredor_id) ?? null} usuario={usuario}
@@ -177,7 +179,7 @@ export default function FacturacionPage() {
               <div className="shead"><h2>Corredores</h2><p className="sub-desc">{kpi.importe > 0 ? 'Los que más facturan.' : 'Los que tienen más flotas contratadas.'} Pulsa uno para filtrar.</p></div>
               <div className="bars fa-cor">
                 {porCorredor.map(c => (
-                  <button type="button" className="bar" key={c.id || 'sin'} onClick={() => setFCor(fCor === c.id ? '' : c.id)} aria-pressed={fCor === c.id} disabled={!c.id}>
+                  <button type="button" className="bar" key={c.id || 'sin'} onClick={() => setFCor(fCor === c.id ? '' : c.id)} aria-pressed={!!c.id && fCor === c.id} disabled={!c.id}>
                     <span className="bn" title={c.nombre}>{c.nombre}</span>
                     <span className="bt"><span className="bk" style={{ width: `${((kpi.importe > 0 ? c.importe : c.n) / maxCor) * 100}%` }}><span style={{ flex: 1, background: 'var(--blue)' }} /></span></span>
                     <span className="bv">{kpi.importe > 0 ? eur(c.importe) : nf(c.n)}</span>
