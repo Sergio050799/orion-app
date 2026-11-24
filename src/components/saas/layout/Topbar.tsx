@@ -15,6 +15,7 @@ const navItems = [
     { href: "/corredores",         label: "Corredores" },
     { href: "/flotas",             label: "Estudio" },
     { href: "/emission",           label: "Flotas" },
+    { href: "/facturacion",        label: "Facturación" },
     { href: "/analysis/vehiculos", label: "Vehículos" },
     { href: "/analysis/ocr",       label: "Escáner" },
 ];

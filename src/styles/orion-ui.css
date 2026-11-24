@@ -452,3 +452,29 @@
 .dr-drawer .vrf .vrow.vh span { font-size:12px; letter-spacing:.07em; text-transform:uppercase; color:var(--quiet); }
 .dr-drawer .vrf .cfwarn { list-style:none; padding-left:16px; }
 .dr-drawer .vrf .cfwarn li + li { margin-top:6px; }
+
+
+/* ───────── Facturación (recibos RC / RW) ───────── */
+.pg.fa .fa-kv { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:0 28px; border-top:1px solid var(--line); margin-top:4px; }
+.pg.fa .fa-kv > div { padding:16px 0; border-bottom:1px solid var(--line); min-width:0; }
+.pg.fa .fa-kv > div.wide { grid-column:1 / -1; }
+.pg.fa .fa-kv label { display:block; font-size:12px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; color:var(--head); margin-bottom:4px; }
+.pg.fa .fa-kv span { font-size:15px; overflow-wrap:anywhere; }
+.pg.fa .fa-kv em { font-style:normal; color:var(--warn); }
+.pg.fa .fa-list { margin:12px 0 0; padding-left:18px; font-size:14.5px; line-height:1.6; color:var(--sub); }
+.pg.fa .fa-list li + li { margin-top:4px; }
+.pg.fa .fa-doc { margin-top:26px; }
+.pg.fa .fa-dochead { display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom:14px; }
+.pg.fa .fa-dochead b { display:block; font:600 18px/1.25 var(--font-display); letter-spacing:-.02em; }
+.pg.fa .fa-dochead span:not(.plate) { font-size:14px; color:var(--sub); }
+.pg.fa .fa-doc .kpi { cursor:default; }
+.pg.fa .fa-doc .kpi:hover .v { color:inherit; }
+.pg.fa .fa-textos { display:grid; gap:16px; margin-top:26px; }
+.pg.fa .fa-lhead { display:flex; justify-content:space-between; align-items:center; gap:14px 24px; flex-wrap:wrap; margin:30px 0 16px; }
+.pg.fa .fa-lines td, .pg.fa .fa-lines th { white-space:nowrap; }
+.pg.fa .fa-lines td:nth-child(n+6), .pg.fa .fa-lines th:nth-child(n+6) { text-align:right; }
+.pg.fa .fa-check { display:flex; gap:12px; align-items:flex-start; font-size:15px; cursor:pointer; max-width:760px; }
+.pg.fa .fa-check input { width:18px; height:18px; margin-top:2px; accent-color:var(--blue); flex-shrink:0; }
+.pg.fa .vzone:first-of-type { border-top:0; }
+@container app (max-width:900px) { .pg.fa .fa-kv { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@container app (max-width:560px) { .pg.fa .fa-kv { grid-template-columns:1fr; } }
