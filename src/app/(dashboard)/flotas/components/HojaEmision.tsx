@@ -176,17 +176,20 @@ function RecalcularPrecio({ filas, ajustes, onChange }: {
   const eur2 = (n: number) => n.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   return (
-    <details style={{ margin: '6px 0 4px' }} open={lista.length > 0}>
-      <summary style={{ cursor: 'pointer', fontWeight: 600 }}>Recalcular precio objetivo</summary>
-      <p className="dg-sub" style={{ marginTop: 8 }}>
+    <section id="recalcular-precio" style={{ margin: '18px 0 6px', padding: '16px 18px', border: '1px solid var(--line)', borderRadius: 6, scrollMarginTop: 80 }}>
+      <p className="dg-h3" style={{ marginTop: 0 }}>Recalcular precio objetivo</p>
+      <p className="dg-sub" style={{ marginTop: 6 }}>
         Sube el Excel de resultado que devuelve el sistema de emisión. ORION compara la PRIMA que ha dado cada vehículo con su
         precio objetivo original y calcula el PRECIO_OBJETIVO que hay que enviar para que salga exacta. Después descarga de nuevo
         el Excel de emisión (ya lleva los precios corregidos) y vuelve a subirlo al sistema. Si algún vehículo aún no cuadra, sube el
         nuevo resultado: con cada vuelta el cálculo es más preciso.
       </p>
       <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-        <input type="file" accept=".xlsx,.xls" aria-label="Excel de resultado del sistema de emisión" disabled={leyendo}
-          onChange={e => { const f = e.target.files?.[0]; e.target.value = ''; if (f) leer(f); }} />
+        <label className="mini pri" style={{ cursor: leyendo ? 'default' : 'pointer', opacity: leyendo ? 0.6 : 1 }}>
+          {leyendo ? 'Leyendo…' : 'Subir resultado del sistema (.xlsx)'}
+          <input type="file" accept=".xlsx,.xls" aria-label="Excel de resultado del sistema de emisión" disabled={leyendo} style={{ display: 'none' }}
+            onChange={e => { const f = e.target.files?.[0]; e.target.value = ''; if (f) leer(f); }} />
+        </label>
         {lista.length > 0 && (
           <button type="button" className="mini"
             onClick={() => { if (window.confirm('¿Quitar los precios recalculados? El Excel de emisión volverá a llevar el precio objetivo original.')) { onChange(undefined); setResumen(null); } }}>
@@ -194,7 +197,6 @@ function RecalcularPrecio({ filas, ajustes, onChange }: {
           </button>
         )}
       </div>
-      {leyendo && <p className="dg-sub" style={{ marginTop: 8 }}>Leyendo…</p>}
       {error && <div className="notice" role="alert" style={{ marginTop: 8 }}>{error}</div>}
       {resumen && (
         <div className={resumen.corregidos === 0 ? 'lock' : 'notice'} role="status" style={{ marginTop: 8 }}>
@@ -244,7 +246,7 @@ function RecalcularPrecio({ filas, ajustes, onChange }: {
           </div>
         </>
       )}
-    </details>
+    </section>
   );
 }
 
@@ -361,6 +363,11 @@ export default function HojaEmision({
             <p>Fichero de emisión masiva con la plantilla oficial. Las coberturas son las confirmadas en el informe.</p>
           </div>
           <div className="acts">
+            <button type="button" className="mini"
+              onClick={() => document.getElementById('recalcular-precio')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              title="Sube el resultado del sistema de emisión y ORION corrige el PRECIO_OBJETIVO para que la prima salga exacta">
+              Recalcular precio objetivo
+            </button>
             <button type="button" className="mini pri" onClick={descargar} disabled={!res.listo || descargando}
               title={res.listo ? 'Genera el Excel de emisión masiva' : 'Resuelve los bloqueos para poder generar el fichero'}>
               {descargando ? 'Generando…' : 'Descargar Excel de emisión'}
@@ -418,9 +425,9 @@ export default function HojaEmision({
           </>
         )}
         {errDescarga && <div className="notice" role="alert">{errDescarga}</div>}
-        <AprenderDelSistema filas={res.filas} />
         <RecalcularPrecio filas={res.filas} ajustes={em.ajustesPrecio}
           onChange={a => { const n = { ...em }; if (a && Object.keys(a).length > 0) n.ajustesPrecio = a; else delete n.ajustesPrecio; onEmisionChange(n); }} />
+        <AprenderDelSistema filas={res.filas} />
 
         {/* Datos de la emisión */}
         <p className="dg-h3">Datos de la emisión</p>
