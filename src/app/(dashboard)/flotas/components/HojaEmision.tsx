@@ -13,8 +13,9 @@ import type { InfoVerificacion } from '@/core/catalogo/verificacion';
 import { leerErroresSistema, ventanasDeErrores, ventanasDeAceptados } from '@/core/catalogo/ventanasSistema';
 import { guardarVentanas } from '@/lib/ventanasSistemaClient';
 import {
-  CAMPOS_COMUNES, COLUMNAS_EMISION, LISTAS_EMISION, prepararEmision, type FilaEmision,
+  CAMPOS_COMUNES, COLUMNAS_EMISION, LISTAS_EMISION, prepararEmision, matriculaLimpia, type FilaEmision,
 } from '@/core/flotas/emision';
+import { aplicarResultado, numeroFichero, type AjustesPrecio, type FilaResultado, type ResumenRecalculo } from '@/core/flotas/precioObjetivo';
 
 interface Props {
   trabajoRows: Record<string, string>[];
@@ -116,6 +117,137 @@ function AprenderDelSistema({ filas }: { filas: FilaEmision[] }) {
   );
 }
 
+/**
+ * Recalcular PRECIO_OBJETIVO: se sube el fichero de resultado del sistema (columnas MATRICULA, PRECIO_OBJETIVO y
+ * PRIMA) y ORION calcula, vehículo a vehículo, qué precio hay que enviar para que la prima salga exactamente la
+ * buscada. Cada fichero que se sube afina más (con dos intentos el cálculo ya es exacto en el tramo del sistema).
+ */
+function RecalcularPrecio({ filas, ajustes, onChange }: {
+  filas: FilaEmision[];
+  ajustes?: AjustesPrecio;
+  onChange: (a: AjustesPrecio | undefined) => void;
+}) {
+  const [resumen, setResumen] = useState<(ResumenRecalculo & { fichero: string }) | null>(null);
+  const [error, setError] = useState('');
+  const [leyendo, setLeyendo] = useState(false);
+
+  // Prima buscada por matrícula = el precio objetivo original (la prima ofertada del estudio)
+  const objetivos = useMemo(() => {
+    const o: Record<string, number> = {};
+    for (const f of filas) if (f.precioBase && f.precioBase > 0) o[f.matricula] = f.precioBase;
+    return o;
+  }, [filas]);
+
+  const leer = async (file: File) => {
+    setLeyendo(true); setError(''); setResumen(null);
+    try {
+      const XLSX = await import('xlsx');
+      const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' });
+      const ws = wb.Sheets['DATOS'] ?? wb.Sheets[wb.SheetNames[0]];
+      const tabla = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, raw: true, defval: '' });
+      // Fila de cabeceras: la primera que tenga MATRICULA, PRECIO_OBJETIVO y PRIMA
+      const norm = (x: unknown) => String(x ?? '').trim().toUpperCase();
+      const iCab = tabla.findIndex(r => Array.isArray(r) && ['MATRICULA', 'PRECIO_OBJETIVO', 'PRIMA'].every(k => r.some(c => norm(c) === k)));
+      if (iCab < 0) { setError('El fichero no tiene las columnas MATRICULA, PRECIO_OBJETIVO y PRIMA. Sube el Excel de resultado que devuelve el sistema de emisión.'); return; }
+      const cab = tabla[iCab].map(norm);
+      const cM = cab.indexOf('MATRICULA'), cP = cab.indexOf('PRECIO_OBJETIVO'), cR = cab.indexOf('PRIMA');
+      const leidas: FilaResultado[] = [];
+      for (const r of tabla.slice(iCab + 1)) {
+        const mat = matriculaLimpia(String(r?.[cM] ?? ''));
+        if (!mat) continue;
+        leidas.push({ matricula: mat, enviado: numeroFichero(r[cP]), obtenido: numeroFichero(r[cR]) });
+      }
+      if (leidas.length === 0) { setError('El fichero no tiene vehículos.'); return; }
+      const res = aplicarResultado(ajustes, objetivos, leidas);
+      onChange(res.ajustes);
+      setResumen({ ...res, fichero: file.name });
+    } catch {
+      setError('No se ha podido leer el fichero. Comprueba que es el Excel de resultado del sistema de emisión.');
+    } finally {
+      setLeyendo(false);
+    }
+  };
+
+  const lista = useMemo(() => filas
+    .map(f => ({ f, a: ajustes?.[f.matricula] }))
+    .filter((x): x is { f: FilaEmision; a: NonNullable<typeof x.a> } => !!x.a && !!x.f.precioBase && Math.abs(x.a.objetivo - x.f.precioBase) < 0.005)
+    .sort((x, y) => (x.a.estado === 'ajustado' ? 0 : 1) - (y.a.estado === 'ajustado' ? 0 : 1)), [filas, ajustes]);
+  const nExactos = lista.filter(x => x.a.estado === 'exacto').length;
+  const eur2 = (n: number) => n.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  return (
+    <details style={{ margin: '6px 0 4px' }} open={lista.length > 0}>
+      <summary style={{ cursor: 'pointer', fontWeight: 600 }}>Recalcular precio objetivo</summary>
+      <p className="dg-sub" style={{ marginTop: 8 }}>
+        Sube el Excel de resultado que devuelve el sistema de emisión. ORION compara la PRIMA que ha dado cada vehículo con su
+        precio objetivo original y calcula el PRECIO_OBJETIVO que hay que enviar para que salga exacta. Después descarga de nuevo
+        el Excel de emisión (ya lleva los precios corregidos) y vuelve a subirlo al sistema. Si algún vehículo aún no cuadra, sube el
+        nuevo resultado: con cada vuelta el cálculo es más preciso.
+      </p>
+      <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+        <input type="file" accept=".xlsx,.xls" aria-label="Excel de resultado del sistema de emisión" disabled={leyendo}
+          onChange={e => { const f = e.target.files?.[0]; e.target.value = ''; if (f) leer(f); }} />
+        {lista.length > 0 && (
+          <button type="button" className="mini"
+            onClick={() => { if (window.confirm('¿Quitar los precios recalculados? El Excel de emisión volverá a llevar el precio objetivo original.')) { onChange(undefined); setResumen(null); } }}>
+            Quitar ajustes
+          </button>
+        )}
+      </div>
+      {leyendo && <p className="dg-sub" style={{ marginTop: 8 }}>Leyendo…</p>}
+      {error && <div className="notice" role="alert" style={{ marginTop: 8 }}>{error}</div>}
+      {resumen && (
+        <div className={resumen.corregidos === 0 ? 'lock' : 'notice'} role="status" style={{ marginTop: 8 }}>
+          <b>{resumen.fichero}</b>
+          <span>
+            {nf(resumen.exactos)} {resumen.exactos === 1 ? 'vehículo ya exacto' : 'vehículos ya exactos'} · {nf(resumen.corregidos)} con precio objetivo corregido
+            {resumen.masCercanos > 0 ? ` · ${nf(resumen.masCercanos)} en los que el sistema no permite la prima exacta (se deja la más cercana posible)` : ''}
+            {resumen.sinPrima.length > 0 ? ` · ${nf(resumen.sinPrima.length)} sin prima en el fichero (${resumen.sinPrima.slice(0, 6).join(', ')}${resumen.sinPrima.length > 6 ? '…' : ''})` : ''}
+            {resumen.noEncontradas.length > 0 ? ` · ${nf(resumen.noEncontradas.length)} no están en esta emisión (${resumen.noEncontradas.slice(0, 6).join(', ')}${resumen.noEncontradas.length > 6 ? '…' : ''})` : ''}
+            {resumen.corregidos > 0 ? '. Descarga de nuevo el Excel de emisión y súbelo al sistema.' : '. Todas las primas cuadran.'}
+          </span>
+        </div>
+      )}
+      {lista.length > 0 && (
+        <>
+          <p className="dg-sub" style={{ marginTop: 10 }}>{nf(nExactos)} de {nf(lista.length)} vehículos con la prima exacta.</p>
+          <div className="xwrap" style={{ maxHeight: 360 }}>
+            <table className="xg">
+              <thead>
+                <tr>
+                  <th>Matrícula</th><th className="n">Prima buscada</th><th className="n">Último enviado</th><th className="n">Prima obtenida</th>
+                  <th className="n">Diferencia</th><th className="n">Próximo PRECIO_OBJETIVO</th><th>Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {lista.map(({ f, a }) => {
+                  const u = a.puntos[a.puntos.length - 1];
+                  const dif = u ? u.obtenido - a.objetivo : 0;
+                  return (
+                    <tr key={f.matricula}>
+                      <td><b>{f.matricula}</b></td>
+                      <td className="n">{eur2(a.objetivo)}</td>
+                      <td className="n">{u ? eur2(u.enviado) : '—'}</td>
+                      <td className="n">{u ? eur2(u.obtenido) : '—'}</td>
+                      <td className="n" style={{ color: a.estado === 'exacto' ? undefined : 'var(--warn, #b45309)' }}>{u ? `${dif >= 0 ? '+' : '−'}${eur2(Math.abs(dif))}` : '—'}</td>
+                      <td className="n"><b>{eur2(a.enviar)}</b></td>
+                      <td>{a.estado === 'exacto'
+                        ? <span className="cfgst confirmada">Exacta</span>
+                        : a.estado === 'mas_cercano'
+                          ? <span className="cfgst falta" title="El sistema salta de un céntimo a otro sin pasar por la prima buscada: este es el precio que más se acerca">Lo más cercano posible</span>
+                          : <span className="cfgst propuesta">Corregido · {nf(a.puntos.length)} {a.puntos.length === 1 ? 'intento' : 'intentos'}</span>}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </details>
+  );
+}
+
 export default function HojaEmision({
   trabajoRows, catalogoSeleccion, configCoberturas, ofertaRows, emision, onEmisionChange,
   idPerceptor, corredorNombre, carpetaNombre, efectoGenerales, periodicidadGenerales, verificacion,
@@ -168,7 +300,9 @@ export default function HojaEmision({
   }, [res.filas]);
   // Filas cuyo año no entra en el rango de su ID y que por eso bloquean el fichero
   const conflictosAnio = res.filas.filter(f => f.conflictoAnio && f.errores.some(e => e.startsWith('Año de fabricación')));
-  const totalPrima = res.filas.reduce((a, f) => a + (parseFloat(f.valores.PRECIO_OBJETIVO ?? '') || 0), 0);
+  // Total de la flota: la prima buscada (el precio objetivo original), aunque se envíe un precio corregido
+  const totalPrima = res.filas.reduce((a, f) => a + (f.precioBase ?? (parseFloat(f.valores.PRECIO_OBJETIVO ?? '') || 0)), 0);
+  const nAjustados = res.filas.filter(f => f.precioAjustado).length;
 
   // Fecha: input date trabaja con aaaa-mm-dd; se guarda dd/mm/aaaa
   const aIso = (dmy?: string) => { const m = (dmy ?? '').match(/^(\d{2})\/(\d{2})\/(\d{4})$/); return m ? `${m[3]}-${m[2]}-${m[1]}` : ''; };
@@ -236,7 +370,7 @@ export default function HojaEmision({
 
         {/* Estado */}
         {res.listo ? (
-          <div className="lock"><b>Listo</b><span>{nf(res.filas.length)} {res.filas.length === 1 ? 'vehículo preparado' : 'vehículos preparados'} · prima total {eur(totalPrima, 2)}.</span></div>
+          <div className="lock"><b>Listo</b><span>{nf(res.filas.length)} {res.filas.length === 1 ? 'vehículo preparado' : 'vehículos preparados'} · prima total {eur(totalPrima, 2)}{nAjustados > 0 ? ` · ${nf(nAjustados)} con precio objetivo recalculado` : ''}.</span></div>
         ) : (
           <div className="notice" role="status">
             <b>Para generar el fichero falta:</b>
@@ -285,6 +419,8 @@ export default function HojaEmision({
         )}
         {errDescarga && <div className="notice" role="alert">{errDescarga}</div>}
         <AprenderDelSistema filas={res.filas} />
+        <RecalcularPrecio filas={res.filas} ajustes={em.ajustesPrecio}
+          onChange={a => { const n = { ...em }; if (a && Object.keys(a).length > 0) n.ajustesPrecio = a; else delete n.ajustesPrecio; onEmisionChange(n); }} />
 
         {/* Datos de la emisión */}
         <p className="dg-h3">Datos de la emisión</p>

@@ -2,6 +2,7 @@
 
 import type { Periodicidad } from './corredor';
 import type { ConfigCobertura } from './catalogoCoberturas';
+import type { AjustesPrecio } from './precioObjetivo';
 
 export type EstadoFlota = 'EN ESTUDIO' | 'ESTUDIADA' | 'OFERTADA' | 'CONTRATADA' | 'RECHAZADA';
 
@@ -35,6 +36,8 @@ export interface EmisionDatos {
   idPerceptorOverride?: string;
   /** Valores comunes a todos los vehículos (columna de la plantilla de emisión, valor). */
   comunes?: Record<string, string>;
+  /** PRECIO_OBJETIVO recalculado por matrícula para que la PRIMA del sistema salga exacta («Recalcular precio objetivo»). */
+  ajustesPrecio?: AjustesPrecio;
 }
 
 export interface FlotaCarpeta {

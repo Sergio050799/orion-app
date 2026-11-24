@@ -141,6 +141,10 @@ export interface FilaEmision {
     errores: string[];
     /** se muestran, no bloquean */
     avisos: string[];
+    /** prima buscada: la ofertada del estudio (lo que se puso inicialmente en PRECIO_OBJETIVO) */
+    precioBase?: number;
+    /** true si PRECIO_OBJETIVO lleva el valor recalculado para que la prima del sistema salga exacta */
+    precioAjustado?: boolean;
     /** el año de fabricación queda fuera del rango de años que admite la ID de catálogo asignada */
     conflictoAnio?: { anio: number; min: number | null; max: number | null; origen: 'sistema' | 'catalogo'; id: string };
 }
@@ -292,12 +296,22 @@ export function prepararEmision(e: EntradaEmision): ResultadoEmision {
             }
         }
 
-        // Prima
+        // Prima: la ofertada es la prima buscada. Si se ha recalculado con un resultado del sistema
+        // («Recalcular precio objetivo») y la oferta no ha cambiado desde entonces, se envía el precio corregido.
         const prima = parseFloat((ofertaPorMat.get(matricula) ?? '').replace(',', '.'));
-        if (!isNaN(prima) && prima > 0) v.PRECIO_OBJETIVO = prima.toFixed(2);
-        else avisos.push('Sin prima ofertada (PRECIO_OBJETIVO).');
+        let precioBase: number | undefined, precioAjustado = false;
+        if (!isNaN(prima) && prima > 0) {
+            precioBase = Math.round(prima * 100) / 100;
+            const aj = em.ajustesPrecio?.[matricula];
+            if (aj && Math.abs(aj.objetivo - precioBase) < 0.005 && aj.enviar > 0) {
+                v.PRECIO_OBJETIVO = aj.enviar.toFixed(2);
+                precioAjustado = Math.abs(aj.enviar - precioBase) >= 0.005;
+            } else {
+                v.PRECIO_OBJETIVO = precioBase.toFixed(2);
+            }
+        } else avisos.push('Sin prima ofertada (PRECIO_OBJETIVO).');
 
-        return { matricula, tipo, tipoEtiqueta, valores: v, errores, avisos, conflictoAnio };
+        return { matricula, tipo, tipoEtiqueta, valores: v, errores, avisos, conflictoAnio, precioBase, precioAjustado };
     });
 
     const hayErrorFila = filas.some(f => f.errores.length > 0);
