@@ -38,6 +38,7 @@ export async function GET(
                 anyo: iniYear,
                 desde: iniYear,
                 hasta: veh.fec_fin_comerc ? parseInt(veh.fec_fin_comerc.substring(0, 4)) || 0 : 0,
+                actualizado: veh.actualizado ?? 0,
                 plazasMin: veh.num_plazas_min,
                 tipo: veh.tipo || 'sin_clasificar',
                 pvp: veh.pvp || undefined,

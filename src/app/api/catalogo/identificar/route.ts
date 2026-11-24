@@ -39,6 +39,7 @@ async function ventanas(): Promise<MapaVentanas> {
                 mapa = fusionarVentanas(mapa, filas.map((f: Record<string, unknown>) => ({
                     id: String(f.id_veh), fabMin: Number(f.fab_min) || 0, fabMax: Number(f.fab_max) || 0,
                     matMin: f.mat_min ? Number(f.mat_min) : null, matMax: f.mat_max ? Number(f.mat_max) : null,
+                    okMin: f.ok_min ? Number(f.ok_min) : null, okMax: f.ok_max ? Number(f.ok_max) : null,
                 })));
             }
         }
@@ -75,8 +76,9 @@ function aCandidato(c: ReturnType<typeof identificar>['candidatos'][number]) {
         kw: c.kw, cv: c.cv, cilindrada: c.cilindrada, plazas: c.num_plazas_max, tara: c.tara, pma: c.pma ?? 0,
         puertas: c.num_puertas, anyo: ini, desde: ini,
         hasta: c.fec_fin_comerc ? parseInt(c.fec_fin_comerc.substring(0, 4), 10) || 0 : 0,
+        actualizado: c.actualizado ?? 0,
         plazasMin: c.num_plazas_min, tipo: c.tipo || 'sin_clasificar', pvp: c.pvp || undefined,
-        score: c.score, cubreAnio: c.cubreAnio,
+        score: c.score, cubreAnio: c.cubreAnio, anioConfirmado: c.anioConfirmado,
     };
 }
 

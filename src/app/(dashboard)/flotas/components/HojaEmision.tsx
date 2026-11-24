@@ -10,7 +10,7 @@ import { nf, eur } from '@/lib/fmt';
 import type { EmisionDatos } from '@/core/flotas/carpeta';
 import type { ConfigCobertura } from '@/core/flotas/catalogoCoberturas';
 import type { InfoVerificacion } from '@/core/catalogo/verificacion';
-import { leerErroresSistema, ventanasDeErrores } from '@/core/catalogo/ventanasSistema';
+import { leerErroresSistema, ventanasDeErrores, ventanasDeAceptados } from '@/core/catalogo/ventanasSistema';
 import { guardarVentanas } from '@/lib/ventanasSistemaClient';
 import {
   CAMPOS_COMUNES, COLUMNAS_EMISION, LISTAS_EMISION, prepararEmision, type FilaEmision,
@@ -51,31 +51,66 @@ function CampoTexto({ id, label, valor, onCommit, placeholder, hint, requerido }
 }
 
 /** Pegar los errores que devuelve el sistema de emisión: ORION aprende el rango de años de cada ID. */
-function AprenderDelSistema() {
+function AprenderDelSistema({ filas }: { filas: FilaEmision[] }) {
   const [txt, setTxt] = useState('');
   const [msg, setMsg] = useState('');
   const [ocupado, setOcupado] = useState(false);
   const errores = useMemo(() => leerErroresSistema(txt), [txt]);
   const ids = useMemo(() => new Set(errores.map(e => e.id)).size, [errores]);
+  // ¿Los errores son de ESTA emisión? Lo son si en cada fila que citan está la misma ID que hay ahora en pantalla
+  // (fila 2 del Excel = primer vehículo). Solo entonces se puede dar por aceptado el resto de filas.
+  const fabric = errores.filter(e => e.campo === 'fabricacion' && e.fila !== null);
+  const mismaEmision = fabric.length > 0 && fabric.every(e => filas[e.fila! - 2]?.valores.ID_VEH_MMT === e.id);
+  const filasRechazadas = useMemo(() => new Set(errores.map(e => e.fila).filter((n): n is number => n !== null)), [errores]);
+  const aceptadasDe = (soloSinError: boolean) => filas
+    .map((f, i) => ({ fila: i + 2, id: f.valores.ID_VEH_MMT ?? '', anio: parseInt(f.valores.ANHO_FABRICACION ?? '', 10) }))
+    .filter(x => x.id && Number.isFinite(x.anio) && (!soloSinError || !filasRechazadas.has(x.fila)));
   const aprender = async () => {
     setOcupado(true);
-    const donde = await guardarVentanas(ventanasDeErrores(errores));
-    setMsg(`${nf(ids)} ${ids === 1 ? 'versión aprendida' : 'versiones aprendidas'}${donde === 'servidor' ? '' : ' (solo en este navegador: el servidor no respondió)'}. Vuelve a PRE-EMISIÓN para que se apliquen.`);
+    const nuevas = ventanasDeErrores(errores);
+    // Las filas de esta emisión que el sistema no rechazó quedan como «año aceptado» para su ID
+    const aceptadas = mismaEmision ? ventanasDeAceptados(aceptadasDe(true)) : [];
+    const donde = await guardarVentanas([...nuevas, ...aceptadas]);
+    setMsg(`${nf(ids)} ${ids === 1 ? 'versión con rango aprendido' : 'versiones con rango aprendido'}${aceptadas.length > 0 ? ` y ${nf(aceptadas.length)} confirmadas por haberlas aceptado el sistema` : ''}${donde === 'servidor' ? '' : ' (solo en este navegador: el servidor no respondió)'}. En PRE-EMISIÓN pulsa «Buscar una versión que cubra el año» para corregir los vehículos afectados.`);
     setTxt('');
+    setOcupado(false);
+  };
+  // El sistema aceptó el fichero entero (sin errores de año): todas las filas confirman su ID para su año
+  const confirmarTodo = async () => {
+    const lista = ventanasDeAceptados(aceptadasDe(false));
+    if (lista.length === 0) return;
+    if (!window.confirm(`¿El sistema de emisión ha aceptado este fichero SIN errores de año?\n\nSe guardará que estas ${lista.length} versiones admiten los años con los que se han emitido. Hazlo solo si la emisión entró completa.`)) return;
+    setOcupado(true);
+    const donde = await guardarVentanas(lista);
+    setMsg(`${nf(lista.length)} versiones confirmadas con sus años${donde === 'servidor' ? '' : ' (solo en este navegador: el servidor no respondió)'}.`);
     setOcupado(false);
   };
   return (
     <details style={{ margin: '14px 0 4px' }}>
-      <summary style={{ cursor: 'pointer', fontWeight: 600 }}>¿El sistema rechazó años? Pega aquí sus errores</summary>
+      <summary style={{ cursor: 'pointer', fontWeight: 600 }}>¿El sistema rechazó años? Sube aquí su fichero de errores</summary>
       <p className="dg-sub" style={{ marginTop: 8 }}>
-        Pega las líneas tal cual (por ejemplo «Error en fila 29 Causa: Año de fabricación 2022 debe estar entre [2018,2019] para idVehMMT=256114891»).
-        ORION guarda el rango de años de cada versión y, desde ese momento, no deja pasar vehículos fuera de él.
+        Sube el fichero «…_ERRORES.txt» que devuelve el sistema de emisión, o pega sus líneas (por ejemplo «Error en fila 29 Causa:
+        Año de fabricación 2022 debe estar entre [2018,2019] para idVehMMT=256114891»). ORION guarda el rango de años real de cada
+        versión para todas las flotas: desde ese momento no vuelve a proponerla ni a dejarla pasar fuera de ese rango.
       </p>
+      <div style={{ margin: '0 0 8px' }}>
+        <input type="file" accept=".txt,text/plain" aria-label="Fichero de errores del sistema de emisión"
+          onChange={async e => {
+            const f = e.target.files?.[0];
+            e.target.value = '';
+            if (!f) return;
+            try { setTxt(await f.text()); setMsg(''); } catch { setMsg('No se ha podido leer el fichero.'); }
+          }} />
+      </div>
       <textarea className="dg-inp" rows={4} value={txt} onChange={e => setTxt(e.target.value)} aria-label="Errores del sistema de emisión"
         placeholder="Error en fila 29 Causa: Año de fabricación 2022 debe estar entre [2018,2019] para idVehMMT=256114891" style={{ width: '100%', fontFamily: 'inherit' }} />
       <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginTop: 8 }}>
         <button type="button" className="mini pri" onClick={aprender} disabled={errores.length === 0 || ocupado}>Aprender estos rangos</button>
-        <span className="dg-sub" style={{ margin: 0 }}>{txt.trim() ? `${nf(errores.length)} ${errores.length === 1 ? 'error leído' : 'errores leídos'} · ${nf(ids)} ${ids === 1 ? 'versión' : 'versiones'}` : msg}</span>
+        <button type="button" className="mini" onClick={confirmarTodo} disabled={ocupado || filas.length === 0 || txt.trim() !== ''}
+          title="Úsalo cuando el sistema haya aceptado el fichero completo: ORION recordará que esas versiones admiten esos años.">
+          El sistema lo aceptó todo
+        </button>
+        <span className="dg-sub" style={{ margin: 0 }}>{txt.trim() ? `${nf(errores.length)} ${errores.length === 1 ? 'error leído' : 'errores leídos'} · ${nf(ids)} ${ids === 1 ? 'versión' : 'versiones'}${errores.length > 0 ? (mismaEmision ? ' · son de esta emisión: el resto de filas se guardarán como aceptadas' : ' · no coinciden con las filas de esta emisión: solo se aprenden los rangos') : ''}` : msg}</span>
       </div>
     </details>
   );
@@ -249,7 +284,7 @@ export default function HojaEmision({
           </>
         )}
         {errDescarga && <div className="notice" role="alert">{errDescarga}</div>}
-        <AprenderDelSistema />
+        <AprenderDelSistema filas={res.filas} />
 
         {/* Datos de la emisión */}
         <p className="dg-h3">Datos de la emisión</p>

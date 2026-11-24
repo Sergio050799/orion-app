@@ -20,7 +20,7 @@
 import type { CatalogoVehiculo } from './catalogoDataSource';
 import { TIPO_INFO, esTipoKey } from './tipologia';
 import { tipoDesdeTexto, VIDA_MAX_VERSION } from './verificacion';
-import type { MapaVentanas } from './ventanasSistema';
+import { anioAceptado, type MapaVentanas } from './ventanasSistema';
 
 export interface VehiculoAIdentificar {
     marca?: string;
@@ -50,6 +50,12 @@ export interface CandidatoIdentificado extends CatalogoVehiculo {
     score: number;
     /** true = el rango de años cubre el del vehículo; false = no; null = no se puede saber */
     cubreAnio: boolean | null;
+    /**
+     * true si ese año está confirmado: lo dice el sistema de emisión, el catálogo trae fecha de fin, o el
+     * vehículo no es posterior a la última actualización de la versión. false = cubre «en teoría» (versión sin
+     * fecha de fin y vehículo posterior a su última actualización): el sistema puede rechazarla.
+     */
+    anioConfirmado: boolean;
 }
 
 export interface ResultadoIdentificacion {
@@ -123,6 +129,7 @@ interface Fila {
     verTxt: string;
     ini: number;   // 0 = desconocido
     fin: number;   // 0 = sin fin o desconocido
+    act: number;   // año de la última actualización en el catálogo (0 = desconocido)
     cat: number;   // categoría (1, 2, 3; 0 = sin clasificar)
 }
 
@@ -156,7 +163,7 @@ export function construirIndice(vehiculos: CatalogoVehiculo[]): IndiceCatalogo {
         const tipo = esTipoKey(v.tipo) ? v.tipo : 'sin_clasificar';
         const f: Fila = {
             v, modTok, mod: modTok.join(''), verTok: trocea(verTxt), ver: verTxt.replace(/ /g, ''), verTxt: ` ${verTxt} `,
-            ini: anioDeFecha(v.fec_ini_comerc), fin: anioDeFecha(v.fec_fin_comerc), cat: TIPO_INFO[tipo].categoria,
+            ini: anioDeFecha(v.fec_ini_comerc), fin: anioDeFecha(v.fec_fin_comerc), act: v.actualizado ?? 0, cat: TIPO_INFO[tipo].categoria,
         };
         todas.push(f);
         const k = limpia(v.marca);
@@ -303,6 +310,7 @@ function cubre(f: Fila, anyo: number | null | undefined, ventanas?: MapaVentanas
     if (!anyo) return { cubre: null, exacta: false };
     const w = ventanas?.[f.v.id_veh];
     if (w && w.fabMin) return { cubre: anyo >= w.fabMin && anyo <= w.fabMax, exacta: true };
+    if (anioAceptado(w, anyo)) return { cubre: true, exacta: true };   // año ya aceptado por el sistema para esta ID
     if (!f.ini && !f.fin) return { cubre: null, exacta: false };
     if (f.ini && anyo < f.ini) return { cubre: false, exacta: false };
     if (f.fin && anyo > f.fin) return { cubre: false, exacta: false };
@@ -455,7 +463,8 @@ export function identificar(idx: IndiceCatalogo, d: VehiculoAIdentificar, ventan
     const tara = d.tara && d.tara > 0 ? d.tara : null;
     const maxCod = dec.codigos.length, maxPal = dec.palabras.length;
 
-    const puntuados = vivos.map(p => {
+    type ConAnio = (typeof conAnio)[number];
+    const puntuar = (p: ConAnio) => {
         const f = p.f;
         let s = p.nivel * 10, max = 1000;
         // códigos y palabras de la versión
@@ -465,7 +474,7 @@ export function identificar(idx: IndiceCatalogo, d: VehiculoAIdentificar, ventan
         const palPosibles = dec.palabras.filter(w => !f.modTok.includes(w)).length;
         s += pal * 25; max += Math.min(maxPal, palPosibles) * 25;
         // potencia
-        let kwFuerte = false, abiertaVieja = false;
+        let kwFuerte = false, sinConfirmar = false;
         if (kw && f.v.kw > 0) {
             max += 60;
             const dif = Math.abs(kw - f.v.kw) / f.v.kw;
@@ -486,17 +495,47 @@ export function identificar(idx: IndiceCatalogo, d: VehiculoAIdentificar, ventan
         // año: rango exacto del sistema > rango cerrado del catálogo > rango abierto (cuanto más reciente la generación, mejor)
         if (anyo) {
             max += 30;
+            const remolque = f.v.tipo === 'remolque';   // entradas genéricas: el sistema las admite para cualquier año
             if (p.a.cubre === true) {
-                if (p.a.exacta) s += 30;
-                else if (f.fin) s += 22;
-                else if (anyo - f.ini > VIDA_MAX_VERSION) { s -= 40; abiertaVieja = true; }   // «desde 1998 sin fin» para un vehículo de 2022: casi seguro que el sistema la tiene cerrada
+                if (p.a.exacta) s += 30;                                    // rango exacto del sistema de emisión
+                else if (f.fin) s += 24;                                    // rango cerrado en el catálogo
+                else if (remolque) s += 20;
+                else if (f.act > 0 && anyo <= f.act) s += Math.max(-40, 20 - 4 * Math.max(0, anyo - f.ini));   // vigente a esa fecha según el catálogo; cuanto más antigua la versión, peor
+                else if (f.act > 0) { s -= 30 + 25 * Math.min(6, anyo - f.act) + 4 * Math.min(15, Math.max(0, anyo - f.ini)); sinConfirmar = true; }   // posterior a la última actualización: puede estar cerrada (y cuanto más antigua, peor)
+                else if (anyo - f.ini > VIDA_MAX_VERSION) { s -= 40; sinConfirmar = true; }
                 else s += Math.max(4, 16 - Math.max(0, anyo - f.ini));
             } else if (p.a.cubre === false) s -= 20 * Math.min(5, distanciaAnio(f, anyo, ventanas));
         }
-        return { p, s, max, kwFuerte, abiertaVieja };
-    });
+        return { p, s, max, kwFuerte, sinConfirmar };
+    };
+    let puntuados = vivos.map(puntuar);
 
-    puntuados.sort((a, b) => b.s - a.s
+    // «El año manda»: si ninguna versión del modelo reconocido tiene el año confirmado y el estudio trae un
+    // código («FT 480», «N320»…), se buscan en la marca las versiones con ese código cuyo año SÍ está confirmado
+    // (p. ej. la DAF XG 480 FT de 2021 para un «DAF FT 480» de 2022) y se proponen primero.
+    let alternativas = false;
+    if (anyo && clave && dec.codigos.length > 0 && !puntuados.some(x => x.p.a.cubre === true && !x.sinConfirmar)) {
+        const yaEsta = new Set(puntuados.map(x => x.p.f.v.id_veh));
+        const extra: ConAnio[] = [];
+        let maxC = 0;
+        for (const f of pool) {
+            if (yaEsta.has(f.v.id_veh)) continue;
+            const a = cubre(f, anyo, ventanas);
+            if (a.cubre !== true) continue;
+            if (!a.exacta && !f.fin && !(f.act > 0 && anyo <= f.act)) continue;      // solo año confirmado
+            if (catDecl && f.cat && f.cat !== catDecl) continue;
+            if (f.v.tipo === 'minibus_autocar' && tipoDecl !== 'minibus_autocar') continue;
+            const cod = aciertosCodigo(f, dec.codigos);
+            if (cod === 0) continue;
+            if (cod > maxC) maxC = cod;
+            extra.push({ f, nivel: 60, cod, a });
+        }
+        const buenos = extra.filter(e => e.cod === maxC).map(puntuar).filter(x => !x.sinConfirmar);
+        if (buenos.length > 0) { puntuados = [...buenos, ...puntuados]; alternativas = true; }
+    }
+
+    const confirmada = (x: (typeof puntuados)[number]) => (x.p.a.cubre === true && !x.sinConfirmar ? 1 : 0);
+    puntuados.sort((a, b) => (alternativas ? confirmada(b) - confirmada(a) : 0) || b.s - a.s
         || (anyo ? distanciaAnio(a.p.f, anyo, ventanas) - distanciaAnio(b.p.f, anyo, ventanas) : 0)
         || b.p.f.ini - a.p.f.ini
         || (a.p.f.v.id_veh < b.p.f.v.id_veh ? -1 : 1));
@@ -506,6 +545,7 @@ export function identificar(idx: IndiceCatalogo, d: VehiculoAIdentificar, ventan
         ...x.p.f.v,
         score: Math.max(1, Math.min(100, Math.round((x.s / x.max) * 100))),
         cubreAnio: x.p.a.cubre,
+        anioConfirmado: x.p.a.cubre === true && !x.sinConfirmar,
     }));
 
     // ¿Se puede asignar sin preguntar? Solo dentro de año y sin ambigüedad.
@@ -514,7 +554,7 @@ export function identificar(idx: IndiceCatalogo, d: VehiculoAIdentificar, ventan
     if (!fuera && anyo && puntuados.length > 0) {
         const a = puntuados[0], b = puntuados[1];
         const plazasOk = plazas === null || enPlazas(a.p.f);
-        if (a.abiertaVieja || a.p.nivel < 80 || porPotencia) auto = null;
+        if (a.sinConfirmar || a.p.nivel < 80 || porPotencia || alternativas) auto = null;
         else if (!b) auto = a.p.f.v.id_veh;
         else if (plazasOk && a.s - b.s >= 55 && (a.kwFuerte || a.p.cod > 0)) auto = a.p.f.v.id_veh;
     }

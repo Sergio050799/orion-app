@@ -18,6 +18,12 @@ export interface CatalogoVehiculo {
     pvp: number;        // Precio de venta al público (índice 12)
     pma?: number;       // Peso Máximo Autorizado (índice 13)
     tipo?: string;      // Tipología ORION (ver tipologia.ts): se calcula al cargar el CSV
+    /**
+     * Año en que el catálogo actualizó por última vez esta versión (columna ts_update).
+     * Si la versión no tiene fecha de fin, el catálogo solo confirma que seguía a la venta hasta ese año:
+     * más allá no se sabe (el sistema de emisión suele tenerla cerrada).
+     */
+    actualizado?: number;
 }
 
 export interface SearchParams {

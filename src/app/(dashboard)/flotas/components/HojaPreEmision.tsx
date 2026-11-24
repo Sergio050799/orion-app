@@ -10,7 +10,8 @@ import {
   revisarIdentificacion, bloquea, avisos, ventanaAnios,
   type Hallazgo, type VersionCatalogo, type VehiculoDeclarado, type InfoVerificacion, type FuenteAnio,
 } from '@/core/catalogo/verificacion';
-import { cubreAnio, distanciaAnios } from '@/core/catalogo/seleccion';
+import { cubreAnio, distanciaAnios, anioSinConfirmar } from '@/core/catalogo/seleccion';
+import { anioAceptado } from '@/core/catalogo/ventanasSistema';
 import { VENTANAS_SEMILLA, type MapaVentanas } from '@/core/catalogo/ventanasSistema';
 import { cargarVentanas } from '@/lib/ventanasSistemaClient';
 
@@ -82,7 +83,7 @@ function declaradoDe(v: VehicleEmision): VehiculoDeclarado {
 function versionDe(c: CandidatoCatalogo): VersionCatalogo {
   return {
     marca: c.marca, modelo: c.modelo, version: c.version, kw: c.kw, anyo: c.anyo,
-    desde: c.desde, hasta: c.hasta, tipo: c.tipo,
+    desde: c.desde, hasta: c.hasta, actualizado: c.actualizado, tipo: c.tipo,
     plazas: c.plazas, num_plazas_min: c.plazasMin || c.plazas, num_plazas_max: c.plazas,
   };
 }
@@ -166,6 +167,8 @@ interface CandidatoCatalogo {
   /** ventana de comercialización y tipología de la versión (para verificarla) */
   desde?: number;
   hasta?: number;
+  /** año de la última actualización de la versión en el catálogo */
+  actualizado?: number;
   plazasMin?: number;
   tipo?: string;
   pvp?: number;
@@ -290,7 +293,7 @@ function ManualSearchPanel({ vehicle, yearHint, onSelect, onClose }: {
     id_veh: v.id_veh, marca: v.marca, modelo: v.modelo, version: v.version,
     combustible: v.combustible, kw: v.kw, cv: v.cv, cilindrada: v.cilindrada,
     plazas: v.plazas, tara: v.tara, pma: v.pma, puertas: v.puertas, anyo: v.anyo, pvp: v.pvp, score: 100,
-    desde: v.desde, hasta: v.hasta, plazasMin: v.plazasMin, tipo: v.tipo,
+    desde: v.desde, hasta: v.hasta, actualizado: v.actualizado, plazasMin: v.plazasMin, tipo: v.tipo,
   });
 
   return (
@@ -854,6 +857,7 @@ export default function HojaPreEmision({ trabajoRows, initialSeleccion, onCatalo
       const vi = ventanaAnios(sel);
       const ventana: Revision['ventana'] = w?.fabMin
         ? { min: w.fabMin, max: w.fabMax, origen: 'sistema' }
+        : anioAceptado(w, aniosDe(v).fab) ? { min: null, max: null, origen: 'abierta' }   // año ya aceptado por el sistema
         : { min: vi.ini, max: vi.fin, origen: vi.ini !== null && vi.fin !== null ? 'catalogo' : 'abierta' };
       // Año fuera del rango de la ID: no se puede dar por bueno (regla «ID = AÑO»). Con rango del sistema, nunca;
       // con rango cerrado del catálogo, tampoco, salvo remolques (entradas genéricas por peso).
@@ -1078,6 +1082,21 @@ export default function HojaPreEmision({ trabajoRows, initialSeleccion, onCatalo
     setRebuscar(x => x + 1);
   }, []);
 
+  // Vehículos cuya ID no admite su año (lo ha dicho el sistema o el catálogo): se les quita y se vuelven a
+  // identificar. El identificador ya conoce los rangos, así que propondrá una versión que sí cubra el año.
+  const reidentificar = useCallback((lista: VehicleEmision[]) => {
+    const mats = new Set(lista.map(v => v.matricula));
+    if (mats.size === 0) return;
+    setVehicles(prev => prev.map(v => {
+      if (!mats.has(v.matricula)) return v;
+      searchedMatsRef.current.delete(v.matricula);
+      noAutoRef.current.delete(v.matricula);
+      return { ...v, seleccionado: null, candidatos: [], aproximada: false, status: 'pendiente' as EmisionStatus };
+    }));
+    pendingNotifyRef.current = true;
+    setRebuscar(x => x + 1);
+  }, []);
+
   // Fix 19/11: desasignar en lote los vehículos marcados con el checkbox.
   // Útil cuando el usuario asignó por error la misma versión a todos y quiere empezar de cero.
   const handleBulkClear = useCallback(() => {
@@ -1272,13 +1291,30 @@ export default function HojaPreEmision({ trabajoRows, initialSeleccion, onCatalo
               const porRevisar = vehicles.filter(v => { const r = revisiones[v.matricula]; return v.seleccionado && r && r.bloq.length > 0 && !r.confirmada; });
               if (porRevisar.length === 0) return null;
               const confirmables = porRevisar.filter(v => !revisiones[v.matricula].imposible);
-              const imposibles = porRevisar.length - confirmables.length;
+              const listaImposibles = porRevisar.filter(v => revisiones[v.matricula].imposible);
+              const imposibles = listaImposibles.length;
+              // año posterior a la última actualización de la versión: puede haber otra más reciente que sí lo cubra
+              const sinConfirmar = confirmables.filter(v => revisiones[v.matricula].hall.some(h => h.codigo === 'VENTANA_ABIERTA'));
               return (
                 <div className="notice" role="status" style={{ marginBottom: 12 }}>
                   <b>{nf(porRevisar.length)} {porRevisar.length === 1 ? 'vehículo por revisar' : 'vehículos por revisar'}: no se emitirán hasta resolverlos.</b>
                   {imposibles > 0 && (
                     <div style={{ marginTop: 4 }}>
-                      {nf(imposibles)} {imposibles === 1 ? 'tiene' : 'tienen'} el año fuera del rango de su ID: el sistema de emisión {imposibles === 1 ? 'lo' : 'los'} rechazaría, así que no se {imposibles === 1 ? 'puede' : 'pueden'} dar por {imposibles === 1 ? 'bueno' : 'buenos'}. Corrige el año o elige otra versión.
+                      {nf(imposibles)} {imposibles === 1 ? 'tiene' : 'tienen'} el año fuera del rango de su ID: el sistema de emisión {imposibles === 1 ? 'lo' : 'los'} rechazaría, así que no se {imposibles === 1 ? 'puede' : 'pueden'} dar por {imposibles === 1 ? 'bueno' : 'buenos'}.
+                    </div>
+                  )}
+                  {sinConfirmar.length > 0 && (
+                    <div style={{ marginTop: 4 }}>
+                      {nf(sinConfirmar.length)} {sinConfirmar.length === 1 ? 'tiene' : 'tienen'} el año sin confirmar: {sinConfirmar.length === 1 ? 'es posterior' : 'son posteriores'} a la última actualización de su versión en el catálogo y el sistema puede rechazar{sinConfirmar.length === 1 ? 'lo' : 'los'}.
+                    </div>
+                  )}
+                  {(imposibles > 0 || sinConfirmar.length > 0) && (
+                    <div style={{ marginTop: 8 }}>
+                      <button type="button" className="mini pri"
+                        title="Quita la versión a esos vehículos y busca otra que cubra su año. Si hay una sola que encaje la asigna; si hay varias, te deja elegir el acabado."
+                        onClick={() => reidentificar([...listaImposibles, ...sinConfirmar])}>
+                        Buscar una versión que cubra el año ({nf(imposibles + sinConfirmar.length)})
+                      </button>
                     </div>
                   )}
                   {confirmables.length > 0 && (
@@ -1431,7 +1467,7 @@ export default function HojaPreEmision({ trabajoRows, initialSeleccion, onCatalo
                                   onChange={e => { const c = v.candidatos.find(c => c.id_veh === e.target.value); if (c) handleSelect(origIdx, c); }}>
                                   <option value="" disabled>Seleccionar acabado</option>
                                   {v.candidatos.map(c => (
-                                    <option key={c.id_veh} value={c.id_veh}>{c.version}{c.score ? ` · ${nf(c.score)} %` : ''}{cubreAnio(c, anioVehiculo(v), ventanas) === false ? ' · fuera de año' : ''}</option>
+                                    <option key={c.id_veh} value={c.id_veh}>{c.version}{c.score ? ` · ${nf(c.score)} %` : ''}{cubreAnio(c, anioVehiculo(v), ventanas) === false ? ' · fuera de año' : anioSinConfirmar(c, anioVehiculo(v), ventanas) ? ' · año sin confirmar' : ''}</option>
                                   ))}
                                 </select>
                                 <button type="button" className="mini" title="Buscar manualmente en el catálogo"

@@ -105,6 +105,11 @@ function modeloScore(ocrModelo: string, catModelo: string): number {
     return 0;
 }
 
+function anioDeTexto(s: string | undefined): number {
+    const y = parseInt((s ?? '').trim().substring(0, 4), 10);
+    return Number.isFinite(y) && y > 1990 && y < 2100 ? y : 0;
+}
+
 function parseRow(cols: string[]): CatalogoVehiculo | null {
     const id_veh = cols[0]?.trim();
     if (!id_veh) return null;
@@ -131,6 +136,7 @@ function parseRow(cols: string[]): CatalogoVehiculo | null {
         kw,
         cv: Math.round(kw * 1.36),
         tipo: clasificar(id_clase, pma),
+        actualizado: anioDeTexto(cols[22]) || anioDeTexto(cols[21]),
     };
 }
 
@@ -427,6 +433,7 @@ export interface CascadaVersion {
     anyo: number;        // año consultado (o de inicio de comercialización si no se indicó)
     desde: number;       // año de inicio de comercialización (0 = desconocido)
     hasta: number;       // año de fin (0 = sigue comercializándose o desconocido)
+    actualizado: number; // año de la última actualización de la versión en el catálogo
     pvp?: number;
 }
 
@@ -560,6 +567,7 @@ export function consultarCascada(p: CascadaParams): CascadaResultado {
             anyo: p.anyo || yearOf(v.fec_ini_comerc),
             desde: yearOf(v.fec_ini_comerc),
             hasta: yearOf(v.fec_fin_comerc),
+            actualizado: v.actualizado ?? 0,
             pvp: v.pvp || undefined,
         }));
 

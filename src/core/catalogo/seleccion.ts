@@ -7,7 +7,7 @@
 // Módulo puro (sin React ni red).
 
 import { ventanaAnios, dentroDeVentana } from './verificacion';
-import type { MapaVentanas } from './ventanasSistema';
+import { anioAceptado, type MapaVentanas } from './ventanasSistema';
 
 export interface CandidatoBasico {
     id_veh: string;
@@ -15,6 +15,23 @@ export interface CandidatoBasico {
     hasta?: number;
     anyo?: number;
     score?: number;
+    /** año de la última actualización de la versión en el catálogo */
+    actualizado?: number;
+}
+
+/**
+ * true si la versión cubre el año pero NO está confirmado: no tiene fecha de fin en el catálogo, el sistema de
+ * emisión no ha indicado su rango y el vehículo es posterior a la última actualización de la versión.
+ */
+export function anioSinConfirmar(c: CandidatoBasico, anio: number | null | undefined, ventanas?: MapaVentanas): boolean {
+    if (!anio) return false;
+    const v = ventanas?.[c.id_veh];
+    if (v && v.fabMin) return false;                       // el sistema ya dijo su rango: es exacto
+    if (anioAceptado(v, anio)) return false;               // el sistema ya aceptó ese año
+    const { ini, fin } = ventanaAnios(c);
+    if (ini === null || fin !== null) return false;         // rango cerrado o sin inicio: lo trata la verificación
+    if (anio < ini) return false;
+    return !!c.actualizado && c.actualizado > 1990 && anio > c.actualizado;
 }
 
 /** Distancia en años entre el año del vehículo y la ventana de la versión (0 = dentro). */
@@ -30,6 +47,7 @@ export function cubreAnio(c: CandidatoBasico, anio: number | null | undefined, v
     if (!anio) return null;
     const v = ventanas?.[c.id_veh];
     if (v && v.fabMin) return anio >= v.fabMin && anio <= v.fabMax;
+    if (anioAceptado(v, anio)) return true;                // el sistema ya aceptó ese año para esta ID
     return dentroDeVentana(c, anio);
 }
 

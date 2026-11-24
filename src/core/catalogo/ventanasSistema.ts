@@ -18,6 +18,12 @@ export interface VentanaSistema {
     /** ventana de matriculación, si el sistema la ha indicado alguna vez */
     matMin?: number | null;
     matMax?: number | null;
+    /**
+     * Años de fabricación que el sistema ACEPTÓ para esta ID en una emisión real (menor y mayor).
+     * No es el rango completo: solo se sabe que entre esos dos años la admite.
+     */
+    okMin?: number | null;
+    okMax?: number | null;
     /** de dónde sale: «error del sistema», «tabla de MMT»… */
     fuente?: string;
     actualizada?: string;
@@ -33,10 +39,13 @@ const SEMILLA: Array<[string, number, number]> = [
     ['245386497', 2017, 2018], ['250592225', 2016, 2019], ['252320933', 2017, 2018], ['252919403', 2018, 2018],
     ['253538875', 2018, 2019], ['253538877', 2018, 2019], ['256114891', 2018, 2019], ['275279063', 2020, 2020],
     ['230261478', 1998, 2000],
+    // Emisión de noviembre de 2026 (camiones): el catálogo las da «sin fecha de fin» y el sistema las tiene cerradas
+    ['259373254', 2017, 2019], ['239615202', 2017, 2019], ['248433536', 2011, 2020], ['230267063', 2013, 2016],
+    ['230282179', 2016, 2020], ['230272963', 2003, 2020],
 ];
 
 export const VENTANAS_SEMILLA: MapaVentanas = Object.fromEntries(
-    SEMILLA.map(([id, a, b]) => [id, { id, fabMin: a, fabMax: b, fuente: 'error del sistema (emisión de octubre de 2026)' } as VentanaSistema]),
+    SEMILLA.map(([id, a, b]) => [id, { id, fabMin: a, fabMax: b, fuente: 'error del sistema de emisión' } as VentanaSistema]),
 );
 
 export interface ErrorSistema {
@@ -90,9 +99,28 @@ export function fusionarVentanas(base: MapaVentanas, nuevas: VentanaSistema[]): 
             ...previa, ...n,
             fabMin: n.fabMin || previa?.fabMin || 0, fabMax: n.fabMax || previa?.fabMax || 0,
             matMin: n.matMin ?? previa?.matMin ?? null, matMax: n.matMax ?? previa?.matMax ?? null,
+            okMin: n.okMin && previa?.okMin ? Math.min(n.okMin, previa.okMin) : (n.okMin ?? previa?.okMin ?? null),
+            okMax: n.okMax && previa?.okMax ? Math.max(n.okMax, previa.okMax) : (n.okMax ?? previa?.okMax ?? null),
         };
     }
     return out;
+}
+
+/** true si el sistema de emisión ya aceptó ese año de fabricación (o uno a cada lado) para esa ID. */
+export function anioAceptado(v: VentanaSistema | null | undefined, anio: number | null | undefined): boolean {
+    return !!(v && anio && v.okMin && v.okMax && anio >= v.okMin && anio <= v.okMax);
+}
+
+/** Años aceptados por ID a partir de las filas de una emisión (id + año) que el sistema NO rechazó. */
+export function ventanasDeAceptados(filas: Array<{ id: string; anio: number }>, ahora = new Date().toISOString()): VentanaSistema[] {
+    const por = new Map<string, VentanaSistema>();
+    for (const f of filas) {
+        if (!/^\d+$/.test(f.id) || !(f.anio > 1900 && f.anio < 2100)) continue;
+        const v = por.get(f.id) ?? { id: f.id, fabMin: 0, fabMax: 0, okMin: f.anio, okMax: f.anio, fuente: 'aceptado por el sistema', actualizada: ahora };
+        v.okMin = Math.min(v.okMin ?? f.anio, f.anio); v.okMax = Math.max(v.okMax ?? f.anio, f.anio);
+        por.set(f.id, v);
+    }
+    return [...por.values()];
 }
 
 /** true si el año cae dentro del rango (inclusive) */

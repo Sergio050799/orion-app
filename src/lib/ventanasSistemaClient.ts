@@ -22,6 +22,7 @@ export async function cargarVentanas(): Promise<MapaVentanas> {
         mapa = fusionarVentanas(mapa, filas.map((f: Record<string, unknown>) => ({
           id: String(f.id_veh), fabMin: Number(f.fab_min) || 0, fabMax: Number(f.fab_max) || 0,
           matMin: f.mat_min ? Number(f.mat_min) : null, matMax: f.mat_max ? Number(f.mat_max) : null,
+          okMin: f.ok_min ? Number(f.ok_min) : null, okMax: f.ok_max ? Number(f.ok_max) : null,
           fuente: String(f.fuente ?? ''), actualizada: String(f.updated_at ?? ''),
         })));
       }

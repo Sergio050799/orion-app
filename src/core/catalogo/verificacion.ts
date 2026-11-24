@@ -8,7 +8,7 @@
 // Módulo puro (sin React ni red): lo usan PRE-EMISIÓN, EMISIÓN y las pruebas.
 
 import { TIPO_INFO, esTipoKey, type TipoKey } from './tipologia';
-import type { VentanaSistema } from './ventanasSistema';
+import { anioAceptado, type VentanaSistema } from './ventanasSistema';
 
 export type Gravedad = 'bloquea' | 'aviso';
 
@@ -71,6 +71,8 @@ export interface VersionCatalogo {
     hasta?: number;
     /** año de inicio si el catálogo no trae fec_ini_comerc */
     anyo?: number;
+    /** año de la última actualización de la versión en el catálogo (0 o vacío = no se sabe) */
+    actualizado?: number;
     /** tipología ORION calculada al cargar el catálogo (tipologia.ts) */
     tipo?: string;
 }
@@ -160,6 +162,11 @@ export function revisarIdentificacion(d: VehiculoDeclarado, c: VersionCatalogo, 
     const anioMat = d.anioMat && d.anioMat > 1900 ? d.anioMat : null;
     if (!anioFab) {
         add('ANIO_SIN', 'bloquea', 'No hay año de fabricación del vehículo: sin él no se puede comprobar la versión ni emitir.');
+    } else if (anioAceptado(ventanaSistema, anioFab) && !(ventanaSistema && ventanaSistema.fabMin)) {
+        // El sistema de emisión ya aceptó ese año para esta ID en una emisión real: no hay nada que comprobar.
+        if (anioMat && anioMat < anioFab) {
+            add('ANIO_INCOHERENTE', 'aviso', `Matriculado en ${anioMat} y fabricado en ${anioFab}: la matriculación no puede ser anterior a la fabricación.`);
+        }
     } else {
         const vs = ventanaSistema && ventanaSistema.fabMin ? ventanaSistema : null;
         const { ini, fin } = vs ? { ini: vs.fabMin, fin: vs.fabMax } : ventanaAnios(c);
@@ -168,12 +175,29 @@ export function revisarIdentificacion(d: VehiculoDeclarado, c: VersionCatalogo, 
         } else if (fin !== null && anioFab > fin + TOLERANCIA_ANIOS) {
             add('ANIO_POSTERIOR', 'bloquea', `El vehículo es de ${anioFab} y esta versión ${vs ? 'solo admite hasta' : 'se dejó de comercializar en'} ${fin}.`);
         } else if (!vs && (ini === null || fin === null)) {
-            add('VENTANA_ABIERTA', ini !== null && fin === null && anioFab - ini <= VIDA_MAX_VERSION ? 'aviso' : 'bloquea',
-                ini === null && fin === null
-                    ? 'El catálogo no indica entre qué años se comercializó esta versión: no se puede comprobar que el año del vehículo sea válido.'
-                    : fin === null
-                        ? `El catálogo no indica cuándo dejó de comercializarse esta versión (desde ${ini}): el sistema puede tener un fin que ORION no conoce.`
-                        : `El catálogo no indica cuándo empezó esta versión (hasta ${fin}): no se puede comprobar el año del vehículo.`);
+            // El catálogo no trae la fecha de fin de casi la mitad de las versiones, y el sistema de emisión
+            // sí la tiene (visto en emisiones reales: «2017 – sin fin» resultó ser 2017–2019). Lo único que el
+            // catálogo confirma es que la versión seguía a la venta el año en que la actualizó por última vez.
+            //   · año del vehículo ≤ ese año  → dentro de lo confirmado: no bloquea.
+            //   · año del vehículo  > ese año  → sin confirmar: se revisa (en emisiones reales se rechazó la mitad).
+            // Los remolques van a entradas genéricas por peso, que el sistema admite para cualquier año.
+            const esRemolque = tipoDesdeTexto(d.tipo) === 'remolque' || c.tipo === 'remolque';
+            const act = c.actualizado && c.actualizado > 1990 ? c.actualizado : null;
+            if (ini !== null && fin === null && esRemolque) {
+                /* entrada genérica: nada que avisar */
+            } else if (ini !== null && fin === null && act !== null) {
+                if (anioFab > act) {
+                    add('VENTANA_ABIERTA', 'bloquea',
+                        `Año sin confirmar: el catálogo solo confirma esta versión de ${ini} a ${act} (su última actualización) y el vehículo es de ${anioFab}. El sistema de emisión puede rechazarla; si hay una versión más reciente del mismo modelo, elige esa.`);
+                }
+            } else {
+                add('VENTANA_ABIERTA', ini !== null && fin === null && anioFab - ini <= VIDA_MAX_VERSION ? 'aviso' : 'bloquea',
+                    ini === null && fin === null
+                        ? 'El catálogo no indica entre qué años se comercializó esta versión: no se puede comprobar que el año del vehículo sea válido.'
+                        : fin === null
+                            ? `El catálogo no indica cuándo dejó de comercializarse esta versión (desde ${ini}): el sistema puede tener un fin que ORION no conoce.`
+                            : `El catálogo no indica cuándo empezó esta versión (hasta ${fin}): no se puede comprobar el año del vehículo.`);
+            }
         }
         if (vs && anioMat && vs.matMin && vs.matMax && (anioMat < vs.matMin || anioMat > vs.matMax)) {
             add('MATRICULACION_FUERA', 'bloquea', `La matriculación es de ${anioMat} y el sistema solo admite ${vs.matMin} a ${vs.matMax} para esta versión.`);

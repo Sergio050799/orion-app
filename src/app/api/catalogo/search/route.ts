@@ -23,6 +23,7 @@ function normalizeCandidato(c: CatalogoCandidato) {
         // Ventana de comercialización y tipología: ORION los usa para verificar la identificación (verificacion.ts)
         desde: iniYear,
         hasta: c.fec_fin_comerc ? parseInt(c.fec_fin_comerc.substring(0, 4)) || 0 : 0,
+        actualizado: c.actualizado ?? 0,
         plazasMin: c.num_plazas_min,
         tipo: c.tipo || 'sin_clasificar',
         pvp: c.pvp || undefined,

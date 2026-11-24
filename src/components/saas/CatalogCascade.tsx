@@ -30,6 +30,7 @@ export interface CascadaVersion {
   anyo: number;
   desde: number;
   hasta: number;
+  actualizado?: number;
   pvp?: number;
 }
 

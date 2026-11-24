@@ -28,6 +28,8 @@ export async function POST(req: NextRequest) {
     body.usuario = usuarioDe(req);
     const res  = await apiPost('/ventanas-sistema', body);
     const data = await res.json();
+    // el identificador guarda los rangos un minuto en memoria: se descartan para que use los nuevos ya
+    (globalThis as { _orionVentanas?: unknown })._orionVentanas = undefined;
     return NextResponse.json(data, { status: res.status });
   } catch {
     return NextResponse.json({ error: 'Servicio de ventanas no disponible' }, { status: 503 });
