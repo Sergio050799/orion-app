@@ -64,6 +64,21 @@ function faltaEnConfig(cfg: ConfigFacturacion | null): string[] {
   return f;
 }
 
+/** Lo que falta, en corto, para la portada («Falta: CIF del tomador +1»). Mismas condiciones que faltaEnConfig. */
+export function faltaCorta(cfg: ConfigFacturacion | null): string[] {
+  if (!cfg) return ['Datos de facturación'];
+  const f: string[] = [];
+  if (!diaDe(cfg.inicioCiclo)) f.push('Inicio de ciclo');
+  if (!MESES_PERIODICIDAD[cfg.periodicidad]) f.push('Periodicidad');
+  if (!cfg.corredor?.nombre?.trim()) f.push('Nombre del corredor');
+  if (!cfg.corredor?.cif?.trim()) f.push('CIF del corredor');
+  if (!cfg.corredor?.domicilio?.trim()) f.push('Domicilio del corredor');
+  const toms = cfg.tomadores ?? [];
+  if (toms.length === 0 || toms.some(t => !t.nombre?.trim())) f.push('Tomador');
+  else if (toms.some(t => !t.cif?.trim())) f.push('CIF del tomador');
+  return f;
+}
+
 /** Operación que sugiere el archivo: con anulaciones o importes en negativo, regularización; si no, emisión. */
 function operacionSugerida(lineas: LineaRecibo[]): Serie {
   return lineas.some(l => l.importe < 0 || /anul/i.test(l.tipo)) ? 'RW' : 'RC';
