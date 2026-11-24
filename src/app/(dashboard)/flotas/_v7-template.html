@@ -1989,7 +1989,7 @@ function ficha(f,_v,force){
   h+='<h4>Del estudio</h4><div class="kv">'+kv('Estado',cap(f.estReal||k))+kv('Nº de vehículos',l.veh?nf(l.veh):'')+kv(k===C?'Prima contratada':'Prima del estudio',prima?money(prima):'')+kv('Última modificación',f.mod?fd(f.mod):(l.f?fd(l.f):''))+'</div>'
    +'<p class="desc" style="margin-top:10px">Los vehículos, las primas y las coberturas se trabajan en <b>Estudio</b>. Aquí se mantienen los datos de la flota.</p>';
   h+='<div class="dacts">'+(k==='EN ESTUDIO'?'<button class="mini" data-act="form">Cambiar estado</button>':k==='OFERTADA'?'<button class="mini" data-act="resp">Registrar respuesta</button>':'')+'</div>';
-  h+='<div class="danger-zone"><p>'+(k===C?'<b>No se puede borrar:</b> la flota está contratada.':'<b>Borrar flota.</b> Se elimina con todo su estudio. No se puede deshacer.')+'</p>'+(k===C?'':'<button class="mini danger" data-act="del">Borrar flota</button>')+'</div>';
+  h+='<div class="danger-zone"><p>'+(k===C?'<b>Borrar flota contratada.</b> Úsalo solo si se subió por error: se elimina con su estudio y su emisión. No se puede deshacer.':'<b>Borrar flota.</b> Se elimina con todo su estudio. No se puede deshacer.')+'</p><button class="mini danger" data-act="del">Borrar flota</button></div>';
   var keep=dr.scrollTop,was=dr.classList.contains('open')&&same;
   openDr(h);
   fx={f:f,cor:f.cor||''};
@@ -2102,10 +2102,9 @@ function formalizar(f,resp){
   });
 }
 function borrar(f){
-  if(f.em.length){
-    modal('<div class="mdl-over">No se puede borrar</div><h3>'+esc(f.nombre)+'</h3><p class="mdl-desc">La flota está <b>contratada</b>, así que no se puede borrar desde aquí.</p><div class="mdl-act"><button class="btn" data-mclose autofocus>Entendido</button></div>');return;
-  }
-  modal('<div class="mdl-over">Borrar flota</div><h3>¿Borrar «'+esc(f.nombre)+'»?</h3><p class="mdl-desc">Se eliminarán la flota y sus <b>'+nf(f.st.length)+' estudio'+(f.st.length>1?'s':'')+'</b>. Esta acción no se puede deshacer. Para confirmar, escribe el nombre exacto de la flota.</p><div class="fld"><label for="dN">Nombre de la flota</label><input id="dN" class="inp" autocomplete="off" placeholder="'+esc(f.nombre)+'"></div><div class="mdl-act"><button class="btn ghost" data-mclose>Cancelar</button><button class="btn danger" id="okD" disabled>Borrar definitivamente</button></div>');
+  // Las contratadas también se pueden borrar (hay flotas subidas por error), con un aviso más claro.
+  var contratada=f.em.length>0;
+  modal('<div class="mdl-over">'+(contratada?'Borrar flota contratada':'Borrar flota')+'</div><h3>¿Borrar «'+esc(f.nombre)+'»?</h3><p class="mdl-desc">'+(contratada?'Esta flota está <b>contratada</b>. Bórrala solo si se subió por error: se eliminarán la flota, su emisión y sus ':'Se eliminarán la flota y sus ')+'<b>'+nf(f.st.length)+' estudio'+(f.st.length>1?'s':'')+'</b>.'+(contratada?' Los recibos que tenga en Facturación se conservan en su histórico.':'')+' Esta acción no se puede deshacer y queda registrado quién la hace. Para confirmar, escribe el nombre exacto de la flota.</p><div class="fld"><label for="dN">Nombre de la flota</label><input id="dN" class="inp" autocomplete="off" placeholder="'+esc(f.nombre)+'"></div><div class="mdl-act"><button class="btn ghost" data-mclose>Cancelar</button><button class="btn danger" id="okD" disabled>Borrar definitivamente</button></div>');
   var inp=$('#dN',md),ok=$('#okD',md);inp.addEventListener('input',function(){ok.disabled=norm(inp.value.trim())!==norm(f.nombre)});
   ok.addEventListener('click',function(){if(ok.disabled)return;if(ed)leaveEdit(true);syncDelete(f);F.splice(F.indexOf(f),1);closeModal();closeDr(true);render();toast('«'+f.nombre+'» borrada')});
 }

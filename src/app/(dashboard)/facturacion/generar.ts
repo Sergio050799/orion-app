@@ -1,6 +1,11 @@
-// Carpeta de una facturación: <FLOTA>_<AAAAMMDD>/TRABAJO y /ENVIAR, en un ZIP.
-//   ENVIAR  → por cada recibo (RC / RW y tomador): PDF, Word y anexo Excel con el detalle.
-//   TRABAJO → Excel originales tal cual se subieron, detalle interno con la fila de origen y los cambios, y auditoría.
+// Carpeta de una facturación, tal como se prepara a mano:
+//
+//   AAAA-MM-DD RECIBOS PRIMER TRIMESTRE 2026 - GEODIS/
+//     ORIGINAL/  el informe de recibos de MMT tal cual se subió
+//     TRABAJO/   el Excel transformado (sin columnas internas, con comisión y líquido, ordenado por póliza) y el recibo en Word
+//     ENVIAR/    el mismo Excel con el número delante y el recibo en PDF
+//
+// Emisión y regularización son descargas separadas, cada una con su carpeta.
 
 import {
   esDe, isoDe, diaDe, moverMeses, NOMBRE_PERIODICIDAD, MESES_PERIODICIDAD,
@@ -18,30 +23,39 @@ export interface ConfigFacturacion {
 }
 
 export interface CambioLinea {
-  serie: Serie; recibo: string; campo: string; antes: string; despues: string; motivo: string; usuario: string; fecha: string;
+  recibo: string; campo: string; antes: string; despues: string; motivo: string; usuario: string; fecha: string;
 }
 
 export interface DocumentoFactura {
   id: string;
   serie: Serie;
   tomador: TomadorFacturacion;
+  /** RW13012026 */
   numero: string;
-  /** vencimiento de la fracción (ISO) */
+  /** fecha del documento (ISO): la del número y la del nombre de la carpeta */
+  fechaDocumento: string;
+  /** primer día de la fracción (ISO) */
   vencimiento: string;
+  /** «PRIMER TRIMESTRE 2026» y su forma corta «1º TRIMESTRE 2026» */
+  nombrePeriodo: string;
+  nombrePeriodoCorto: string;
+  /** línea en negrita del recibo */
   textoPeriodo: string;
   /** inicio del ciclo y renovación (ISO) de la fracción facturada */
   inicioCiclo: string;
   renovacion: string;
+  /** fecha del informe de MMT (ISO) */
+  fechaInforme: string;
   lineas: LineaRecibo[];
   resumen: ResumenSerie;
   archivo: string;
   sha256: string;
-  excluidas: number[];
   avisos: string[];
   cambios: CambioLinea[];
 }
 
-export const slug = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9]+/g, '_').replace(/^_+|_+$/g, '').toUpperCase() || 'FLOTA';
+/** Texto válido como nombre de archivo o carpeta en Windows, en mayúsculas. */
+export const paraNombre = (s: string) => s.replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim().toUpperCase();
 
 /** Último día cubierto por el ciclo (renovación − 1 día), dd/mm/aaaa. */
 function finCobertura(renovacionIso: string): string {
@@ -73,102 +87,132 @@ async function pedir(ruta: string, cuerpo: unknown): Promise<ArrayBuffer> {
 }
 
 const AZUL = 'FF002F82';
+const GRIS = 'FFF1F4F9';
+const NUM = '#,##0.00';
 
-async function excelDetalle(doc: DocumentoFactura, cfg: ConfigFacturacion, interno: boolean): Promise<ArrayBuffer> {
+/** Título del Excel: «Informe Recibos GEODIS PRIMER TRIMESTRE 2026» / «Informe Recibos - Regularización GEODIS CUARTO TRIMESTRE 2026». */
+export function tituloInforme(cfg: ConfigFacturacion, doc: DocumentoFactura): string {
+  return doc.serie === 'RC'
+    ? `Informe Recibos ${cfg.flota.toUpperCase()} ${doc.nombrePeriodo}`
+    : `Informe Recibos - Regularización ${cfg.flota.toUpperCase()} ${doc.nombrePeriodo}`;
+}
+
+/**
+ * Excel de TRABAJO y de ENVIAR: del informe de MMT se quitan Ejercicio, Fin cobertura, Estado, F. último estado,
+ * Cobro y los datos del propietario; se añaden Comisión y Líquido a abonar; se ordena por póliza.
+ */
+async function excelRecibos(doc: DocumentoFactura, cfg: ConfigFacturacion): Promise<ArrayBuffer> {
   const ExcelJS = (await import('exceljs')).default;
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet('Recibos');
-  const cols: Array<{ t: string; w: number; v: (l: LineaRecibo) => string | number; n?: boolean }> = [
+  const cols: Array<{ t: string; w: number; v: (l: LineaRecibo) => string | number; n?: boolean; tot?: keyof ResumenSerie }> = [
     { t: 'PÓLIZA', w: 12, v: l => l.poliza },
-    { t: 'Nº RECIBO', w: 16, v: l => l.recibo },
+    { t: 'NUM. RECIBO', w: 16, v: l => l.recibo },
     { t: 'RIESGO', w: 14, v: l => l.riesgo },
     { t: 'FECHA', w: 12, v: l => esDe(l.fecha) },
-    { t: 'TIPO', w: 12, v: l => l.tipo },
-    { t: 'PRIMA NETA', w: 14, v: l => l.neta, n: true },
-    { t: 'IMPUESTO', w: 13, v: l => l.impuesto, n: true },
-    { t: 'IMPORTE', w: 14, v: l => l.importe, n: true },
-    { t: 'COMISIÓN', w: 13, v: l => l.comision, n: true },
-    { t: 'LÍQUIDO A ABONAR', w: 18, v: l => l.liquido, n: true },
+    { t: 'TIPO', w: 13, v: l => l.tipo },
+    { t: 'P.NETA', w: 14, v: l => l.neta, n: true, tot: 'neta' },
+    { t: 'IMPUESTO', w: 13, v: l => l.impuesto, n: true, tot: 'impuesto' },
+    { t: 'IMPORTE TOTAL', w: 16, v: l => l.importe, n: true, tot: 'importe' },
+    { t: 'COMISIÓN', w: 13, v: l => l.comision, n: true, tot: 'comision' },
+    { t: 'LIQUIDO A ABONAR', w: 19, v: l => l.liquido, n: true, tot: 'liquido' },
     { t: 'PERIODICIDAD', w: 14, v: l => l.periodicidad },
-    { t: 'INICIO PÓLIZA', w: 14, v: l => esDe(l.inicioPoliza) },
-    { t: 'VENCIMIENTO', w: 14, v: l => esDe(l.vencimientoPoliza) },
+    { t: 'FECHA INICIO PÓLIZA', w: 20, v: l => esDe(l.inicioPoliza) },
+    { t: 'FECHA VENCIMIENTO', w: 19, v: l => esDe(l.vencimientoPoliza) },
     { t: 'TOMADOR', w: 36, v: l => l.tomador },
   ];
-  if (interno) cols.push({ t: 'FILA ORIGEN', w: 12, v: l => l.fila });
+  const r = doc.resumen;
+  const filaTotales = () => {
+    const f = ws.addRow(cols.map((c, i) => (i === 0 ? r.recibos : c.tot ? (r[c.tot] as number) : '')));
+    f.font = { bold: true };
+    f.eachCell(c => { c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: GRIS } }; });
+    cols.forEach((c, i) => { if (c.n) f.getCell(i + 1).numFmt = NUM; });
+  };
 
-  ws.addRow([`${doc.numero} · ${cfg.flota} · ${doc.tomador.nombre}`]).font = { bold: true, size: 13 };
-  ws.addRow([doc.textoPeriodo]);
+  ws.addRow(['', tituloInforme(cfg, doc)]).getCell(2).font = { bold: true, size: 14, color: { argb: AZUL } };
+  ws.mergeCells(1, 2, 1, 10);
   ws.addRow([]);
+  ws.addRow([`Fecha informe - ${esDe(doc.fechaInforme || doc.fechaDocumento)}`]).getCell(1).font = { bold: true };
+  ws.mergeCells(3, 1, 3, 4);
+  filaTotales();
   const cab = ws.addRow(cols.map(c => c.t));
+  cab.height = 22;
   cab.eachCell(c => {
     c.font = { bold: true, color: { argb: 'FFFFFFFF' } };
     c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: AZUL } };
-    c.alignment = { vertical: 'middle', horizontal: 'center' };
+    c.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
   });
-  for (const l of doc.lineas) {
+  // Por póliza y, dentro de cada póliza, en el orden del informe de MMT (el más reciente primero)
+  const ordenadas = [...doc.lineas].sort((a, b) => a.poliza.localeCompare(b.poliza, 'es', { numeric: true }) || a.fila - b.fila);
+  for (const l of ordenadas) {
     const fila = ws.addRow(cols.map(c => c.v(l)));
-    cols.forEach((c, i) => { if (c.n) fila.getCell(i + 1).numFmt = '#,##0.00'; });
+    cols.forEach((c, i) => { if (c.n) fila.getCell(i + 1).numFmt = NUM; });
   }
-  const r = doc.resumen;
-  const tot = ws.addRow(cols.map(c => ({ 'PÓLIZA': `TOTAL (${r.recibos} recibos)`, 'PRIMA NETA': r.neta, 'IMPUESTO': r.impuesto, 'IMPORTE': r.importe, 'COMISIÓN': r.comision, 'LÍQUIDO A ABONAR': r.liquido } as Record<string, string | number>)[c.t] ?? ''));
-  tot.font = { bold: true };
-  cols.forEach((c, i) => { if (c.n) tot.getCell(i + 1).numFmt = '#,##0.00'; ws.getColumn(i + 1).width = c.w; });
-  ws.views = [{ state: 'frozen', ySplit: 4 }];
+  ws.addRow([]);
+  filaTotales();
+  ws.addRow([]); ws.addRow([]);
+  // Resumen del pie, como en el Excel hecho a mano
+  const pie = (etiqueta: string, valor: number) => {
+    const f = ws.addRow(['', '', '', '', '', etiqueta, '', valor]);
+    f.getCell(6).font = { bold: true }; f.getCell(8).font = { bold: true }; f.getCell(8).numFmt = NUM;
+  };
+  pie('PRIMA NETA:', r.neta); pie('IMPUESTO:', r.impuesto); pie('IMPORTE TOTAL:', r.importe);
+  ws.addRow([]);
+  pie('COMISIÓN:', r.comision); pie('LIQUIDO A ABONAR:', r.liquido);
+  cols.forEach((c, i) => { ws.getColumn(i + 1).width = c.w; });
+  ws.views = [{ state: 'frozen', ySplit: 5 }];
 
-  if (interno && doc.cambios.length > 0) {
+  if (doc.cambios.length > 0) {
     const wc = wb.addWorksheet('Cambios');
     const h = wc.addRow(['FECHA', 'USUARIO', 'RECIBO', 'DATO', 'ANTES', 'DESPUÉS', 'MOTIVO']);
     h.eachCell(c => { c.font = { bold: true, color: { argb: 'FFFFFFFF' } }; c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: AZUL } }; });
     for (const c of doc.cambios) wc.addRow([c.fecha, c.usuario, c.recibo, c.campo, c.antes, c.despues, c.motivo]);
-    [20, 16, 16, 14, 14, 14, 40].forEach((w, i) => { wc.getColumn(i + 1).width = w; });
+    [22, 16, 16, 14, 16, 18, 40].forEach((w, i) => { wc.getColumn(i + 1).width = w; });
   }
   return wb.xlsx.writeBuffer() as Promise<ArrayBuffer>;
 }
 
+/** «2026-01-13 RECIBOS PRIMER TRIMESTRE 2026 - GEODIS» */
+export function nombreCarpeta(cfg: ConfigFacturacion, doc: DocumentoFactura): string {
+  return paraNombre(`${doc.fechaDocumento} RECIBOS ${doc.serie === 'RW' ? 'REGULARIZACIÓN ' : ''}${doc.nombrePeriodo} - ${cfg.flota}`);
+}
+
 export interface EntradaZip {
   cfg: ConfigFacturacion;
+  /** recibos de UNA operación (uno por tomador) */
   docs: DocumentoFactura[];
-  /** Excel originales tal cual se subieron (no los hay al volver a descargar del histórico) */
-  originales: Partial<Record<Serie, File>>;
-  usuario: string;
-  /** fecha y hora de la emisión (ISO) */
-  emitidoEn: string;
+  /** Excel original tal cual se subió (no lo hay al volver a descargar del histórico) */
+  original?: File;
 }
 
 export async function construirZip(e: EntradaZip, progreso?: (texto: string) => void): Promise<{ blob: Blob; nombre: string }> {
   const JSZip = (await import('jszip')).default;
   const zip = new JSZip();
-  const venc = e.docs[0]?.vencimiento ?? '';
-  const raiz = `${slug(e.cfg.flota)}_${venc.replace(/-/g, '')}`;
-  const trabajo = zip.folder(raiz)!.folder('TRABAJO')!, enviar = zip.folder(raiz)!.folder('ENVIAR')!;
-  const variosTomadores = new Set(e.docs.map(d => d.tomador.id)).size > 1;
+  const raiz = nombreCarpeta(e.cfg, e.docs[0]);
+  const carpeta = zip.folder(raiz)!;
+  const original = carpeta.folder('ORIGINAL')!, trabajo = carpeta.folder('TRABAJO')!, enviar = carpeta.folder('ENVIAR')!;
+  const varios = e.docs.length > 1;
+  const flota = e.cfg.flota;
 
-  for (const s of ['RC', 'RW'] as Serie[]) {
-    const f = e.originales[s];
-    if (f) trabajo.file(`${s}_ORIGINAL_${f.name}`, await f.arrayBuffer());
-  }
+  if (e.original) original.file(e.original.name, await e.original.arrayBuffer());
   for (const doc of e.docs) {
-    const base = doc.numero + (variosTomadores ? `_${slug(doc.tomador.nombre).slice(0, 40)}` : '');
-    progreso?.(`Generando ${doc.numero}${variosTomadores ? ` · ${doc.tomador.nombre}` : ''}…`);
+    progreso?.(`Generando ${doc.numero}${varios ? ` · ${doc.tomador.nombre}` : ''}…`);
+    const cola = varios ? ` - ${doc.tomador.nombre}` : '';
+    const recibo = paraNombre(doc.serie === 'RC'
+      ? `${doc.numero} RECIBO ${flota} ${doc.nombrePeriodo}${cola}`
+      : `${doc.numero} RECIBO REGULARIZACIÓN ${flota} ${doc.nombrePeriodoCorto}${cola}`);
+    const libro = paraNombre(`RECIBOS ${doc.serie === 'RW' ? 'REGULARIZACIÓN ' : ''}${doc.nombrePeriodo} ${flota}${cola}`);
     const cuerpo = cuerpoRecibo(e.cfg, doc);
-    const [pdf, docx, anexo, interno] = await Promise.all([
+    const [pdf, docx, excel] = await Promise.all([
       pedir('/api/flotas/recibos/factura-pdf', cuerpo),
       pedir('/api/flotas/recibos/factura', cuerpo),
-      excelDetalle(doc, e.cfg, false),
-      excelDetalle(doc, e.cfg, true),
+      excelRecibos(doc, e.cfg),
     ]);
-    enviar.file(`${base}.pdf`, pdf);
-    enviar.file(`${base}.docx`, docx);
-    enviar.file(`${base}_ANEXO.xlsx`, anexo);
-    trabajo.file(`${base}_DETALLE_INTERNO.xlsx`, interno);
+    trabajo.file(`${libro}.xlsx`, excel);
+    trabajo.file(`${recibo}.docx`, docx);
+    enviar.file(`${doc.numero} ${libro}.xlsx`, excel);
+    enviar.file(`${recibo}.pdf`, pdf);
   }
-  trabajo.file('auditoria.json', JSON.stringify({
-    flota: e.cfg.flota, emitido_por: e.usuario, emitido_en: e.emitidoEn, configuracion: e.cfg,
-    documentos: e.docs.map(d => ({
-      id: d.id, numero: d.numero, serie: d.serie, tomador: d.tomador, vencimiento: d.vencimiento, texto_periodo: d.textoPeriodo,
-      archivo: d.archivo, sha256: d.sha256, filas_excluidas: d.excluidas, totales: d.resumen, avisos: d.avisos, cambios: d.cambios,
-    })),
-  }, null, 2));
   progreso?.('Comprimiendo…');
   return { blob: await zip.generateAsync({ type: 'blob' }), nombre: `${raiz}.zip` };
 }

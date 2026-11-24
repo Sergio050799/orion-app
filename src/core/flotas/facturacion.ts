@@ -1,19 +1,21 @@
-// ─── FACTURACIÓN DE FLOTAS · recibos RC y RW ─────────────────────────────────
+// ─── FACTURACIÓN DE FLOTAS · recibos de emisión y de regularización ──────────
 //
-// Reglas de negocio (24/11/2026):
-//   · RC = emisión, renovación o fracción ordinaria. RW = regularización. Cada serie es UN recibo con la suma
-//     algebraica de sus líneas (las anulaciones restan). La serie la elige quien sube el archivo: nunca se
-//     deduce del signo ni de la columna «Tipo».
-//   · Número visible = serie + DDMMAAAA del vencimiento de la fracción (no la fecha de hoy ni el corredor).
+// Reglas de negocio (24/11/2026, tal como se hace a mano):
+//   · Dos operaciones SEPARADAS, cada una con su Excel de MMT y su recibo: EMISIÓN (emisión, renovación o
+//     fracción; incluye sus suplementos) y REGULARIZACIÓN (todo lo que trae el archivo: altas, suplementos,
+//     anulaciones…). Cada recibo es la suma algebraica de sus líneas. La operación la elige quien sube el archivo.
+//   · Número del recibo = «R» + inicial del corredor + DDMMAAAA (RW13012026 para Willis). La fecha es la del
+//     informe en la emisión y el último día de la fracción en la regularización; se puede corregir.
 //   · Prima neta, impuestos e importe se SUMAN del Excel; no se recalculan impuestos.
-//   · Comisión = prima neta × % del corredor, redondeada a céntimos POR LÍNEA (mitades hacia fuera);
-//     líquido = importe − comisión. Después se suman las líneas. La comisión no va en el recibo.
+//   · Comisión = % del corredor sobre la prima neta, SIN redondear línea a línea (como la fórmula de Excel);
+//     el total se redondea al céntimo. Líquido = importe − comisión. La comisión no va en el recibo.
 //   · Los periodos salen del ciclo de la flota (inicio + periodicidad), no de trimestres naturales.
-//   · Bloquean: recibo repetido, neta + impuesto ≠ importe, fila incompleta, tomador sin reconocer.
-//     Las fechas que no cuadran con la fracción son avisos (hay que revisarlos, no impiden emitir).
+//   · Bloquean: recibo repetido en el archivo, neta + impuesto ≠ importe, fila incompleta, tomador sin reconocer.
+//     Las fechas que caen fuera de la fracción son avisos (hay que revisarlos, no impiden emitir).
 //
-// Módulo puro: sin React, sin red y sin fecha del sistema. Importes en euros con 2 decimales exactos.
+// Módulo puro: sin React, sin red y sin fecha del sistema.
 
+/** RC = emisión / fracción · RW = regularización (códigos internos; el número visible es R + inicial del corredor). */
 export type Serie = 'RC' | 'RW';
 
 export interface LineaRecibo {
@@ -32,6 +34,9 @@ export interface LineaRecibo {
     inicioPoliza: string;
     vencimientoPoliza: string;
     tomador: string;
+    /** estado del recibo en MMT (Liquidado, Anulado, Pendiente de cobro…), solo informativo */
+    estado: string;
+    /** comisión de la línea SIN redondear al céntimo (como la fórmula de Excel) */
     comision: number;
     liquido: number;
 }
@@ -43,6 +48,8 @@ export interface LecturaRecibos {
     /** fila de la cabecera (1 = primera) */
     filaCabecera: number;
     hoja: string;
+    /** «Fecha informe - dd/mm/aaaa» de la cabecera del Excel de MMT (ISO; '' si no viene) */
+    fechaInforme: string;
     errores: string[];
 }
 
@@ -66,19 +73,17 @@ export function importeDe(v: unknown): number | null {
     return Number.isFinite(n) ? r2(n) : null;
 }
 
-/** Comisión de una línea: neta × % con el redondeo de la regla (exacto, sin errores de coma flotante). */
+const milesimasDe = (pct: number) => Math.round(Math.abs(pct) * 1000);            // 10 % → 10000
+
+/** Comisión de una línea: neta × %, sin redondear al céntimo (3,408 € para 34,08 € al 10 %). */
 export function comisionDe(neta: number, pct: number): number {
-    const c = Math.abs(aCentimos(neta));
-    const milesimas = Math.round(Math.abs(pct) * 1000);            // 10 % → 10000
-    const num = c * milesimas, den = 100000;
-    const cent = Math.floor((2 * num + den) / (2 * den));           // mitad hacia fuera
-    return deCentimos((neta < 0) !== (pct < 0) ? -cent : cent);
+    return (aCentimos(neta) * milesimasDe(pct) * (pct < 0 ? -1 : 1)) / 1e7;
 }
 
 export function conComision(lineas: LineaRecibo[], pct: number): LineaRecibo[] {
     return lineas.map(l => {
         const comision = comisionDe(l.neta, pct);
-        return { ...l, comision, liquido: deCentimos(aCentimos(l.importe) - aCentimos(comision)) };
+        return { ...l, comision, liquido: Number((l.importe - comision).toFixed(5)) };
     });
 }
 
@@ -90,21 +95,28 @@ export interface ResumenSerie {
     negativos: { recibos: number; importe: number };
 }
 
-export function resumir(lineas: LineaRecibo[]): ResumenSerie {
-    let neta = 0, impuesto = 0, importe = 0, comision = 0, liquido = 0, pos = 0, posN = 0, neg = 0, negN = 0;
+/**
+ * Totales de un recibo. La comisión es el % del corredor sobre el TOTAL de prima neta, redondeado al céntimo
+ * (igual que sumar la columna de Excel sin redondear cada línea); el líquido, importe − comisión.
+ */
+export function resumir(lineas: LineaRecibo[], pct: number): ResumenSerie {
+    let neta = 0, impuesto = 0, importe = 0, pos = 0, posN = 0, neg = 0, negN = 0;
     const veh = new Set<string>();
     for (const l of lineas) {
         const i = aCentimos(l.importe);
         neta += aCentimos(l.neta); impuesto += aCentimos(l.impuesto); importe += i;
-        comision += aCentimos(l.comision); liquido += aCentimos(l.liquido);
         if (i > 0) { pos += i; posN++; } else if (i < 0) { neg += i; negN++; }
         const m = l.riesgo.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
         if (m) veh.add(m);
     }
+    // céntimos de comisión = neta × milésimas / 100000, mitad hacia fuera, en enteros exactos
+    const num = Math.abs(neta) * milesimasDe(pct), den = 100000;
+    const comAbs = Math.floor((2 * num + den) / (2 * den));
+    const comision = (neta < 0) !== (pct < 0) ? -comAbs : comAbs;
     return {
         recibos: lineas.length, vehiculos: veh.size,
         neta: deCentimos(neta), impuesto: deCentimos(impuesto), importe: deCentimos(importe),
-        comision: deCentimos(comision), liquido: deCentimos(liquido),
+        comision: deCentimos(comision), liquido: deCentimos(importe - comision),
         positivos: { recibos: posN, importe: deCentimos(pos) }, negativos: { recibos: negN, importe: deCentimos(neg) },
     };
 }
@@ -150,7 +162,7 @@ export const MESES_PERIODICIDAD: Record<string, number> = { mensual: 1, bimestra
 export const NOMBRE_PERIODICIDAD: Record<number, string> = { 1: 'Mensual', 2: 'Bimestral', 3: 'Trimestral', 4: 'Cuatrimestral', 6: 'Semestral', 12: 'Anual' };
 
 export interface Fraccion {
-    /** vencimiento de la fracción = primer día cubierto (ISO) */
+    /** primer día cubierto (ISO) */
     desde: string;
     /** último día cubierto (ISO) */
     hasta: string;
@@ -180,40 +192,52 @@ export function fraccionesDelCiclo(inicio: Dia, meses: number): Fraccion[] {
     return out;
 }
 
-/** La fracción que vence en `vencimiento` (null si esa fecha no es un vencimiento del ciclo de la flota). */
-export function fraccionDe(ancla: Dia, meses: number, vencimiento: Dia): Fraccion | null {
-    const ciclo = inicioCicloDe(ancla, vencimiento);
-    return fraccionesDelCiclo(ciclo, meses).find(f => f.desde === isoDe(vencimiento)) ?? null;
+/** La fracción que empieza en `inicio` (null si esa fecha no es un inicio de fracción del ciclo de la flota). */
+export function fraccionDe(ancla: Dia, meses: number, inicio: Dia): Fraccion | null {
+    const ciclo = inicioCicloDe(ancla, inicio);
+    return fraccionesDelCiclo(ciclo, meses).find(f => f.desde === isoDe(inicio)) ?? null;
 }
 
-/** La fracción inmediatamente anterior (la que se regulariza al vencer `f`). */
-export function fraccionAnterior(ancla: Dia, meses: number, f: Fraccion): Fraccion | null {
-    const d = diaDe(f.desde)!;
-    return fraccionDe(ancla, meses, moverMeses(inicioCicloDe(ancla, d), f.indice * meses - meses));
+/** La fracción del ciclo en la que cae una fecha (para proponer el periodo a partir de las fechas del Excel). */
+export function fraccionQueContiene(ancla: Dia, meses: number, fecha: Dia): Fraccion | null {
+    const iso = isoDe(fecha);
+    return fraccionesDelCiclo(inicioCicloDe(ancla, fecha), meses).find(f => iso >= f.desde && iso <= f.hasta) ?? null;
 }
 
 const ORDINAL = ['PRIMER', 'SEGUNDO', 'TERCER', 'CUARTO', 'QUINTO', 'SEXTO'];
 const MES = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
 const UNIDAD: Record<number, string> = { 2: 'BIMESTRE', 3: 'TRIMESTRE', 4: 'CUATRIMESTRE', 6: 'SEMESTRE' };
 
-function nombreFraccion(f: Fraccion, meses: number, corto: boolean): string {
+/** «PRIMER TRIMESTRE 2026», «4º TRIMESTRE 2026» (corto), «ANUALIDAD 2026», «MES DE ENERO 2026». */
+export function nombreFraccion(f: Fraccion, meses: number, corto = false): string {
     const d = diaDe(f.desde)!;
     if (meses === 12) return `ANUALIDAD ${d.y}`;
     if (meses === 1) return d.d === 1 ? `MES DE ${MES[d.m - 1]} ${d.y}` : `MENSUALIDAD ${f.indice + 1} ${d.y}`;
     return `${corto ? `${f.indice + 1}º` : ORDINAL[f.indice] ?? `${f.indice + 1}º`} ${UNIDAD[meses]} ${d.y}`;
 }
 
-/** Texto del periodo que se imprime en el recibo (editable después por el usuario). */
-export function textoPeriodo(serie: Serie, meses: number, fraccion: Fraccion, anterior: Fraccion | null): string {
-    if (serie === 'RC') return `${nombreFraccion(fraccion, meses, false)}: ${esDe(fraccion.desde)} al ${esDe(fraccion.hasta)}`;
-    const a = anterior ?? fraccion;
-    return `REGULARIZACIÓN ${nombreFraccion(a, meses, true)}: Recibos del ${esDe(a.desde)} al ${esDe(a.hasta)}`;
+/** Línea en negrita que se imprime en el recibo, encima de los importes (el usuario puede corregirla). */
+export function textoPeriodo(serie: Serie, meses: number, fraccion: Fraccion): string {
+    if (serie === 'RC') return `${nombreFraccion(fraccion, meses)}: ${esDe(fraccion.desde)} al ${esDe(fraccion.hasta)}`;
+    return `REGULARIZACIÓN ${nombreFraccion(fraccion, meses, true)}: Recibos del ${esDe(fraccion.desde)} al ${esDe(fraccion.hasta)}`;
 }
 
-/** RC01102026 / RW01102026 */
-export function numeroRecibo(serie: Serie, vencimientoIso: string): string {
-    const d = diaDe(vencimientoIso);
-    return d ? `${serie}${String(d.d).padStart(2, '0')}${String(d.m).padStart(2, '0')}${d.y}` : serie;
+/** Inicial del corredor para el número de recibo (primera letra o cifra de su nombre). */
+export function inicialCorredor(nombre: string): string {
+    return (nombre.normalize('NFD').replace(/[̀-ͯ]/g, '').match(/[A-Za-z0-9]/)?.[0] ?? 'X').toUpperCase();
+}
+
+/** Número del recibo: «R» + inicial del corredor + DDMMAAAA de la fecha del documento (RW13012026). */
+export function numeroRecibo(corredor: string, fechaIso: string): string {
+    const d = diaDe(fechaIso);
+    const pre = `R${inicialCorredor(corredor)}`;
+    return d ? `${pre}${String(d.d).padStart(2, '0')}${String(d.m).padStart(2, '0')}${d.y}` : pre;
+}
+
+/** Fecha del documento por defecto: la del informe en la emisión; el último día de la fracción en la regularización. */
+export function fechaDocumento(serie: Serie, fraccion: Fraccion, fechaInforme: string): string {
+    if (serie === 'RW') return fraccion.hasta;
+    return fechaInforme || fraccion.desde;
 }
 
 // ─── Lectura del Excel ───────────────────────────────────────────────────────
@@ -230,18 +254,20 @@ const ALIAS: Record<string, string[]> = {
     neta: ['pneta', 'primaneta'],
     impuesto: ['impuesto', 'impuestos'],
     periodicidad: ['periodicidad', 'formadepago'],
-    inicioPoliza: ['fechainiciopoliza', 'fecinicio poliza', 'feciniciopoliza', 'iniciopoliza'],
+    inicioPoliza: ['fechainiciopoliza', 'feciniciopoliza', 'iniciopoliza'],
     vencimientoPoliza: ['fechavencimiento', 'fecvencimiento', 'vencimiento'],
     tomador: ['tomador'],
+    estado: ['estado'],
 };
 const OBLIGATORIAS = ['poliza', 'recibo', 'riesgo', 'importe', 'neta', 'impuesto', 'tomador'];
 
 /**
  * Lee la tabla de recibos de un libro (una matriz por hoja, tal como la da la librería de Excel).
- * La cabecera se busca en las 15 primeras filas; títulos, blancos y totales se excluyen.
+ * Vale el informe de MMT tal cual sale y también uno ya trabajado. La cabecera se busca en las 15 primeras
+ * filas; títulos, blancos y totales se excluyen.
  */
 export function leerRecibos(hojas: Array<{ nombre: string; filas: unknown[][] }>): LecturaRecibos {
-    const vacio = (e: string): LecturaRecibos => ({ lineas: [], excluidas: [], filaCabecera: 0, hoja: '', errores: [e] });
+    const vacio = (e: string): LecturaRecibos => ({ lineas: [], excluidas: [], filaCabecera: 0, hoja: '', fechaInforme: '', errores: [e] });
     const candidatas: Array<{ hoja: string; filas: unknown[][]; i: number; etiquetas: string[] }> = [];
     for (const h of hojas) {
         for (let i = 0; i < Math.min(15, h.filas.length); i++) {
@@ -253,15 +279,24 @@ export function leerRecibos(hojas: Array<{ nombre: string; filas: unknown[][] }>
     if (candidatas.length > 1) return vacio('El archivo tiene más de una tabla de recibos. Deja una sola hoja de recibos por archivo.');
     const { hoja, filas, i: cab, etiquetas } = candidatas[0];
 
+    // «Fecha informe - 13/01/2026», en las filas de título
+    let fechaInforme = '';
+    for (let i = 0; i < cab && !fechaInforme; i++) {
+        for (const c of filas[i] ?? []) {
+            const m = String(c ?? '').match(/fecha\s+informe\D*(\d{1,2}[/.-]\d{1,2}[/.-]\d{4})/i);
+            if (m) { const d = diaDe(m[1]); if (d) fechaInforme = isoDe(d); break; }
+        }
+    }
+
     const col: Record<string, number> = {};
     const errores: string[] = [];
     for (const [clave, opciones] of Object.entries(ALIAS)) {
-        const idx = etiquetas.map((e, i) => (opciones.map(normalizar).includes(e) ? i : -1)).filter(i => i >= 0);
-        if (idx.length > 1) errores.push(`La columna «${clave}» aparece más de una vez en la cabecera.`);
+        const idx = etiquetas.map((e, i) => (opciones.includes(e) ? i : -1)).filter(i => i >= 0);
+        if (idx.length > 1 && clave !== 'estado') errores.push(`La columna «${clave}» aparece más de una vez en la cabecera.`);
         if (idx.length > 0) col[clave] = idx[0];
     }
     const faltan = OBLIGATORIAS.filter(k => col[k] === undefined);
-    if (faltan.length > 0) return { lineas: [], excluidas: [], filaCabecera: cab + 1, hoja, errores: [...errores, `Faltan columnas en el Excel: ${faltan.join(', ')}.`] };
+    if (faltan.length > 0) return { lineas: [], excluidas: [], filaCabecera: cab + 1, hoja, fechaInforme, errores: [...errores, `Faltan columnas en el Excel: ${faltan.join(', ')}.`] };
 
     const txt = (r: unknown[], k: string) => (col[k] === undefined ? '' : String(r[col[k]] ?? '').trim());
     const fechaIso = (r: unknown[], k: string) => { if (col[k] === undefined) return ''; const d = diaDe(typeof r[col[k]] === 'string' ? (r[col[k]] as string).trim() : r[col[k]]); return d ? isoDe(d) : ''; };
@@ -271,7 +306,7 @@ export function leerRecibos(hojas: Array<{ nombre: string; filas: unknown[][] }>
         const n = i + 1;
         if (!r.some(c => String(c ?? '').trim() !== '')) continue;                       // fila en blanco
         const poliza = txt(r, 'poliza'), recibo = txt(r, 'recibo'), riesgo = txt(r, 'riesgo');
-        // Fila de totales: sin recibo ni matrícula, y en «Póliza» nada o un contador numérico
+        // Fila de totales o de resumen: sin recibo ni matrícula, y en «Póliza» nada o un contador numérico
         if (!recibo && !riesgo && (!poliza || typeof r[col.poliza] === 'number')) { excluidas.push(n); continue; }
         if (!poliza || !recibo) { errores.push(`Fila ${n}: falta la póliza o el número de recibo.`); continue; }
         const neta = importeDe(r[col.neta]), impuesto = importeDe(r[col.impuesto]), importe = importeDe(r[col.importe]);
@@ -279,11 +314,11 @@ export function leerRecibos(hojas: Array<{ nombre: string; filas: unknown[][] }>
         lineas.push({
             fila: n, poliza, recibo, riesgo, fecha: fechaIso(r, 'fecha'), tipo: txt(r, 'tipo'), neta, impuesto, importe,
             periodicidad: txt(r, 'periodicidad'), inicioPoliza: fechaIso(r, 'inicioPoliza'), vencimientoPoliza: fechaIso(r, 'vencimientoPoliza'),
-            tomador: txt(r, 'tomador'), comision: 0, liquido: importe,
+            tomador: txt(r, 'tomador'), estado: txt(r, 'estado'), comision: 0, liquido: importe,
         });
     }
     if (lineas.length === 0 && errores.length === 0) errores.push('El archivo no tiene recibos debajo de la cabecera.');
-    return { lineas, excluidas, filaCabecera: cab + 1, hoja, errores };
+    return { lineas, excluidas, filaCabecera: cab + 1, hoja, fechaInforme, errores };
 }
 
 // ─── Tomadores de facturación ────────────────────────────────────────────────
@@ -306,47 +341,33 @@ export function tomadorDe(nombreExcel: string, tomadores: TomadorFacturacion[]):
 
 // ─── Comprobaciones ──────────────────────────────────────────────────────────
 
-export interface Comprobacion { errores: string[]; avisos: string[] }
-
 const lista = (xs: string[], max = 6) => xs.slice(0, max).join(', ') + (xs.length > max ? ` y ${xs.length - max} más` : '');
 
-/** Errores que bloquean la emisión: recibos repetidos (dentro de una serie o entre las dos) y descuadres. */
-export function comprobarImportes(series: Partial<Record<Serie, LineaRecibo[]>>): string[] {
+/** Errores que bloquean la emisión: recibos repetidos en el archivo y líneas descuadradas. */
+export function comprobarImportes(lineas: LineaRecibo[]): string[] {
     const errores: string[] = [];
-    const visto = new Map<string, Serie>();
-    const rep = new Set<string>(), cruz = new Set<string>();
-    for (const s of ['RC', 'RW'] as Serie[]) {
-        for (const l of series[s] ?? []) {
-            const previa = visto.get(l.recibo);
-            if (previa === s) rep.add(l.recibo); else if (previa) cruz.add(l.recibo); else visto.set(l.recibo, s);
-            if (aCentimos(l.neta) + aCentimos(l.impuesto) !== aCentimos(l.importe)) {
-                errores.push(`${s} · fila ${l.fila} (recibo ${l.recibo}): prima neta + impuesto no coincide con el importe.`);
-            }
+    const visto = new Set<string>(), rep = new Set<string>();
+    for (const l of lineas) {
+        if (visto.has(l.recibo)) rep.add(l.recibo); else visto.add(l.recibo);
+        if (aCentimos(l.neta) + aCentimos(l.impuesto) !== aCentimos(l.importe)) {
+            errores.push(`Fila ${l.fila} (recibo ${l.recibo}): prima neta + impuesto no coincide con el importe.`);
         }
     }
-    if (rep.size > 0) errores.push(`Recibos repetidos en el mismo archivo: ${lista([...rep])}.`);
-    if (cruz.size > 0) errores.push(`Recibos que están a la vez en RC y en RW: ${lista([...cruz])}.`);
+    if (rep.size > 0) errores.push(`Recibos repetidos en el archivo: ${lista([...rep])}.`);
     return errores;
 }
 
 /** Avisos de fechas: no bloquean, pero hay que revisarlos antes de emitir. */
-export function avisosDeFechas(serie: Serie, lineas: LineaRecibo[], fraccion: Fraccion, anterior: Fraccion | null, meses: number): string[] {
+export function avisosDeFechas(lineas: LineaRecibo[], fraccion: Fraccion, meses: number): string[] {
     const avisos: string[] = [];
     const esperada = normalizar(NOMBRE_PERIODICIDAD[meses] ?? '');
     const fuera: string[] = [], venc: string[] = [], per: string[] = [];
     for (const l of lineas) {
-        if (l.fecha) {
-            if (serie === 'RC' && l.fecha !== fraccion.desde) fuera.push(l.recibo);
-            if (serie === 'RW' && anterior && !(l.fecha >= anterior.desde && l.fecha < fraccion.desde)) fuera.push(l.recibo);
-        }
-        if (l.vencimientoPoliza && l.vencimientoPoliza !== fraccion.renovacion && !(serie === 'RW' && fraccion.indice === 0 && l.vencimientoPoliza === fraccion.inicioCiclo)) venc.push(l.recibo);
+        if (l.fecha && !(l.fecha >= fraccion.desde && l.fecha <= fraccion.hasta)) fuera.push(l.recibo);
+        if (l.vencimientoPoliza && l.vencimientoPoliza !== fraccion.renovacion) venc.push(l.recibo);
         if (l.periodicidad && esperada && normalizar(l.periodicidad) !== esperada) per.push(l.recibo);
     }
-    if (fuera.length > 0) {
-        avisos.push(serie === 'RC'
-            ? `${fuera.length} ${fuera.length === 1 ? 'recibo tiene' : 'recibos tienen'} una fecha distinta del vencimiento de la fracción (${esDe(fraccion.desde)}): ${lista(fuera)}.`
-            : `${fuera.length} ${fuera.length === 1 ? 'recibo queda' : 'recibos quedan'} fuera del periodo que se regulariza (${esDe(anterior!.desde)} al ${esDe(anterior!.hasta)}): ${lista(fuera)}.`);
-    }
+    if (fuera.length > 0) avisos.push(`${fuera.length} ${fuera.length === 1 ? 'recibo tiene' : 'recibos tienen'} fecha fuera del periodo elegido (${esDe(fraccion.desde)} al ${esDe(fraccion.hasta)}): ${lista(fuera)}.`);
     if (venc.length > 0) avisos.push(`${venc.length} ${venc.length === 1 ? 'póliza vence' : 'pólizas vencen'} en una fecha distinta de la renovación de la flota (${esDe(fraccion.renovacion)}): ${lista(venc)}.`);
     if (per.length > 0) avisos.push(`${per.length} ${per.length === 1 ? 'recibo trae' : 'recibos traen'} una periodicidad distinta de la de la flota (${NOMBRE_PERIODICIDAD[meses]}): ${lista(per)}.`);
     return avisos;

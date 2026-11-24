@@ -75,6 +75,12 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+    // Al borrar una flota queda registrado quién lo hace (el usuario sale de la sesión, no del navegador)
+    if (body?.action === 'delete') {
+      const tok = req.cookies.get('orion_session')?.value ?? '';
+      const dot = tok.lastIndexOf('.');
+      body.usuario = dot < 0 ? '' : (tok.slice(0, dot).split(':')[0] ?? '');
+    }
     const res  = await apiPost('/carpetas', body);
     const data = await res.json();
     if (!res.ok) return NextResponse.json(data, { status: res.status });
