@@ -9,6 +9,7 @@ import {
 import {
   listarCarpetas, guardarCarpeta, cargarCarpetasDelServidor, leerCarpetasDeSessionStorage, type FlotaCarpeta,
 } from '@/core/flotas';
+import { esCifValido, normalizarCif } from '@/core/validators/cif';
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
@@ -62,6 +63,18 @@ const mean = (a: number[]) => a.length ? sum(a) / a.length : 0;
 const wmean = (R: CorredorRow[]) => { const t = sum(R.map(b => b.n)); return t ? sum(R.map(b => num(b.comisionBase) * b.n)) / t : 0; };
 const norm = (t: string) => String(t).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 const sucName = (k: string) => SUC[k] ?? 'Sin asignar';
+// Nombre normalizado para detectar duplicados: sin acentos, mayúsculas, espacios colapsados (no se eliminan).
+const normNombre = (t: string) => String(t ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/\s+/g, ' ').trim();
+
+// Devuelve `value` con retardo; el input sigue ligado al valor inmediato. Vaciar es instantáneo.
+function useDebounced(value: string, ms = 300): string {
+  const [deb, setDeb] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setDeb(value), ms);
+    return () => clearTimeout(t);
+  }, [value, ms]);
+  return value ? deb : '';
+}
 
 // ─── Helpers de datos ─────────────────────────────────────────────────────────
 
@@ -106,7 +119,7 @@ function enrichCorredor(c: Corredor, allCarpetas: FlotaCarpeta[], scope: string)
     veh: flotas.reduce((s, f) => s + getVehicleCount(f), 0),
     prima: flotas.reduce((s, f) => s + primaDeFlota(f), 0),
     tasa: nT > 0 ? cT / nT * 100 : 0,
-    ext: (c as unknown as Record<string, number>)['comisionExtra'] ?? 0,
+    ext: c.comisionExtra ?? 0,
   };
 }
 
@@ -135,8 +148,8 @@ function Toast({ msg, onDone }: { msg: string | null; onDone: () => void }) {
 
 // ─── Componentes del drawer ───────────────────────────────────────────────────
 
-function DrawerKpi({ kpiKey, rows, n, totalFlotasN }: {
-  kpiKey: string; rows: CorredorRow[]; n: number; totalFlotasN: number;
+function DrawerKpi({ kpiKey, rows, n }: {
+  kpiKey: string; rows: CorredorRow[]; n: number;
 }) {
   const R = rows;
   const S = [...R].sort((x, y) => y.n - x.n || x.nombre.localeCompare(y.nombre, 'es'));
@@ -332,7 +345,7 @@ function FormCorredor({ brokerId, corredores, onSave, onCancel, showToast }: {
   const [com, setCom] = useState(broker?.comercial ?? '');
   const [cif, setCif] = useState(broker?.cif ?? '');
   const [pct, setPct] = useState(broker ? String(broker.comisionBase) : '');
-  const [ext, setExt] = useState(broker ? String((broker as unknown as Record<string, number>)['comisionExtra'] ?? 0) : '');
+  const [ext, setExt] = useState(broker ? String(broker.comisionExtra ?? 0) : '');
   const [per, setPer] = useState<Periodicidad>(broker?.periodicidad ?? 'mensual');
   const [email, setEmail] = useState(broker?.email ?? '');
   const [tel, setTel] = useState(broker?.telefono ?? '');
@@ -361,22 +374,33 @@ function FormCorredor({ brokerId, corredores, onSave, onCancel, showToast }: {
     const extN = parseFloat(ext.replace(',', '.')) || 0;
     if (pctN < 0 || pctN > 100) { setErr('La comisión base debe estar entre 0 y 100.'); return; }
     if (extN < 0 || extN > 100) { setErr('La comisión extra debe estar entre 0 y 100.'); return; }
-    const cifU = cif.toUpperCase().replace(/\s/g, '');
-    if (cifU && corredores.some(c => c.id !== brokerId && c.cif.toUpperCase() === cifU)) {
+    const cifU = normalizarCif(cif);
+    const cifCambiado = !broker || cifU !== normalizarCif(broker.cif ?? '');
+    // CIF vacío permitido (hay corredores reales sin CIF). Si se informa o se cambia, debe ser un CIF/NIF/NIE válido.
+    if (cifU && cifCambiado && !esCifValido(cifU)) {
+      setErr('El CIF/NIF/NIE no es válido. Revísalo o déjalo vacío.'); return;
+    }
+    if (cifU && corredores.some(c => c.id !== brokerId && normalizarCif(c.cif ?? '') === cifU)) {
       setErr('Ya existe un corredor con ese CIF.'); return;
+    }
+    // Duplicado por nombre normalizado cuando el CIF no permite distinguirlos (alguno de los dos sin CIF).
+    // En edición sólo se comprueba si cambia el nombre o se vacía el CIF, para no bloquear fichas ya existentes.
+    const nomN = normNombre(nombre);
+    const nombreCambiado = !broker || nomN !== normNombre(broker.nombre);
+    if (nombreCambiado || (cifCambiado && !cifU)) {
+      const dup = corredores.find(c => c.id !== brokerId && normNombre(c.nombre) === nomN && (!cifU || !normalizarCif(c.cif ?? '')));
+      if (dup) { setErr(`Ya existe un corredor con ese nombre (${dup.codigo || dup.nombre}).`); return; }
     }
     if (email && !/^\S+@\S+\.\S+$/.test(email)) { setErr('El email no parece válido.'); return; }
     setErr('');
     if (broker) {
-      const updated: Corredor = { ...broker, nombre: nombre.trim(), cif: cifU, sucursal: suc as Sucursal || undefined, comercial: com || undefined, comisionBase: pctN, periodicidad: per, email, telefono: tel, codigo: cod || broker.codigo, idPerceptor: idp || undefined, observaciones: obs };
-      (updated as unknown as Record<string, unknown>)['comisionExtra'] = extN;
+      const updated: Corredor = { ...broker, nombre: nombre.trim(), cif: cifU, sucursal: suc as Sucursal || undefined, comercial: com || undefined, comisionBase: pctN, periodicidad: per, email, telefono: tel, codigo: cod || broker.codigo, idPerceptor: idp || undefined, observaciones: obs, comisionExtra: extN };
       guardarCorredor(updated);
       showToast('Cambios guardados.');
       onSave(updated);
     } else {
       const nextNum = corredores.length + 1;
-      const nuevo = crearCorredor({ nombre: nombre.trim(), cif: cifU, sucursal: suc as Sucursal || undefined, comercial: com || undefined, comisionBase: pctN, periodicidad: per, formaPago: '', contacto: '', email, telefono: tel, observaciones: obs, codigo: cod || `COR-${String(nextNum).padStart(3, '0')}`, idPerceptor: idp || undefined });
-      (nuevo as unknown as Record<string, unknown>)['comisionExtra'] = extN;
+      const nuevo = crearCorredor({ nombre: nombre.trim(), cif: cifU, sucursal: suc as Sucursal || undefined, comercial: com || undefined, comisionBase: pctN, periodicidad: per, formaPago: '', contacto: '', email, telefono: tel, observaciones: obs, codigo: cod || `COR-${String(nextNum).padStart(3, '0')}`, idPerceptor: idp || undefined, comisionExtra: extN });
       showToast('Corredor creado: ' + nombre.trim() + '.');
       onSave(nuevo);
     }
@@ -523,13 +547,19 @@ export default function CorredoresPage() {
     setCorredores(listarCorredores());
     setCarpetas(listarCarpetas());
     let cancelled = false;
+    let avisado = false; // un solo aviso por racha de fallos (hay polling cada 30 s)
     const cargar = () => {
       if (cancelled) return;
       Promise.all([cargarCorredoresDelServidor(), cargarCarpetasDelServidor(undefined, true)]).then(([cs, fs]) => {
         if (cancelled) return;
         setCorredores([...cs].sort((a, b) => a.nombre.localeCompare(b.nombre)));
         setCarpetas(fs);
-      }).catch(() => {});
+        avisado = false;
+      }).catch(() => {
+        if (cancelled || avisado) return;
+        avisado = true;
+        showToast('No se pudo conectar con el servidor. Los datos pueden no estar actualizados.');
+      });
     };
     cargar();
     const es = new EventSource('/api/flotas/eventos');
@@ -537,7 +567,7 @@ export default function CorredoresPage() {
     es.onerror = () => es.close();
     const interval = setInterval(cargar, 30_000);
     return () => { cancelled = true; clearInterval(interval); es.close(); };
-  }, []);
+  }, [showToast]);
 
   // Derivar filas enriquecidas
   const allRows = useMemo<CorredorRow[]>(() =>
@@ -623,16 +653,17 @@ export default function CorredoresPage() {
     return '';
   };
 
+  const queryDeb = useDebounced(query);
   const filteredDir = useMemo(() => {
     let R = rows;
-    if (query) { const q = norm(query); R = R.filter(b => norm([b.nombre, b.cif, b.comercial ?? '', b.codigo ?? '', b.idPerceptor ?? '', sucName(b.sucursal ?? '')].join(' ')).includes(q)); }
+    if (queryDeb) { const q = norm(queryDeb); R = R.filter(b => norm([b.nombre, b.cif, b.comercial ?? '', b.codigo ?? '', b.idPerceptor ?? '', sucName(b.sucursal ?? '')].join(' ')).includes(q)); }
     R = [...R].sort((a, b) => {
       const x = sortVal(a, sortKey), y = sortVal(b, sortKey);
       const c = typeof x === 'string' ? x.localeCompare(y as string, 'es') : (x as number) - (y as number);
       return (c || norm(a.nombre).localeCompare(norm(b.nombre), 'es')) * sortDir;
     });
     return R;
-  }, [rows, query, sortKey, sortDir]);
+  }, [rows, queryDeb, sortKey, sortDir]);
 
   const dirPage = filteredDir.slice(0, shown);
 
@@ -707,12 +738,18 @@ export default function CorredoresPage() {
   const brokerListQ = dLq ? brokerListAll.filter(f => norm(f.nombre || '').includes(norm(dLq)) || norm(SN[normalizeEstado(f.estado)] || '').includes(norm(dLq))) : brokerListAll;
   const brokerListPart = brokerListQ.slice(0, dLshown);
 
-  const dPq = brokerDrawer?.pq ?? '';
+  const dPq = useDebounced(brokerDrawer?.pq ?? '');
   const dPshown = brokerDrawer?.pshown ?? 8;
-  const pickAll = brokerDrawer?.pick ? carpetas.filter(f => {
-    if (f.corredor_id === brokerRow?.id) return false;
-    return !dPq || norm(f.nombre || '').includes(norm(dPq));
-  }).sort((x, y) => (!x.corredor_id ? 0 : 1) - (!y.corredor_id ? 0 : 1) || (x.nombre || '').localeCompare(y.nombre || '', 'es')) : [];
+  const pickOpen = !!brokerDrawer?.pick;
+  const pickBrokerId = brokerRow?.id;
+  const pickAll = useMemo(() => {
+    if (!pickOpen) return [];
+    const q = dPq ? norm(dPq) : '';
+    return carpetas.filter(f => {
+      if (f.corredor_id === pickBrokerId) return false;
+      return !q || norm(f.nombre || '').includes(q);
+    }).sort((x, y) => (!x.corredor_id ? 0 : 1) - (!y.corredor_id ? 0 : 1) || (x.nombre || '').localeCompare(y.nombre || '', 'es'));
+  }, [pickOpen, pickBrokerId, carpetas, dPq]);
   const pickPart = pickAll.slice(0, dPshown);
 
   // ─── Render ──────────────────────────────────────────────────────────────────
@@ -960,7 +997,7 @@ export default function CorredoresPage() {
 
           {/* KPI detail */}
           {drawer.mode === 'kpi' && (
-            <DrawerKpi kpiKey={drawer.key} rows={rows} n={kpiN} totalFlotasN={kpiN} />
+            <DrawerKpi kpiKey={drawer.key} rows={rows} n={kpiN} />
           )}
 
           {/* Broker detail */}

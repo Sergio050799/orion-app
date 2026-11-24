@@ -5,7 +5,7 @@
 // todas las garantías de esa tipología, con los códigos que se emitirán. Todo sale del catálogo único
 // (core/flotas/catalogoCoberturas.ts). Lo confirmado aquí es lo que ve la OFERTA y lo que emite la EMISIÓN.
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { startTransition, useEffect, useMemo, useRef, useState } from 'react';
 import { DetailDrawer } from '@/components/saas/DetailDrawer';
 import { nf } from '@/lib/fmt';
 import { TIPO_INFO } from '@/core/catalogo/tipologia';
@@ -155,11 +155,14 @@ export default function ConfigCoberturas({ grupos, configs, onChange }: Props) {
   const fAbierta = abierto ? porClave.get(abierto) : null;
   const marcadasOtras = abierto ? marcadas.filter(f => f.g.key !== abierto).length : 0;
 
-  // Al abrir el drawer, inicializar el draft con la cobertura efectiva de la fila (confirmada o propuesta).
-  useEffect(() => {
-    if (fAbierta?.cfg) setDraftCfg({ producto: fAbierta.cfg.producto, franquicia: fAbierta.cfg.franquicia, opciones: { ...fAbierta.cfg.opciones } });
-    else setDraftCfg(null);
-  }, [abierto, fAbierta]);
+  // Al abrir el drawer, el draft se inicializa en el mismo render con la cobertura efectiva de la fila
+  // (confirmada o propuesta). Antes lo hacía un efecto que además se relanzaba con cada guardado del
+  // padre: el panel entraba vacío un instante y lo elegido a medias se perdía.
+  const abrir = (key: string) => {
+    const f = porClave.get(key);
+    setDraftCfg(f?.cfg ? { producto: f.cfg.producto, franquicia: f.cfg.franquicia, opciones: { ...f.cfg.opciones } } : null);
+    setAbierto(key);
+  };
 
   const setDraftProducto = (p: ProductoKey) => {
     if (!fAbierta) return;
@@ -177,12 +180,13 @@ export default function ConfigCoberturas({ grupos, configs, onChange }: Props) {
   };
   const confirmarDraft = () => {
     if (!fAbierta || !draftCfg) { setAbierto(null); return; }
-    guardar({ [fAbierta.g.key]: draftCfg });
+    const cambios = { [fAbierta.g.key]: draftCfg };
     setAviso(`Cobertura de ${titulo(fAbierta.g.tipoNorm)} actualizada.`);
     setAbierto(null);
+    // El guardado recalcula todo el estudio: va en transición para que el panel cierre fluido primero.
+    startTransition(() => guardar(cambios));
   };
   const cancelarDraft = () => {
-    setDraftCfg(null);
     setAbierto(null);
   };
 
@@ -272,7 +276,7 @@ export default function ConfigCoberturas({ grupos, configs, onChange }: Props) {
                   </td>
                   <td>
                     {bloqueada ? <span className="cfgmut">{f.errs[0]}</span> : f.cfg ? (
-                      <button type="button" className="cfglink" onClick={() => setAbierto(f.g.key)} title="Ver y editar las garantías de esta tipología">
+                      <button type="button" className="cfglink" onClick={() => abrir(f.g.key)} title="Ver y editar las garantías de esta tipología">
                         {resumenConfig(f.tipo, f.cfg)}
                       </button>
                     ) : <span className="cfgmut">Elige cobertura</span>}

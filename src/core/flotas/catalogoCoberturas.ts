@@ -339,8 +339,10 @@ export function camposDe(tipo: TipoKey, producto: ProductoKey, franquicia?: numb
     // Asistencia en viaje, seguro del conductor y subsidio
     const av = opcAsistencia(g);
     add({ id: 'asistencia', grupo: 'Asistencia en viaje', label: g === 'a3' ? 'Asistencia en viaje moto' : 'Asistencia en viaje', kind: 'select', opciones: av.opciones, defecto: av.defecto, col: 'ID_AV' });
+    // Regla (24/11): el seguro del conductor va SIEMPRE incluido por defecto, con la primera opción
+    // (igual que la defensa jurídica). Excepción: remolques y semirremolques, que no llevan conductor.
     const sc = opcSeguroConductor(g);
-    add({ id: 'seg_cond', grupo: 'Seguro del conductor', label: 'Seguro del conductor', kind: 'select', opciones: sc.opciones, defecto: sc.defecto, col: 'ID_SEG_COND' });
+    add({ id: 'seg_cond', grupo: 'Seguro del conductor', label: 'Seguro del conductor', kind: 'select', opciones: sc.opciones, defecto: tipo === 'remolque' ? sc.defecto : sc.opciones[0].value, col: 'ID_SEG_COND' });
     if (g === 'a2') add({ id: 'subsidio', grupo: 'Subsidio por paralización del vehículo', label: 'Subsidio por paralización del vehículo', kind: 'select', opciones: siNo('Incluida'), defecto: 'no', col: 'SUBSIDIO' });
 
     return out;
@@ -505,7 +507,14 @@ export function inferirConfig(tipo: TipoKey, etiquetaCobertura: string, filas: F
     const hayLunas = filas.some(f => esSi(f.lunas));
     const hayAnim = filas.some(f => esSi(f.animales));
     // Solo se activa lo que el corredor pidió; si no pidió nada, vale el valor por defecto del sistema
-    if (hayLunas && campos.some(c => c.id === 'lunas_rotura' && c.kind === 'select')) cfg.opciones.lunas_rotura = 'si';
+    // LA PLANTILLA ES LEY. En Terceros las lunas son opcionales: se ponen solo si la plantilla las pide.
+    // (Antes, en 2.ª categoría quedaban marcadas por defecto aunque la plantilla dijera «No».)
+    // En Terceros ampliado y Todo riesgo las lunas forman parte de la cobertura y no dependen de esa columna.
+    if (producto === 'terceros' || producto === 'moto_terceros') {
+        for (const id of ['lunas_rotura', 'lunas_rep']) {
+            if (campos.some(c => c.id === id && c.kind === 'select')) cfg.opciones[id] = hayLunas ? 'si' : 'no';
+        }
+    } else if (hayLunas && campos.some(c => c.id === 'lunas_rotura' && c.kind === 'select')) cfg.opciones.lunas_rotura = 'si';
     if (hayAnim && campos.some(c => c.id === 'animales')) cfg.opciones.animales = 'si';
 
     // ─── Fix 18/11 — asistencia, seguro del conductor y ámbito vienen de la plantilla por fila ─────────
@@ -529,26 +538,41 @@ export function inferirConfig(tipo: TipoKey, etiquetaCobertura: string, filas: F
         // Si hay un campo 'asistencia' de tipo select en la config, intentar matchear valor o 'si'
         const campoAsist = campos.find(c => c.id === 'asistencia' || c.id === 'asistencia_viaje' || c.id === 'asistencia_en_viaje');
         if (campoAsist && campoAsist.kind === 'select' && campoAsist.opciones) {
-            const match = campoAsist.opciones.find(o =>
-                o.value.toLowerCase() === asistenciaRaw ||
-                o.label.toLowerCase().includes(asistenciaRaw)
-            );
+            // «oro_plus» → «oro plus»; se busca primero la coincidencia exacta de nivel (Oro ≠ Oro Plus)
+            const raw = asistenciaRaw.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/_/g, ' ').trim();
+            const etiqueta = (o: Opcion) => o.label.toLowerCase().replace(/^av\s+/, '').replace(/\s*\(.*\)$/, '').trim();
+            const afirmativo = ['si', 's', 'x', 'true', '1', 'yes'].includes(raw);
+            const negativo = ['no', 'n', '0', 'false', 'sin'].includes(raw);
+            const match = campoAsist.opciones.find(o => o.value.toLowerCase() === raw || etiqueta(o) === raw)
+                ?? (afirmativo || negativo ? undefined : campoAsist.opciones.find(o => o.value !== 'NO' && o.label.toLowerCase().includes(raw)));
             if (match) cfg.opciones[campoAsist.id] = match.value;
-            else if (asistenciaRaw !== 'no') cfg.opciones[campoAsist.id] = 'si';
+            else if (!negativo) {
+                // «Sí» sin nivel: 1.ª cat. y moto → el primer nivel (Oro). 2.ª cat. → según el ámbito del grupo
+                // (regla del 18/11: la asistencia de 2.ª categoría sigue SIEMPRE al ámbito del vehículo).
+                const conAsist = campoAsist.opciones.filter(o => o.value !== 'NO');
+                const ambGrupo = dominantePorFila(f => (f.ambito ?? '').toLowerCase());
+                const porAmbito = conAsist.find(o => o.label.toLowerCase().includes(ambGrupo.includes('int') ? 'internacional' : 'nacional'));
+                const elegida = porAmbito ?? conAsist[0];
+                if (elegida) cfg.opciones[campoAsist.id] = elegida.value;
+            }
         }
     }
 
     // Seguro del conductor
     const segCondRaw = dominantePorFila(f => (f.seguro_conductor ?? '').toLowerCase());
     if (segCondRaw) {
-        const campoSC = campos.find(c => c.id === 'seguro_conductor' || c.id === 'conductor');
+        const campoSC = campos.find(c => c.id === 'seg_cond');
         if (campoSC && campoSC.kind === 'select' && campoSC.opciones) {
-            const match = campoSC.opciones.find(o =>
-                o.value.toLowerCase() === segCondRaw ||
-                o.label.toLowerCase().includes(segCondRaw)
-            );
-            if (match) cfg.opciones[campoSC.id] = match.value;
-            else if (esSi(segCondRaw)) cfg.opciones[campoSC.id] = 'si';
+            const conSeguro = campoSC.opciones.filter(o => o.value !== 'NO');
+            const pedido = ['no', 'n', '0', 'false'].includes(segCondRaw) ? null : segCondRaw;
+            if (pedido === null) {
+                // la plantilla dice «No» de forma expresa: se respeta
+                cfg.opciones[campoSC.id] = 'NO';
+            } else if (tipo !== 'remolque') {
+                // «Sí» (o un límite concreto, p. ej. «30.055»): la opción que coincida o, si no, la primera
+                const exacta = conSeguro.find(o => o.value.toLowerCase() === pedido || o.label.toLowerCase().includes(pedido));
+                cfg.opciones[campoSC.id] = (exacta ?? conSeguro[0]).value;
+            }
         }
     }
 

@@ -26,6 +26,7 @@ const ORIG_COLS_EXTRA: { key: string; label: string; n?: boolean }[] = [
   { key: 'anyo_matricula',      label: 'Año matr.', n: true },
   { key: 'fecha_matriculacion', label: 'F. matriculación' },
   { key: 'adr',                 label: 'ADR' },
+  { key: 'isotermo',            label: 'Isotermo' },
   { key: 'lunas',               label: 'Lunas' },
   { key: 'animales',            label: 'Animales' },
   { key: 'seguro_conductor',    label: 'Seg. conductor' },

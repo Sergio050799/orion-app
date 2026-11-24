@@ -10,6 +10,25 @@ import {
   cargarCarpetasDelServidor, consolidarSinco, filtrarFilasReales,
   type FlotaCarpeta, type EstadoFlota,
 } from '@/core/flotas';
+import { hayGuardadosPendientes } from '@/core/flotas/carpeta';
+import { useToast } from '@/components/ui/Toast';
+import { useTarifa } from '@/core/flotas/primasContext';
+
+// Fecha dd/mm/aaaa (o aaaa-mm-dd) que exista en el calendario.
+function fechaValida(raw: string): boolean {
+  const t = raw.trim();
+  let d: number, m: number, y: number;
+  let mt = t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (mt) { d = +mt[1]; m = +mt[2]; y = +mt[3]; }
+  else if ((mt = t.match(/^(\d{4})-(\d{2})-(\d{2})$/))) { y = +mt[1]; m = +mt[2]; d = +mt[3]; }
+  else return false;
+  if (y < 2000 || y > 2100) return false;
+  const f = new Date(y, m - 1, d);
+  return f.getFullYear() === y && f.getMonth() === m - 1 && f.getDate() === d;
+}
+
+const mismasFilas = (a: Record<string, string>[], b: Record<string, string>[]) =>
+  a === b || (a.length === b.length && JSON.stringify(a) === JSON.stringify(b));
 
 // TRABAJO se genera desde ORIGINAL. Si ya había datos de trabajo (Silverdat, etc.) para una matrícula,
 // se conservan los campos que el nuevo Original no trae; lo que sí trae el Original manda.
@@ -299,6 +318,10 @@ export default function FlotasPage() {
   const [estadoPopover, setEstadoPopover] = useState<{ estado: EstadoFlota; motivo: string; fechaVencimiento: string; comentario: string } | null>(null);
   const [openFlotas, setOpenFlotas] = useState<FlotaCarpeta[]>([]);
   const [fichaMode, setFichaMode] = useState(false);
+  const [guardadoFallido, setGuardadoFallido] = useState(false);
+  const { toast } = useToast();
+  const { recargar: recargarTarifa } = useTarifa();
+  const [actualizandoPrimas, setActualizandoPrimas] = useState(false);
 
   const motivoCarpeta = useMemo(() => {
     if (!carpetaActiva) return undefined;
@@ -317,7 +340,8 @@ export default function FlotasPage() {
       asistencia: '',
       animales: false,
       perdidaTotal: false,
-      primaMmt: parseFloat(r['oferta_prima_mmt'] ?? '') || null,
+      // sin el recargo de isotermo de esa fila: la prima del INFORME es la base del grupo
+      primaMmt: (parseFloat(r['oferta_prima_mmt'] ?? '') - (parseFloat(r['_isoDelta'] ?? '') || 0)) || null,
     })), [ofertaRows]);
 
   // ─── Autoguardado ─────────────────────────────────────────────────────────
@@ -358,11 +382,39 @@ export default function FlotasPage() {
   }
   const guardaCatalogoRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Lo que se cargó al abrir la flota. Mientras nada cambie respecto a esto NO se autoguarda:
+  // antes, sólo con abrir una flota se reenviaba entera a los 2 s (falseaba «último movimiento»
+  // y, si el detalle había llegado incompleto, lo escribía encima de lo bueno).
+  const baseRef = useRef<{ header: FlotaHeader; original: unknown; trabajo: unknown; sinco: unknown; oferta: unknown } | null>(null);
+  const fijarBase = (header: FlotaHeader, original: unknown, trabajo: unknown, sinco: unknown, oferta: unknown) => {
+    baseRef.current = { header, original, trabajo, sinco, oferta };
+  };
+
+  // Único punto para cambiar campos sueltos de la carpeta activa. Actualiza el ref EN EL ACTO:
+  // si dos hojas avisan en el mismo instante (p. ej. primas y coberturas del Informe), la segunda
+  // parte de lo que dejó la primera. Antes cada una partía de la copia vieja y una pisaba a la otra.
+  const patchCarpeta = useCallback((patch: Partial<FlotaCarpeta>, guardar = true): FlotaCarpeta | null => {
+    const cur = carpetaActivaRef.current;
+    if (!cur) return null;
+    const updated = { ...cur, ...patch };
+    carpetaActivaRef.current = updated;
+    setCarpetaActiva(updated);
+    if (guardar) guardarCarpeta(updated);
+    return updated;
+  }, []);
+
   useEffect(() => {
     if (!carpetaActiva) return;
+    const b = baseRef.current;
+    if (b && b.header === flotaHeader && b.original === originalData && b.trabajo === trabajoRows
+      && b.sinco === sincoResultRows && b.oferta === ofertaRows) return;
+    const id = carpetaActiva.id;
     const timer = setTimeout(() => {
+      const cur = carpetaActivaRef.current;
+      // Guarda de identidad: nunca escribir datos de una flota sobre otra.
+      if (!cur || cur.id !== id) return;
       const updated: FlotaCarpeta = {
-        ...carpetaActivaRef.current!,
+        ...cur,
         header: flotaHeader,
         original: originalData,
         trabajo: trabajoRows,
@@ -370,11 +422,39 @@ export default function FlotasPage() {
         oferta: ofertaRows,
       };
       guardarCarpeta(updated);
+      carpetaActivaRef.current = updated;
       setCarpetaActiva(updated);
+      fijarBase(flotaHeader, originalData, trabajoRows, sincoResultRows, ofertaRows);
     }, 2000);
     return () => clearTimeout(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [originalData, trabajoRows, ofertaRows, sincoResultRows, flotaHeader]);
+
+  // ─── Aviso si un guardado no llega al servidor + guarda al cerrar la pestaña ──
+  useEffect(() => {
+    const onGuardado = (e: Event) => {
+      const ok = !!(e as CustomEvent<{ ok: boolean }>).detail?.ok;
+      setGuardadoFallido(!ok);
+      if (ok) toast('Conexión recuperada: cambios guardados.', 'success');
+      else toast('No se pudo guardar en el servidor. Reintentando…', 'error');
+    };
+    const onUnload = (e: BeforeUnloadEvent) => {
+      // Guardado de catálogo en espera (PRE-EMISIÓN): se lanza ya, no a los 800 ms.
+      if (guardaCatalogoRef.current) {
+        clearTimeout(guardaCatalogoRef.current);
+        guardaCatalogoRef.current = null;
+        const c = carpetaActivaRef.current;
+        if (c) guardarCarpeta(c);
+      }
+      if (hayGuardadosPendientes()) { e.preventDefault(); e.returnValue = ''; }
+    };
+    window.addEventListener('orion:guardado', onGuardado);
+    window.addEventListener('beforeunload', onUnload);
+    return () => {
+      window.removeEventListener('orion:guardado', onGuardado);
+      window.removeEventListener('beforeunload', onUnload);
+    };
+  }, [toast]);
 
   // ─── Sesión activa — heartbeat mientras se estudia una carpeta ───────────────
 
@@ -409,6 +489,8 @@ export default function FlotasPage() {
   // ─── Handlers ─────────────────────────────────────────────────────────────
 
   const handleSelectCarpeta = useCallback(async (raw: FlotaCarpeta) => {
+    // Cada vez que se abre una flota se relee la tarifa del Admin: un estudio nuevo usa siempre los precios vigentes.
+    void recargarTarifa();
     // Always read from memCache — it's updated synchronously by guardarCarpeta,
     // so it's always newer than what CarpetaScreen's state might have (race condition).
     const fromCache = cargarCarpeta(raw.id);
@@ -420,6 +502,12 @@ export default function FlotasPage() {
     if (necesita_detalle) {
       const fresh = await cargarCarpetaDelServidor(carpeta.id);
       if (fresh) carpeta = normalizarCarpeta(fresh);
+      else if ((raw.vehiculosCount ?? 0) > 0 || Object.values(raw.avance ?? {}).some(Boolean)) {
+        // La flota tiene contenido pero el detalle no ha llegado: no abrirla vacía (se vería sin
+        // vehículos y cualquier edición se guardaría sobre datos incompletos).
+        toast('No se pudo cargar el detalle de la flota. Revisa la conexión y vuelve a intentarlo.', 'error');
+        return;
+      }
     }
     // Defensa extra: si el detalle aún viene sin arrays (carpeta vacía recién creada),
     // garantizamos arrays vacíos para que los .length no revienten.
@@ -447,12 +535,14 @@ export default function FlotasPage() {
     setFlotaHeader(carpeta.header);
     setOriginalData(originalToUse);
     setOfertaRows(carpeta.oferta);
-    setSincoResultRows(carpeta.sincoResultados ?? []);
+    setSincoResultRows(carpeta.sincoResultados);
     setActiveTab('DATOS GENERALES');
     setShowCarpetaScreen(false);
     setFichaMode(carpeta.estado === 'CONTRATADA');
     setTrabajoRows(trabajo);
-  }, []);
+    fijarBase(carpeta.header, originalToUse, trabajo, carpeta.sincoResultados, carpeta.oferta);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [toast]);
 
   const trabajoRowsRef = useRef(trabajoRows);
   trabajoRowsRef.current = trabajoRows;
@@ -491,10 +581,11 @@ export default function FlotasPage() {
       return next;
     });
   }, []);
-  const handleTrabajoChange = useCallback((data: Record<string, string>[]) => { setTrabajoRows(data); }, []);
-  const handleOfertaChange = useCallback((data: Record<string, string>[]) => { setOfertaRows(data); }, []);
+  // Si la hoja reenvía exactamente lo mismo (pasa al montar), se conserva la referencia: no hay nada que guardar.
+  const handleTrabajoChange = useCallback((data: Record<string, string>[]) => { setTrabajoRows(prev => mismasFilas(prev, data) ? prev : data); }, []);
+  const handleOfertaChange = useCallback((data: Record<string, string>[]) => { setOfertaRows(prev => mismasFilas(prev, data) ? prev : data); }, []);
   const getOriginalSnapshot = useCallback(() => originalRef.current?.getData() ?? null, []);
-  const handleCarpetaChange = useCallback((updated: FlotaCarpeta) => { setCarpetaActiva(normalizarCarpeta(updated)); }, []);
+  const handleCarpetaChange = useCallback((updated: FlotaCarpeta) => { const n = normalizarCarpeta(updated); carpetaActivaRef.current = n; setCarpetaActiva(n); }, []);
 
   const handleSwitchFlota = useCallback((target: FlotaCarpeta) => {
     if (carpetaActiva?.id === target.id) { setShowCarpetaScreen(false); return; }
@@ -524,16 +615,19 @@ export default function FlotasPage() {
     setFlotaHeader(fresh.header);
     setOriginalData(originalToUse);
     setOfertaRows(fresh.oferta);
-    setSincoResultRows(fresh.sincoResultados ?? []);
+    const sinco = fresh.sincoResultados ?? [];
+    setSincoResultRows(sinco);
     setActiveTab('DATOS GENERALES');
     setShowCarpetaScreen(false);
     setFichaMode(fresh.estado === 'CONTRATADA');
     setTrabajoRows(trabajo);
+    fijarBase(fresh.header, originalToUse, trabajo, sinco, fresh.oferta);
+    setEstadoPopover(null);
   }, [carpetaActiva, flotaHeader, originalData, trabajoRows, sincoResultRows, ofertaRows]);
 
   const handleConfirmarEstado = useCallback(() => {
     if (!carpetaActiva || !estadoPopover) return;
-    if (estadoPopover.estado === 'CONTRATADA' && !estadoPopover.fechaVencimiento.trim()) return;
+    if (estadoPopover.estado === 'CONTRATADA' && !fechaValida(estadoPopover.fechaVencimiento)) return;
     const motivo = estadoPopover.estado === 'RECHAZADA' ? (estadoPopover.motivo || undefined) : undefined;
     const obs    = estadoPopover.estado === 'RECHAZADA' && estadoPopover.comentario.trim() ? estadoPopover.comentario.trim() : undefined;
     const updated = cambiarEstado(carpetaActiva.id, estadoPopover.estado, motivo, obs);
@@ -548,6 +642,29 @@ export default function FlotasPage() {
     }
     setEstadoPopover(null);
   }, [carpetaActiva, estadoPopover]);
+
+  // ─── Actualizar primas con la tarifa del Admin ──────────────────────────────
+  // Relee la tarifa, recalcula todos los vehículos de la OFERTA (salvo los escritos a mano) y deja en el
+  // INFORME la prima de cada grupo. Sirve igual para un estudio antiguo que para uno recién hecho.
+  const handleActualizarPrimas = useCallback(async () => {
+    if (actualizandoPrimas || !carpetaActivaRef.current) return;
+    if (!window.confirm('Se va a leer la tarifa actual del Admin y a recalcular las primas de este estudio.\n\nLas primas escritas a mano en la Oferta se conservan. ¿Continuar?')) return;
+    setActualizandoPrimas(true);
+    try {
+      const cfg = await recargarTarifa();
+      if (!cfg) { toast('No se ha podido leer la tarifa del Admin. Las primas no se han tocado.', 'error'); return; }
+      const res = ofertaRef.current?.actualizarConTarifa(cfg);
+      if (!res) { toast('La oferta todavía no está cargada. Vuelve a intentarlo en un momento.', 'error'); return; }
+      const cur = carpetaActivaRef.current;
+      if (cur) patchCarpeta({ primasMmtInforme: { ...(cur.primasMmtInforme ?? {}), ...res.primasGrupo } });
+      const partes = [`${res.recalculadas} ${res.recalculadas === 1 ? 'vehículo recalculado' : 'vehículos recalculados'}`];
+      if (res.manuales > 0) partes.push(`${res.manuales} con prima a mano sin tocar`);
+      if (res.sinTarifa > 0) partes.push(`${res.sinTarifa} sin precio en la tarifa`);
+      toast(`Primas actualizadas con la tarifa del Admin: ${partes.join(' · ')}.`, res.sinTarifa > 0 ? 'info' : 'success');
+    } finally {
+      setActualizandoPrimas(false);
+    }
+  }, [actualizandoPrimas, recargarTarifa, patchCarpeta, toast]);
 
   const handleDownload = useCallback(async () => {
     if (!carpetaActiva || isDownloading) return;
@@ -583,6 +700,7 @@ export default function FlotasPage() {
       oferta: ofertaRef.current?.getData() ?? ofertaRows,
     };
     guardarCarpeta(updated);
+    carpetaActivaRef.current = updated;
     setCarpetaActiva(updated);
     setSaveFlash(true);
     setTimeout(() => setSaveFlash(false), 1500);
@@ -602,8 +720,10 @@ export default function FlotasPage() {
       setFlotaHeader(fresh.header);
       setOriginalData(fresh.original);
       setOfertaRows(fresh.oferta);
-      setSincoResultRows(fresh.sincoResultados ?? []);
+      const sinco = fresh.sincoResultados ?? [];
+      setSincoResultRows(sinco);
       setTrabajoRows(fresh.trabajo);
+      if (indiv) fijarBase(fresh.header, fresh.original, fresh.trabajo, sinco, fresh.oferta);
     } catch { /* si falla, mantiene estado actual */ }
     finally { setIsRefreshing(false); }
   }, [carpetaActiva, isRefreshing]);
@@ -653,8 +773,11 @@ export default function FlotasPage() {
         setFlotaHeader(next.header);
         setOriginalData(next.original);
         setOfertaRows(next.oferta);
-        setSincoResultRows(next.sincoResultados ?? []);
+        const sinco = next.sincoResultados ?? [];
+        setSincoResultRows(sinco);
         setTrabajoRows(next.trabajo);
+        fijarBase(next.header, next.original, next.trabajo, sinco, next.oferta);
+        setEstadoPopover(null);
         setFichaMode(next.estado === 'CONTRATADA');
         setActiveTab('DATOS GENERALES');
       } else {
@@ -674,7 +797,8 @@ export default function FlotasPage() {
     if (!carpetaActiva || carpetaActiva.estado !== 'OFERTADA') return 0;
     const last = [...(carpetaActiva.historico ?? [])].reverse().find(h => h.estadoNuevo === 'OFERTADA');
     if (!last?.fecha) return 0;
-    return Math.floor((Date.now() - new Date(last.fecha).getTime()) / 86400000);
+    const t = new Date(last.fecha).getTime();
+    return isNaN(t) ? 0 : Math.max(0, Math.floor((Date.now() - t) / 86400000));
   }, [carpetaActiva]);
 
   // Escape key cierra el drawer de cambio de estado
@@ -744,6 +868,9 @@ export default function FlotasPage() {
                         <input id="es_vcto" className="inp" placeholder="31/12/2027"
                           value={estadoPopover.fechaVencimiento}
                           onChange={e => setEstadoPopover(p => p ? { ...p, fechaVencimiento: e.target.value } : null)} />
+                        {estadoPopover.fechaVencimiento.trim() !== '' && !fechaValida(estadoPopover.fechaVencimiento) && (
+                          <p className="hint" role="alert">Fecha no válida. Escríbela como DD/MM/AAAA, por ejemplo 31/12/2027.</p>
+                        )}
                       </div>
                     )}
 
@@ -768,9 +895,8 @@ export default function FlotasPage() {
 
                     <div className="fact">
                       <button type="submit"
-                        disabled={estadoPopover.estado === 'CONTRATADA' && !estadoPopover.fechaVencimiento.trim()}
-                        className="btn"
-                        style={{ opacity: (estadoPopover.estado === 'CONTRATADA' && !estadoPopover.fechaVencimiento.trim()) ? 0.5 : 1 }}>
+                        disabled={estadoPopover.estado === 'CONTRATADA' && !fechaValida(estadoPopover.fechaVencimiento)}
+                        className="btn">
                         Confirmar
                       </button>
                       <button type="button" onClick={() => setEstadoPopover(null)} className="btn ghost">Cancelar</button>
@@ -810,6 +936,12 @@ export default function FlotasPage() {
                   <span>{numVeh} {numVeh === 1 ? 'vehículo' : 'vehículos'}</span>
                   <EstadoBadge estado={carpetaActiva.estado} />
                 </div>
+                {guardadoFallido && (
+                  <div className="banner" role="alert" style={{ '--c': 'var(--warn)' } as React.CSSProperties}>
+                    <b>Sin guardar</b>
+                    <span>Los últimos cambios no han llegado al servidor. ORION lo reintenta solo; no cierres la pestaña.</span>
+                  </div>
+                )}
                 {carpetaActiva.estado === 'ESTUDIADA' && (
                   <div className="banner" style={{ '--c': 'var(--st-estudiada)' } as React.CSSProperties}>
                     <b>Estudiada</b>
@@ -885,10 +1017,7 @@ export default function FlotasPage() {
                           carpetaActiva={carpetaActiva}
                           onHeaderUpdate={(h) => { setFlotaHeader(prev => ({ ...prev, ...h })); }}
                           onVehiclesProcessed={(vehicles) => {
-                            if (!carpetaActiva) return;
-                            const updated = { ...carpetaActiva, automaticoVehicles: vehicles };
-                            guardarCarpeta(updated);
-                            setCarpetaActiva(normalizarCarpeta(updated));
+                            patchCarpeta({ automaticoVehicles: vehicles });
                           }}
                           onComplete={(rows) => {
                             setTrabajoRows(rows);
@@ -921,7 +1050,7 @@ export default function FlotasPage() {
                           ? [corredor.comercial, corredor.nombre].filter(Boolean).join(' · ')
                           : undefined;
                         return (
-                          <HojaInforme header={flotaHeader} carpetaNombre={carpetaActiva?.nombre} trabajoRows={trabajoRows} coberturas={coberturas} sincoResultRows={sincoResultRows} sincoManual={carpetaActiva?.sincoManual ?? []} sincoGlobal={carpetaActiva?.sincoGlobal ?? null} primasMmtValues={carpetaActiva?.primasMmtInforme} onPrimasMmtChange={(primas) => { const cur = carpetaActivaRef.current; if (cur) { const updated = { ...cur, primasMmtInforme: primas }; setCarpetaActiva(updated); guardarCarpeta(updated); } }} configCoberturas={carpetaActiva?.configCoberturas} onConfigCoberturasChange={(cfg) => { const cur = carpetaActivaRef.current; if (cur) { const updated = { ...cur, configCoberturas: cfg }; setCarpetaActiva(updated); guardarCarpeta(updated); } }} onTrabajoRowChange={(matricula, patch) => {
+                          <HojaInforme header={flotaHeader} carpetaNombre={carpetaActiva?.nombre} trabajoRows={trabajoRows} coberturas={coberturas} sincoResultRows={sincoResultRows} sincoManual={carpetaActiva?.sincoManual ?? []} sincoGlobal={carpetaActiva?.sincoGlobal ?? null} primasMmtValues={carpetaActiva?.primasMmtInforme} onPrimasMmtChange={(primas) => { patchCarpeta({ primasMmtInforme: primas }); }} configCoberturas={carpetaActiva?.configCoberturas} onConfigCoberturasChange={(cfg) => { patchCarpeta({ configCoberturas: cfg }); }} onTrabajoRowChange={(matricula, patch) => {
                             const m = (matricula || '').trim().toUpperCase();
                             if (!m) return;
                             const cur = carpetaActivaRef.current;
@@ -931,10 +1060,9 @@ export default function FlotasPage() {
                             );
                             setTrabajoRows(nuevo);
                             trabajoRef.current?.setData(nuevo);
-                            const updated = { ...cur, trabajo: nuevo };
-                            setCarpetaActiva(updated);
-                            guardarCarpeta(updated);
-                          }} tarifaFlota={carpetaActiva?.tarifaFlota} corredorLabel={corredorLabel} corredorNombre={corredor?.nombre} corredorComercial={corredor?.comercial} danosPropios={carpetaActiva?.danosPropios} observacion={motivoCarpeta} />
+                            trabajoRowsRef.current = nuevo;
+                            patchCarpeta({ trabajo: nuevo });
+                          }} tarifaFlota={carpetaActiva?.tarifaFlota} corredorLabel={corredorLabel} corredorNombre={corredor?.nombre} corredorComercial={corredor?.comercial} danosPropios={carpetaActiva?.danosPropios} observacion={motivoCarpeta} onActualizarPrimas={handleActualizarPrimas} actualizandoPrimas={actualizandoPrimas} />
                         );
                       })()}
                       {tab === 'OFERTA' && (
@@ -951,17 +1079,18 @@ export default function FlotasPage() {
                             primaClienteTotal={carpetaActiva?.primaClienteTotal}
                             descuentoOferta={carpetaActiva?.descuentoOferta}
                             descuentosCoberturas={carpetaActiva?.descuentosCoberturas}
+                            onActualizarPrimas={handleActualizarPrimas}
+                            actualizandoPrimas={actualizandoPrimas}
                             onOfertaFieldsChange={(fields) => {
-                              if (!carpetaActiva) return;
-                              const updated = { ...carpetaActiva, ...fields };
-                              setCarpetaActiva(normalizarCarpeta(updated));
-                              guardarCarpeta(updated);
+                              patchCarpeta(fields);
                             }}
                           />
                         </Suspense>
                       )}
                       {tab === 'PRE-EMISIÓN' && (
                         <HojaPreEmision
+                          // una instancia por flota: al cambiar de flota abierta no se mezclan vehículos ni confirmaciones
+                          key={carpetaActiva?.id ?? 'sin-flota'}
                           trabajoRows={trabajoRows}
                           initialSeleccion={carpetaActiva?.catalogoSeleccion}
                           initialVerificacionOk={carpetaActiva?.verificacionOk}
@@ -987,12 +1116,23 @@ export default function FlotasPage() {
                               return true;
                             };
                             let cambios = 0;
-                            const trabajoNuevo = (cur.trabajo ?? []).map(r => {
+                            // Se parte de las filas vivas de TRABAJO (no de la copia guardada, que puede ir por detrás)
+                            const trabajoNuevo = (trabajoRowsRef.current.length > 0 ? trabajoRowsRef.current : (cur.trabajo ?? [])).map(r => {
                               const mat = String(r['matricula'] ?? '').replace(/[\s-]/g, '').toUpperCase();
                               const ex = porMatricula.get(mat);
-                              if (!ex || !ex.id_catalogo) return r;
+                              if (!ex) return r;
+                              const manual = (ex.plazas_manual ?? '').trim();
+                              // Sin ID y sin plazas a mano: no hay nada que propagar.
+                              if (!ex.id_catalogo && manual === '' && (r['plazas_manual'] ?? '') === '') return r;
                               const next = { ...r };
                               let dirty = false;
+                              // Plazas escritas a mano en PRE-EMISIÓN: se recuerdan y mandan sobre las del catálogo.
+                              if ((next['plazas_manual'] ?? '') !== manual) { next['plazas_manual'] = manual; dirty = true; }
+                              if (!ex.id_catalogo) {
+                                if (manual !== '' && setFromCat(next, 'plazas', ex.plazas)) dirty = true;
+                                if (dirty) cambios++;
+                                return next;
+                              }
                               if (setFromCat(next, 'plazas', ex.plazas)) dirty = true;
                               if (setFromCat(next, 'kw', ex.kw)) dirty = true;
                               if (setFromCat(next, 'cv', ex.cv)) dirty = true;
@@ -1010,7 +1150,12 @@ export default function FlotasPage() {
                               autoNuevo = autoOriginales.map(v => {
                                 const mat = String(v.matricula ?? '').replace(/[\s-]/g, '').toUpperCase();
                                 const ex = porMatricula.get(mat);
-                                if (!ex || !ex.id_catalogo) return v;
+                                if (!ex) return v;
+                                if (!ex.id_catalogo) {
+                                  // sin ID: solo se aplican las plazas escritas a mano
+                                  if ((ex.plazas_manual ?? '') !== '' && ex.plazas !== -1 && v.plazas !== ex.plazas) { cambios++; return { ...v, plazas: ex.plazas }; }
+                                  return v;
+                                }
                                 const next = { ...v };
                                 let dirty = false;
                                 // Fix 23/11: 0 plazas (remolques) es válido; -1 es sentinel "no tocar"
@@ -1027,6 +1172,11 @@ export default function FlotasPage() {
                             const updated = { ...cur, trabajo: trabajoNuevo, ...(autoNuevo ? { automaticoVehicles: autoNuevo } : {}) };
                             carpetaActivaRef.current = updated;
                             setCarpetaActiva(updated);
+                            // Las filas vivas también: EMISIÓN, OFERTA y el autoguardado leen de ahí. Antes los datos del
+                            // catálogo (plazas, kW, tara) solo iban a la copia guardada y EMISIÓN seguía sin plazas.
+                            trabajoRowsRef.current = trabajoNuevo;
+                            setTrabajoRows(trabajoNuevo);
+                            trabajoRef.current?.setData(trabajoNuevo);
                             if (guardaCatalogoRef.current) clearTimeout(guardaCatalogoRef.current);
                             guardaCatalogoRef.current = setTimeout(() => { const c = carpetaActivaRef.current; if (c) guardarCarpeta(c); }, 800);
                           }}
@@ -1062,7 +1212,7 @@ export default function FlotasPage() {
                             configCoberturas={carpetaActiva.configCoberturas}
                             ofertaRows={ofertaRows}
                             emision={carpetaActiva.emision}
-                            onEmisionChange={(emision) => { const cur = carpetaActivaRef.current; if (cur) { const updated = { ...cur, emision }; setCarpetaActiva(updated); guardarCarpeta(updated); } }}
+                            onEmisionChange={(emision) => { patchCarpeta({ emision }); }}
                             idPerceptor={corredor?.idPerceptor}
                             corredorNombre={corredor?.nombre}
                             carpetaNombre={carpetaActiva.nombre}

@@ -7,7 +7,7 @@ import 'react-data-grid/lib/styles.css';
 import { COBERTURA_OPTS, LUNAS_OPTS, AMBITO_OPTS } from '@/core/flotas';
 import { nf, dec, eur } from '@/lib/fmt';
 import { calcularPrima, type CalcPrimaParams, type TipoVehiculo, type Producto, type PrimasConfig } from '@/core/flotas/primas';
-import { usePrimasConfig } from '@/core/flotas/primasContext';
+import { useTarifa } from '@/core/flotas/primasContext';
 import { aEmision, aOfertaRow, camposDe, franquiciasPermitidas, garantiasOferta, grupoCob, inferirConfig, normalizarConfig, pendientesEmision, productosPermitidos, resumenConfig, tipoKeyDesdeEtiqueta, PRODUCTO_DEF, type ConfigCobertura, type ProductoKey } from '@/core/flotas/catalogoCoberturas';
 import { TIPO_INFO, type TipoKey } from '@/core/catalogo/tipologia';
 import { DetailDrawer } from '@/components/saas/DetailDrawer';
@@ -37,9 +37,22 @@ interface OfertaRow {
   _cfg: string;           // 'true' si las coberturas las fija la configuración confirmada en INFORME
 }
 
+/** Resultado de recalcular la oferta con la tarifa vigente. */
+export interface ResultadoActualizarPrimas {
+  /** prima base por grupo del INFORME («TIPO||cobertura solicitada»), sin recargo de isotermo */
+  primasGrupo: Record<string, number>;
+  recalculadas: number;
+  /** vehículos con prima escrita a mano: no se tocan */
+  manuales: number;
+  /** vehículos para los que la tarifa no tiene precio */
+  sinTarifa: number;
+}
+
 export interface HojaOfertaHandle {
   getData: () => Record<string, string>[];
   setData: (data: Record<string, string>[]) => void;
+  /** Recalcula todas las primas (salvo las escritas a mano) con la tarifa que se le pasa. */
+  actualizarConTarifa: (config: PrimasConfig) => ResultadoActualizarPrimas;
 }
 
 interface OfertaFields {
@@ -61,6 +74,9 @@ interface Props {
   descuentoOferta?: number;
   descuentosCoberturas?: Record<string, number>;
   onOfertaFieldsChange?: (fields: OfertaFields) => void;
+  /** Vuelve a leer la tarifa del Admin y recalcula las primas del estudio (lo resuelve la página). */
+  onActualizarPrimas?: () => void;
+  actualizandoPrimas?: boolean;
 }
 
 // ─── Mapeos para calcularPrima ──────────────────────────────────────────────
@@ -121,6 +137,8 @@ function rowToPrimaParams(row: OfertaRow): CalcPrimaParams | null {
   // Determinar producto
   const cobLower = row.coberturas.toLowerCase();
   let producto = PRODUCTO_MAP[cobLower];
+  // Motos: «Terceros ampliado con franquicia» es su cobertura con franquicia en la tarifa
+  if (!producto && tipoVehiculo === 'moto' && cobLower === 'terceros ampliado con franquicia') producto = 'todo_riesgo';
   if (!producto) return null;
 
   // Terceros + Lunas Sí: en 2.ª cat. existe fila `terceros_con_luna` (dato histórico). En 1.ª y 3.ª cat.
@@ -179,6 +197,64 @@ function calcPrimaForRow(row: OfertaRow, config?: PrimasConfig | null): string {
   const result = calcularPrima(params, config);
   if (result === null) return '';
   return String(result);
+}
+
+// Parte de la prima que corresponde al isotermo (+30 % de la base en 2.ª cat.). 0 si la fila no lo lleva.
+function isoDeltaDe(row: OfertaRow, config?: PrimasConfig | null): number {
+  if (row.isotermo !== 'true') return 0;
+  const params = rowToPrimaParams(row);
+  if (!params) return 0;
+  const con = calcularPrima({ ...params, isotermo: true }, config);
+  const sin = calcularPrima({ ...params, isotermo: false }, config);
+  return con != null && sin != null ? Math.max(0, con - sin) : 0;
+}
+
+// La prima del INFORME es por grupo (tipología × cobertura) y no distingue isotermos:
+// a la fila isoterma se le suma su recargo encima.
+function primaInformeFila(prima: number, row: OfertaRow, config?: PrimasConfig | null): string {
+  return String(Math.round((prima + isoDeltaDe(row, config)) * 100) / 100);
+}
+
+// ─── Asistencia por categoría (columna ASISTENCIA del grid) ─────────────────
+const TIPOS_CAT2_ASIST = new Set<TipoVehiculo>(['cabeza_tractora', 'camion_rigido', 'semirremolque']);
+const TIPOS_CAT1_ASIST = new Set<TipoVehiculo>(['turismo', 'derivado_turismo', 'derivado_todoterreno', 'furgoneta', 'furgon']);
+const ASIST_LABEL: Record<string, string> = { no: 'Sin', oro: 'Oro', oro_plus: 'Oro Plus', platino: 'Platino' };
+
+/** Opciones de asistencia que admite la tipología: [valor guardado, texto]. Vacío = no aplica. */
+function opcionesAsistencia(row: OfertaRow): [string, string][] {
+  const t = getTipoKey(row.tipo_vehiculo);
+  if (!t) return [];
+  if (TIPOS_CAT1_ASIST.has(t)) return [['no', 'Sin'], ['oro', 'Oro'], ['oro_plus', 'Oro Plus'], ['platino', 'Platino']];
+  if (t === 'moto') return [['no', 'Sin'], ['oro', 'Oro']];
+  if (TIPOS_CAT2_ASIST.has(t)) {
+    const amb = (row.ambito ?? '').toLowerCase().includes('int') ? 'internacional' : 'nacional';
+    return [['no', 'Sin'], [amb, amb === 'internacional' ? 'Internacional' : 'Nacional']];
+  }
+  return [];
+}
+
+/** Valor de asistencia de la fila llevado a uno de los que admite su tipología. */
+function asistenciaNormal(row: OfertaRow): string {
+  const v = (row.asistencia ?? '').trim().toLowerCase().replace(/\s+/g, '_');
+  const ops = opcionesAsistencia(row);
+  if (ops.length === 0) return '';
+  if (v === '' || v === 'no' || v === 'n' || v === 'sin') return 'no';
+  if (ops.some(([val]) => val === v)) return v;
+  return ops[1][0];   // «sí» sin nivel (o un valor de otra categoría): el primero con asistencia
+}
+
+function AsistenciaEditor({ row, onRowChange, onClose }: RenderEditCellProps<OfertaRow>) {
+  const ops = opcionesAsistencia(row);
+  if (ops.length === 0) return <div />;
+  return (
+    <select
+      autoFocus
+      value={asistenciaNormal(row)}
+      onChange={e => { onRowChange({ ...row, asistencia: e.target.value }); onClose(true); }}
+      style={{ width: '100%', height: '100%', border: 'none', outline: 'none', fontSize: 12, padding: '0 8px', background: '#fff', cursor: 'pointer' }}>
+      {ops.map(([val, txt]) => <option key={val} value={val}>{txt}</option>)}
+    </select>
+  );
 }
 
 // Franquicia legible («1.800 €») solo si la cobertura la lleva; vacío si no aplica.
@@ -519,7 +595,9 @@ function trabajoToOferta(rows: Record<string, string>[]): OfertaRow[] {
       ambito:          r['ambito']                 ?? '',
       frq:             r['frq']                    ?? '',
       animales:        '',
-      isotermo:        '',
+      // Isotermo marcado en la plantilla o en TRABAJO (solo camión rígido y semirremolque)
+      isotermo:        ['si', 'sí', 's', 'x', 'true', '1', 'yes'].includes((r['isotermo'] ?? '').trim().toLowerCase())
+                         && ISOTERMO_TIPOS.has(getTipoKey(r['tipo_vehiculo'] ?? '') ?? '') ? 'true' : '',
       perdida_total:   '',
       oferta_prima_mmt: '',
       _primaOverride:  '',
@@ -550,13 +628,19 @@ const claveInforme = (row: Pick<OfertaRow, 'tipo_vehiculo' | 'cob_solicitada' | 
 // ─── HojaOferta ───────────────────────────────────────────────────────────────
 
 const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
-  { trabajoRows, header, carpetaId, carpetaNombre, primasMmt, configCoberturas, onDataChange, primaClienteTotal, descuentoOferta, descuentosCoberturas, onOfertaFieldsChange },
+  { trabajoRows, header, carpetaId, carpetaNombre, primasMmt, configCoberturas, onDataChange, primaClienteTotal, descuentoOferta, descuentosCoberturas, onOfertaFieldsChange, onActualizarPrimas, actualizandoPrimas },
   ref,
 ) {
   // Primas config del admin (Bug fix 18/11: calcPrimaForRow ignoraba el config y siempre usaba fallback hardcoded)
-  const primasConfig = usePrimasConfig();
+  const { config: primasConfig, estado: estadoTarifa } = useTarifa();
   const primasConfigRef = useRef<PrimasConfig | null>(primasConfig);
   primasConfigRef.current = primasConfig;
+  // Matrículas cuya prima calculó ORION en esta sesión (no venía guardada ni escrita a mano).
+  const autoMatsRef = useRef<Set<string>>(new Set());
+  // Último valor de ISOTERMO visto en TRABAJO por matrícula: si cambia allí, se refleja aquí.
+  const isoSrcRef = useRef<Map<string, string>>(new Map());
+  // true justo después de cargar una oferta guardada: en esa pasada manda lo guardado.
+  const savedFrescoRef = useRef(false);
 
   const [rows, setRows] = useState<OfertaRow[]>([]);
   const [seeded, setSeeded] = useState(false);
@@ -614,6 +698,8 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
 
     const fromTrabajo = trabajoToOferta(trabajoRows);
     const savedEdits = savedEditsRef.current;
+    const savedFresco = savedFrescoRef.current;
+    savedFrescoRef.current = false;
 
     // On first seed or always: rebuild from trabajo, merging user edits
     const existingByMat = new Map(rows.map(r => [r.matricula, r]));
@@ -623,6 +709,16 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
       const saved = savedEdits.get(src.matricula);
       // Check if we have existing row with user edits made in this session
       const existing = existingByMat.get(src.matricula);
+
+      // Isotermo: lo que hay en la oferta (sesión o guardado) se mantiene; si en TRABAJO se marca o
+      // se desmarca, manda TRABAJO. La primera vez que se ve la fila, un «Sí» de TRABAJO la marca.
+      const isoGuardado = savedFresco ? (saved?.isotermo ?? existing?.isotermo ?? '') : (existing ? existing.isotermo : (saved?.isotermo ?? ''));
+      const isoPrevSrc = isoSrcRef.current.get(src.matricula);
+      isoSrcRef.current.set(src.matricula, src.isotermo);
+      let isoBase = isoGuardado;
+      if (isoPrevSrc === undefined) { if (src.isotermo === 'true') isoBase = 'true'; }
+      else if (isoPrevSrc !== src.isotermo) isoBase = src.isotermo;
+      const isoCambio = isoBase !== isoGuardado;
 
       const row: OfertaRow = {
         ...src,
@@ -641,7 +737,7 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
         frq: existing?.frq || saved?.frq || src.frq,
         // Checkboxes + prima: only from existing/saved (not in trabajo)
         animales: existing?.animales || saved?.animales || '',
-        isotermo: existing?.isotermo || saved?.isotermo || '',
+        isotermo: isoBase,
         perdida_total: existing?.perdida_total || saved?.perdida_total || '',
         oferta_prima_mmt: existing?.oferta_prima_mmt || saved?.oferta_prima_mmt || '',
         _primaOverride: existing?._primaOverride || saved?._primaOverride || '',
@@ -661,7 +757,7 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
         // La prima la fija el informe (prima MMT del grupo) salvo que alguien la haya escrito a mano en la oferta
         const informePrima = primasMmt?.[claveInf];
         if (informePrima && row._primaOverride !== 'true') {
-          row.oferta_prima_mmt = String(informePrima);
+          row.oferta_prima_mmt = primaInformeFila(informePrima, row, primasConfigRef.current);
           return row;
         }
       }
@@ -672,12 +768,18 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
       const hasSavedPrima = !!(saved?.oferta_prima_mmt || existing?.oferta_prima_mmt);
       if (!hasSavedPrima) {
         const auto = calcPrimaForRow(row, primasConfigRef.current);
+        // Se apunta aunque todavía no haya precio (la tarifa puede llegar un instante después): se recalcula al llegar
+        autoMatsRef.current.add(row.matricula);
         if (auto) {
           row.oferta_prima_mmt = auto;
         } else {
           const informePrima = primasMmt?.[claveInforme(row)];
           row.oferta_prima_mmt = informePrima ? String(informePrima) : '';
         }
+      } else if (isoCambio && row._primaOverride !== 'true') {
+        // El isotermo ha cambiado en TRABAJO: la prima guardada ya no vale, se recalcula (salvo las escritas a mano).
+        const auto = calcPrimaForRow(row, primasConfigRef.current);
+        if (auto) row.oferta_prima_mmt = auto;
       }
 
       return row;
@@ -688,18 +790,61 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trabajoRows, editsVersion, primasMmt, configCoberturas]);
 
+  // La tabla de primas llega del servidor un instante después de montar. Las primas que ORION
+  // calculó antes de tenerla (con los valores por defecto) se recalculan con la tabla real.
+  // No toca primas guardadas, escritas a mano ni fijadas por el Informe.
+  useEffect(() => {
+    if (!primasConfig || autoMatsRef.current.size === 0) return;
+    setRows(prev => {
+      let cambia = false;
+      const next = prev.map(r => {
+        if (!autoMatsRef.current.has(r.matricula) || r._primaOverride === 'true') return r;
+        const auto = calcPrimaForRow(r, primasConfig);
+        if (!auto || auto === r.oferta_prima_mmt) return r;
+        cambia = true;
+        return { ...r, oferta_prima_mmt: auto };
+      });
+      return cambia ? next : prev;
+    });
+  }, [primasConfig]);
+
   // Notify parent of changes
   useEffect(() => {
     if (!seeded) return;
     const timer = setTimeout(() => {
-      onDataChangeRef.current?.(rows.map(rowToRecord));
+      onDataChangeRef.current?.(rows.map(aRegistro));
     }, 300);
     return () => clearTimeout(timer);
   }, [rows, seeded]);
 
+  // Fila tal como se guarda: añade `_isoDelta` (recargo de isotermo incluido en la prima) para que el
+  // INFORME pueda tomar la prima base del grupo sin ese recargo.
+  const aRegistro = (r: OfertaRow): Record<string, string> => {
+    const d = isoDeltaDe(r, primasConfigRef.current);
+    return { ...rowToRecord(r), _isoDelta: d > 0 ? String(d) : '' };
+  };
+
   useImperativeHandle(ref, () => ({
-    getData: () => rows.map(rowToRecord),
+    getData: () => rows.map(aRegistro),
+    actualizarConTarifa: (config) => {
+      const primasGrupo: Record<string, number> = {};
+      let recalculadas = 0, manuales = 0, sinTarifa = 0;
+      const next = rows.map(r => {
+        if (!r.matricula.trim()) return r;
+        if (r._primaOverride === 'true') { manuales++; return r; }
+        const auto = calcPrimaForRow(r, config);
+        if (!auto) { sinTarifa++; return r; }
+        recalculadas++;
+        const k = claveInforme(r);
+        // prima del grupo para el INFORME: la del primer vehículo, sin su recargo de isotermo
+        if (!(k in primasGrupo)) primasGrupo[k] = Math.round((parseFloat(auto) - isoDeltaDe(r, config)) * 100) / 100;
+        return auto === r.oferta_prima_mmt ? r : { ...r, oferta_prima_mmt: auto };
+      });
+      setRows(next);
+      return { primasGrupo, recalculadas, manuales, sinTarifa };
+    },
     setData: (data) => {
+      savedFrescoRef.current = true;
       // Store saved user edits keyed by matrícula — the useEffect will merge them
       const edits = new Map<string, Partial<OfertaRow>>();
       for (const r of data) {
@@ -735,6 +880,7 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
       const primaFieldsChanged =
         row.coberturas !== prev.coberturas ||
         row.lunas !== prev.lunas ||
+        row.asistencia !== prev.asistencia ||
         row.ambito !== prev.ambito ||
         row.frq !== prev.frq ||
         row.animales !== prev.animales ||
@@ -882,7 +1028,7 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
     if (!primasMmt || Object.keys(primasMmt).length === 0) return;
     setRows(prev => prev.map(row => {
       const prima = primasMmt[claveInforme(row)];
-      if (prima != null) return { ...row, oferta_prima_mmt: String(prima), _primaOverride: row._cfg === 'true' ? '' : 'true' };
+      if (prima != null) return { ...row, oferta_prima_mmt: primaInformeFila(prima, row, primasConfigRef.current), _primaOverride: row._cfg === 'true' ? '' : 'true' };
       return row;
     }));
   }, [primasMmt]);
@@ -1062,6 +1208,29 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
       },
     },
     {
+      key: 'asistencia', name: 'ASISTENCIA', width: 118,
+      editable: (row: OfertaRow) => row._cfg !== 'true' && opcionesAsistencia(row).length > 0,
+      renderEditCell: (props) => <AsistenciaEditor {...props} />,
+      renderCell: ({ row }: RenderCellProps<OfertaRow>) => {
+        const ops = opcionesAsistencia(row);
+        if (ops.length === 0) {
+          return (
+            <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f3f4f6' }}>
+              <span style={{ color: '#d1d5db', fontSize: 10 }}>N/A</span>
+            </div>
+          );
+        }
+        const v = asistenciaNormal(row);
+        const txt = ops.find(([val]) => val === v)?.[1] ?? ASIST_LABEL[v] ?? 'Sin';
+        return (
+          <div title={row._cfg === 'true' ? 'Definida en INFORME' : 'Doble clic para cambiar el nivel de asistencia'}
+            style={{ height: '100%', display: 'flex', alignItems: 'center', paddingLeft: 8, fontSize: 12, color: v === 'no' ? '#9ca3af' : '#000000', opacity: row._cfg === 'true' ? 0.65 : 1 }}>
+            {txt}
+          </div>
+        );
+      },
+    },
+    {
       key: 'animales', name: 'ANIM', width: 52,
       editable: false,
       renderCell: ({ row }: RenderCellProps<OfertaRow>) => {
@@ -1226,7 +1395,7 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
       if (r._id !== id) return r;
       if (value.trim() === '') {
         const informe = r._cfg === 'true' ? primasMmt?.[claveInforme(r)] : undefined;
-        const auto = informe ? String(informe) : calcPrimaForRow(r, primasConfigRef.current);
+        const auto = informe ? primaInformeFila(informe, r, primasConfigRef.current) : calcPrimaForRow(r, primasConfigRef.current);
         return { ...r, oferta_prima_mmt: auto, _primaOverride: '' };
       }
       return { ...r, oferta_prima_mmt: value, _primaOverride: 'true' };
@@ -1271,14 +1440,27 @@ const HojaOferta = forwardRef<HojaOfertaHandle, Props>(function HojaOferta(
   return (
     <div className="flex flex-col h-full min-h-0">
       {/* ── Cabecera de paso ── */}
+      {estadoTarifa === 'error' && !primasConfig && (
+        <div className="notice" role="alert" style={{ flexShrink: 0 }}>
+          <b>No se ha podido leer la tarifa de primas.</b> ORION no calcula precios sin ella: las primas nuevas quedarán vacías
+          hasta que vuelva la conexión. Pulsa «Actualizar primas» para reintentarlo.
+        </div>
+      )}
       <div className="sh" style={{ flexShrink: 0 }}>
         <div>
           <h2><b>07 ·</b>Oferta</h2>
           <p>Prima ofertada por vehículo y diferencia con la solicitada.</p>
         </div>
         <div className="acts">
+          {onActualizarPrimas && (
+            <button className="mini" onClick={onActualizarPrimas} disabled={actualizandoPrimas}
+              title="Vuelve a leer la tarifa del Admin y recalcula las primas de este estudio. Las escritas a mano no se tocan.">
+              {actualizandoPrimas ? 'Actualizando…' : 'Actualizar primas'}
+            </button>
+          )}
           {primasMmt && Object.keys(primasMmt).length > 0 && (
-            <button className="mini" onClick={handleActualizarDesdeInforme}>Actualizar primas</button>
+            <button className="mini" onClick={handleActualizarDesdeInforme}
+              title="Copia a la oferta las primas que hay ahora en el Informe">Traer del informe</button>
           )}
           <button className="mini" onClick={() => setVista(vista === 'cliente' ? 'tabla' : 'cliente')}>
             {vista === 'cliente' ? 'Volver a la tabla' : 'Vista del cliente'}

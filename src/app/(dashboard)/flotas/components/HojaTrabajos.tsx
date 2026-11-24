@@ -141,9 +141,15 @@ const TRAB_COLS: TrabCol[] = [
   { key: 'cv',                     label: 'CV', fx: true, n: true,
     compute: row => { const kw = parseFloat(row['kw'] || ''); return isNaN(kw) ? '—' : String(Math.round(kw * 1.35962)); } },
   { key: 'ambito',                 label: 'Ámbito' },
+  { key: 'isotermo',               label: 'Isotermo' },
   { key: 'coberturas_solicitadas', label: 'Cobertura' },
   { key: 'frq',                    label: 'Franq.', n: true },
 ];
+
+// Isotermo: solo 2.ª categoría con caja (camión rígido y semirremolque). Sube un 30 % la prima base.
+const admiteIsotermo = (row: Record<string, string>) =>
+  /cami[oó]n\s+r[ií]gido|remolque/i.test(row['tipo_vehiculo'] ?? '');
+const esSiTexto = (v?: string) => ['si', 'sí', 's', 'x', 'true', '1', 'yes'].includes((v ?? '').trim().toLowerCase());
 
 // ─── HojaTrabajos ────────────────────────────────────────────────────────────
 
@@ -288,6 +294,7 @@ const HojaTrabajos = forwardRef<FlotaGridHandle, Props>(function HojaTrabajos(
       { key: 'anyo_matricula',         label: 'Año matriculación' },
       { key: 'fecha_matriculacion',    label: 'Fecha matriculación' },
       { key: 'adr',                    label: 'ADR' },
+      { key: 'isotermo',               label: 'Isotermo' },
       { key: 'lunas',                  label: 'Lunas' },
       { key: 'animales',               label: 'Animales' },
       { key: 'seguro_conductor',       label: 'Seguro conductor' },
@@ -612,6 +619,18 @@ const HojaTrabajos = forwardRef<FlotaGridHandle, Props>(function HojaTrabajos(
                 {visibleRows.map((row, i) => (
                   <tr key={i}>
                     {TRAB_COLS.map(c => {
+                      if (c.key === 'isotermo') {
+                        return (
+                          <td key={c.key}>
+                            {admiteIsotermo(row) ? (
+                              <input type="checkbox" checked={esSiTexto(row['isotermo'])}
+                                aria-label={`Isotermo · ${row['matricula'] ?? ''}`}
+                                title="Vehículo isotermo: +30 % sobre la prima base"
+                                onChange={e => setRows(rows.map(r => r === row ? { ...r, isotermo: e.target.checked ? 'Sí' : 'No' } : r))} />
+                            ) : <span style={{ color: 'var(--quiet)' }}>—</span>}
+                          </td>
+                        );
+                      }
                       const val = c.compute ? c.compute(row) : (row[c.key] || '—');
                       return (
                         <td key={c.key} className={[c.fx ? 'fx' : '', c.n ? 'n' : ''].filter(Boolean).join(' ')}>

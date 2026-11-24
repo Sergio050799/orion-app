@@ -46,6 +46,13 @@ export function DetailDrawer({ isOpen, onClose, data, children }: Props) {
     return () => { document.body.style.overflow = ''; };
   }, [isOpen]);
 
+  // Mientras se cierra, el panel conserva el último contenido que mostró: antes se vaciaba
+  // de golpe y se veía un panel en blanco deslizándose hacia fuera.
+  const lastData = useRef(data);
+  const lastChildren = useRef(children);
+  if (isOpen) { lastData.current = data; lastChildren.current = children; }
+  else { data = lastData.current; children = lastChildren.current; }
+
   if (!mounted || typeof document === 'undefined') return null;
 
   const fx = data?.fx ?? [];
@@ -60,6 +67,7 @@ export function DetailDrawer({ isOpen, onClose, data, children }: Props) {
         role="dialog"
         aria-modal="true"
         aria-hidden={!isOpen}
+        inert={!isOpen}
         tabIndex={-1}
       >
         <button className="x" onClick={onClose} aria-label="Cerrar">×</button>

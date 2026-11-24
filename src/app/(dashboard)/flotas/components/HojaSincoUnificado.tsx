@@ -407,7 +407,9 @@ function AutomaticoContent({ header, trabajoRows, sincoResultRows, onSincoResult
 
 // ─── DAÑOS PROPIOS ───────────────────────────────────────────────────────────
 
-function DanosPropiosSection({ carpetaActiva, trabajoRows, sincoResultRows, onCarpetaChange }: Pick<Props, 'carpetaActiva' | 'trabajoRows' | 'sincoResultRows' | 'onCarpetaChange'>) {
+// Solo el número total de siniestros de daños propios de la flota (lo facilita el corredor). No se calcula
+// frecuencia: sin saber cuántos tiene cada vehículo, una frecuencia de daños propios no significa nada.
+function DanosPropiosSection({ carpetaActiva, onCarpetaChange }: Pick<Props, 'carpetaActiva' | 'onCarpetaChange'>) {
   const data = carpetaActiva.danosPropios;
   const numSiniestros = data?.numSiniestros ?? 0;
   const mostrarEnInforme = data?.mostrarEnInforme ?? false;
@@ -419,32 +421,12 @@ function DanosPropiosSection({ carpetaActiva, trabajoRows, sincoResultRows, onCa
     });
   };
 
-  // Derivar vehículos y antigüedad de los datos ya cargados (igual que SINCO automático)
-  const totalVeh = trabajoRows.filter(r => r['matricula']?.trim()).length;
-  const exitosas = sincoResultRows.filter(r => {
-    const c = r['Codigo_Retorno'] ?? r['codigo_retorno'] ?? '';
-    return !c || c.trim() === '' || c.trim() === '0';
-  });
-  const numAniosList = exitosas.map(r => {
-    const aniosRaw = r['Num_Anios_Asegurado'] ?? r['num_anios_asegurado'] ?? '';
-    if (aniosRaw.trim()) {
-      const n = parseFloat(aniosRaw);
-      if (!isNaN(n) && n >= 0) return n;
-    }
-    const fec = r['Fec_Ini_Cobertura'] ?? r['fec_ini_cobertura'] ?? '';
-    if (fec.trim()) { const y = calcularAntiguedad(fec); if (y > 0) return y; }
-    return null;
-  }).filter((n): n is number => n !== null);
-  const antiguedMedia = numAniosList.length > 0 ? numAniosList.reduce((a, b) => a + b, 0) / numAniosList.length : 0;
-  const sinAnio = calcularSiniestrosPorAnio(numSiniestros, antiguedMedia);
-  const frecuencia = calcularFrecuencia(sinAnio, totalVeh > 0 ? totalVeh : 1);
-
   return (
     <div style={{ marginTop: 26, borderTop: '1px solid var(--line)', paddingTop: 22 }}>
       <div className="sh">
         <div>
           <h2 style={{ fontSize: 20 }}>Daños propios</h2>
-          <p>Siniestros de daños propios que no vienen en SINCO. Se calculan con la antigüedad media de arriba.</p>
+          <p>Siniestros de daños propios del total de la flota, según indique el corredor. No vienen en SINCO.</p>
         </div>
         <label className="ck">
           <input type="checkbox" checked={mostrarEnInforme} onChange={e => save({ mostrarEnInforme: e.target.checked })} />
@@ -454,7 +436,7 @@ function DanosPropiosSection({ carpetaActiva, trabajoRows, sincoResultRows, onCa
 
       <div className="adj">
         <div className="dg-fld">
-          <label htmlFor="dp-n">Nº siniestros daños propios</label>
+          <label htmlFor="dp-n">Nº de daños propios en el total de la flota</label>
           <input
             id="dp-n"
             className="inp"
@@ -470,14 +452,7 @@ function DanosPropiosSection({ carpetaActiva, trabajoRows, sincoResultRows, onCa
         </div>
       </div>
 
-      <KpiPanel label="Resultado daños propios" kpis={[
-        { label: 'Vehículos', value: nf(totalVeh) },
-        { label: 'Siniestros', value: nf(numSiniestros) },
-        { label: 'Antigüedad media', value: `${fmt(antiguedMedia)} años` },
-        { label: 'Siniestros / año', value: fmt(sinAnio) },
-        { label: 'Frecuencia', value: fmtFreq(frecuencia) },
-      ]} />
-      <p className="note">Siniestros por año = siniestros ÷ antigüedad media. Frecuencia = siniestros por año ÷ vehículos × 100.</p>
+      <p className="note">Es un dato informativo del conjunto de la flota: no se reparte por vehículo ni se calcula su frecuencia.</p>
     </div>
   );
 }
@@ -498,8 +473,6 @@ export default function HojaSincoUnificado({
       />
       <DanosPropiosSection
         carpetaActiva={carpetaActiva}
-        trabajoRows={trabajoRows}
-        sincoResultRows={sincoResultRows}
         onCarpetaChange={onCarpetaChange}
       />
     </div>

@@ -10,13 +10,17 @@
   background:var(--bg); border-left:1px solid var(--line); color:var(--text);
   overflow-y:auto; padding:28px 36px 48px;
   font:15px/1.55 var(--font-body); letter-spacing:-.005em; -webkit-font-smoothing:antialiased;
-  transform:translateX(102%); transition:transform .35s var(--ease-out);
+  transform:translateX(102%); transition:transform .35s var(--ease-out), visibility 0s .35s;
+  /* cerrado: fuera de pintado y de foco (hay un panel por hoja montado a la vez) */
+  visibility:hidden;
+  /* la barra de scroll reserva su hueco: el contenido no salta de ancho al crecer (p. ej. al elegir Todo riesgo) */
+  scrollbar-gutter:stable; overscroll-behavior:contain;
   /* fix 20/11: quitado container-type:inline-size + cqw del padding/h3.
      Al abrir un combo/select dentro, el browser recalculaba el ancho del container
      y el drawer parecía encogerse. Afectaba a TODOS los drawers de la app:
      CarpetaScreen (Estudio), Corredores y Flotas v7. */
 }
-.dr-drawer.open { transform:none; box-shadow:-25px 0 80px #0006; }
+.dr-drawer.open { transform:none; visibility:visible; transition:transform .35s var(--ease-out), visibility 0s; box-shadow:-25px 0 80px #0006; }
 .dr-drawer:focus { outline:none; }
 .dr-drawer .x { position:absolute; right:14px; top:14px; font-size:24px; line-height:1; background:none; border:none; color:var(--quiet); cursor:pointer; width:36px; height:36px; display:grid; place-items:center; border-radius:6px; transition:background .16s; }
 .dr-drawer .x:hover { background:var(--hover); }

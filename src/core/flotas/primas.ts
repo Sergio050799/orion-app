@@ -1,3 +1,16 @@
+// ─── MOTOR DE PRIMAS ──────────────────────────────────────────────────────────
+//
+// Este fichero NO contiene ningún precio. Toda la tarifa (primas base por tipología y cobertura,
+// suplementos y ajustes) vive en la base de datos y se edita desde orion-admin («Tarifa»).
+// Aquí solo está la FÓRMULA: cómo se combinan esos valores.
+//
+//   PRIMA = base(tipo, cobertura, ámbito)            ← tabla primas_base
+//           [ajustada por franquicia en Todo riesgo]  ← curva con tr_alpha y la franquicia de referencia
+//           + suplementos (asistencia, animales, reposo, isotermo, pérdida total)   ← primas_suplementos
+//           × (1 + ajuste global %)
+//
+// Sin tarifa cargada no se calcula nada (devuelve null): Orion nunca inventa un precio.
+
 // ─── TIPOS GLOBALES ───────────────────────────────────────────────────────────
 
 export type TipoVehiculo =
@@ -19,17 +32,30 @@ export type Producto =
     | 'terceros_ampliado'
     | 'todo_riesgo';
 
-// Asistencia: 1.ª cat. + moto usan oro/oro_plus/platino; 2.ª cat. usa nacional/internacional según la OPCIÓN elegida.
+// Asistencia: 1.ª cat. + moto usan oro/oro_plus/platino; 2.ª cat. usa nacional/internacional.
 export type NivelAsistencia = 'no' | 'oro' | 'oro_plus' | 'platino' | 'nacional' | 'internacional';
 
-// ─── CONFIGURACIÓN EXTERNA (del panel admin) ──────────────────────────────────
+// ─── TARIFA (viene de la base de datos) ───────────────────────────────────────
 
 export interface PrimasConfig {
-  primas:  Record<string, number>; // "tipo_vehiculo:cobertura:ambito" → prima base
-  ajustes: Record<string, number>; // "clave" → valor (animales, asistencia_*, ...)
+    // "tipo:cobertura:ambito" → prima base. Variante "tipo@sp:…" = misma tipología en servicio público.
+    primas: Record<string, number>;
+    // clave del suplemento o ajuste → valor (€, o fracción en los porcentajes: 0,30 = 30 %)
+    ajustes: Record<string, number>;
 }
 
-// ─── METADATOS INTERNOS ───────────────────────────────────────────────────────
+/** Claves de suplementos y ajustes que usa la fórmula. Todas se leen de la tarifa. */
+export type ClaveAjuste =
+    | 'animales'
+    | 'reposo_cat1' | 'reposo_cat2' | 'reposo_moto'
+    | 'asistencia_oro' | 'asistencia_oro_plus' | 'asistencia_platino'
+    | 'asistencia_servicio_pub_oro' | 'asistencia_servicio_pub_op' | 'asistencia_servicio_pub'
+    | 'asistencia_nacional' | 'asistencia_internacional' | 'asistencia_moto_oro'
+    | 'isotermo_pct' | 'perdida_total_pct'
+    | 'tr_alpha' | 'tr_fref_cat1' | 'tr_fref_cat2' | 'tr_fref_moto'
+    | 'ajuste_global_pct';
+
+// ─── METADATOS DE TIPOLOGÍA (no son precios) ──────────────────────────────────
 
 type FamiliaCat2 = 'cabeza_tractora' | 'camion_rigido' | 'remolque';
 
@@ -53,63 +79,6 @@ const VEH_META: Record<TipoVehiculo, VehMeta> = {
     industrial_no_matriculado:  { categoria: 2, puedelunas: false },
 };
 
-// ─── TABLAS HARDCODEADAS (fallback si la API no responde) ─────────────────────
-// 2.ª cat. INTACTA (D12, documento oficial). 1.ª y 3.ª: lista del 03/11/2026.
-
-const PRIMAS_CAT1: Partial<Record<TipoVehiculo, Partial<Record<Producto, number>>>> = {
-    turismo:                    { terceros: 500, terceros_ampliado: 650, todo_riesgo: 850 },
-    derivado_turismo:           { terceros: 395, terceros_ampliado: 650, todo_riesgo: 950 },
-    derivado_todoterreno:       { terceros: 550, terceros_ampliado: 750, todo_riesgo: 1150 },
-    furgoneta:                  { terceros: 500, terceros_ampliado: 650, todo_riesgo: 1050 },
-    furgon:                     { terceros: 640, terceros_ampliado: 950, todo_riesgo: 1350 },
-    industrial_matriculado:     { terceros: 190 },
-    industrial_no_matriculado:  { terceros: 190 },
-};
-
-// Moto: solo Terceros y «Ampliado con franquicia» (hoja Precios R12). TR_REF = 500.
-const PRIMAS_MOTO: Partial<Record<Producto, number>> = {
-    terceros: 336.08,
-    todo_riesgo: 426.89,   // producto COMB_MOTO_FRANQ (TR en la guía)
-};
-
-const PRIMAS_CAT2_NAC: Record<FamiliaCat2, Record<Producto, number | null>> = {
-    cabeza_tractora: { terceros: 820,  terceros_con_luna: 970,  terceros_ampliado: 1500, todo_riesgo: 2355 },
-    camion_rigido:   { terceros: 800,  terceros_con_luna: 950,  terceros_ampliado: 1400, todo_riesgo: 2305 },
-    remolque:        { terceros: 270,  terceros_con_luna: null, terceros_ampliado: 1100, todo_riesgo: 1870 },
-};
-
-const PRIMAS_CAT2_INT: Record<FamiliaCat2, Record<Producto, number | null>> = {
-    cabeza_tractora: { terceros: 965,  terceros_con_luna: 1115, terceros_ampliado: 1645, todo_riesgo: 2500 },
-    camion_rigido:   { terceros: 945,  terceros_con_luna: 1095, terceros_ampliado: 1545, todo_riesgo: 2450 },
-    remolque:        { terceros: 300,  terceros_con_luna: null, terceros_ampliado: 1200, todo_riesgo: 1950 },
-};
-
-// Ajustes nuevos (D11): hoy solo se cobran lunas (en Terceros), animales, reposo, pérdida total y asistencia.
-const AJUSTES = {
-    animales:                   25,
-    reposo_cat1:                40,
-    reposo_cat2:                80,
-    reposo_moto:                25,
-    lunas_cat1_terceros:        70,   // turismo / derivados / furgoneta (media)
-    lunas_furgon_terceros:      100,
-    asistencia_oro:             35,   // cat. 1
-    asistencia_oro_plus:        75,
-    asistencia_platino:         110,
-    asistencia_servicio_pub:    160,  // furgoneta SP (Platino)
-    asistencia_servicio_pub_oro: 50,   // furgoneta SP (Oro) — escalado
-    asistencia_servicio_pub_op:  105,  // furgoneta SP (Oro Plus) — escalado
-    asistencia_nacional:        221,
-    asistencia_internacional:   327,
-    asistencia_moto_oro:        30,
-    isotermo_pct:               0.30,
-    perdida_total_pct:          0.12,
-    // Curva TR por franquicia (D10, hoja «TR x franquicia»).
-    tr_alpha:                   0.35,
-    tr_fref_cat1:               300,
-    tr_fref_cat2:               1800,
-    tr_fref_moto:               500,
-} as const;
-
 // ─── FUNCIÓN PRINCIPAL ────────────────────────────────────────────────────────
 
 export interface CalcPrimaParams {
@@ -120,13 +89,18 @@ export interface CalcPrimaParams {
     franquicia?:   number;
     asistencia?:   NivelAsistencia;
     animales?:     boolean;
-    lunas?:        boolean;         // solo cuenta en Terceros de 1.ª cat.
+    lunas?:        boolean;         // Terceros + lunas (1.ª cat.): usa la fila «Terceros con lunas» de la tarifa
     reposo?:       boolean;         // RC voluntaria en reposo
-    isotermo?:     boolean;         // solo 2.ª cat.
-    perdidaTotal?: boolean;         // TA/TR
+    isotermo?:     boolean;         // solo 2.ª cat. (camión rígido y semirremolque)
+    perdidaTotal?: boolean;         // ampliado y todo riesgo
 }
 
+/**
+ * Prima de un vehículo según la tarifa. Devuelve null si no hay tarifa cargada o si la tarifa no
+ * tiene precio para esa combinación de tipología, cobertura y ámbito (o está marcada «no aplica»).
+ */
 export function calcularPrima(params: CalcPrimaParams, config?: PrimasConfig | null): number | null {
+    if (!config) return null;
     const {
         tipoVehiculo, producto, uso,
         ambito = 'nacional', asistencia = 'no',
@@ -135,46 +109,32 @@ export function calcularPrima(params: CalcPrimaParams, config?: PrimasConfig | n
     } = params;
 
     const meta = VEH_META[tipoVehiculo];
+    if (!meta) return null;
 
-    // Ajuste: config primero, hardcoded como fallback
-    const adj = (key: keyof typeof AJUSTES): number =>
-        config?.ajustes?.[key] !== undefined ? config.ajustes[key] : AJUSTES[key];
+    // Suplemento o ajuste de la tarifa; si no está definido no suma nada.
+    const adj = (key: ClaveAjuste): number => {
+        const v = config.ajustes[key];
+        return typeof v === 'number' && Number.isFinite(v) ? v : 0;
+    };
 
-    // Prima base: config primero (del admin), tablas hardcodeadas como fallback
-    function getBase(): number | null {
-        if (config) {
-            const key = `${tipoVehiculo}:${producto}:${ambito}`;
-            if (key in config.primas) return config.primas[key];
-            // Fallback a nacional cuando se pide internacional y no existe en config
-            if (ambito === 'internacional') {
-                const kNac = `${tipoVehiculo}:${producto}:nacional`;
-                if (kNac in config.primas) return config.primas[kNac];
-            }
+    // Tipo con el que se busca en la tarifa: en servicio público, primero su fila propia si existe.
+    const tiposTabla = uso === 'servicio_publico' ? [`${tipoVehiculo}@sp`, tipoVehiculo] : [tipoVehiculo];
+    const precio = (prod: Producto): number | null => {
+        for (const t of tiposTabla) {
+            const v = config.primas[`${t}:${prod}:${ambito}`];
+            if (typeof v === 'number' && Number.isFinite(v)) return v;
         }
-        if (meta.categoria === 3) return PRIMAS_MOTO[producto] ?? null;
-        if (meta.categoria === 1) return PRIMAS_CAT1[tipoVehiculo]?.[producto] ?? null;
-        if (!meta.familia2)       return PRIMAS_CAT1[tipoVehiculo]?.[producto] ?? null; // industriales
-        const tabla = ambito === 'internacional' ? PRIMAS_CAT2_INT : PRIMAS_CAT2_NAC;
-        return tabla[meta.familia2][producto] ?? null;
-    }
-
-    const primaBase = getBase();
-    if (primaBase === null || primaBase === undefined) return null;
-
-    const applyGlobal = (n: number): number => {
-        const pct = config?.ajustes?.['ajuste_global_pct'];
-        if (!pct) return Math.round(n);
-        return Math.round(n * (1 + pct / 100));
+        return null;
     };
 
-    // Suplemento lunas: solo en Terceros; en TA/TR las lunas forman parte de la modalidad.
-    const suplementoLunas = (): number => {
-        if (!lunas || producto !== 'terceros') return 0;
-        if (tipoVehiculo === 'furgon') return adj('lunas_furgon_terceros');
-        return adj('lunas_cat1_terceros');
-    };
+    // Terceros + lunas: es una cobertura con precio propio en la tarifa («Terceros con lunas»).
+    const conLunas = producto === 'terceros' && lunas && meta.puedelunas;
+    const primaBase = conLunas ? (precio('terceros_con_luna') ?? precio('terceros')) : precio(producto);
+    if (primaBase === null) return null;
 
-    // Suplemento asistencia (1.ª cat. + moto y 2.ª cat. por opción).
+    const applyGlobal = (n: number): number => Math.round(n * (1 + adj('ajuste_global_pct') / 100));
+
+    // Asistencia en viaje, según categoría.
     const suplementoAsistencia = (): number => {
         if (asistencia === 'no') return 0;
         if (meta.categoria === 3) return asistencia === 'oro' ? adj('asistencia_moto_oro') : 0;
@@ -183,9 +143,8 @@ export function calcularPrima(params: CalcPrimaParams, config?: PrimasConfig | n
             if (asistencia === 'internacional') return adj('asistencia_internacional');
             return 0;
         }
-        // Categoría 1: furgoneta en servicio público tiene escalado propio
-        const sp = tipoVehiculo === 'furgoneta' && uso === 'servicio_publico';
-        if (sp) {
+        // 1.ª categoría: la furgoneta en servicio público tiene su propia escala
+        if (tipoVehiculo === 'furgoneta' && uso === 'servicio_publico') {
             if (asistencia === 'oro')      return adj('asistencia_servicio_pub_oro');
             if (asistencia === 'oro_plus') return adj('asistencia_servicio_pub_op');
             if (asistencia === 'platino')  return adj('asistencia_servicio_pub');
@@ -197,7 +156,6 @@ export function calcularPrima(params: CalcPrimaParams, config?: PrimasConfig | n
         return 0;
     };
 
-    // Suplemento reposo (siempre que esté activo).
     const suplementoReposo = (): number => {
         if (!reposo) return 0;
         if (meta.categoria === 3) return adj('reposo_moto');
@@ -205,40 +163,33 @@ export function calcularPrima(params: CalcPrimaParams, config?: PrimasConfig | n
         return adj('reposo_cat1');
     };
 
-    // Curva TR por franquicia: solo en TR y cuando el motor conoce la franquicia de referencia.
+    // Todo riesgo según franquicia: el precio de la tarifa es el de la franquicia de referencia;
+    // con otra franquicia se mueve entre «Terceros ampliado» y ese precio:
+    //   TR(f) = TA + (TR_ref − TA) × (f_ref / f) ^ alfa
     const ajusteTRporFranquicia = (base: number): number => {
         if (producto !== 'todo_riesgo' || !franquicia) return base;
-        const ta = meta.categoria === 3
-            ? PRIMAS_MOTO['terceros'] ?? base
-            : (config?.primas?.[`${tipoVehiculo}:terceros_ampliado:${ambito}`]
-                ?? PRIMAS_CAT1[tipoVehiculo]?.terceros_ampliado
-                ?? (meta.familia2 ? (ambito === 'internacional' ? PRIMAS_CAT2_INT : PRIMAS_CAT2_NAC)[meta.familia2].terceros_ampliado : null)
-                ?? base);
-        const fref = meta.categoria === 3
-            ? adj('tr_fref_moto')
-            : meta.categoria === 2 ? adj('tr_fref_cat2') : adj('tr_fref_cat1');
+        const fref = meta.categoria === 3 ? adj('tr_fref_moto') : meta.categoria === 2 ? adj('tr_fref_cat2') : adj('tr_fref_cat1');
         const alpha = adj('tr_alpha');
-        // TR(f) = TA + (TR_ref - TA) * (fref / f)^alpha
-        const trAjustado = ta + (base - ta) * Math.pow(fref / franquicia, alpha);
-        return trAjustado;
+        if (!(fref > 0) || !(alpha > 0)) return base;
+        const ta = meta.categoria === 3 ? precio('terceros') : precio('terceros_ampliado');
+        if (ta === null) return base;
+        return ta + (base - ta) * Math.pow(fref / franquicia, alpha);
     };
 
-    // ── Rama por categoría ────────────────────────────────────────────────────
-
+    // ── 3.ª categoría (motos) ──
     if (meta.categoria === 3) {
         let total = ajusteTRporFranquicia(primaBase);
         if (animales) total += adj('animales');
-        if (reposo)   total += suplementoReposo();
+        total += suplementoReposo();
         total += suplementoAsistencia();
-        if (lunas && producto === 'terceros') total += suplementoLunas();
         return applyGlobal(total);
     }
 
+    // ── 1.ª categoría ──
     if (meta.categoria === 1) {
-        let total = ajusteTRporFranquicia(primaBase);
-        if (animales)     total += adj('animales');
-        if (reposo)       total += suplementoReposo();
-        total += suplementoLunas();
+        let total = conLunas ? primaBase : ajusteTRporFranquicia(primaBase);
+        if (animales) total += adj('animales');
+        total += suplementoReposo();
         total += suplementoAsistencia();
         if (perdidaTotal && (producto === 'terceros_ampliado' || producto === 'todo_riesgo')) {
             total += primaBase * adj('perdida_total_pct');
@@ -246,15 +197,14 @@ export function calcularPrima(params: CalcPrimaParams, config?: PrimasConfig | n
         return applyGlobal(total);
     }
 
-    // ── CATEGORÍA 2 (INTACTA — D12) ──────────────────────────────────────────
-    if (!meta.familia2) return applyGlobal(primaBase);
+    // ── 2.ª categoría ──
+    if (!meta.familia2) return applyGlobal(primaBase);   // industriales: solo la prima base
     let total = ajusteTRporFranquicia(primaBase);
     if (isotermo && (meta.familia2 === 'remolque' || meta.familia2 === 'camion_rigido')) {
         total += primaBase * adj('isotermo_pct');
     }
     if (perdidaTotal) total += primaBase * adj('perdida_total_pct');
-    if (reposo)       total += suplementoReposo();
-    // Asistencia 2.ª cat.: hoy sale de la OPCIÓN elegida (D6/R13), no del ámbito del vehículo.
+    total += suplementoReposo();
     total += suplementoAsistencia();
 
     return applyGlobal(total);

@@ -113,6 +113,26 @@ export default function HojaEmision({
   };
 
   const filasConError = res.filas.filter(f => f.errores.length > 0).length;
+  // En la vista previa, primero los vehículos bloqueados (antes quedaban perdidos más allá de la primera página)
+  const filasOrdenadas = useMemo(() => [...res.filas].sort((a, b) => (b.errores.length > 0 ? 1 : 0) - (a.errores.length > 0 ? 1 : 0)), [res.filas]);
+  // Motivos de bloqueo agrupados, con las matrículas afectadas
+  const motivosBloqueo = useMemo(() => {
+    const m = new Map<string, string[]>();
+    for (const f of res.filas) {
+      for (const e of f.errores) {
+        const clave = e.startsWith('Identificación por revisar') ? 'Identificación por revisar en PRE-EMISIÓN (abre el vehículo allí: elige otra versión, corrige el año o dalo por bueno)'
+          : e.startsWith('Año de fabricación') ? 'Año de fabricación fuera del rango de su ID'
+          : e.startsWith('Plazas ') ? 'Plazas fuera de las que admite su ID'
+          : e;
+        const l = m.get(clave) ?? [];
+        if (!l.includes(f.matricula)) l.push(f.matricula);
+        m.set(clave, l);
+      }
+    }
+    return [...m.entries()].sort((a, b) => b[1].length - a[1].length);
+  }, [res.filas]);
+  // Filas cuyo año no entra en el rango de su ID y que por eso bloquean el fichero
+  const conflictosAnio = res.filas.filter(f => f.conflictoAnio && f.errores.some(e => e.startsWith('Año de fabricación')));
   const totalPrima = res.filas.reduce((a, f) => a + (parseFloat(f.valores.PRECIO_OBJETIVO ?? '') || 0), 0);
 
   // Fecha: input date trabaja con aaaa-mm-dd; se guarda dd/mm/aaaa
@@ -187,9 +207,46 @@ export default function HojaEmision({
             <b>Para generar el fichero falta:</b>
             <ul className="emlist">
               {res.erroresGlobales.map(e => <li key={e}>{e}</li>)}
-              {filasConError > 0 && <li>{nf(filasConError)} {filasConError === 1 ? 'vehículo con bloqueos' : 'vehículos con bloqueos'} (marcados en la tabla).</li>}
+              {filasConError > 0 && <li>{nf(filasConError)} {filasConError === 1 ? 'vehículo con bloqueos' : 'vehículos con bloqueos'} (van los primeros en la tabla):</li>}
             </ul>
+            {motivosBloqueo.length > 0 && (
+              <ul className="emlist" style={{ marginTop: 6 }}>
+                {motivosBloqueo.map(([motivo, mats]) => (
+                  <li key={motivo}><b>{nf(mats.length)}</b> · {motivo} — {mats.slice(0, 12).join(', ')}{mats.length > 12 ? ` y ${nf(mats.length - 12)} más` : ''}</li>
+                ))}
+              </ul>
+            )}
           </div>
+        )}
+        {conflictosAnio.length > 0 && (
+          <>
+            <p className="dg-h3 sp">Años fuera del rango de su ID</p>
+            <p className="dg-sub">
+              El sistema de emisión rechazaría estas filas. No se puede descargar el Excel hasta corregir el año
+              o asignar otra ID en PRE-EMISIÓN.
+            </p>
+            <div className="xwrap" style={{ maxHeight: 'none' }}>
+              <table className="xg">
+                <thead>
+                  <tr><th>Matrícula</th><th className="n">Año del vehículo</th><th>Rango que admite la ID</th><th>ID catálogo</th><th>Origen del rango</th></tr>
+                </thead>
+                <tbody>
+                  {conflictosAnio.map(f => {
+                    const c = f.conflictoAnio!;
+                    return (
+                      <tr key={f.matricula}>
+                        <td><b>{f.matricula}</b></td>
+                        <td className="n">{c.anio}</td>
+                        <td>{c.min != null && c.max != null ? `${c.min} – ${c.max}` : c.min != null ? `desde ${c.min}` : `hasta ${c.max}`}</td>
+                        <td>{c.id}</td>
+                        <td>{c.origen === 'sistema' ? 'Sistema de emisión' : 'Catálogo'}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
         {errDescarga && <div className="notice" role="alert">{errDescarga}</div>}
         <AprenderDelSistema />
@@ -274,7 +331,7 @@ export default function HojaEmision({
                   </tr>
                 </thead>
                 <tbody>
-                  {res.filas.slice(0, shown).map(f => (
+                  {filasOrdenadas.slice(0, shown).map(f => (
                     <tr key={f.matricula} className="clk" onClick={() => setAbierta(f)} tabIndex={0}
                       onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setAbierta(f); } }}>
                       <td><b>{f.matricula}</b></td>

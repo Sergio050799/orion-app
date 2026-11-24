@@ -82,6 +82,13 @@ export interface VersionCatalogo {
  */
 export const TOLERANCIA_ANIOS = 0;
 
+/**
+ * Años que una versión «sin fecha de fin» en el catálogo se considera fiable desde su inicio.
+ * Casi la mitad del catálogo no trae fecha de fin: bloquear todas obligaba a dar por bueno casi todo.
+ * Dentro de este plazo queda como aviso; más allá, se sigue pidiendo revisión.
+ */
+export const VIDA_MAX_VERSION = 10;
+
 // ─── Utilidades de texto ─────────────────────────────────────────────────────
 
 const norm = (s: string | undefined): string =>
@@ -161,7 +168,7 @@ export function revisarIdentificacion(d: VehiculoDeclarado, c: VersionCatalogo, 
         } else if (fin !== null && anioFab > fin + TOLERANCIA_ANIOS) {
             add('ANIO_POSTERIOR', 'bloquea', `El vehículo es de ${anioFab} y esta versión ${vs ? 'solo admite hasta' : 'se dejó de comercializar en'} ${fin}.`);
         } else if (!vs && (ini === null || fin === null)) {
-            add('VENTANA_ABIERTA', 'bloquea',
+            add('VENTANA_ABIERTA', ini !== null && fin === null && anioFab - ini <= VIDA_MAX_VERSION ? 'aviso' : 'bloquea',
                 ini === null && fin === null
                     ? 'El catálogo no indica entre qué años se comercializó esta versión: no se puede comprobar que el año del vehículo sea válido.'
                     : fin === null
@@ -264,6 +271,8 @@ export interface InfoVerificacion {
     fuenteAnio?: FuenteAnio;
     /** ventana usada: la del sistema (exacta), la del catálogo o ninguna (abierta) */
     ventana?: { min: number | null; max: number | null; origen: 'sistema' | 'catalogo' | 'abierta' } | null;
+    /** plazas que admite la ID de catálogo asignada (el sistema de emisión rechaza las que queden fuera) */
+    plazasId?: { min: number; max: number } | null;
     /** quién y cuándo dio por buena la identificación */
     confirmadaPor?: string;
     confirmadaFecha?: string;

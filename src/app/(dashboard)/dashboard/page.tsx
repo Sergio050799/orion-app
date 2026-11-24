@@ -21,7 +21,8 @@ const sum = (a: number[]) => a.reduce((s, x) => s + x, 0);
 
 // ─── Utils ────────────────────────────────────────────────────────────────────
 
-function parseFechaFlexible(s: string): Date | null {
+function parseFechaFlexible(raw: string): Date | null {
+  const s = (raw ?? '').trim();
   if (!s) return null;
   const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if (m) {
@@ -116,8 +117,14 @@ type Series = { labels: string[]; data: Record<MetricKey, SerieMes>; contratada:
 
 /** Prima de una flota: la ofertada por MMT y, si aún no hay oferta, la prima cliente. */
 function primaDeFlota(c: FlotaCarpeta): number {
-  const o = (c.oferta ?? []).reduce((t, r) => t + (parseFloat(r['oferta_prima_mmt']) || 0), 0);
-  return o > 0 ? o : (c.primaClienteTotal ?? 0);
+  const o = (c.oferta ?? []).reduce((t, r) => {
+    const v = parseFloat(r['oferta_prima_mmt']);
+    return t + (Number.isFinite(v) ? v : 0);
+  }, 0);
+  if (o > 0) return o;
+  // Saneado: nunca NaN/Infinity/string hacia las series (un NaN contamina la suma del mes entero).
+  const cliente = Number(c.primaClienteTotal ?? 0);
+  return Number.isFinite(cliente) ? cliente : 0;
 }
 
 /** Fecha en la que la flota pasó a Contratada (último cambio a ese estado; si no consta, su última actualización). */
@@ -228,6 +235,10 @@ const ESTADO_COLORS: Record<string, string> = {
 
 type DrawerData = DetailDrawerData;
 
+/** CatStats (definido en VehiculosCategorias) no trae rechazados; el dashboard sí los muestra. */
+type CatStatsDash = CatStats & { rechazada: number };
+type CatColId = 'estudio' | 'ofertada' | 'contratada' | 'rechazada';
+
 // ─── Sugerencias ──────────────────────────────────────────────────────────────
 
 function SugerenciasSection({ user }: { user: string | null }) {
@@ -312,9 +323,11 @@ function EvolutionChart({
 
   const S    = CHART_DATA[metric];
   const dual = metric === 'primas';   // primas: en estudio frente a contratada (en vez de «año anterior»)
-  const now  = series.data[metric].now.slice(-period);
-  const prev = (dual ? series.contratada.now : series.data[metric].prev).slice(-period);
-  const labels = series.labels.slice(-period);
+  const { now, prev, labels } = useMemo(() => ({
+    now:    series.data[metric].now.slice(-period),
+    prev:   (metric === 'primas' ? series.contratada.now : series.data[metric].prev).slice(-period),
+    labels: series.labels.slice(-period),
+  }), [series, metric, period]);
 
   const { W, H } = dims;
   const L = W < 520 ? 40 : 52;
@@ -328,13 +341,16 @@ function EvolutionChart({
   const step = niceStep(raw * 1.05 / 4);
   const max  = step * 4;
 
-  const X = (i: number) => L + iw * i / (now.length - 1);
-  const Y = (v: number) => T + ih - ih * v / max;
+  const nPts = now.length;
+  const X = useCallback((i: number) => L + iw * i / (nPts - 1), [L, iw, nPts]);
+  const Y = useCallback((v: number) => T + ih - ih * v / max, [T, ih, max]);
 
-  const pn: [number, number][] = now.map((v, i) => [X(i), Y(v)]);
-  const pp: [number, number][] = prev.map((v, i) => [X(i), Y(v)]);
-  const dn = monotone(pn);
-  const dp = monotone(pp);
+  // Puntos y trazos solo se recalculan si cambian los datos o el tamaño (no en cada hover del tooltip).
+  const { pn, pp, dn, dp } = useMemo(() => {
+    const pn: [number, number][] = now.map((v, i) => [X(i), Y(v)]);
+    const pp: [number, number][] = prev.map((v, i) => [X(i), Y(v)]);
+    return { pn, pp, dn: monotone(pn), dp: monotone(pp) };
+  }, [now, prev, X, Y]);
 
   const axisLbl = (v: number) => metric === 'primas'
     ? (v ? (Number.isInteger(v / 1000) ? nf(v / 1000) : dec(v / 1000, 1)) + ' k' : '0')
@@ -622,6 +638,16 @@ export default function DashboardPage() {
   const [toast,      setToast]      = useState('');
   const [toastVis,   setToastVis]   = useState(false);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  // Hora/fecha del saludo: solo en cliente tras montar (el servidor puede estar en otra zona horaria → hidratación).
+  const [ahora, setAhora] = useState<Date | null>(null);
+  useEffect(() => { setAhora(new Date()); }, []);
+
+  const showToast = useCallback((msg: string) => {
+    setToast(msg);
+    setToastVis(true);
+    clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToastVis(false), 2800);
+  }, []);
 
   useEffect(() => {
     // summary=true: payload ~25× más ligero (sin trabajo/original crudos).
@@ -635,19 +661,37 @@ export default function DashboardPage() {
     cargar();
     // Sincronización cross-pestañas: SSE empuja cambios (cambio de estado, upsert de carpeta,
     // actualización de corredor). Fallback por polling cada 30s si el SSE no está disponible.
-    const es = new EventSource('/api/flotas/eventos');
-    es.onmessage = (e) => { if (e.data === 'update') cargar(); };
-    es.onerror = () => es.close();
+    // Si el SSE cae se reconecta con backoff (2s, 4s, 8s… máx. 60s). Solo se avisa al usuario tras
+    // 3 intentos fallidos seguidos: un corte puntual (p. ej. timeout de proxy por inactividad) es silencioso.
+    let es: EventSource | null = null;
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
+    let fallos = 0;
+    let avisado = false;
+    const conectar = () => {
+      if (cancelled) return;
+      es = new EventSource('/api/flotas/eventos');
+      es.onopen = () => {
+        if (cancelled) return;
+        if (fallos > 0) cargar(); // recuperar lo que se haya perdido durante el corte
+        fallos = 0;
+        if (avisado) { avisado = false; showToast('Conexión en tiempo real restablecida.'); }
+      };
+      es.onmessage = (e) => { if (e.data === 'update') cargar(); };
+      es.onerror = () => {
+        es?.close();
+        if (cancelled) return;
+        fallos += 1;
+        if (fallos === 3 && !avisado) {
+          avisado = true;
+          showToast('Sin conexión en tiempo real: se actualiza cada 30 s.');
+        }
+        retryTimer = setTimeout(conectar, Math.min(60_000, 2_000 * 2 ** (fallos - 1)));
+      };
+    };
+    conectar();
     const interval = setInterval(cargar, 30_000);
-    return () => { cancelled = true; clearInterval(interval); es.close(); };
-  }, []);
-
-  const showToast = useCallback((msg: string) => {
-    setToast(msg);
-    setToastVis(true);
-    clearTimeout(toastTimer.current);
-    toastTimer.current = setTimeout(() => setToastVis(false), 2800);
-  }, []);
+    return () => { cancelled = true; clearInterval(interval); clearTimeout(retryTimer); es?.close(); };
+  }, [showToast]);
 
   const openDrawer = useCallback((data: DrawerData) => {
     setDrawer(data);
@@ -703,7 +747,7 @@ export default function DashboardPage() {
       ? carpetas.filter(c => c.estado === 'CONTRATADA')
       : [];
     return source
-      .filter(c => c.header?.fechaVencimiento)
+      .filter(c => c.header?.fechaVencimiento?.trim())
       .flatMap(c => {
         const fecha = parseFechaFlexible(c.header!.fechaVencimiento!);
         if (!fecha) return [];
@@ -774,7 +818,7 @@ export default function DashboardPage() {
     return entries.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime()).slice(0, 6);
   }, [carpetas]);
 
-  const vehiculosCatStats = useMemo((): CatStats[] => {
+  const vehiculosCatStats = useMemo((): CatStatsDash[] => {
     const acc: Record<string, Record<string, Record<string, number>>> = {
       '1ª Categoría': {}, '2ª Categoría': {}, '3ª Categoría': {}, 'Sin clasificar': {},
     };
@@ -803,6 +847,7 @@ export default function DashboardPage() {
             estudio:    estadoMap['EN ESTUDIO']  ?? 0,
             ofertada:   estadoMap['OFERTADA']    ?? 0,
             contratada: estadoMap['CONTRATADA']  ?? 0,
+            rechazada:  estadoMap['RECHAZADA']   ?? 0,
             total: Object.values(estadoMap).reduce((s, v) => s + v, 0),
           }))
           .sort((a, b) => b.total - a.total);
@@ -813,6 +858,7 @@ export default function DashboardPage() {
           estudio:    tipologias.reduce((s, t) => s + t.estudio,    0),
           ofertada:   tipologias.reduce((s, t) => s + t.ofertada,   0),
           contratada: tipologias.reduce((s, t) => s + t.contratada, 0),
+          rechazada:  tipologias.reduce((s, t) => s + t.rechazada,  0),
           total:      tipologias.reduce((s, t) => s + t.total,      0),
         };
       })
@@ -968,7 +1014,8 @@ export default function DashboardPage() {
     };
 
     if (key.startsWith('estado:')) {
-      const estadoKey = key.slice(7).toUpperCase() as EstadoFlota;
+      // la clave llega como «en_estudio»; el estado real es «EN ESTUDIO» (con espacio)
+      const estadoKey = key.slice(7).toUpperCase().replace(/_/g, ' ') as EstadoFlota;
       const seg = SEGS.find(s => s.key === estadoKey);
       if (!seg) return null;
       const count = flotasEstadoCounts[estadoKey] ?? 0;
@@ -1077,9 +1124,10 @@ export default function DashboardPage() {
 
   // ── Render helpers ──────────────────────────────────────────────────────────
 
-  const hora     = new Date().getHours();
-  const saludo   = hora < 14 ? 'Buenos días' : hora < 21 ? 'Buenas tardes' : 'Buenas noches';
-  const fechaHoy = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  // `ahora` es null en SSR y en el primer render de cliente: se pinta un hueco del mismo alto y se rellena al montar.
+  const hora     = ahora ? ahora.getHours() : null;
+  const saludo   = hora === null ? '' : hora < 14 ? 'Buenos días' : hora < 21 ? 'Buenas tardes' : 'Buenas noches';
+  const fechaHoy = ahora ? ahora.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : '';
 
   const TOPB    = 7;
   const maxBrok = corredoresStats.length > 0 ? corredoresStats[0].total : 1;
@@ -1087,7 +1135,7 @@ export default function DashboardPage() {
     ? [...corredoresStats.slice(0, TOPB), { nombre: `Otros corredores (${corredoresStats.length - TOPB})`, total: sum(corredoresStats.slice(TOPB).map(b => b.total)), isAgg: true }]
     : corredoresStats.map(b => ({ ...b, isAgg: false }));
 
-  const catCols: { id: string; var: string }[] = [
+  const catCols: { id: CatColId; var: string }[] = [
     { id: 'estudio',    var: '--st-estudio'    },
     { id: 'ofertada',   var: '--st-ofertada'   },
     { id: 'contratada', var: '--st-contratada' },
@@ -1222,7 +1270,7 @@ export default function DashboardPage() {
         /* Alert */
         .db-blink{animation:db-blink 2s ease-in-out infinite}
         @keyframes db-blink{0%,100%{opacity:1}50%{opacity:.22}}
-        @container app (max-width:640px){.db-sug{grid-template-columns:1fr!important}}
+        @container app (max-width:640px){.db-sug{grid-template-columns:1fr!important}.db-toast{white-space:normal;text-align:center}}
         @container app (max-width:900px){
           .db-grid2,.db-grid2.r40{grid-template-columns:1fr}
           .db-grid2>section:first-child{padding-right:0}
@@ -1254,9 +1302,11 @@ export default function DashboardPage() {
       <section style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 20, flexWrap: 'wrap', marginBottom: 'clamp(22px,3cqw,38px)' }}>
         <div>
           <h1 style={{ fontSize: 'clamp(26px,3.2cqw,44px)', fontWeight: 600, letterSpacing: '-0.05em', lineHeight: 1.1, margin: '0 0 7px', fontFamily: 'var(--font-display)' }}>
-            <Letters key={`${saludo}, ${displayName(user)}`} text={`${saludo}, ${displayName(user)}`} />
+            {saludo
+              ? <Letters key={`${saludo}, ${displayName(user)}`} text={`${saludo}, ${displayName(user)}`} />
+              : ' '}
           </h1>
-          <p style={{ margin: 0, color: 'var(--sub)', fontSize: 14 }}>{fechaHoy.charAt(0).toUpperCase() + fechaHoy.slice(1)}</p>
+          <p style={{ margin: 0, color: 'var(--sub)', fontSize: 14 }}>{fechaHoy ? fechaHoy.charAt(0).toUpperCase() + fechaHoy.slice(1) : ' '}</p>
         </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
           <select
@@ -1333,7 +1383,8 @@ export default function DashboardPage() {
             },
           ] as Array<{ id: string; l: string; v: string; n: string; urgent?: boolean; delta?: number | null; spark?: number[] }>);
         })().map(kpi => (
-          <button key={kpi.id} className="db-kpi" onClick={() => handleDetail(kpi.id)} tabIndex={0}>
+          <button key={kpi.id} className="db-kpi" onClick={() => handleDetail(kpi.id)} tabIndex={0}
+            aria-label={`${kpi.l}: ${kpi.v}. ${kpi.n.replace(/<[^>]+>/g, '')}. Ver detalle`}>
             <div className="l">{kpi.l}</div>
             <div className="v" style={{ color: kpi.urgent ? 'var(--danger)' : undefined }}>{kpi.v}</div>
             {kpi.delta != null && isFinite(kpi.delta)
@@ -1441,7 +1492,7 @@ export default function DashboardPage() {
               {vehiculosCatStats.map((cat, i) => {
                 const stackSegs = catCols.map(col => ({
                   color: `var(${col.var})`,
-                  pct:   catMax > 0 ? ((cat as unknown as Record<string, number>)[col.id] / catMax) * 100 : 0,
+                  pct:   catMax > 0 ? (cat[col.id] / catMax) * 100 : 0,
                 }));
                 return (
                   <button key={cat.categoria} className="db-cbtn" onClick={() => handleDetail(`cat:${i}`)}>
@@ -1450,7 +1501,7 @@ export default function DashboardPage() {
                       <span className="db-num">{nf(cat.estudio)}</span>
                       <span className="db-num">{nf(cat.ofertada)}</span>
                       <span className="db-num">{nf(cat.contratada)}</span>
-                      <span className="db-num">{nf((cat as unknown as Record<string, number>)['rechazada'] ?? 0)}</span>
+                      <span className="db-num">{nf(cat.rechazada)}</span>
                       <span className="db-num t">{nf(cat.total)}</span>
                     </div>
                     <StackedBar segments={stackSegs} />

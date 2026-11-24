@@ -101,6 +101,36 @@ interface Revision {
 
 const CODIGOS_IMPOSIBLES = new Set(['ANIO_ANTERIOR', 'ANIO_POSTERIOR', 'MATRICULACION_FUERA']);
 
+// Ficha de catálogo por ID: se pide una sola vez aunque la lleven 90 vehículos de la flota.
+const fichasPorId = new Map<string, Promise<CandidatoCatalogo | null>>();
+function fichaCatalogo(idVeh: string): Promise<CandidatoCatalogo | null> {
+  let p = fichasPorId.get(idVeh);
+  if (!p) {
+    p = fetch(`/api/catalogo/${encodeURIComponent(idVeh)}`)
+      .then(r => r.json())
+      .then(json => (json.ok && json.vehiculo ? json.vehiculo as CandidatoCatalogo : null));
+    // un fallo de red no se recuerda: se podrá reintentar
+    p.catch(() => fichasPorId.delete(idVeh));
+    fichasPorId.set(idVeh, p);
+  }
+  return p;
+}
+
+const esRemolque = (v: { tipo: string; matricula: string }) =>
+  ['semirremolque', 'remolque'].includes((v.tipo || '').toLowerCase()) || /^R[\s-]?\d{4}/i.test(v.matricula);
+
+/** Plazas escritas a mano (número entero ≥ 0) o null si no hay. */
+function plazasManual(v: { plazas_manual: string }): number | null {
+  const m = (v.plazas_manual ?? '').trim();
+  return /^\d{1,3}$/.test(m) ? parseInt(m, 10) : null;
+}
+/** Plazas que se emiten: las escritas a mano mandan; si no, las del catálogo (0 es válido en remolques). null = sin dato. */
+function plazasEfectivas(v: { plazas_manual: string; seleccionado: { plazas: number } | null }): number | null {
+  const m = plazasManual(v);
+  if (m !== null) return m;
+  return v.seleccionado ? (typeof v.seleccionado.plazas === 'number' ? v.seleccionado.plazas : 0) : null;
+}
+
 const fechaCorta = (iso?: string) => { const d = iso ? new Date(iso) : null; return d && !isNaN(d.getTime()) ? d.toLocaleDateString('es-ES') : ''; };
 const usuarioActual = () => { try { return sessionStorage.getItem('orion_user') || ''; } catch { return ''; } };
 
@@ -162,6 +192,8 @@ interface VehicleEmision {
   anyo_fab_fuente: string;
   fecha_matriculacion: string;
   plazas: string;
+  /** plazas escritas a mano en PRE-EMISIÓN: mandan sobre las del catálogo ('' = usar las del catálogo) */
+  plazas_manual: string;
   status: EmisionStatus;
   candidatos: CandidatoCatalogo[];
   seleccionado: CandidatoCatalogo | null;
@@ -183,6 +215,8 @@ export interface VehiculoExport {
   cv: number;
   tara: number;
   plazas: number;
+  /** plazas escritas a mano ('' si se usan las del catálogo) */
+  plazas_manual: string;
   status: string;
   /** «Correcta», «Con avisos», «Por revisar» o «Dada por buena» (vacío si aún no hay versión asignada) */
   revision: string;
@@ -358,6 +392,7 @@ export default function HojaPreEmision({ trabajoRows, initialSeleccion, onCatalo
       anyo_fab_fuente:     r['anyo_fab_fuente'] ?? '',
       fecha_matriculacion: r['fecha_matriculacion'] ?? '',
       plazas:              r['plazas'] ?? '',
+      plazas_manual:       r['plazas_manual'] ?? '',
       status:              'pendiente' as EmisionStatus,
       candidatos:          [],
       seleccionado:        null,
@@ -394,6 +429,10 @@ export default function HojaPreEmision({ trabajoRows, initialSeleccion, onCatalo
   const cargandoRef                     = useRef<Set<string>>(new Set());
   const searchAbortRef                  = useRef<Map<number, AbortController>>(new Map());
   const pendingNotifyRef                = useRef(false);
+  // Se incrementa para relanzar la búsqueda automática (ID guardada que ya no existe, catálogo quitado…)
+  const [rebuscar, setRebuscar]         = useState(0);
+  // Vehículos a los que el usuario quitó la versión a mano: se vuelven a buscar, pero ya no se asigna sola
+  const noAutoRef                       = useRef<Set<string>>(new Set());
 
   const [modalData, setModalData] = useState<{
     sourceIdx: number;
@@ -425,15 +464,20 @@ export default function HojaPreEmision({ trabajoRows, initialSeleccion, onCatalo
     toLoad.forEach(([mat, idVeh]) => {
       preloadedRef.current.add(mat);
       cargandoRef.current.add(mat);
-      fetch(`/api/catalogo/${encodeURIComponent(idVeh)}`)
-        .then(r => r.json())
-        .then(json => {
-          if (!json.ok || !json.vehiculo) return;
+      fichaCatalogo(idVeh)
+        .then(veh => {
+          if (!veh) {
+            // La ID guardada ya no está en el catálogo (se subió una versión nueva): el vehículo no se
+            // queda parado en «Buscar en catálogo», se vuelve a identificar solo.
+            searchedMatsRef.current.delete(mat);
+            setRebuscar(n => n + 1);
+            return;
+          }
           setVehicles(prev => {
             const idx = prev.findIndex(v => v.matricula === mat);
             if (idx < 0 || prev[idx].seleccionado) return prev;
             const n = [...prev];
-            n[idx] = { ...n[idx], seleccionado: json.vehiculo, status: 'listo', candidatos: [json.vehiculo] };
+            n[idx] = { ...n[idx], seleccionado: veh, status: 'listo', candidatos: [veh] };
             return n;
           });
           pendingNotifyRef.current = true;
@@ -533,6 +577,43 @@ export default function HojaPreEmision({ trabajoRows, initialSeleccion, onCatalo
       if (marcaClean !== v.marca || modeloClean !== v.modelo) {
         setV(i, { marca: marcaClean, modelo: modeloClean });
         v = { ...v, marca: marcaClean, modelo: modeloClean };
+      }
+
+      // ── Identificación por filtros (marca → modelo → año → plazas → acabado) ──
+      // Una sola llamada: el servidor aplica toda la cascada. Los remolques siguen su camino propio (más abajo).
+      if (!isRem) {
+        const pzMan = plazasManual(v);
+        const pzEst = parseInt(v.plazas, 10);
+        const taraN = v.tn ? parseFloat(v.tn) : NaN;
+        const res = await fetch('/api/catalogo/identificar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal: ctrl.signal,
+          body: JSON.stringify({ vehiculos: [{
+            marca: marcaClean, modelo: modeloClean, tipo: v.tipo,
+            anyo: aniosDe(v).fab,
+            plazas: pzMan ?? (Number.isFinite(pzEst) && pzEst > 0 ? pzEst : null),
+            plazasFirmes: pzMan !== null,
+            kw: v.kw || (v.cv ? Math.round(parseFloat(v.cv) / 1.36) : null),
+            combustible: v.combustible,
+            tara: Number.isFinite(taraN) && taraN > 0 ? (taraN >= 100 ? taraN : taraN * 1000) : null,
+          }] }),
+        });
+        if (!res.ok) throw new Error('API error');
+        const json = await res.json();
+        if (ctrl.signal.aborted) return;
+        const r0 = json.resultados?.[0] as { auto: string | null; candidatos: CandidatoCatalogo[] } | undefined;
+        const cands = r0?.candidatos ?? [];
+        const elegida = r0?.auto && !noAutoRef.current.has(v.matricula) ? cands.find(c => c.id_veh === r0.auto) : undefined;
+        if (elegida) {
+          // Una sola versión cumple marca, modelo, año y plazas (o es claramente la mejor): se asigna sola
+          setVehicles(prev => { const n = [...prev]; n[i] = { ...n[i], candidatos: cands, searching: false, aproximada: false }; return n; });
+          setTimeout(() => handleSelect(i, elegida), 0);
+        } else {
+          // Varias versiones posibles: se ofrecen para elegir el acabado. Nunca se asigna una fuera de año.
+          setV(i, { candidatos: cands, status: cands.length > 0 ? 'pendiente' : 'sin_catalogo', searching: false, aproximada: false });
+        }
+        return;
       }
 
       // Detectar patrón camión: "R450", "R 450", "SERIE R 450", "XF 460", "TGX 460"
@@ -724,7 +805,43 @@ export default function HojaPreEmision({ trabajoRows, initialSeleccion, onCatalo
     };
     runNext();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [vehicles.length, ventanasListas]);
+  }, [vehicles.length, ventanasListas, rebuscar]);
+
+  // ── Al cambiar el año, volver a buscar la ID sola (antes había que pulsar Enter) ──
+  // Espera 600 ms tras la última tecla. Si la versión asignada ya cubre el año nuevo se conserva;
+  // si no lo cubre, se quita y se busca la que sí (regla «ID = AÑO»).
+  const handleSearchRef = useRef(handleSearch);
+  handleSearchRef.current = handleSearch;
+  const vehiclesRef = useRef(vehicles);
+  vehiclesRef.current = vehicles;
+  const yearTimersRef = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
+  useEffect(() => {
+    const timers = yearTimersRef.current;
+    return () => { timers.forEach(t => clearTimeout(t)); timers.clear(); };
+  }, []);
+  const buscarPorAnio = useCallback((i: number, val: string, espera = 600) => {
+    const previo = yearTimersRef.current.get(i);
+    if (previo) clearTimeout(previo);
+    yearTimersRef.current.delete(i);
+    if (!/^\d{4}$/.test(val) || anioDe(val) === null) return;
+    yearTimersRef.current.set(i, setTimeout(() => {
+      yearTimersRef.current.delete(i);
+      const v = vehiclesRef.current[i];
+      if (!v || v.searching) return;
+      if (v.seleccionado) {
+        if (cubreAnio(v.seleccionado, anioVehiculo(v), ventanasRef.current) !== false) return;
+        setVehicles(prev => {
+          const n = [...prev];
+          if (n[i]) n[i] = { ...n[i], seleccionado: null, aproximada: false, status: 'pendiente' };
+          return n;
+        });
+        pendingNotifyRef.current = true;
+        setTimeout(() => handleSearchRef.current(i), 0);
+        return;
+      }
+      handleSearchRef.current(i);
+    }, espera));
+  }, []);
 
   // ── Verificación de cada identificación (reglas en core/catalogo/verificacion.ts) ──
   const revisiones = useMemo(() => {
@@ -738,7 +855,9 @@ export default function HojaPreEmision({ trabajoRows, initialSeleccion, onCatalo
       const ventana: Revision['ventana'] = w?.fabMin
         ? { min: w.fabMin, max: w.fabMax, origen: 'sistema' }
         : { min: vi.ini, max: vi.fin, origen: vi.ini !== null && vi.fin !== null ? 'catalogo' : 'abierta' };
-      const imposible = !!w?.fabMin && hall.some(h => CODIGOS_IMPOSIBLES.has(h.codigo));
+      // Año fuera del rango de la ID: no se puede dar por bueno (regla «ID = AÑO»). Con rango del sistema, nunca;
+      // con rango cerrado del catálogo, tampoco, salvo remolques (entradas genéricas por peso).
+      const imposible = hall.some(h => CODIGOS_IMPOSIBLES.has(h.codigo)) && (!!w?.fabMin || !esRemolque(v));
       const reg = registro[matLimpia(v.matricula)];
       out[v.matricula] = {
         hall, bloq: bloquea(hall), av: avisos(hall), anio: aniosDe(v).fab, fuente: aniosDe(v).fuente, ventana, imposible,
@@ -766,6 +885,7 @@ export default function HojaPreEmision({ trabajoRows, initialSeleccion, onCatalo
       info[matLimpia(v.matricula)] = {
         bloquea: r.bloq.map(h => h.texto), avisos: r.av.map(h => h.texto), confirmada: r.confirmada, anio: r.anio,
         anioFab: an.fab, anioMat: an.mat, fuenteAnio: an.fuente, ventana: r.ventana,
+        plazasId: v.seleccionado ? { min: v.seleccionado.plazasMin ?? v.seleccionado.plazas ?? 0, max: v.seleccionado.plazas ?? 0 } : null,
         confirmadaPor: r.confirmada ? r.por : undefined, confirmadaFecha: r.confirmada ? r.fecha : undefined,
       };
     });
@@ -820,7 +940,9 @@ export default function HojaPreEmision({ trabajoRows, initialSeleccion, onCatalo
       // Fix 23/11: solo enviar plazas si HAY ID catálogo seleccionada. Si no, -1 (sentinel)
       // para que el padre NO sobreescriba lo que ya tiene trabajo[].plazas (plantilla original).
       // Los remolques tienen plazas=0 en catálogo — es válido y debe propagarse.
-      plazas:      v.seleccionado ? (typeof v.seleccionado.plazas === 'number' ? v.seleccionado.plazas : 0) : -1,
+      // Si hay plazas escritas a mano, mandan (el catálogo puede venir mal); se propagan aunque no haya ID.
+      plazas:      plazasEfectivas(v) ?? -1,
+      plazas_manual: plazasManual(v) !== null ? String(plazasManual(v)) : '',
       status:      v.status,
       revision:    etiquetaRevision(revisiones[v.matricula]),
       motivos:     (revisiones[v.matricula]?.hall ?? []).map(h => h.texto).join(' | '),
@@ -922,7 +1044,7 @@ export default function HojaPreEmision({ trabajoRows, initialSeleccion, onCatalo
         v.seleccionado!.kw     ?? '',
         v.seleccionado!.cv     ?? '',
         v.seleccionado!.tara   ?? '',
-        v.seleccionado!.plazas ?? '',
+        plazasEfectivas(v) ?? '',
         v.seleccionado!.id_veh,
         etiquetaRevision(rv) || 'Correcta',
         rv ? rv.hall.map(h => h.texto).join(' | ') : '',
@@ -945,10 +1067,15 @@ export default function HojaPreEmision({ trabajoRows, initialSeleccion, onCatalo
   const handleClearSelection = useCallback((i: number) => {
     setVehicles(prev => {
       const n = [...prev];
-      n[i] = { ...n[i], seleccionado: null, aproximada: false, status: n[i].candidatos.length > 0 ? 'pendiente' : 'sin_catalogo' };
+      // si solo quedaba la versión que se quita (o ninguna), se vuelve a identificar desde cero
+      const sinOpciones = n[i].candidatos.length <= 1;
+      if (sinOpciones) searchedMatsRef.current.delete(n[i].matricula);
+      noAutoRef.current.add(n[i].matricula);
+      n[i] = { ...n[i], seleccionado: null, aproximada: false, status: 'pendiente', candidatos: sinOpciones ? [] : n[i].candidatos };
       return n;
     });
     pendingNotifyRef.current = true;
+    setRebuscar(x => x + 1);
   }, []);
 
   // Fix 19/11: desasignar en lote los vehículos marcados con el checkbox.
@@ -959,11 +1086,15 @@ export default function HojaPreEmision({ trabajoRows, initialSeleccion, onCatalo
       const n = [...prev];
       for (const i of checkedRows) {
         if (!n[i]) continue;
-        n[i] = { ...n[i], seleccionado: null, aproximada: false, status: n[i].candidatos.length > 0 ? 'pendiente' : 'sin_catalogo' };
+        // Tras una asignación en bloque no hay candidatas propias de cada vehículo: se vuelven a identificar
+        const sinOpciones = n[i].candidatos.length <= 1;
+        if (sinOpciones) searchedMatsRef.current.delete(n[i].matricula);
+        n[i] = { ...n[i], seleccionado: null, aproximada: false, status: 'pendiente', candidatos: sinOpciones ? [] : n[i].candidatos };
       }
       return n;
     });
     pendingNotifyRef.current = true;
+    setRebuscar(x => x + 1);
     setCheckedRows(new Set());
   }, [checkedRows]);
 
@@ -1136,6 +1267,33 @@ export default function HojaPreEmision({ trabajoRows, initialSeleccion, onCatalo
               );
             })()}
 
+            {(() => {
+              // Lo que impide emitir, a la vista: cuántos están por revisar y cuáles no se pueden dar por buenos
+              const porRevisar = vehicles.filter(v => { const r = revisiones[v.matricula]; return v.seleccionado && r && r.bloq.length > 0 && !r.confirmada; });
+              if (porRevisar.length === 0) return null;
+              const confirmables = porRevisar.filter(v => !revisiones[v.matricula].imposible);
+              const imposibles = porRevisar.length - confirmables.length;
+              return (
+                <div className="notice" role="status" style={{ marginBottom: 12 }}>
+                  <b>{nf(porRevisar.length)} {porRevisar.length === 1 ? 'vehículo por revisar' : 'vehículos por revisar'}: no se emitirán hasta resolverlos.</b>
+                  {imposibles > 0 && (
+                    <div style={{ marginTop: 4 }}>
+                      {nf(imposibles)} {imposibles === 1 ? 'tiene' : 'tienen'} el año fuera del rango de su ID: el sistema de emisión {imposibles === 1 ? 'lo' : 'los'} rechazaría, así que no se {imposibles === 1 ? 'puede' : 'pueden'} dar por {imposibles === 1 ? 'bueno' : 'buenos'}. Corrige el año o elige otra versión.
+                    </div>
+                  )}
+                  {confirmables.length > 0 && (
+                    <div style={{ marginTop: 8 }}>
+                      <button type="button" className="mini"
+                        title="Da por buena la identificación de todos los vehículos por revisar que se pueden confirmar. Queda registrado quién y cuándo."
+                        onClick={() => { if (window.confirm(`¿Dar por buena la identificación de ${confirmables.length} vehículo${confirmables.length > 1 ? 's' : ''} con discrepancias? Revisa antes que la versión asignada es la correcta: quedará registrado con tu usuario y la fecha.`)) darPorBuenoVarios(confirmables); }}>
+                        Dar por {confirmables.length === 1 ? 'bueno el que se puede' : `buenos los ${nf(confirmables.length)} que se pueden`}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
             <div className="xwrap" style={{ maxHeight: 'none' }}>
               <table className="xg">
                 <thead>
@@ -1152,6 +1310,7 @@ export default function HojaPreEmision({ trabajoRows, initialSeleccion, onCatalo
                     <th>Tipo</th>
                     <th className="n">kW</th>
                     <th className="n" style={{ cursor: 'pointer' }} onClick={() => handleSortCol('anyo_fabricacion')}>Año</th>
+                    <th className="n">Plazas</th>
                     <th>ID catálogo</th>
                     <th>Versión / acabado</th>
                     <th style={{ cursor: 'pointer' }} onClick={() => handleSortCol('status')}>Estado</th>
@@ -1159,7 +1318,7 @@ export default function HojaPreEmision({ trabajoRows, initialSeleccion, onCatalo
                 </thead>
                 <tbody>
                   {filas.length === 0 && (
-                    <tr><td colSpan={9} style={{ textAlign: 'center', color: 'var(--quiet)', padding: 26 }}>Ningún vehículo coincide con el filtro.</td></tr>
+                    <tr><td colSpan={10} style={{ textAlign: 'center', color: 'var(--quiet)', padding: 26 }}>Ningún vehículo coincide con el filtro.</td></tr>
                   )}
                   {filas.map((v, displayIdx) => {
                     const origIdx = vehicles.indexOf(v);
@@ -1210,16 +1369,47 @@ export default function HojaPreEmision({ trabajoRows, initialSeleccion, onCatalo
                           <td className="n">{v.kw ? nf(parseFloat(v.kw) || 0) : <span className="em">—</span>}</td>
                           <td className="n yr">
                             <input value={yearShown ?? ''} inputMode="numeric" placeholder="—" aria-label={`Año de fabricación de ${v.matricula}`}
-                              title={an.fuente ? `Año de fabricación (${ETIQUETA_FUENTE[an.fuente]}). Edita y pulsa Enter para volver a buscar` : 'Introduce el año de fabricación y pulsa Enter'}
+                              title={an.fuente ? `Año de fabricación (${ETIQUETA_FUENTE[an.fuente]}). Al cambiarlo se vuelve a buscar la ID sola` : 'Introduce el año de fabricación: la ID se busca sola'}
                               onChange={e => {
                                 const val = e.target.value.trim();
                                 // se escribe el de fabricación; el de matriculación solo se toca si no hay fecha real de Silverdat
                                 setV(origIdx, { anyo_fabricacion: val, anyo_fab_fuente: val ? 'manual' : '', ...(v.fecha_matriculacion ? {} : { anyo_matricula: val }) });
+                                buscarPorAnio(origIdx, val);
                               }}
-                              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleSearch(origIdx); } }} />
+                              onKeyDown={e => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  const t = yearTimersRef.current.get(origIdx);
+                                  if (t) { clearTimeout(t); yearTimersRef.current.delete(origIdx); }
+                                  handleSearch(origIdx);
+                                }
+                              }} />
                             {an.fuente && an.fuente !== 'fabricacion' && (
                               <small style={{ display: 'block', fontSize: 10, color: an.fuente === 'estimado' ? 'var(--warn, #b45309)' : 'var(--quiet)', lineHeight: 1.2 }}>{ETIQUETA_FUENTE[an.fuente]}</small>
                             )}
+                          </td>
+                          <td className="n yr">
+                            {(() => {
+                              const cat = v.seleccionado ? (typeof v.seleccionado.plazas === 'number' ? v.seleccionado.plazas : 0) : null;
+                              const man = plazasManual(v);
+                              return (
+                                <>
+                                  <input value={v.plazas_manual} inputMode="numeric" maxLength={3}
+                                    placeholder={cat !== null ? String(cat) : (v.plazas || '—')}
+                                    aria-label={`Plazas de ${v.matricula}`}
+                                    title={cat !== null
+                                      ? `Catálogo: ${cat} ${cat === 1 ? 'plaza' : 'plazas'}. Escribe otro número solo si el catálogo viene mal; vacío = usar el del catálogo`
+                                      : 'Sin ID asignada. Puedes escribir las plazas a mano'}
+                                    style={{ width: 54 }}
+                                    onChange={e => setV(origIdx, { plazas_manual: e.target.value.replace(/\D/g, '') })} />
+                                  {man !== null && man !== cat && (
+                                    <small style={{ display: 'block', fontSize: 10, color: 'var(--warn, #b45309)', lineHeight: 1.2 }}>
+                                      escrito a mano{cat !== null ? ` · catálogo ${cat}` : ''}
+                                    </small>
+                                  )}
+                                </>
+                              );
+                            })()}
                           </td>
                           <td>
                             {v.seleccionado
@@ -1268,7 +1458,7 @@ export default function HojaPreEmision({ trabajoRows, initialSeleccion, onCatalo
 
                         {openSearchRow === origIdx && (
                           <tr className="srchrow">
-                            <td colSpan={9}>
+                            <td colSpan={10}>
                               <ManualSearchPanel
                                 vehicle={v}
                                 yearHint={extractYear(v) ?? undefined}
@@ -1287,7 +1477,7 @@ export default function HojaPreEmision({ trabajoRows, initialSeleccion, onCatalo
 
             <div className="xnote">
               <span>
-                Si hay coincidencias eliges el acabado; si no, pulsa Buscar. Cada versión asignada se comprueba contra el estudio (año, modelo, tipología, potencia y plazas): si hay una discrepancia grave el vehículo queda «A revisar» y no se emite hasta que elijas otra versión o lo des por bueno. El mismo ID solo se aplica a vehículos idénticos (marca, modelo, kW y tipo) de la misma época. Edita el ID o el año y pulsa Enter para volver a buscar.
+                Si hay coincidencias eliges el acabado; si no, pulsa Buscar. Cada versión asignada se comprueba contra el estudio (año, modelo, tipología, potencia y plazas): si hay una discrepancia grave el vehículo queda «A revisar» y no se emite hasta que elijas otra versión o lo des por bueno. El mismo ID solo se aplica a vehículos idénticos (marca, modelo, kW y tipo) de la misma época. Al cambiar el año, la ID se vuelve a buscar sola; las plazas salen del catálogo y solo se escriben a mano si el catálogo viene mal.
               </span>
               <span>Mostrando {nf(filas.length)} de {nf(visibles.length)}</span>
             </div>
@@ -1318,7 +1508,9 @@ export default function HojaPreEmision({ trabajoRows, initialSeleccion, onCatalo
               <h3>{matLimpia(v.matricula)}</h3>
               <p className="desc">
                 {r.imposible
-                  ? `El sistema de emisión solo admite esta versión para fabricaciones de ${r.ventana.min} a ${r.ventana.max}: rechazará este vehículo. Corrige el año o elige otra versión.`
+                  ? (r.ventana.origen === 'sistema'
+                    ? `El sistema de emisión solo admite esta versión para fabricaciones de ${r.ventana.min} a ${r.ventana.max}: rechazará este vehículo. Corrige el año o elige otra versión.`
+                    : `El año del vehículo queda fuera de los años de esta versión en el catálogo (${textoVentana(r.ventana)}): el sistema de emisión la rechazará. Corrige el año o elige otra versión.`)
                   : r.bloq.length > 0 && !r.confirmada
                   ? 'Hay discrepancias graves entre el estudio y la versión elegida. No se emitirá este vehículo hasta que elijas otra versión o lo des por bueno.'
                   : r.confirmada ? `Esta identificación se dio por buena a pesar de las discrepancias${r.por ? ` · ${r.por}` : ''}${fechaCorta(r.fecha) ? `, el ${fechaCorta(r.fecha)}` : ''}.`
@@ -1383,7 +1575,7 @@ export default function HojaPreEmision({ trabajoRows, initialSeleccion, onCatalo
 function DirectIdCell({ onSubmit, label }: { onSubmit: (id: string) => void; label: string }) {
   const [val, setVal] = useState('');
   return (
-    <input value={val} inputMode="numeric" placeholder="241210258" aria-label={label}
+    <input value={val} inputMode="numeric" placeholder="Escribir ID" aria-label={label}
       title="Escribe el ID de catálogo y pulsa Enter"
       onChange={e => setVal(e.target.value)}
       onKeyDown={e => {

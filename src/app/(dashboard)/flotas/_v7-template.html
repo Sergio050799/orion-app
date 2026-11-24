@@ -1436,7 +1436,7 @@ body{overflow:hidden}
     </section>
   </div>
 
-  <div class="footer"><span>ORION · Datos de ejemplo</span><span id="fDate"></span></div>
+  <div class="footer"><span>ORION · Flotas</span><span id="fDate"></span></div>
 </div>
 </div></main>
 
@@ -1463,9 +1463,18 @@ var dias=function(s){return Math.round((pd(s)-TODAY)/864e5)};
 var addD=function(s,n){var d=pd(s);d.setDate(d.getDate()+n);return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2)};
 var fcif=function(c){return String(c||'').toUpperCase().replace(/[\s.\-]/g,'')};
 var norm=function(t){return String(t||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase()};
-var cifOk=function(c){c=fcif(c);return /^[A-HJ-NP-SUVW]\d{7}[0-9A-J]$/.test(c)||/^\d{8}[A-Z]$/.test(c)};
+var cifOk=function(c){c=fcif(c);return /^[A-HJ-NP-SUVW]\d{7}[0-9A-J]$/.test(c)||/^\d{8}[A-Z]$/.test(c)||/^[XYZ]\d{7}[A-Z]$/.test(c)};
 var hash=function(s){var h=0;for(var i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))>>>0;return h};
 var pad=function(n,l){return ('000'+n).slice(-l)};
+/* Parser numérico es-ES. Con coma: puntos = miles, coma = decimal. Sin coma: un punto seguido de
+   exactamente 3 dígitos (o varios grupos de 3) = miles; cualquier otro punto = decimal ("0.5" → 0,5).
+   Devuelve NaN si el texto no es un número (el llamante decide: nunca se convierte en 0 a ciegas). */
+var pnum=function(v){var s=String(v==null?'':v).replace(/[\s€]/g,'');if(!s)return NaN;
+  if(s.indexOf(',')>=0){if(s.indexOf(',')!==s.lastIndexOf(','))return NaN;s=s.replace(/\./g,'').replace(',','.')}
+  else{var p=s.split('.');
+    if(p.length>2){if(!p.slice(1).every(function(x){return x.length===3}))return NaN;s=p.join('')}
+    else if(p.length===2&&p[1].length===3&&/^-?[1-9]\d{0,2}$/.test(p[0]))s=p.join('')}
+  return /^-?(\d+\.?\d*|\.\d+)$/.test(s)?parseFloat(s):NaN};
 
 /* ── Catálogos ── */
 var SUC={TITAN:'Titán',MEDIACION:'Mediación'};
@@ -1533,18 +1542,20 @@ var nextId=100,nextSt=1000;
 var F=RAW.map(function(r,i){
   var id=i+1,c=byC(r[4]);
   // r[6] = realId de carpeta BD (inyectado server-side para persistir cambios)
-  var f={id:id,realId:r[6]||null,nombre:r[0],cif:r[1],act:r[2],cor:r[3],cT:r[4],suc:c.s,obs:OBS[id]||'',arch:false,tp:TP[PRO[id]||'log'],st:[],em:[],log:[]};
+  // r[7] = datos reales de la carpeta (observaciones, tomador, fechas, póliza…). Sin ellos, vacío: nunca datos de ejemplo.
+  var x=r[7]||{};
+  var f={id:id,realId:r[6]||null,nombre:r[0],cif:r[1],act:r[2],cor:r[3],cT:r[4],suc:x.suc||c.s,obs:x.obs||'',tom:x.tom||'',efecto:x.efecto||'',cia:x.cia||'',pol:x.pol||'',per:x.per||'',estReal:x.est||'',mod:x.mod||'',arch:false,tp:TP[PRO[id]||'log'],st:[],em:[],log:[]};
   r[5].forEach(function(s,j){
     var st={id:nextSt++,v:j+1,e:s[0],f:s[1],veh:s[2],pof:s[3],pem:s[4],vto:s[5]||'',mot:s[6]||'',cm:s[7]||r[4],ppe:s[3]?Math.round(s[3]*.94/100)*100:0};
     f.st.push(st);
-    if(st.e===C)f.em.push({pol:'5 '+String(100000+hash(r[0]+j)%899999),fe:st.f,vto:st.vto,prima:st.pem,veh:st.veh,v:st.v});
+    if(st.e===C)f.em.push({pol:x.pol||'—',fe:st.f,vto:st.vto,prima:st.pem,veh:st.veh,v:st.v});
   });
   return f;
 });
 /* ── Derivados ── */
 var last=function(f){var a=f.st.filter(function(s){return !s.draft}).sort(function(a,b){return b.v-a.v});return a[0]};
 var estado=function(f){return last(f).e};
-var reqs=function(f){var l=last(f);return [{ok:cifOk(f.cif),t:'CIF válido'},{ok:!!f.cor,t:'Corredor'},{ok:!!l.cm,t:'Comercial'},{ok:l.veh>0,t:'Vehículos'}]};
+var reqs=function(f){var l=last(f);return [{ok:cifOk(f.cif),t:'CIF válido'},{ok:!!f.cor,t:'Corredor'},{ok:!!l.cm&&l.cm!=='m_na',t:'Comercial'},{ok:l.veh>0,t:'Vehículos'}]};
 var canFormal=function(f){return reqs(f).every(function(r){return r.ok})};
 var created=function(f){return f.st.slice().sort(function(a,b){return a.v-b.v})[0].f};
 var visible=function(){return F.filter(function(f){return !f.arch})};
@@ -1552,32 +1563,46 @@ var byId=function(id){for(var i=0;i<F.length;i++)if(F[i].id===+id)return F[i]};
 
 /* ── Persistencia al backend (fix 20/11 bug guardado no persistía) ── */
 function syncCarpeta(f){
-  if(!f || !f.realId) return;
-  var l = last(f) || {};
+  // Devuelve una promesa con true si el servidor ha guardado. Escribe (sobrescribe) los datos de la ficha
+  // en la carpeta real; el resto de la carpeta (vehículos, estudio, oferta…) no se toca.
+  if(!f) return Promise.resolve(false);
+  var l = last(f) || {}, ahora = new Date().toISOString(), nueva = !f.realId;
+  if(nueva) f.realId = 'carpeta_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
   var corReal = f.cor && typeof COR_REAL_BY_V7!=='undefined' ? (COR_REAL_BY_V7[f.cor]||null) : null;
-  var payload = {
-    action: 'upsert',
-    carpeta: {
-      id: f.realId,
-      nombre: f.nombre,
-      cif: f.cif,
-      actividad: f.act || '',
-      estado: l.e || 'EN ESTUDIO',
-      corredor_id: corReal,
-      header: { cif: f.cif, tomador: f.nombre, actividad: f.act || '', fechaVencimiento: l.vto || '' },
-      observaciones: f.obs || '',
-    }
+  var comReal = l.cm && typeof COM_REAL_BY_V7!=='undefined' ? (COM_REAL_BY_V7[l.cm]||null) : null;
+  var c = {
+    id: f.realId,
+    nombre: f.nombre,
+    cif: f.cif,
+    actividad: f.act || '',
+    // el estado real de la carpeta (p. ej. ESTUDIADA) se conserva salvo que se cambie aquí
+    estado: f.estReal || l.e || 'EN ESTUDIO',
+    corredor_id: corReal,
+    _sin_corredor: !corReal,
+    comercial_id: comReal,
+    header: { cif: f.cif, tomador: f.tom || '', actividad: f.act || '', fechaVencimiento: l.vto || '', efecto: f.efecto || '', ciaActual: f.cia || '', polizaActual: f.pol || '', periodicidad: f.per || '' },
+    observaciones: f.obs || ''
   };
-  fetch('/api/flotas/carpetas', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),credentials:'same-origin'})
-    .then(function(r){if(!r.ok) console.warn('[v7 sync] HTTP', r.status);})
-    .catch(function(e){console.warn('[v7 sync] error', e);});
+  if(nueva){
+    c.creadaEn = ahora; c.actualizadaEn = ahora;
+    c.historico = [{fecha: ahora, accion: 'Creación', estadoNuevo: 'EN ESTUDIO'}];
+    c.header.formaPago = '';
+    c.original = []; c.trabajo = []; c.sincoResultados = []; c.oferta = [];
+  }
+  return fetch('/api/flotas/carpetas', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'upsert',carpeta:c}),credentials:'same-origin'})
+    .then(function(r){
+      if(!r.ok){console.warn('[v7 sync] HTTP', r.status);if(nueva)f.realId=null;toast('No se pudo guardar «'+f.nombre+'» en el servidor (error '+r.status+').');return false}
+      f.mod = ahora.slice(0,10);
+      return true;
+    })
+    .catch(function(e){console.warn('[v7 sync] error', e);if(nueva)f.realId=null;toast('Sin conexión: «'+f.nombre+'» no se ha guardado.');return false});
 }
 
 function syncDelete(f){
   if(!f || !f.realId) return;
   fetch('/api/flotas/carpetas', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'delete',id:f.realId}),credentials:'same-origin'})
-    .then(function(r){if(!r.ok) console.warn('[v7 delete] HTTP', r.status);})
-    .catch(function(e){console.warn('[v7 delete] error', e);});
+    .then(function(r){if(!r.ok){console.warn('[v7 delete] HTTP', r.status);toast('No se pudo borrar «'+f.nombre+'» en el servidor (HTTP '+r.status+'). Recarga la página.')}})
+    .catch(function(e){console.warn('[v7 delete] error', e);toast('Sin conexión: «'+f.nombre+'» no se ha borrado en el servidor.')});
 }
 function tips(f,st){
   var ti=f.tp.map(function(x){return {t:x[0],v:Math.floor(st.veh*x[1]),w:x[2],r:st.veh*x[1]-Math.floor(st.veh*x[1])}});
@@ -1593,8 +1618,6 @@ function tips(f,st){
 var PMAX=450000,VMAX=250;
 var blank=function(){return {suc:'',com:'',cor:'',est:{},cif:'',dq:'',d1:'',d2:'',pmin:0,pmax:PMAX,vmin:0,vmax:VMAX,q:''}};
 var fl=blank(),sortK='mod',sortD=-1,PAGE=14,page=1,newId=null,sel={},cols={suc:false},views=[],actView=-1,ed=null,openId=null,chOpen=true;
-views.push({n:'Mis flotas sin CIF',f:Object.assign(blank(),{cif:'sin'}),c:{suc:false}});
-views.push({n:'Vencen en 30 días',f:Object.assign(blank(),{dq:'30'}),c:{suc:true}});
 function filtered(R,skipEst){
   var q=norm(fl.q.trim()),qc=fcif(fl.q),any=Object.keys(fl.est).length,pa=fl.pmin>0||fl.pmax<PMAX,va=fl.vmin>0||fl.vmax<VMAX;
   return R.filter(function(f){
@@ -1632,7 +1655,7 @@ function combo(host,o){
   var btn=$('.cb-btn',host),pop=$('.cb-pop',host),inp=$('.cb-in',host),list=$('.cb-list',host),tx=$('.cb-t',host),xx=$('.cb-x',host),act=-1,items=[];
   var tops=o.tops||[];
   function label(){var v=o.get(),c=v&&v!=='__none'?byR(v):null;
-    if(c){tx.className='cb-t';tx.innerHTML='<span class="cd mono">'+esc(c.code)+'</span>'+esc(c.n);xx.hidden=false}
+    if(c){tx.className='cb-t';tx.textContent='';var cd=document.createElement('span');cd.className='cd mono';cd.textContent=c.code;tx.appendChild(cd);tx.appendChild(document.createTextNode(c.n));xx.hidden=false}
     else{var t=tops.filter(function(x){return x.v===v})[0]||tops[0]||{l:'Sin corredor'};tx.className='cb-t'+(v?'':' ph');tx.textContent=t.l;xx.hidden=!v}}
   function hl(t,q){if(!q)return esc(t);var i=norm(t).indexOf(q);if(i<0)return esc(t);return esc(t.slice(0,i))+'<mark>'+esc(t.slice(i,i+q.length))+'</mark>'+esc(t.slice(i+q.length))}
   function draw(){
@@ -1822,7 +1845,7 @@ function render(first){
   // barra masiva
   var ids=Object.keys(sel).map(Number).filter(function(id){var f=byId(id);return f&&!f.arch});Object.keys(sel).forEach(function(k){if(ids.indexOf(+k)<0)delete sel[k]});
   var bk=$('#bulk');bk.hidden=!ids.length;
-  if(ids.length&&bk.dataset.n!==String(ids.length)){bk.dataset.n=ids.length;bk.innerHTML='<b>'+ids.length+' seleccionada'+(ids.length>1?'s':'')+'</b><button class="mini" data-bx>Exportar seleccionadas</button><select class="select" id="bCom" aria-label="Cambiar comercial"><option value="">Cambiar comercial…</option>'+COM.map(function(c){return '<option value="'+c.id+'">'+c.n+' · '+SUC[c.s]+'</option>'}).join('')+'</select><button class="mini" data-ba>Archivar</button><button class="mini" data-bc>Quitar selección</button>'}
+  if(ids.length&&bk.dataset.n!==String(ids.length)){bk.dataset.n=ids.length;bk.innerHTML='<b>'+ids.length+' seleccionada'+(ids.length>1?'s':'')+'</b><button class="mini" data-bx>Exportar seleccionadas</button><select class="select" id="bCom" aria-label="Cambiar comercial"><option value="">Cambiar comercial…</option>'+COM.map(function(c){return '<option value="'+c.id+'">'+esc(c.n)+' · '+SUC[c.s]+'</option>'}).join('')+'</select><button class="mini" data-bc>Quitar selección</button>'}
   if(!ids.length)bk.dataset.n='';
   if(!total){$('#tscroll').innerHTML='<div class="empty"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--quiet)" stroke-width="1.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><p style="margin:0">Sin resultados para los filtros actuales.</p><button class="mini" data-clear>Limpiar filtros</button></div>';$('#pager').innerHTML='';return}
   var vc=COLS.filter(function(c){return cols[c[0]]!==false}),tw=vc.reduce(function(s,c){return s+c[2]},0)+3.5;
@@ -1880,9 +1903,9 @@ function syncUI(){
 function mCols(){$('#mCols').innerHTML=COLS.map(function(c){return '<label><input type="checkbox" data-col="'+c[0]+'" '+(cols[c[0]]!==false?'checked':'')+(c[0]==='n'?' disabled':'')+'>'+c[1]+(c[0]==='suc'?' (sucursal)':'')+'</label>'}).join('')}
 
 /* ── Drawer / modal ── */
-var dr=$('#drawer'),sc=$('#scrim'),mw=$('#mw'),md=$('#mdl'),lastFocus=null;
+var dr=$('#drawer'),sc=$('#scrim'),mw=$('#mw'),md=$('#mdl'),lastFocus=null,pgScroll=null;
 function openDr(html){
-  if(!dr.classList.contains('open'))lastFocus=document.activeElement;
+  if(!dr.classList.contains('open')){lastFocus=document.activeElement;pgScroll=$('#scroll').scrollTop}
   dr.classList.remove('open');dr.innerHTML='<button class="x" aria-label="Cerrar" data-close>×</button>'+html;
   var i=0;[].forEach.call(dr.children,function(c){if(!c.classList.contains('x'))c.style.setProperty('--i',Math.min(i++,9))});
   dr.scrollTop=0;void dr.offsetWidth;
@@ -1894,7 +1917,22 @@ function leaveEdit(silent){
   else{var ix=e.f.st.indexOf(e.draft);if(ix>=0)e.f.st.splice(ix,1)}
   if(!silent)toast('Edición descartada');
 }
-function closeDr(){if(ed){var f=ed.f;leaveEdit();render()}dr.classList.remove('open');sc.classList.remove('open');openId=null;if(lastFocus&&lastFocus.focus)try{lastFocus.focus({preventScroll:true})}catch(e){}}
+/* Cambios sin guardar del formulario de edición: foto de los campos al pintar vs. ahora */
+function edSnap(){var g=function(id){var e=$('#'+id,dr);return e?String(e.value).trim():''};return [g('eN'),g('eC'),g('eV'),g('eM'),g('eP'),g('eA'),g('eO'),ed?(ed.cor||''):''].join('\u0001')}
+function edDirty(){return !!(ed&&ed.init!==undefined&&$('#fEd',dr)&&edSnap()!==ed.init)}
+function closeDr(force){
+  if(fx&&force!==true&&fxDirty()){
+    modal('<div class="mdl-over">Cambios sin guardar</div><h3>¿Descartar los cambios?</h3><p class="mdl-desc">Has modificado <b>'+esc(fx.f.nombre)+'</b> y no has guardado. Si cierras ahora, los cambios se pierden.</p><div class="mdl-act"><button class="btn ghost" data-mclose autofocus>Seguir editando</button><button class="btn danger" id="okDiscF">Descartar cambios</button></div>');
+    $('#okDiscF').addEventListener('click',function(){closeModal();closeDr(true)});return}
+  fx=null;
+  if(ed&&force!==true&&edDirty()){
+    modal('<div class="mdl-over">Cambios sin guardar</div><h3>¿Descartar los cambios?</h3><p class="mdl-desc">Has modificado <b>'+esc(ed.f.nombre)+'</b> y no has guardado. Si cierras ahora, los cambios se pierden.</p><div class="mdl-act"><button class="btn ghost" data-mclose autofocus>Seguir editando</button><button class="btn danger" id="okDisc">Descartar cambios</button></div>');
+    $('#okDisc').addEventListener('click',function(){closeModal();closeDr(true)});return}
+  if(ed){leaveEdit();render()}
+  dr.classList.remove('open');sc.classList.remove('open');openId=null;
+  if(lastFocus&&lastFocus.focus)try{lastFocus.focus({preventScroll:true})}catch(e){}
+  if(pgScroll!==null){var ps=$('#scroll');if(ps)ps.scrollTop=pgScroll;pgScroll=null}
+}
 function modal(html){md.innerHTML=html;mw.hidden=false;setTimeout(function(){md.focus({preventScroll:true});var a=$('[autofocus],input:not([type=radio]),select,textarea',md);if(a)a.focus()},30)}
 function closeModal(){mw.hidden=true;md.innerHTML=''}
 sc.addEventListener('click',closeDr);
@@ -1912,49 +1950,92 @@ function acts(f){
   f.log.forEach(function(x){L.push(x)});
   return L.sort(function(a,b){return a.d<b.d?1:a.d>b.d?-1:0}).slice(0,8);
 }
-function ficha(f,vn){
-  if(ed&&ed.f!==f)leaveEdit(true);
-  openId=f.id;
-  var all=f.st.slice().sort(function(a,b){return b.v-a.v}),com=last(f),editing=ed&&ed.f===f,S;
-  if(editing)S=ed.inPlace?com:ed.draft;else S=vn?(all.filter(function(s){return s.v===+vn})[0]||com):com;
-  var hist=!editing&&S!==com,k=S.e,cr=byR(f.cor),cT=byC(f.cT),cA=byC(S.cm),ok=canFormal(f);
-  var h='<div class="over">Ficha de flota · v'+S.v+(editing?' · editando':hist?' · histórica':'')+'</div><h3>'+esc(f.nombre)+'</h3><p class="desc" style="'+(f.cif?'':'color:var(--quiet)')+'">'+(f.cif?'CIF <span class="mono">'+esc(f.cif)+'</span>'+(cifOk(f.cif)?'':' · <span class="bad">incompleto</span>'):'Sin CIF todavía')+' · '+esc(f.act)+'</p>';
-  h+='<div class="vpills" role="tablist" aria-label="Versiones">'+all.map(function(s,i){var cur=(s===S);return '<button class="vp'+(cur?' on':'')+(s.draft?' dft':'')+'" role="tab" aria-selected="'+cur+'" data-vp="'+s.v+'"><span>v'+s.v+(s.draft?' · '+(ed&&ed.inPlace?'':'nueva'):(s===com&&!s.draft?' · actual':''))+'</span><small>'+fs(s.f)+'</small></button>'}).join('')+(editing?'':'<button class="go6" data-act="ver">+ Nueva versión</button>')+'</div>';
-  h+='<div class="hdtags">'+tagS(k,'lg')+'<span class="chp'+(f.suc==='MEDIACION'?' mm':'')+'">'+SUC[f.suc].toUpperCase()+'</span></div>';
-  if(editing){
-    h+='<div class="edbar"><span><b>Editando v'+ed.S.v+'</b> · '+(ed.inPlace?'Es un borrador: los cambios se guardan en este estudio.':'Los cambios no afectan a versiones anteriores. Pulsa Guardar para confirmar.')+'</span><div class="row"><button class="btn ghost" data-act="ecancel">Cancelar</button><button class="btn" data-act="esave">Guardar cambios</button></div></div>';
-  }else if(hist){
-    h+='<div class="hist6"><span>Estás viendo <b>v'+S.v+'</b> del '+fd(S.f)+'. Es una versión anterior y no se puede modificar.</span><button class="mini pri" data-vp="'+com.v+'">Volver a la actual</button></div>';
-  }else{
-    h+='<div class="dacts"><button class="mini" data-act="edit">Editar</button><button class="mini" data-act="ver">Nueva versión</button>'
-     +(k==='EN ESTUDIO'?'<button class="mini pri'+(ok?' pulse':'')+'" data-act="form" '+(ok?'':'disabled aria-disabled="true"')+'>Formalizar</button>':k==='OFERTADA'?'<button class="mini pri" data-act="resp">Registrar respuesta</button>':'')
-     +'<button class="mini" data-act="mail">Enviar por email</button><button class="mini" data-act="dup">Duplicar flota</button><button class="mini" data-act="pdf">Informe PDF</button><button class="mini danger" data-act="del">Borrar</button></div>';
-    if(k==='EN ESTUDIO'){var rq=reqs(f),n=rq.filter(function(r){return r.ok}).length;h+='<div class="ready'+(n===4?' done':'')+'"><div class="rt"><span>'+(n===4?'Lista para formalizar':'Modo borrador')+'</span><span>'+n+'/4</span></div><div class="rb">'+rq.map(function(r){return '<i class="'+(r.ok?'on':'')+'"></i>'}).join('')+'</div><div class="ri">'+rq.map(function(r){return '<span class="'+(r.ok?'ok':'no')+'">'+r.t+'</span>'}).join('')+'</div></div>'}
-  }
+/* ── Ficha de datos de la flota ──
+   Formulario directo: se abre ya editable y «Guardar» sobrescribe la flota en la base de datos.
+   Pensado para repasar flota a flota completando CIF, corredor, comercial y el resto de datos. */
+var fx=null; // {f, cor, init}: ficha abierta
+var PERIODOS=[['','Sin indicar'],['anual','Anual'],['semestral','Semestral'],['trimestral','Trimestral'],['bimestral','Bimestral'],['mensual','Mensual']];
+function faltan(f){var l=last(f),o=[];if(!cifOk(f.cif))o.push(f.cif?'CIF incompleto':'CIF');if(!f.cor)o.push('Corredor');if(!l.cm||l.cm==='m_na')o.push('Comercial');if(!f.act||f.act==='Sin indicar')o.push('Actividad');return o}
+function fxSnap(){var g=function(id){var e=$('#'+id,dr);return e?String(e.value).trim():''};return [g('xN'),g('xC'),g('xT'),g('xA'),g('xM'),g('xE'),g('xV'),g('xCia'),g('xPol'),g('xPer'),g('xO'),fx?(fx.cor||''):''].join('\u0001')}
+function fxDirty(){return !!(fx&&fx.init!==undefined&&$('#fFx',dr)&&fxSnap()!==fx.init)}
+function ficha(f,_v,force){
+  if(!f)return;
+  if(ed)leaveEdit(true);
+  // Cambiar de flota con cambios sin guardar: se pregunta antes de perderlos
+  if(fx&&fx.f!==f&&force!==true&&fxDirty()){
+    var prev=fx.f;
+    modal('<div class="mdl-over">Cambios sin guardar</div><h3>¿Descartar los cambios?</h3><p class="mdl-desc">Has modificado <b>'+esc(prev.nombre)+'</b> y no has guardado. Si abres otra flota, esos cambios se pierden.</p><div class="mdl-act"><button class="btn ghost" data-mclose autofocus>Seguir editando</button><button class="btn danger" id="okDisc">Descartar cambios</button></div>');
+    $('#okDisc').addEventListener('click',function(){closeModal();ficha(f,null,true)});return}
+  var same=openId===f.id;openId=f.id;
+  var l=last(f),k=l.e,fa=faltan(f),nOk=4-fa.length;
+  var h='<div class="over">Ficha de flota</div><h3>'+esc(f.nombre)+'</h3><p class="desc" style="'+(f.cif?'':'color:var(--quiet)')+'">'+(f.cif?'CIF <span class="mono">'+esc(f.cif)+'</span>'+(cifOk(f.cif)?'':' · <span class="bad">incompleto</span>'):'Sin CIF todavía')+'</p>';
+  h+='<div class="hdtags">'+tagS(k,'lg')+'<span class="chp'+(f.suc==='MEDIACION'?' mm':'')+'">'+(SUC[f.suc]||'Sin asignar').toUpperCase()+'</span></div>';
+  h+='<div class="ready'+(nOk===4?' done':'')+'"><div class="rt"><span>'+(nOk===4?'Datos principales completos':'Faltan datos')+'</span><span>'+nOk+'/4</span></div><div class="rb">'+[0,1,2,3].map(function(i){return '<i class="'+(i<nOk?'on':'')+'"></i>'}).join('')+'</div><div class="ri">'
+    +[['CIF',cifOk(f.cif)],['Corredor',!!f.cor],['Comercial',!!l.cm&&l.cm!=='m_na'],['Actividad',!!f.act&&f.act!=='Sin indicar']].map(function(r){return '<span class="'+(r[1]?'ok':'no')+'">'+r[0]+'</span>'}).join('')+'</div></div>';
+  var opt=function(list,val){return list.map(function(o){return '<option value="'+o[0]+'"'+(o[0]===val?' selected':'')+'>'+esc(o[1])+'</option>'}).join('')};
+  h+='<h4>Datos de la flota</h4><form class="form" id="fFx" novalidate>'
+   +'<div class="fld"><label for="xN">Nombre de la flota <span class="req">*</span></label><input id="xN" class="inp" autocomplete="off" value="'+esc(f.nombre)+'"></div>'
+   +'<div class="frow"><div class="fld"><label for="xC">CIF / NIF</label><input id="xC" class="inp mono" autocomplete="off" value="'+esc(f.cif)+'" placeholder="B12345678"><div class="hint" id="xH"></div></div><div class="fld"><label for="xT">Tomador (razón social)</label><input id="xT" class="inp" autocomplete="off" value="'+esc(f.tom)+'" placeholder="Si es distinto del nombre"></div></div>'
+   +'<div class="fld"><label>Corredor</label><div id="xCor"></div></div>'
+   +'<div class="frow"><div class="fld"><label for="xM">Comercial</label><select id="xM" class="select">'+COM.map(function(c){return '<option value="'+c.id+'"'+(c.id===l.cm?' selected':'')+'>'+esc(c.n)+(c.id==='m_na'?'':' · '+(SUC[c.s]||''))+'</option>'}).join('')+'</select></div><div class="fld"><label for="xA">Actividad</label><input id="xA" class="inp" autocomplete="off" value="'+esc(f.act==='Sin indicar'?'':f.act)+'" placeholder="Ej.: transporte de mercancías"></div></div>'
+   +'<div class="frow"><div class="fld"><label for="xE">Fecha de efecto</label><input id="xE" type="date" class="inp" value="'+esc(f.efecto)+'"></div><div class="fld"><label for="xV">Fecha de vencimiento</label><input id="xV" type="date" class="inp" value="'+esc(l.vto||'')+'"></div></div>'
+   +'<div class="frow"><div class="fld"><label for="xCia">Compañía actual</label><input id="xCia" class="inp" autocomplete="off" value="'+esc(f.cia)+'"></div><div class="fld"><label for="xPol">Póliza actual</label><input id="xPol" class="inp mono" autocomplete="off" value="'+esc(f.pol)+'"></div></div>'
+   +'<div class="fld"><label for="xPer">Periodicidad de pago</label><select id="xPer" class="select">'+opt(PERIODOS,f.per)+'</select></div>'
+   +'<div class="fld"><label for="xO">Observaciones</label><textarea id="xO" class="inp">'+esc(f.obs)+'</textarea></div>'
+   +'<div class="ferr" id="xErr"></div>'
+   +'<div class="fact"><button type="submit" class="btn" id="xG">Guardar</button><button type="button" class="btn ghost" id="xGS" title="Guarda y abre la siguiente flota de la lista a la que le faltan datos">Guardar y siguiente</button></div></form>';
   var kv=function(a,b){return '<div><label>'+a+'</label><span class="'+(b?'':'em')+'">'+(b?esc(b):'Sin dato')+'</span></div>'};
-  if(editing){
-    var v=ed.S;
-    h+='<h4>Datos de la versión</h4><form class="form" id="fEd" novalidate><div class="fld hi"><label for="eN">Nombre de la flota</label><input id="eN" class="inp" value="'+esc(f.nombre)+'"></div>'
-     +'<div class="frow"><div class="fld hi"><label for="eC">CIF</label><input id="eC" class="inp mono" value="'+esc(f.cif)+'" placeholder="B12345678"></div><div class="fld hi"><label for="eV">Nº de vehículos</label><input id="eV" class="inp" inputmode="numeric" value="'+v.veh+'"></div></div>'
-     +'<div class="fld hi"><label>Corredor</label><div id="eCor"></div></div>'
-     +'<div class="frow"><div class="fld hi"><label for="eM">Comercial</label><select id="eM" class="select">'+COM.map(function(c){return '<option value="'+c.id+'"'+(c.id===v.cm?' selected':'')+'>'+c.n+' · '+SUC[c.s]+'</option>'}).join('')+'</select></div><div class="fld hi"><label for="eP">Prima ofertada (€)</label><input id="eP" class="inp" inputmode="decimal" value="'+(v.pof||'')+'" placeholder="0"></div></div>'
-     +'<div class="fld hi"><label for="eA">Actividad</label><input id="eA" class="inp" value="'+esc(f.act)+'"></div><div class="fld hi"><label for="eO">Observaciones</label><textarea id="eO" class="inp">'+esc(f.obs)+'</textarea></div><div class="ferr" id="eErr"></div></form>';
-  }else{
-    h+='<h4>Datos generales</h4><div class="kv">'+kv('Corredor',cr&&(cr.code+' · '+cr.n))+kv('Sucursal',SUC[f.suc])+kv('Comercial que la trajo',cT&&cT.n)+kv('Comercial en esta versión',cA&&cA.n)+kv('Actividad',f.act)+kv('Observaciones',f.obs)+kv('Nº de vehículos',nf(S.veh))+kv('Vencimiento',S.vto?fd(S.vto)+(dias(S.vto)>=0?' · en '+nf(dias(S.vto))+' d':' · vencida'):'')+'</div>';
-    var base=S.pem||S.pof,hs=f.st.filter(function(s){return s.pof>0&&!s.draft}).sort(function(a,b){return a.v-b.v}),sp=hs.length>1?sparkSvg(hs.map(function(s){return s.pem||s.pof}),'dp'):null;
-    h+='<h4>Primas</h4><div class="pcard"><div class="pg3"><div><label>Ofertada</label><strong>'+money(S.pof)+'</strong></div><div><label>Pedida</label><strong>'+money(S.ppe)+'</strong></div><div><label>'+(k===C?'Emitida':'Dada')+'</label><strong>'+(k===C?money(S.pem):'—')+'</strong></div></div><div class="pv"><span>Prima por vehículo <b>'+(base&&S.veh?eur(base/S.veh,2):'—')+'</b></span>'+(sp?'<div class="spw">'+sp.svg+'<small>'+hs.length+' estudios con prima</small></div>':'<span class="sub2">Un solo estudio: sin histórico</span>')+'</div></div>';
-    var ti=tips(f,S);
-    h+='<h4>Tipologías de coberturas</h4><div class="scroll"><table class="dtbl"><thead><tr><th class="l">Tipo</th><th>Veh.</th><th>Prima</th><th>Tasa sin.</th></tr></thead><tbody>'+ti.map(function(x){return '<tr><td class="nm l">'+x.t+'</td><td>'+nf(x.v)+'</td><td>'+(x.prima?eur(x.prima):'—')+'</td><td>'+x.tasa+' %</td></tr>'}).join('')+'</tbody></table></div>';
-  }
-  var real=all.filter(function(s){return !s.draft});
-  h+='<div><div class="vhead"><h4 style="margin:0">Estudios</h4>'+(real.length>1&&!editing?'<button class="mini" data-act="cmp">Comparar v'+real[1].v+' ↔ v'+real[0].v+'</button>':'')+'</div><div class="scroll"><table class="dtbl hist"><thead><tr><th class="l">Vers.</th><th class="l">Estado</th><th>Fecha</th><th>Prima of.</th><th>Prima em.</th><th>Veh.</th><th></th></tr></thead><tbody>'
-   +real.map(function(s,i){return '<tr class="hrow'+(i===0?' cur':'')+'"><td class="l"><b>v'+s.v+'</b>'+(i===0?'<div class="muted">actual</div>':'')+'</td><td class="l">'+tagS(s.e)+'</td><td>'+fs(s.f)+'</td><td>'+money(s.pof)+'</td><td>'+(s.e===C?money(s.pem):'—')+'</td><td>'+nf(s.veh)+'</td><td><button class="mini" data-vp="'+s.v+'" '+(editing?'disabled':'')+'>Ver</button></td></tr>'}).join('')+'</tbody></table></div></div>';
-  h+='<h4>Emisiones</h4>'+(f.em.length?'<div class="scroll"><table class="dtbl"><thead><tr><th class="l">Póliza</th><th>Emisión</th><th>Vence</th><th>Veh.</th><th>Prima</th></tr></thead><tbody>'+f.em.slice().sort(function(a,b){return b.v-a.v}).map(function(e){var d=dias(e.vto);return '<tr class="'+(d>=0?'vig':'')+'"><td class="nm l mono">'+esc(e.pol)+'<div class="muted" style="font-family:var(--font-body)">'+(d>=0?'Vigente':'Vencida')+'</div></td><td>'+fd(e.fe)+'</td><td>'+fd(e.vto)+'</td><td>'+nf(e.veh)+'</td><td>'+eur(e.prima)+'</td></tr>'}).join('')+'</tbody></table></div>':'<div class="empty">Esta flota todavía no tiene emisiones.</div>');
-  h+='<h4>Actividad</h4><ul class="tl">'+acts(f).map(function(a){return '<li>'+a.t+'<time>'+fd(a.d)+'</time></li>'}).join('')+'</ul>';
-  h+='<div class="danger-zone"><p>'+(f.em.length?'<b>No se puede borrar:</b> tiene '+nf(f.em.length)+' emisión'+(f.em.length>1?'es':'')+'. Puedes archivarla.':'<b>Borrar flota.</b> Se elimina con todos sus estudios. No se puede deshacer.')+'</p><button class="mini danger" data-act="del">'+(f.em.length?'Archivar flota':'Borrar flota')+'</button></div>';
-  var keep=dr.scrollTop,was=dr.classList.contains('open');
+  var prima=k===C?l.pem:l.pof;
+  h+='<h4>Del estudio</h4><div class="kv">'+kv('Estado',cap(f.estReal||k))+kv('Nº de vehículos',l.veh?nf(l.veh):'')+kv(k===C?'Prima contratada':'Prima del estudio',prima?money(prima):'')+kv('Última modificación',f.mod?fd(f.mod):(l.f?fd(l.f):''))+'</div>'
+   +'<p class="desc" style="margin-top:10px">Los vehículos, las primas y las coberturas se trabajan en <b>Estudio</b>. Aquí se mantienen los datos de la flota.</p>';
+  h+='<div class="dacts">'+(k==='EN ESTUDIO'?'<button class="mini" data-act="form">Cambiar estado</button>':k==='OFERTADA'?'<button class="mini" data-act="resp">Registrar respuesta</button>':'')+'</div>';
+  h+='<div class="danger-zone"><p>'+(k===C?'<b>No se puede borrar:</b> la flota está contratada.':'<b>Borrar flota.</b> Se elimina con todo su estudio. No se puede deshacer.')+'</p>'+(k===C?'':'<button class="mini danger" data-act="del">Borrar flota</button>')+'</div>';
+  var keep=dr.scrollTop,was=dr.classList.contains('open')&&same;
   openDr(h);
-  if(editing){combo($('#eCor',dr),{get:function(){return ed.cor},set:function(v){ed.cor=v},tops:[{v:'',l:'Sin corredor'}]});if(was)dr.scrollTop=keep}
+  fx={f:f,cor:f.cor||''};
+  combo($('#xCor',dr),{get:function(){return fx.cor},set:function(v){fx.cor=v},tops:[{v:'',l:'Sin corredor'}]});
+  var ci=$('#xC',dr);
+  var avisoCif=function(){var c=fcif(ci.value),hh=$('#xH',dr);if(!hh)return;
+    if(!c){hh.textContent='';ci.classList.remove('bad');return}
+    if(!cifOk(c)){hh.textContent='Formato no válido todavía (ej. B12345678, 12345678Z, X1234567L).';ci.classList.add('bad');return}
+    ci.classList.remove('bad');
+    var otras=F.filter(function(o){return o!==f&&fcif(o.cif)===c});
+    hh.textContent=otras.length?'Aviso: este CIF también lo tiene «'+otras[0].nombre+'»'+(otras.length>1?' y '+(otras.length-1)+' más':'')+'. Se puede guardar igualmente.':'CIF válido.'};
+  ci.addEventListener('input',avisoCif);avisoCif();
+  $('#fFx',dr).addEventListener('submit',function(e){e.preventDefault();guardarFicha(f,false)});
+  $('#xGS',dr).addEventListener('click',function(){guardarFicha(f,true)});
+  fx.init=fxSnap();
+  if(was)dr.scrollTop=keep;
+}
+function guardarFicha(f,siguiente){
+  if(!fx||fx.f!==f)return;
+  var g=function(id){return $('#'+id,dr).value.trim()};
+  var n=g('xN'),c=fcif(g('xC')),err='';
+  if(!n)err='Falta el nombre de la flota.';
+  else if(c&&!cifOk(c))err='El CIF no tiene un formato válido (ej. B12345678, 12345678Z, X1234567L). Corrígelo o déjalo vacío.';
+  else if(g('xE')&&g('xV')&&g('xV')<g('xE'))err='La fecha de vencimiento no puede ser anterior a la de efecto.';
+  if(err){$('#xErr',dr).textContent=err;return}
+  $('#xErr',dr).textContent='';
+  var bG=$('#xG',dr),bS=$('#xGS',dr);if(bG.disabled)return;bG.disabled=bS.disabled=true;bG.textContent='Guardando…';
+  // Copia de lo anterior por si el servidor no guarda: la pantalla no debe mostrar como guardado lo que no lo está
+  var l=last(f),antes={nombre:f.nombre,cif:f.cif,tom:f.tom,act:f.act,cor:f.cor,obs:f.obs,efecto:f.efecto,cia:f.cia,pol:f.pol,per:f.per,suc:f.suc,cT:f.cT,cm:l.cm,vto:l.vto};
+  f.nombre=n;f.cif=c;f.tom=g('xT');f.act=g('xA')||'Sin indicar';f.cor=fx.cor||null;f.obs=g('xO');f.efecto=g('xE');f.cia=g('xCia');f.pol=g('xPol');f.per=g('xPer');
+  l.cm=g('xM')||'m_na';l.vto=g('xV');f.cT=l.cm;
+  var cr=byR(f.cor),cm=byC(l.cm);f.suc=cr?cr.s:(cm?cm.s:f.suc);
+  syncCarpeta(f).then(function(ok){
+    if(!ok){
+      Object.assign(f,{nombre:antes.nombre,cif:antes.cif,tom:antes.tom,act:antes.act,cor:antes.cor,obs:antes.obs,efecto:antes.efecto,cia:antes.cia,pol:antes.pol,per:antes.per,suc:antes.suc,cT:antes.cT});l.cm=antes.cm;l.vto=antes.vto;
+      if($('#xG',dr)){bG.disabled=bS.disabled=false;bG.textContent='Guardar';$('#xErr',dr).textContent='No se ha podido guardar. Tus cambios siguen en el formulario: vuelve a intentarlo.'}
+      return}
+    fx.init=undefined;newId=f.id;render();
+    if(siguiente){
+      var L=scoped().slice().sort(cmpF),i=L.indexOf(f),resto=L.slice(i+1).concat(L.slice(0,Math.max(i,0))).filter(function(o){return o!==f});
+      var sig=resto.filter(function(o){return faltan(o).length>0})[0];
+      if(sig){toast('«'+f.nombre+'» guardada');ficha(sig,null,true);return}
+      toast('«'+f.nombre+'» guardada · no quedan flotas con datos pendientes en esta lista');
+    }else toast('«'+f.nombre+'» guardada');
+    ficha(f,null,true);
+  });
 }
 
 /* ── Edición y nuevas versiones ── */
@@ -1966,12 +2047,14 @@ function startEdit(f,forceNew){
   ficha(f);
 }
 function saveEdit(f){
-  var n=$('#eN').value.trim(),c=fcif($('#eC').value),v=parseInt($('#eV').value,10),pof=parseFloat(String($('#eP').value).replace(/\./g,'').replace(',','.'))||0,err='';
-  if(!n)err='Falta el nombre de la flota.';else if(c&&c.length<9)err='El CIF debe tener 9 caracteres (o déjalo vacío en modo borrador).';else if(isNaN(v)||v<0)err='Revisa el número de vehículos.';else if(c&&F.some(function(x){return x.id!==f.id&&fcif(x.cif)===c}))err='Ya existe otra flota con ese CIF.';
+  var n=$('#eN').value.trim(),c=fcif($('#eC').value),v=pnum($('#eV').value),pr=$('#eP').value.trim(),pof=pr?pnum(pr):0,err='';
+  if(!n)err='Falta el nombre de la flota.';else if(c&&c.length<9)err='El CIF debe tener 9 caracteres (o déjalo vacío en modo borrador).';else if(isNaN(v)||v<0||v%1!==0)err='Revisa el número de vehículos.';else if(isNaN(pof)||pof<0)err='Revisa la prima ofertada (formato: 1.234,56).';else if(c&&F.some(function(x){return x.id!==f.id&&fcif(x.cif)===c}))err='Ya existe otra flota con ese CIF.';
   if(err){$('#eErr').textContent=err;return}
   var nv=ed.S.v;
   modal('<div class="mdl-over">Confirmar cambios</div><h3>¿Guardar los cambios?</h3><p class="mdl-desc">'+(ed.inPlace?'Se actualizará el borrador de <b>'+esc(f.nombre)+'</b>.':'Se guardará la <b>versión v'+nv+'</b> de <b>'+esc(f.nombre)+'</b> en estado «En estudio». Las versiones anteriores quedan intactas.')+'</p><div class="mdl-act"><button class="btn ghost" data-mclose>Volver</button><button class="btn" id="okEd" autofocus>Confirmar y guardar</button></div>');
+  var saving=false;
   $('#okEd').addEventListener('click',function(){
+    if(saving||!ed)return;saving=true; // anti doble envío
     f.nombre=n;f.cif=c;f.act=$('#eA').value.trim()||'Sin indicar';f.cor=ed.cor||null;f.obs=$('#eO').value.trim();
     var S=ed.S;S.veh=v;S.pof=pof;S.ppe=pof?Math.round(pof*.94/100)*100:0;S.cm=$('#eM').value;S.f=TODAY_ISO;delete S.draft;
     f.log.push({d:TODAY_ISO,t:ed.inPlace?'<b>Borrador editado</b>':'<b>v'+S.v+' creada</b> (copia de v'+(S.v-1)+')'});
@@ -1996,30 +2079,35 @@ function formalizar(f,resp){
     $('#fx',md).innerHTML=h;$('#fxe',md).textContent='';
   }
   $$('input[name=ne]',md).forEach(function(r){r.addEventListener('change',fx)});fx();
+  var sent=false;
   $('#okF').addEventListener('click',function(){
-    var num=function(id){var e=$('#'+id,md);return e?parseFloat(String(e.value).replace(/\./g,'').replace(',','.')):0};
+    if(sent)return;
+    var num=function(id){var e=$('#'+id,md);return e?pnum(e.value):0};
     var vt=$('#xVt',md)?$('#xVt',md).value:'',err='';
     if(sel0==='OFERTADA'){if(!(num('xPo')>0))err='Indica la prima ofertada.';else if(!vt)err='Indica hasta cuándo es válida la oferta.'}
-    if(sel0==='CONTRATADA'){if(!l.pof&&!(num('xPo')>0))err='Indica la prima ofertada.';else if(!(num('xPe')>0))err='Indica la prima emitida.';else if(!$('#xNp',md).value.trim())err='Falta el número de póliza.';else if(!vt)err='Indica la fecha de vencimiento.'}
+    // Formalizar como CONTRATADA exige CIF válido, corredor y comercial (también desde «Registrar respuesta»)
+    var falta=sel0==='CONTRATADA'?reqs(f).slice(0,3).filter(function(r){return !r.ok}).map(function(r){return r.t}):[];
+    if(falta.length)err='No se puede contratar: falta '+falta.join(', ')+'. Complétalo desde «Editar» y vuelve a intentarlo.';
+    else if(sel0==='CONTRATADA'){if(!l.pof&&!(num('xPo')>0))err='Indica la prima ofertada.';else if(!(num('xPe')>0))err='Indica la prima emitida.';else if(!$('#xNp',md).value.trim())err='Falta el número de póliza.';else if(!vt)err='Indica la fecha de vencimiento.'}
     if(sel0==='RECHAZADA'&&!$('#xMo',md).value.trim())err='Indica el motivo del rechazo.';
     if(err){$('#fxe',md).textContent=err;return}
+    sent=true; // anti doble envío
     if(sel0!=='RECHAZADA'&&$('#xPo',md)&&num('xPo')>0){l.pof=num('xPo');l.ppe=Math.round(l.pof*.94/100)*100}
-    l.e=sel0;l.f=TODAY_ISO;
+    l.e=sel0;l.f=TODAY_ISO;f.estReal=sel0;
     if(sel0==='OFERTADA'){l.vto=vt;f.log.push({d:TODAY_ISO,t:'<b>Oferta enviada</b>'+(byR(f.cor)?' a '+esc(byR(f.cor).mail):'')})}
     if(sel0==='CONTRATADA'){l.pem=num('xPe');l.vto=vt;f.em.push({pol:$('#xNp',md).value.trim(),fe:TODAY_ISO,vto:vt,prima:l.pem,veh:l.veh,v:l.v});f.log.push({d:TODAY_ISO,t:'<b>Contratada</b> · póliza '+esc($('#xNp',md).value.trim())})}
     if(sel0==='RECHAZADA'){l.mot=$('#xMo',md).value.trim();l.vto='';f.log.push({d:TODAY_ISO,t:'<b>Rechazada</b> · motivo: '+esc(l.mot)})}
     syncCarpeta(f); // persistir cambio de estado al backend (fix 20/11)
-    closeModal();newId=f.id;render();ficha(f);toast('«'+f.nombre+'» → '+cap(sel0));
+    closeModal();newId=f.id;render();ficha(f,null,true);toast('«'+f.nombre+'» → '+cap(sel0));
   });
 }
 function borrar(f){
   if(f.em.length){
-    modal('<div class="mdl-over">No se puede borrar</div><h3>'+esc(f.nombre)+'</h3><p class="mdl-desc">Tiene <b>'+nf(f.em.length)+' emisión'+(f.em.length>1?'es':'')+'</b> registrada'+(f.em.length>1?'s':'')+', así que no es borrable. Puedes <b>archivarla</b>: sale del listado y conserva todo su historial.</p><div class="mdl-act"><button class="btn ghost" data-mclose>Cancelar</button><button class="btn" id="okA" autofocus>Archivar flota</button></div>');
-    $('#okA').addEventListener('click',function(){f.arch=true;syncCarpeta(f);closeModal();closeDr();render();toast('«'+f.nombre+'» archivada')});return;
+    modal('<div class="mdl-over">No se puede borrar</div><h3>'+esc(f.nombre)+'</h3><p class="mdl-desc">La flota está <b>contratada</b>, así que no se puede borrar desde aquí.</p><div class="mdl-act"><button class="btn" data-mclose autofocus>Entendido</button></div>');return;
   }
   modal('<div class="mdl-over">Borrar flota</div><h3>¿Borrar «'+esc(f.nombre)+'»?</h3><p class="mdl-desc">Se eliminarán la flota y sus <b>'+nf(f.st.length)+' estudio'+(f.st.length>1?'s':'')+'</b>. Esta acción no se puede deshacer. Para confirmar, escribe el nombre exacto de la flota.</p><div class="fld"><label for="dN">Nombre de la flota</label><input id="dN" class="inp" autocomplete="off" placeholder="'+esc(f.nombre)+'"></div><div class="mdl-act"><button class="btn ghost" data-mclose>Cancelar</button><button class="btn danger" id="okD" disabled>Borrar definitivamente</button></div>');
   var inp=$('#dN',md),ok=$('#okD',md);inp.addEventListener('input',function(){ok.disabled=norm(inp.value.trim())!==norm(f.nombre)});
-  ok.addEventListener('click',function(){if(ok.disabled)return;if(ed)leaveEdit(true);syncDelete(f);F.splice(F.indexOf(f),1);closeModal();closeDr();render();toast('«'+f.nombre+'» borrada')});
+  ok.addEventListener('click',function(){if(ok.disabled)return;if(ed)leaveEdit(true);syncDelete(f);F.splice(F.indexOf(f),1);closeModal();closeDr(true);render();toast('«'+f.nombre+'» borrada')});
 }
 function comparar(f,a,b){
   var real=f.st.filter(function(s){return !s.draft}).sort(function(x,y){return x.v-y.v});
@@ -2049,25 +2137,30 @@ function duplicar(f){
 /* ── Nueva flota ── */
 function nueva(){
   if(ed)leaveEdit(true);var nc='';
-  openDr('<div class="over">Flotas</div><h3>Nueva flota</h3><p class="desc">Puedes empezar sin CIF ni corredor: queda como <b>borrador</b>. Para formalizar necesitará CIF válido, corredor, comercial y vehículos.</p>'
+  openDr('<div class="over">Flotas</div><h3>Nueva flota</h3><p class="desc">Se crea en la base de datos en estado «En estudio». Puedes empezar sin CIF ni corredor y completarlos después en su ficha.</p>'
    +'<form class="form" id="fNew" novalidate><div class="fld"><label for="nN">Nombre de la flota <span class="req">*</span></label><input id="nN" class="inp" autocomplete="off"></div>'
-   +'<div class="fld"><label for="nC">CIF</label><input id="nC" class="inp mono" autocomplete="off" placeholder="B12345678"><div class="hint" id="nH">Opcional en modo borrador. Se comprueba que no exista ya.</div></div><div id="nD"></div>'
+   +'<div class="fld"><label for="nC">CIF</label><input id="nC" class="inp mono" autocomplete="off" placeholder="B12345678"><div class="hint" id="nH">Opcional. Si ya existe otra flota con ese CIF se avisa, pero se puede crear.</div></div><div id="nD"></div>'
    +'<div class="fld"><label>Corredor</label><div id="nR"></div></div>'
-   +'<div class="frow"><div class="fld"><label for="nM">Comercial <span class="req">*</span></label><select id="nM" class="select"><option value="">Elige comercial</option>'+COM.map(function(c){return '<option value="'+c.id+'">'+c.n+' · '+SUC[c.s]+'</option>'}).join('')+'</select></div><div class="fld"><label for="nV">Nº de vehículos</label><input id="nV" class="inp" inputmode="numeric" placeholder="0"></div></div>'
-   +'<div class="ferr" id="nE"></div><div class="fact"><button type="button" class="btn ghost" data-close>Cancelar</button><button type="submit" class="btn" id="nG">Crear borrador</button></div></form>');
+   +'<div class="frow"><div class="fld"><label for="nM">Comercial <span class="req">*</span></label><select id="nM" class="select"><option value="">Elige comercial</option>'+COM.map(function(c){return '<option value="'+c.id+'">'+esc(c.n)+' · '+SUC[c.s]+'</option>'}).join('')+'</select></div></div>'
+   +'<div class="ferr" id="nE"></div><div class="fact"><button type="button" class="btn ghost" data-close>Cancelar</button><button type="submit" class="btn" id="nG">Crear flota</button></div></form>');
   combo($('#nR'),{get:function(){return nc},set:function(v){nc=v},tops:[{v:'',l:'Sin corredor'}]});
   var ci=$('#nC'),dup=null;
   function chk(){var c=fcif(ci.value);dup=c.length>=6?(F.filter(function(f){return fcif(f.cif)===c})[0]||null):null;
-    if(dup){ci.classList.add('bad');$('#nH').textContent='Este CIF ya está registrado.';var dl=last(dup);$('#nD').innerHTML='<div class="banner" style="--c:'+STC[dl.e]+'"><b>Ya existe: '+esc(dup.nombre)+'</b><span>'+cap(dl.e)+' · versión v'+dl.v+'</span><div class="row"><button type="button" class="mini pri" data-nv="'+dup.id+'">Crear nueva versión de esta flota</button><button type="button" class="mini" data-open="'+dup.id+'">Ver ficha</button></div></div>';$('#nG').disabled=true}
-    else{ci.classList.remove('bad');$('#nD').innerHTML='';$('#nG').disabled=false;$('#nH').textContent=c.length>=6?'CIF nuevo: no consta en el registro.':'Opcional en modo borrador. Se comprueba que no exista ya.'}}
+    if(dup){ci.classList.add('bad');$('#nH').textContent='Este CIF ya está registrado.';var dl=last(dup);$('#nD').innerHTML='<div class="banner" style="--c:'+STC[dl.e]+'"><b>Ya existe: '+esc(dup.nombre)+'</b><span>'+cap(dl.e)+' · si es otra flota del mismo cliente puedes crearla igualmente</span><div class="row"><button type="button" class="mini" data-open="'+dup.id+'">Ver esa ficha</button></div></div>';$('#nG').disabled=false}
+    else{ci.classList.remove('bad');$('#nD').innerHTML='';$('#nG').disabled=false;$('#nH').textContent=c.length>=6?'CIF nuevo: no consta en el registro.':'Opcional. Si ya existe otra flota con ese CIF se avisa, pero se puede crear.'}}
   ci.addEventListener('input',chk);
   $('#fNew').addEventListener('submit',function(e){
-    e.preventDefault();chk();if(dup)return;
-    var n=$('#nN').value.trim(),c=fcif(ci.value),v=parseInt($('#nV').value,10)||0,cm=byC($('#nM').value),err='';
-    if(!n)err='Falta el nombre de la flota.';else if(c&&c.length<9)err='El CIF debe tener 9 caracteres (o déjalo vacío).';else if(!cm)err='Elige el comercial que la trae.';
+    e.preventDefault();chk();
+    var n=$('#nN').value.trim(),c=fcif(ci.value),v=0,cm=byC($('#nM').value),err='';
+    if(!n)err='Falta el nombre de la flota.';else if(c&&!cifOk(c))err='El CIF no tiene un formato válido (o déjalo vacío).';else if(!cm)err='Elige el comercial que la trae.';
     if(err){$('#nE').textContent=err;return}
-    var f={id:++nextId,nombre:n,cif:c,act:'Sin indicar',cor:nc||null,cT:cm.id,suc:cm.s,obs:'',arch:false,tp:TP.log,st:[{id:nextSt++,v:1,e:E,f:TODAY_ISO,veh:v,pof:0,pem:0,ppe:0,vto:'',mot:'',cm:cm.id}],em:[],log:[{d:TODAY_ISO,t:'<b>Flota creada</b> en modo borrador'}]};
-    F.push(f);newId=f.id;sortK='mod';sortD=-1;page=1;closeDr();render();toast('Borrador creado · formalízalo cuando tenga todos los datos');
+    var bG=$('#nG');if(bG.disabled)return;bG.disabled=true;bG.textContent='Creando…';
+    var cr=byR(nc);
+    var f={id:++nextId,realId:null,nombre:n,cif:c,act:'Sin indicar',cor:nc||null,cT:cm.id,suc:cr?cr.s:cm.s,obs:'',tom:'',efecto:'',cia:'',pol:'',per:'',estReal:'EN ESTUDIO',mod:TODAY_ISO,arch:false,tp:TP.log,st:[{id:nextSt++,v:1,e:E,f:TODAY_ISO,veh:v,pof:0,pem:0,ppe:0,vto:'',mot:'',cm:cm.id}],em:[],log:[]};
+    syncCarpeta(f).then(function(ok){
+      if(!ok){bG.disabled=false;bG.textContent='Crear flota';$('#nE').textContent='No se ha podido crear la flota en el servidor. Vuelve a intentarlo.';return}
+      F.push(f);newId=f.id;sortK='mod';sortD=-1;page=1;render();toast('«'+f.nombre+'» creada');ficha(f,null,true);
+    });
   });
   setTimeout(function(){$('#nN').focus()},380);
 }
@@ -2132,7 +2225,7 @@ document.addEventListener('change',function(e){
   if(t.matches('[data-sel]')){if(t.checked)sel[t.dataset.sel]=1;else delete sel[t.dataset.sel];render()}
   else if(t.id==='selAll'){$$('[data-sel]').forEach(function(c){if(t.checked)sel[c.dataset.sel]=1;else delete sel[c.dataset.sel]});render()}
   else if(t.matches('[data-col]')){cols[t.dataset.col]=t.checked;actView=-1;render()}
-  else if(t.id==='bCom'&&t.value){var ids=Object.keys(sel).map(Number),cm=byC(t.value),v=t.value;t.value='';modal('<div class="mdl-over">Cambio masivo</div><h3>¿Asignar a '+esc(cm.n)+'?</h3><p class="mdl-desc">Se cambiará el comercial de <b>'+ids.length+' flota'+(ids.length>1?'s':'')+'</b> en su versión actual.</p><div class="mdl-act"><button class="btn ghost" data-mclose>Cancelar</button><button class="btn" id="okBC" autofocus>Confirmar cambio</button></div>');$('#okBC').addEventListener('click',function(){ids.forEach(function(id){var x=byId(id);if(!x)return;last(x).cm=v;x.log.push({d:TODAY_ISO,t:'<b>Comercial cambiado</b> a '+esc(cm.n)})});closeModal();render();toast('Comercial actualizado en '+ids.length+' flotas')})}
+  else if(t.id==='bCom'&&t.value){var ids=Object.keys(sel).map(Number),cm=byC(t.value),v=t.value;t.value='';modal('<div class="mdl-over">Cambio masivo</div><h3>¿Asignar a '+esc(cm.n)+'?</h3><p class="mdl-desc">Se cambiará el comercial de <b>'+ids.length+' flota'+(ids.length>1?'s':'')+'</b> en su versión actual.</p><div class="mdl-act"><button class="btn ghost" data-mclose>Cancelar</button><button class="btn" id="okBC" autofocus>Confirmar cambio</button></div>');$('#okBC').addEventListener('click',function(){ids.forEach(function(id){var x=byId(id);if(!x)return;last(x).cm=v;x.cT=v;if(!x.cor)x.suc=cm.s;syncCarpeta(x)});closeModal();render();toast('Comercial guardado en '+ids.length+' flotas')})}
 });
 document.addEventListener('keydown',function(e){var tr=e.target.closest&&e.target.closest('tr[data-id]');if(tr&&e.target===tr&&(e.key==='Enter'||e.key===' ')){e.preventDefault();ficha(byId(tr.dataset.id))}});
 $('#fCom').addEventListener('change',function(e){fl.com=e.target.value;actView=-1;page=1;render()});
@@ -2147,7 +2240,7 @@ window.addEventListener('resize',ul);
 $('#hoy').textContent=TODAY.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).replace(/^./,function(c){return c.toUpperCase()});
 $('#fDate').textContent='Flotas · '+fd(TODAY);
 $('#kpis').innerHTML=kpiHtml();
-$('#fCom').innerHTML='<option value="">Todos los comerciales</option>'+['TITAN','MEDIACION'].map(function(s){return '<optgroup label="'+SUC[s]+'">'+COM.filter(function(c){return c.s===s}).map(function(c){return '<option value="'+c.id+'">'+c.n+'</option>'}).join('')+'</optgroup>'}).join('');
+$('#fCom').innerHTML='<option value="">Todos los comerciales</option>'+['TITAN','MEDIACION'].map(function(s){return '<optgroup label="'+SUC[s]+'">'+COM.filter(function(c){return c.s===s}).map(function(c){return '<option value="'+c.id+'">'+esc(c.n)+'</option>'}).join('')+'</optgroup>'}).join('');
 cmbF=combo($('#fCor'),{get:function(){return fl.cor},set:function(v){fl.cor=v;actView=-1;page=1;render()},tops:[{v:'',l:'Todos los corredores'},{v:'__none',l:'Sin corredor'}]});
 dualP=dual($('#dP'),PMAX,5000,'pmin','pmax',function(v){return nf(v/1000)+'k'},'#lP');
 dualV=dual($('#dV'),VMAX,1,'vmin','vmax',function(v){return String(v)},'#lV');

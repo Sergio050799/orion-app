@@ -141,6 +141,8 @@ export interface FilaEmision {
     errores: string[];
     /** se muestran, no bloquean */
     avisos: string[];
+    /** el año de fabricación queda fuera del rango de años que admite la ID de catálogo asignada */
+    conflictoAnio?: { anio: number; min: number | null; max: number | null; origen: 'sistema' | 'catalogo'; id: string };
 }
 
 export interface ResultadoEmision {
@@ -213,15 +215,43 @@ export function prepararEmision(e: EntradaEmision): ResultadoEmision {
             }
             if (ver) for (const a of ver.avisos) avisos.push(`Identificación: ${a}`);
         }
+        // Año frente al rango de la ID (regla «ID = AÑO»): si el año de fabricación queda fuera del rango
+        // que admite la versión asignada, el sistema de emisión rechaza la fila. No se genera el fichero
+        // hasta corregir el año o cambiar de ID. Manda el rango que haya indicado el propio sistema; si
+        // no se conoce, el del catálogo. Única salvedad: remolques con rango de catálogo dados por buenos
+        // en PRE-EMISIÓN (se asignan a entradas genéricas por peso).
+        let conflictoAnio: FilaEmision['conflictoAnio'];
+        const w = ver?.ventana;
+        const fabN = fab ? parseInt(fab, 10) : NaN;
+        if (idVeh && w && (w.origen === 'sistema' || w.origen === 'catalogo') && Number.isFinite(fabN)
+            && ((w.min != null && fabN < w.min) || (w.max != null && fabN > w.max))) {
+            conflictoAnio = { anio: fabN, min: w.min, max: w.max, origen: w.origen, id: idVeh };
+            const rango = w.min != null && w.max != null ? `[${w.min}, ${w.max}]` : w.min != null ? `desde ${w.min}` : `hasta ${w.max}`;
+            const msg = `Año de fabricación ${fabN} fuera del rango ${rango} que admite la ID ${idVeh} (${w.origen === 'sistema' ? 'según el sistema de emisión' : 'según el catálogo'}).`;
+            if (w.origen === 'catalogo' && tipo === 'remolque' && ver?.confirmada) avisos.push(msg);
+            else errores.unshift(`${msg} Corrige el año o cambia de ID en PRE-EMISIÓN.`);
+        }
+
         // Plazas: fuente única = catálogo (vía PreEmisión) o trabajo[].plazas original.
         // Si el catálogo dice 0 (remolques/semirremolques) → 0 es válido, NO lanzar fallback.
         // Fix 23/11b: eliminado fallback por tipo (puso "2" a remolques que son 0 → MMT rechazó).
-        const plazas = (r['plazas'] ?? '').trim();
+        // Las plazas salen SOLAS de la ID de catálogo asignada (regla «ID = AÑO = PLAZAS»). Solo si alguien
+        // las escribió a mano en PRE-EMISIÓN mandan esas; lo que traiga el estudio es el último recurso.
+        const pzId = ver?.plazasId;
+        const plazasManual = (r['plazas_manual'] ?? '').trim();
+        const plazas = plazasManual !== '' ? plazasManual
+            : (idVeh && pzId) ? String(pzId.max)
+            : (r['plazas'] ?? '').trim();
         if (plazas !== '') {
             v.NUM_PLAZAS = plazas;
-        } else {
-            // Sin plazas ni en catálogo ni en plantilla → error al usuario, NO adivinamos.
-            errores.push(`Sin número de plazas. Asigna una ID en PreEmisión o completa el dato manualmente.`);
+            // El sistema valida las plazas contra el rango de la ID («[0,0] Remolque incorrecta»): si quedan fuera, no se emite.
+            const pz = pzId, nPz = parseInt(plazas, 10);
+            if (idVeh && pz && Number.isFinite(nPz) && (nPz < Math.min(pz.min, pz.max) || nPz > Math.max(pz.min, pz.max))) {
+                errores.push(`Plazas ${nPz} fuera de las que admite la ID ${idVeh} (${pz.min === pz.max ? pz.max : `${Math.min(pz.min, pz.max)} a ${Math.max(pz.min, pz.max)}`}). Corrige las plazas o cambia de ID en PRE-EMISIÓN.`);
+            }
+        } else if (idVeh) {
+            // Con ID asignada las plazas llegan solas; si falta el dato es que PRE-EMISIÓN aún no ha cargado esa ID.
+            errores.push('Sin número de plazas: abre PRE-EMISIÓN para que se carguen de la ID asignada.');
         }
 
         // Uso y ámbito: el del estudio manda; si no lo trae, el valor común
@@ -267,7 +297,7 @@ export function prepararEmision(e: EntradaEmision): ResultadoEmision {
         if (!isNaN(prima) && prima > 0) v.PRECIO_OBJETIVO = prima.toFixed(2);
         else avisos.push('Sin prima ofertada (PRECIO_OBJETIVO).');
 
-        return { matricula, tipo, tipoEtiqueta, valores: v, errores, avisos };
+        return { matricula, tipo, tipoEtiqueta, valores: v, errores, avisos, conflictoAnio };
     });
 
     const hayErrorFila = filas.some(f => f.errores.length > 0);

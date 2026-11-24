@@ -141,22 +141,71 @@ export function initMemCache(carpetas: FlotaCarpeta[]): void {
 
 // ─── Server sync ─────────────────────────────────────────────────────────────
 
-function syncUpsert(carpeta: FlotaCarpeta): void {
+// Cola por carpeta: como mucho UN envío en vuelo por carpeta. Si llegan más guardados mientras
+// tanto, sólo se envía el último al terminar el anterior. Antes cada guardado lanzaba su POST
+// suelto y, si llegaban desordenados al servidor, uno viejo pisaba al nuevo (ediciones perdidas).
+type Pendiente = FlotaCarpeta | 'delete';
+const enVuelo = new Set<string>();
+const pendientes = new Map<string, Pendiente>();
+const fallidas = new Set<string>();
+const REINTENTOS_MS = [2000, 5000, 10000];
+
+/** Evento de ventana `orion:guardado` con `{ id, ok }`: lo escucha el Estudio para avisar si un guardado no llega. */
+function avisarGuardado(id: string, ok: boolean): void {
+  if (ok) { if (!fallidas.delete(id)) return; } else fallidas.add(id);
+  if (typeof window === 'undefined') return;
+  try { window.dispatchEvent(new CustomEvent('orion:guardado', { detail: { id, ok } })); } catch { /* */ }
+}
+
+/** true si queda algún guardado de carpeta sin confirmar por el servidor. */
+export function hayGuardadosPendientes(): boolean {
+  return enVuelo.size > 0 || pendientes.size > 0 || fallidas.size > 0;
+}
+
+function enviar(id: string, que: Pendiente, intento = 0): void {
+  enVuelo.add(id);
+  // El cuerpo se serializa aquí, en el momento del envío: lleva el estado más reciente del objeto.
+  const body = que === 'delete'
+    ? JSON.stringify({ action: 'delete', id })
+    : JSON.stringify({ action: 'upsert', carpeta: que });
+  fetch('/api/flotas/carpetas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body })
+    .then(res => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return true; })
+    .catch(() => false)
+    .then(ok => {
+      enVuelo.delete(id);
+      const siguiente = pendientes.get(id);
+      if (siguiente !== undefined) {
+        // Hay algo más nuevo esperando: manda eso (sustituye a lo que acaba de salir, haya ido bien o mal).
+        pendientes.delete(id);
+        enviar(id, siguiente);
+        return;
+      }
+      if (ok) { avisarGuardado(id, true); return; }
+      avisarGuardado(id, false);
+      if (intento < REINTENTOS_MS.length) {
+        enVuelo.add(id); // reserva el turno durante la espera para mantener el orden
+        setTimeout(() => {
+          enVuelo.delete(id);
+          const masNuevo = pendientes.get(id);
+          pendientes.delete(id);
+          enviar(id, masNuevo ?? que, masNuevo !== undefined ? 0 : intento + 1);
+        }, REINTENTOS_MS[intento]);
+      }
+    });
+}
+
+function encolar(id: string, que: Pendiente): void {
   invalidarCacheCarpetasSafe();
-  fetch('/api/flotas/carpetas', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'upsert', carpeta }),
-  }).catch(() => {});
+  if (enVuelo.has(id)) { pendientes.set(id, que); return; }
+  enviar(id, que);
+}
+
+function syncUpsert(carpeta: FlotaCarpeta): void {
+  encolar(carpeta.id, carpeta);
 }
 
 function syncDelete(id: string): void {
-  invalidarCacheCarpetasSafe();
-  fetch('/api/flotas/carpetas', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'delete', id }),
-  }).catch(() => {});
+  encolar(id, 'delete');
 }
 
 // Wrapper seguro para invalidar el TTL cache; llamado desde syncUpsert/syncDelete que están

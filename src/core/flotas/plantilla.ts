@@ -46,6 +46,8 @@ const COLUMNS = [
   { key: 'tipo_vehiculo',         header: 'TIPO VEHICULO',         width: 26 },
   { key: 'uso',                   header: 'USO',                   width: 22 },
   { key: 'adr',                   header: 'ADR',                   width: 8  },
+  // Solo 2.ª categoría (camión rígido y semirremolque): +30 % sobre la prima base
+  { key: 'isotermo',              header: 'ISOTERMO',              width: 11 },
   { key: 'ambito',                header: 'AMBITO',                width: 14 },
   { key: 'coberturas_solicitadas',header: 'COBERTURAS SOLICITADAS',width: 28 },
   { key: 'lunas',                 header: 'LUNAS',                 width: 10 },
@@ -218,6 +220,12 @@ export async function generarPlantillaExcel(
   addLista(10, 'FRQ_A3', [...FRANQUICIAS_MOTO]);
   addLista(11, 'FRQ_NONE', [NO_APLICA]);
   wb.definedNames.add('_LISTAS!$K$1:$K$1', 'FRQ_IND');
+  // Asistencia en viaje según la categoría del tipo de vehículo:
+  // 1.ª cat. → Oro / Oro Plus / Platino · 2.ª cat. → Nacional / Internacional · 3.ª cat. (motos) → Oro
+  addLista(12, 'ASIS_A1', ['No', 'Oro', 'Oro Plus', 'Platino']);
+  addLista(13, 'ASIS_A2', ['No', 'Nacional', 'Internacional']);
+  addLista(14, 'ASIS_A3', ['No', 'Oro']);
+  addLista(15, 'ASIS_IND', ['No']);
   const COL_TIPO = colLetter(COLUMNS.findIndex(c => c.key === 'tipo_vehiculo') + 1);
   const COL_COB  = colLetter(COLUMNS.findIndex(c => c.key === 'coberturas_solicitadas') + 1);
   const grupoDe = (r: number) => `IFERROR(VLOOKUP($${COL_TIPO}${r},_LISTAS!$A$1:$B$${TIPOS_PLANTILLA.length},2,FALSE),"A1")`;
@@ -227,15 +235,16 @@ export async function generarPlantillaExcel(
   const ADR_OPTIONS_DV = '"No,Si"';
   const AMBITO_OPTIONS = '"Nacional,Internacional"';
   const SI_NO_OPTIONS  = '"Si,No"';
+  const NO_SI_OPTIONS  = '"No,Si"';
 
   const dvMap: Record<string, string> = {
     uso:                    USO_OPTIONS,
     adr:                    ADR_OPTIONS_DV,
+    isotermo:               NO_SI_OPTIONS,
     ambito:                 AMBITO_OPTIONS,
     lunas:                  SI_NO_OPTIONS,
     animales:               SI_NO_OPTIONS,
     seguro_conductor:       SI_NO_OPTIONS,
-    asistencia:             SI_NO_OPTIONS,
   };
 
   // Valor de cada columna de la plantilla a partir de una fila de ORIGINAL (el año de la plantilla es el de fabricación)
@@ -293,6 +302,13 @@ export async function generarPlantillaExcel(
           formulae: [`INDIRECT("FRQ_"&IF(ISNUMBER(SEARCH("franquicia",$${COL_COB}${rr})),${grupoFrq(rr)},"NONE"))`],
           showErrorMessage: true, errorStyle: 'stop', errorTitle: 'Franquicia', error: 'Elige una franquicia de la lista (depende del tipo y de la cobertura).',
           showInputMessage: true, promptTitle: col.header, prompt: 'Solo las coberturas con franquicia admiten un importe.',
+        };
+      } else if (col.key === 'asistencia') {
+        cell.dataValidation = {
+          type: 'list', allowBlank: true, formulae: [`INDIRECT("ASIS_"&${grupoDe(rr)})`],
+          showErrorMessage: true, errorStyle: 'stop', errorTitle: 'Asistencia en viaje',
+          error: 'Elige un valor de la lista. 1.ª categoría: Oro, Oro Plus o Platino. 2.ª categoría: Nacional o Internacional. Motos: Oro.',
+          showInputMessage: true, promptTitle: col.header, prompt: 'Depende del tipo: turismos y furgonetas Oro / Oro Plus / Platino; camiones y remolques Nacional / Internacional; motos Oro.',
         };
       } else if (dvMap[col.key]) {
         cell.dataValidation = {

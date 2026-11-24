@@ -57,6 +57,9 @@ interface Props {
   corredorComercial?: string;
   danosPropios?: DanosPropiosData;
   observacion?: string;
+  /** Vuelve a leer la tarifa del Admin y recalcula las primas del estudio (lo resuelve la página). */
+  onActualizarPrimas?: () => void;
+  actualizandoPrimas?: boolean;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -261,13 +264,15 @@ function buildPdfHtml(data: {
   const sincoPorTipoSection = '';
 
   // Daños Propios
+  // Solo el número total de la flota (dato del corredor): una franja con la cifra y su explicación.
   const danosPropiosSection = danosPropiosPdf ? (() => {
-    const items = danosPropiosPdf.values.map(([l, v]) =>
-      `<div class="metric"><b>${v}</b><small>${l}</small></div>`
-    ).join('');
+    const [, total] = danosPropiosPdf.values[0] ?? ['', '0'];
     return `<section class="report-section section-break">
-    <h2 class="sec-title">3 · Siniestralidad Daños Propios <em>Resumen global</em></h2>
-    <div class="metricstrip">${items}</div>
+    <h2 class="sec-title">${sinco ? 3 : 2} · Daños propios <em>Total de la flota</em></h2>
+    <div class="metricstrip" style="grid-template-columns:150px 1fr;align-items:center">
+      <div class="metric"><b>${total}</b><small>Siniestros de daños propios</small></div>
+      <div style="padding:8px 14px;font-size:9.5px;line-height:1.55">Número de siniestros de daños propios declarados para el conjunto de la flota. Es un dato global facilitado por el corredor: no se desglosa por vehículo.</div>
+    </div>
   </section>`;
   })() : '';
 
@@ -596,6 +601,7 @@ export default function HojaInforme({
   header, carpetaNombre,
   trabajoRows, coberturas, sincoResultRows, sincoManual, sincoGlobal,
   primasMmtValues, onPrimasMmtChange, configCoberturas, onConfigCoberturasChange, onTrabajoRowChange, tarifaFlota, corredorLabel, corredorNombre, corredorComercial, danosPropios, observacion,
+  onActualizarPrimas, actualizandoPrimas,
 }: Props) {
 
   // ── Pivot tipo × cobertura ──────────────────────────────────────────────────
@@ -715,19 +721,9 @@ export default function HojaInforme({
   // ── Daños Propios ────────────────────────────────────────────────────────────
   const danosPropiosItems = useMemo((): [string, string][] | null => {
     if (!danosPropios?.mostrarEnInforme) return null;
-    const numSin = danosPropios.numSiniestros ?? 0;
-    const totalVeh = trabajoRows.filter(r => r['matricula']?.trim()).length;
-    const antiguedMedia = resumenAuto?.antiguedadMedia ?? 0;
-    const sinAnio = antiguedMedia > 0 ? numSin / antiguedMedia : 0;
-    const frecuencia = totalVeh > 0 ? sinAnio / totalVeh : 0;
-    return [
-      ['Vehículos', String(totalVeh)],
-      ['Siniestros', String(numSin)],
-      ['Años media', fmt2(antiguedMedia) + 'a'],
-      ['Sin./año', fmt2(sinAnio)],
-      ['Frecuencia', fmtFreq(frecuencia)],
-    ];
-  }, [danosPropios, trabajoRows, resumenAuto]);
+    // Solo el total de la flota: sin frecuencia (no se sabe cuántos tiene cada vehículo)
+    return [['Daños propios · total de la flota', nf(danosPropios.numSiniestros ?? 0)]];
+  }, [danosPropios]);
 
   // ── Primas agrupadas ─────────────────────────────────────────────────────────
   const isYes = (v?: string) => { const u = (v ?? '').trim().toUpperCase(); return u !== '' && u !== 'NO' && u !== 'N' && u !== '0'; };
@@ -1174,18 +1170,7 @@ export default function HojaInforme({
 
     const danosPropiosPdfValues: [string, string][] | null = (() => {
       if (!danosPropios?.mostrarEnInforme) return null;
-      const numSin = danosPropios.numSiniestros ?? 0;
-      const tVeh = trabajoRows.filter(r => r['matricula']?.trim()).length;
-      const antiguedMedia2 = resumenAuto?.antiguedadMedia ?? 0;
-      const sinAnio2 = antiguedMedia2 > 0 ? numSin / antiguedMedia2 : 0;
-      const frecuencia2 = tVeh > 0 ? sinAnio2 / tVeh : 0;
-      return [
-        ['Vehículos', String(tVeh)],
-        ['Siniestros', String(numSin)],
-        ['Antigüedad', fmt2(antiguedMedia2) + ' años'],
-        ['Sin./año', fmt2(sinAnio2)],
-        ['Frecuencia', fmtFreq(frecuencia2)],
-      ];
+      return [['Siniestros de daños propios', nf(danosPropios.numSiniestros ?? 0)]];
     })();
 
     const html = buildPdfHtml({
@@ -1316,9 +1301,15 @@ export default function HojaInforme({
             <p>Análisis técnico de la flota, listo para descargar.</p>
           </div>
           <div className="acts">
+            {onActualizarPrimas && (
+              <button className="mini" onClick={onActualizarPrimas} disabled={actualizandoPrimas}
+                title="Vuelve a leer la tarifa del Admin y recalcula las primas de este estudio. Las escritas a mano en la Oferta no se tocan.">
+                {actualizandoPrimas ? 'Actualizando…' : 'Actualizar primas'}
+              </button>
+            )}
             <button className="mini" onClick={handleRecalcPrimas}
-              title="Recalcula las primas MMT desde los valores de la Oferta y la tarifa">
-              Recalcular desde la oferta
+              title="Copia al informe las primas que hay ahora en la Oferta">
+              Traer de la oferta
             </button>
             <button className="mini pri" onClick={handlePdf} disabled={pdfLoading}>
               {pdfLoading ? 'Generando…' : 'Descargar informe'}
@@ -1398,7 +1389,7 @@ export default function HojaInforme({
 
           {danosPropiosItems && (
             <>
-              <h4>Siniestralidad de daños propios</h4>
+              <h4>Daños propios</h4>
               <div className="kb">
                 {danosPropiosItems.map(([l, v]) => (
                   <button key={l} type="button" style={{ cursor: 'default' }}><label>{l}</label><strong>{v}</strong></button>

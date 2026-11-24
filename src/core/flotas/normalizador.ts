@@ -23,7 +23,7 @@ export const LUNAS_OPTS = ['Sí', 'No'];
 
 export const ADR_OPTS = ['No', 'Sí'];
 
-export const ASISTENCIA_OPTS = ['no', 'oro', 'oro_plus'];
+export const ASISTENCIA_OPTS = ['no', 'oro', 'oro_plus', 'platino'];
 
 export const SI_NO_OPTS = ['Sí', 'No'];
 
@@ -135,6 +135,7 @@ const COLUMN_OPTS: Record<string, string[]> = {
   tipo_vehiculo:          TIPO_VEHICULO_OPTS,
   uso:                    USO_OPTS,
   adr:                    ADR_OPTS,
+  isotermo:               ADR_OPTS,
   ambito:                 AMBITO_OPTS,
   coberturas_solicitadas: COBERTURA_OPTS,
   asistencia:             ASISTENCIA_OPTS,
@@ -215,13 +216,20 @@ export function normalizeColumnValue(
       return { value: 'Terceros', matched: true };
     }
   }
-  if (colId === 'lunas' || colId === 'animales' || colId === 'seguro_conductor') {
+  if (colId === 'lunas' || colId === 'animales' || colId === 'seguro_conductor' || colId === 'isotermo') {
     const v = raw.trim().toLowerCase();
     if (['s', 'si', 'sí', 'yes', '1', 'true', 'x'].includes(v)) return { value: 'Sí', matched: true };
     if (['n', 'no', '0', 'false', ''].includes(v)) return { value: 'No', matched: true };
   }
   if (colId === 'asistencia') {
     const v = raw.trim().toLowerCase();
+    // Niveles de 1.ª cat. (Oro / Oro Plus / Platino) y modalidades de 2.ª (nacional / internacional)
+    const c = v.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/^av\s+/, '').replace(/[\s_+-]+/g, ' ').trim();
+    if (c === 'oro plus' || c === 'oroplus' || c === 'oro p') return { value: 'oro_plus', matched: true };
+    if (c === 'platino' || c === 'platinum') return { value: 'platino', matched: true };
+    if (c === 'oro') return { value: 'oro', matched: true };
+    if (c === 'nacional' || c === 'internacional') return { value: c, matched: true };
+    if (c === 'sin' || c === 'sin asistencia' || c === 'ninguna') return { value: 'no', matched: true };
     if (['s', 'si', 'sí', 'yes', '1', 'true', 'x'].includes(v)) return { value: 'oro', matched: true };
     if (['n', 'no', '0', 'false', ''].includes(v)) return { value: 'no', matched: true };
   }

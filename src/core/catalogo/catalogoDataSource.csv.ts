@@ -374,6 +374,11 @@ function scoreVehiculo(veh: CatalogoVehiculo, params: SearchParams): { score: nu
 
 // ─── Utilidades públicas ──────────────────────────────────────────────────────
 
+/** Todas las filas del catálogo cargado (para el identificador de PRE-EMISIÓN). */
+export function getCatalogoCompleto(): CatalogoVehiculo[] {
+    return loadCsv().all;
+}
+
 /** Lista de marcas únicas disponibles en el catálogo cargado. */
 export function getAllMarcas(): string[] {
     try {
