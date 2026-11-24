@@ -65,6 +65,9 @@ function aVehiculo(b: Record<string, unknown>): VehiculoAIdentificar {
         kw: num(b.kw),
         combustible: b.combustible ? String(b.combustible) : '',
         tara: num(b.tara),
+        acabado: b.acabado ? String(b.acabado) : '',
+        cilindrada: num(b.cilindrada),
+        puertas: num(b.puertas),
     };
 }
 

@@ -9,6 +9,8 @@ import {
 import type { ClaveFlotaGrupo } from '@/core/flotas';
 import type { FlotaGridHandle } from './types';
 import { DetailDrawer } from '@/components/saas/DetailDrawer';
+import { reconciliar, pendientes, type CampoVehiculo, type Discrepancia } from '@/core/silverdat/reconciliar';
+import SilverdatDiscrepancias, { type MantenerPorMatricula } from './SilverdatDiscrepancias';
 import type { DetailDrawerData } from '@/components/saas/DetailDrawer';
 
 // ─── Silverdat types ─────────────────────────────────────────────────────────
@@ -83,6 +85,8 @@ function SilverdatLoginModal({ onClose, onSuccess }: { onClose: () => void; onSu
   );
 }
 
+const matDe = (row: Record<string, string>) => (row['matricula'] ?? '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+
 // ─── Silverdat report ────────────────────────────────────────────────────────
 
 function SilverdatReport({ mismatches, enriched, noData, total, vehicles, onClose }: { mismatches: Mismatch[]; enriched: number; noData: string[]; total: number; vehicles: SilverdatVehicle[]; onClose: () => void }) {
@@ -111,7 +115,7 @@ function SilverdatReport({ mismatches, enriched, noData, total, vehicles, onClos
         ))}
         {mismatches.length > 0 && (
           <div style={{ marginBottom: 12 }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Discrepancias</p>
+            <p style={{ fontSize: 11, fontWeight: 700, color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Diferencias con la plantilla (ya decididas)</p>
             {mismatches.map((m, i) => <div key={i} style={{ padding: '6px 10px', borderRadius: 8, background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)', fontSize: 11, color: '#fbbf24', marginBottom: 4 }}><b>{m.matricula}</b> — {m.campo}: <span style={{ color: '#BDD4FF' }}>{m.excel}</span> vs <span style={{ color: '#f59e0b' }}>{m.silverdat}</span></div>)}
           </div>
         )}
@@ -177,6 +181,13 @@ const HojaTrabajos = forwardRef<FlotaGridHandle, Props>(function HojaTrabajos(
 
   const prevClaveKeyRef   = useRef('');
   const silverdatPendingRef = useRef(false);
+  // Alerta «Silverdat no coincide con la plantilla»
+  const [sdDiscrepancias, setSdDiscrepancias] = useState<Discrepancia[] | null>(null);
+  const sdPendienteRef = useRef<{
+    antes: Record<string, string>[];
+    sv: Map<string, SilverdatVehicle>;
+    informe: { mismatches: Mismatch[]; enriched: number; noData: string[]; total: number; vehicles: SilverdatVehicle[] };
+  } | null>(null);
   const silverdatStopRef  = useRef(false);
   const correctionFileRef = useRef<HTMLInputElement>(null);
   const rowsRef = useRef(rows);
@@ -377,61 +388,55 @@ const HojaTrabajos = forwardRef<FlotaGridHandle, Props>(function HojaTrabajos(
 
   // ─── Silverdat ───────────────────────────────────────────────────────────────
 
-  const applyVehicleToRows = useCallback((
-    currentRows: Record<string, string>[],
+  // Silverdat (DGT) manda en los datos del vehículo: sustituye lo que diga la plantilla y deja las diferencias
+  // para la pantalla de alerta. `mantener` = campos en los que el usuario se queda con la plantilla.
+  const aplicarSilverdat = useCallback((
+    row: Record<string, string>,
     sv: SilverdatVehicle,
-    mismatches: Mismatch[],
-  ): { rows: Record<string, string>[]; enriched: boolean } => {
-    let enriched = false;
-    const newRows = currentRows.map(row => {
-      const mat = (row['matricula'] ?? '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-      if (mat !== sv.matricula) return row;
-      const updated = { ...row };
-      let rowEnriched = false;
-      const fill = (excelKey: string, svValue: string | number | undefined, label: string) => {
-        if (svValue === undefined || svValue === null || svValue === '') return;
-        const svStr    = String(svValue);
-        const excelVal = (row[excelKey] ?? '').trim();
-        if (!excelVal) { updated[excelKey] = svStr; rowEnriched = true; }
-        else if (excelVal.toUpperCase() !== svStr.toUpperCase()) {
-          const nE = parseFloat(excelVal), nS = parseFloat(svStr);
-          if (!isNaN(nE) && !isNaN(nS) && Math.abs(nE - nS) / Math.max(nE, nS) < 0.05) return;
-          mismatches.push({ matricula: mat, campo: label, excel: excelVal, silverdat: svStr });
-        }
-      };
-      fill('marca', sv.marca, 'Marca'); fill('modelo', sv.modelo, 'Modelo');
-      fill('tipo_vehiculo', sv.tipo_vehiculo, 'Tipo vehículo'); fill('kw', sv.kw, 'kW');
-      fill('tn', sv.tara ? (sv.tara / 1000).toFixed(3) : undefined, 'Tara (Tn)');
-      fill('combustible', sv.combustible, 'Combustible'); fill('cilindrada', sv.cilindrada, 'Cilindrada');
-      fill('plazas', sv.plazas, 'Plazas'); fill('puertas', sv.puertas, 'Puertas');
-      fill('cv', sv.cv, 'CV'); fill('version', sv.version, 'Versión');
-      fill('variante', sv.variante, 'Variante'); fill('vin', sv.vin, 'VIN');
-      fill('anyo_fabricacion', sv.anyo_fabricacion, 'Año fabricación');
-      // Origen del año: si lo ha puesto Silverdat se guarda si es fabricación real o sustituto (matriculación)
-      if (updated['anyo_fabricacion'] && !(row['anyo_fabricacion'] ?? '').trim()) updated['anyo_fab_fuente'] = sv.anyo_fab_fuente || 'fabricacion';
-      fill('fecha_matriculacion', sv.fecha_matriculacion, 'Fecha matriculación');
-      fill('etiqueta_dgt', sv.etiqueta_dgt, 'Etiqueta DGT');
-      fill('tipo_cambio', sv.tipo_cambio, 'Tipo cambio'); fill('kilometraje', sv.kilometraje, 'Kilometraje');
-      fill('co2', sv.co2, 'CO2'); fill('euro', sv.euro, 'Euro');
-      fill('precio_nuevo', sv.precio_nuevo, 'Precio nuevo'); fill('precio_nuevo_total', sv.precio_nuevo_total, 'Precio nuevo total');
-      fill('valor_venta', sv.valor_venta, 'Valor venta'); fill('valor_compra', sv.valor_compra, 'Valor compra');
-      fill('servicio', sv.servicio, 'Servicio'); fill('renting', sv.renting, 'Renting');
-      fill('num_titulares', sv.num_titulares, 'Nº titulares');
-      fill('tipo_alimentacion', sv.tipo_alimentacion, 'Tipo alimentación');
-      fill('distancia_ejes', sv.distancia_ejes, 'Distancia ejes');
-      if (sv.servicio && !(row['uso'] ?? '').trim()) {
-        const svc = sv.servicio.toLowerCase();
-        if (svc.startsWith('particular')) updated['uso'] = 'Particular';
-        else if (svc.startsWith('públ') || svc.startsWith('publ')) updated['uso'] = 'Servicio público';
-        else if (svc.includes('propios')) updated['uso'] = 'Transportes propios';
-        else updated['uso'] = sv.servicio;
-        rowEnriched = true;
-      }
-      if (rowEnriched) enriched = true;
-      return updated;
-    });
-    return { rows: newRows, enriched };
+    mantener?: CampoVehiculo[],
+  ): { row: Record<string, string>; discrepancias: Discrepancia[]; cambia: boolean } => {
+    const rec = reconciliar(row, sv, { mantener });
+    const updated = rec.fila;
+    let cambia = rec.rellenados.length > 0 || rec.discrepancias.length > 0;
+    // Datos informativos de la DGT que la plantilla no trae: solo se rellenan si están vacíos
+    const fill = (key: string, v: string | number | undefined) => {
+      if (v === undefined || v === null || v === '') return;
+      if (!(row[key] ?? '').trim()) { updated[key] = String(v); cambia = true; }
+    };
+    fill('etiqueta_dgt', sv.etiqueta_dgt); fill('tipo_cambio', sv.tipo_cambio); fill('kilometraje', sv.kilometraje);
+    fill('co2', sv.co2); fill('euro', sv.euro);
+    fill('precio_nuevo', sv.precio_nuevo); fill('precio_nuevo_total', sv.precio_nuevo_total);
+    fill('valor_venta', sv.valor_venta); fill('valor_compra', sv.valor_compra);
+    fill('servicio', sv.servicio); fill('renting', sv.renting); fill('num_titulares', sv.num_titulares);
+    fill('tipo_alimentacion', sv.tipo_alimentacion); fill('distancia_ejes', sv.distancia_ejes);
+    // El USO lo decide quien hace el estudio: Silverdat solo lo propone si la plantilla lo trae vacío, nunca lo cambia
+    if (sv.servicio && !(row['uso'] ?? '').trim()) {
+      const svc = sv.servicio.toLowerCase();
+      if (svc.startsWith('particular')) updated['uso'] = 'Particular';
+      else if (svc.startsWith('públ') || svc.startsWith('publ')) updated['uso'] = 'Servicio público';
+      else if (svc.includes('propios')) updated['uso'] = 'Transportes propios';
+      else updated['uso'] = sv.servicio;
+      cambia = true;
+    }
+    return { row: updated, discrepancias: pendientes(rec.discrepancias, updated), cambia };
   }, []);
+
+  // El usuario ha decidido en la alerta: en los vehículos donde mantiene algo de la plantilla se rehace la fila
+  const aplicarDecisiones = useCallback((mantener: MantenerPorMatricula) => {
+    const pen = sdPendienteRef.current;
+    sdPendienteRef.current = null;
+    setSdDiscrepancias(null);
+    if (!pen) return;
+    if (Object.keys(mantener).length > 0) {
+      setRows(rowsRef.current.map((row, i) => {
+        const mat = matDe(row);
+        const campos = mantener[mat], sv = pen.sv.get(mat), antes = pen.antes[i];
+        if (!campos || !sv || !antes || matDe(antes) !== mat) return row;
+        return aplicarSilverdat(antes, sv, campos).row;
+      }));
+    }
+    setSilverdatReport(pen.informe);
+  }, [aplicarSilverdat, setRows]);
 
   const runSilverdatEnrich = useCallback(async () => {
     const currentRows = rowsRef.current;
@@ -444,6 +449,8 @@ const HojaTrabajos = forwardRef<FlotaGridHandle, Props>(function HojaTrabajos(
     const allVehicles: SilverdatVehicle[] = [];
     const noData: string[] = [];
     const mismatches: Mismatch[] = [];
+    const discrepancias: Discrepancia[] = [];
+    const svPorMat = new Map<string, SilverdatVehicle>();
     let enrichedCount = 0;
     let workRows = [...currentRows];
     for (let i = 0; i < unique.length; i++) {
@@ -458,17 +465,34 @@ const HojaTrabajos = forwardRef<FlotaGridHandle, Props>(function HojaTrabajos(
         const r    = json.results?.[0] as SilverdatResult | undefined;
         if (r?.ok && r.vehicle) {
           allVehicles.push(r.vehicle);
-          const { rows: newWorkRows, enriched } = applyVehicleToRows(workRows, r.vehicle, mismatches);
-          workRows = newWorkRows;
+          const sv = r.vehicle;
+          svPorMat.set(sv.matricula, sv);
+          let enriched = false;
+          workRows = workRows.map(row => {
+            if (matDe(row) !== sv.matricula) return row;
+            const a = aplicarSilverdat(row, sv);
+            if (a.cambia) enriched = true;
+            // la misma matrícula repetida en varias filas: la diferencia se pregunta una vez
+            for (const d of a.discrepancias) if (!discrepancias.some(x => x.matricula === d.matricula && x.campo === d.campo)) discrepancias.push(d);
+            return a.row;
+          });
           if (enriched) enrichedCount++;
         } else { noData.push(mat); }
       } catch { noData.push(mat); }
     }
     setRows(workRows);
-    setSilverdatReport({ mismatches, enriched: enrichedCount, noData, total: allVehicles.length + noData.length, vehicles: allVehicles });
+    for (const d of discrepancias) mismatches.push({ matricula: d.matricula, campo: d.etiqueta, excel: d.plantilla, silverdat: d.silverdat });
+    const informe = { mismatches, enriched: enrichedCount, noData, total: allVehicles.length + noData.length, vehicles: allVehicles };
+    if (discrepancias.length > 0) {
+      // Silverdat ya está aplicado; la alerta deja mantener la plantilla dato a dato. El informe sale después.
+      sdPendienteRef.current = { antes: currentRows, sv: svPorMat, informe };
+      setSdDiscrepancias(discrepancias);
+    } else {
+      setSilverdatReport(informe);
+    }
     setSilverdatLoading(false);
     setSilverdatProgress('');
-  }, [applyVehicleToRows, setRows]);
+  }, [aplicarSilverdat, setRows]);
 
   const handleSilverdatClick = useCallback(async () => {
     try {
@@ -688,6 +712,7 @@ const HojaTrabajos = forwardRef<FlotaGridHandle, Props>(function HojaTrabajos(
         />
       )}
       {silverdatReport && <SilverdatReport {...silverdatReport} onClose={() => setSilverdatReport(null)} />}
+      <SilverdatDiscrepancias abierto={!!sdDiscrepancias} discrepancias={sdDiscrepancias ?? []} onAplicar={aplicarDecisiones} />
 
       {/* ── Drawer: subir trabajo modificado ── */}
       <DetailDrawer isOpen={uploadDrawerOpen} onClose={() => setUploadDrawerOpen(false)}>

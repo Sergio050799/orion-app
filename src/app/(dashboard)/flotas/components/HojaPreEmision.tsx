@@ -197,6 +197,10 @@ interface VehicleEmision {
   plazas: string;
   /** plazas escritas a mano en PRE-EMISIÓN: mandan sobre las del catálogo ('' = usar las del catálogo) */
   plazas_manual: string;
+  /** acabado (versión + variante), cilindrada y puertas que da Silverdat: afinan la elección de la versión */
+  acabado?: string;
+  cilindrada?: string;
+  puertas?: string;
   status: EmisionStatus;
   candidatos: CandidatoCatalogo[];
   seleccionado: CandidatoCatalogo | null;
@@ -395,6 +399,9 @@ export default function HojaPreEmision({ trabajoRows, initialSeleccion, onCatalo
       anyo_fab_fuente:     r['anyo_fab_fuente'] ?? '',
       fecha_matriculacion: r['fecha_matriculacion'] ?? '',
       plazas:              r['plazas'] ?? '',
+      acabado:             [r['version'], r['variante']].map(x => (x ?? '').trim()).filter(Boolean).join(' '),
+      cilindrada:          r['cilindrada'] ?? '',
+      puertas:             r['puertas'] ?? '',
       plazas_manual:       r['plazas_manual'] ?? '',
       status:              'pendiente' as EmisionStatus,
       candidatos:          [],
@@ -600,6 +607,9 @@ export default function HojaPreEmision({ trabajoRows, initialSeleccion, onCatalo
             kw: v.kw || (v.cv ? Math.round(parseFloat(v.cv) / 1.36) : null),
             combustible: v.combustible,
             tara: Number.isFinite(taraN) && taraN > 0 ? (taraN >= 100 ? taraN : taraN * 1000) : null,
+            acabado: v.acabado || '',
+            cilindrada: v.cilindrada ? parseFloat(v.cilindrada) || null : null,
+            puertas: v.puertas ? parseInt(v.puertas, 10) || null : null,
           }] }),
         });
         if (!res.ok) throw new Error('API error');

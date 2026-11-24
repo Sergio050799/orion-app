@@ -294,6 +294,10 @@ function vehiclesToTrabajoRows(vehicles: any[]): Record<string, string>[] {
     plazas:               typeof v.plazas === 'number' && v.plazas >= 0 ? String(v.plazas) : (typeof v.plazas === 'string' ? v.plazas : ''),
     tn:                   v.tara > 0 ? String(v.tara) : (v.tn || ''),
     cilindrada:           v.cilindrada            || '',
+    version:              v.version               || '',
+    variante:             v.variante              || '',
+    ...(v.sd_plantilla ? { sd_plantilla: v.sd_plantilla } : {}),
+    ...(v.sd_mantener ? { sd_mantener: v.sd_mantener } : {}),
     puertas:              v.puertas > 0 ? String(v.puertas) : (v.puertas || ''),
   }));
 }

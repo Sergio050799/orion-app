@@ -6,6 +6,8 @@ import { normalizeTipoVehiculo, TIPO_VEHICULO_OPTS } from '@/core/flotas/normali
 import type { FlotaHeader } from './types';
 import { EstadoBadge } from './CarpetaScreen';
 import SilverdatModal from '@/components/saas/SilverdatModal';
+import { reconciliar, type CampoVehiculo, type Discrepancia } from '@/core/silverdat/reconciliar';
+import SilverdatDiscrepancias, { type MantenerPorMatricula } from './SilverdatDiscrepancias';
 import { nf, eur2, dec } from '@/lib/fmt';
 import { listarCarpetas, listarCorredores, type FlotaCarpeta } from '@/core/flotas';
 
@@ -17,6 +19,7 @@ interface SilverdatVehicle {
     marca?: string;
     modelo?: string;
     version?: string;
+    variante?: string;
     combustible?: string;
     kw?: number;
     cv?: number;
@@ -71,6 +74,17 @@ interface ProcessedVehicle {
     co2: string;
     precio_nuevo: number;
     valor_venta: number;
+    // Datos del vehículo que da Silverdat y PRE-EMISIÓN usa para elegir la versión del catálogo
+    version?: string;
+    variante?: string;
+    cilindrada?: string;
+    plazas?: string;
+    puertas?: string;
+    /** tara en toneladas, como en TRABAJO */
+    tn?: string;
+    /** lo que puso el corredor en los datos que Silverdat ha sustituido (JSON) y los que se mantienen de la plantilla */
+    sd_plantilla?: string;
+    sd_mantener?: string;
     // Catalog
     id_veh?: string;
     sd_ok: boolean;
@@ -164,6 +178,14 @@ function Step3({
                 etiqueta_dgt: v.etiqueta_dgt,
                 euro: v.euro,
                 co2: v.co2,
+                version: v.version ?? '',
+                variante: v.variante ?? '',
+                cilindrada: v.cilindrada ?? '',
+                plazas: v.plazas ?? '',
+                puertas: v.puertas ?? '',
+                tn: v.tn ?? '',
+                ...(v.sd_plantilla ? { sd_plantilla: v.sd_plantilla } : {}),
+                ...(v.sd_mantener ? { sd_mantener: v.sd_mantener } : {}),
             };
         });
         onComplete(rows);
@@ -558,24 +580,47 @@ export default function HojaAutomatico({ header, carpetaActiva, onComplete, onVe
         finally { clearInterval(poll); }
     };
 
-    const buildVehicle = (row: Record<string, string>, sd?: SilverdatVehicle, id_veh?: string): ProcessedVehicle => {
+    // Silverdat (DGT) manda en los datos del vehículo; lo que la plantilla diga distinto queda como discrepancia
+    // para la pantalla de alerta. `mantener` = campos en los que el usuario se queda con la plantilla.
+    const discrepanciasRef = useRef(new Map<string, { row: Record<string, string>; sd: SilverdatVehicle; id_veh?: string; lista: Discrepancia[] }>());
+    const buildVehicle = (row: Record<string, string>, sd?: SilverdatVehicle, id_veh?: string, mantener?: CampoVehiculo[]): ProcessedVehicle => {
         const matricula = row['matricula'].trim().replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-        const tipoRaw = sd?.tipo_vehiculo || row['tipo_vehiculo'] || inferTipoFromMat(matricula);
+        const anioPlantilla = /(19|20)\d{2}/.test(row['anyo_fabricacion'] || '');
+        const base: Record<string, string> = {
+            marca: row['marca'] || '', modelo: row['modelo'] || '', tipo_vehiculo: row['tipo_vehiculo'] || '',
+            kw: parseFloat(row['kw'] || '0') > 0 ? row['kw'] : '', cv: parseFloat(row['cv'] || '0') > 0 ? row['cv'] : '',
+            combustible: row['combustible'] || '', plazas: row['plazas'] || '', puertas: row['puertas'] || '',
+            cilindrada: row['cilindrada'] || '', tn: row['tn'] || '', vin: row['vin'] || '',
+            version: row['version'] || '', variante: row['variante'] || '',
+            fecha_matriculacion: row['fecha_matriculacion'] || '',
+            anyo_fabricacion: anioPlantilla ? row['anyo_fabricacion'] : '',
+            anyo_fab_fuente: anioPlantilla ? 'fabricacion' : '',
+        };
+        let d = base;
+        if (sd) {
+            const rec = reconciliar(base, { ...sd, matricula }, { mantener });
+            d = rec.fila;
+            const pend = rec.discrepancias.filter(x => !(mantener ?? []).includes(x.campo));
+            if (pend.length > 0 || (mantener ?? []).length > 0) discrepanciasRef.current.set(matricula, { row, sd, id_veh, lista: rec.discrepancias });
+            else discrepanciasRef.current.delete(matricula);
+        }
+        const tipoRaw = d.tipo_vehiculo || inferTipoFromMat(matricula);
         const tipo = normalizeTipoVehiculo(tipoRaw) || '';
         const sinLunas = NO_LUNAS.has(tipo.toLowerCase());
-        const anioPlantilla = /(19|20)\d{2}/.test(row['anyo_fabricacion'] || '');
         return {
             matricula,
-            marca: sd?.marca || row['marca'] || '',
-            modelo: sd?.modelo || row['modelo'] || '',
+            marca: d.marca || '',
+            modelo: d.modelo || '',
             tipo_vehiculo: tipo,
-            kw: sd?.kw || parseFloat(row['kw'] || '0') || 0,
-            cv: sd?.cv || parseFloat(row['cv'] || '0') || 0,
-            combustible: sd?.combustible || '',
-            fecha_matriculacion: sd?.fecha_matriculacion || '',
-            // Año: primero el de la plantilla del corredor; si no lo trae, el de Silverdat (con su origen)
-            anyo_fabricacion: anioPlantilla ? row['anyo_fabricacion'] : (sd?.anyo_fabricacion || ''),
-            anyo_fab_fuente: anioPlantilla ? 'fabricacion' : (sd?.anyo_fabricacion ? (sd.anyo_fab_fuente || 'fabricacion') : ''),
+            kw: parseFloat(d.kw || '0') || 0,
+            cv: parseFloat(d.cv || '0') || 0,
+            combustible: d.combustible || '',
+            fecha_matriculacion: d.fecha_matriculacion || '',
+            anyo_fabricacion: d.anyo_fabricacion || '',
+            anyo_fab_fuente: d.anyo_fabricacion ? (d.anyo_fab_fuente || 'fabricacion') : '',
+            version: d.version || '', variante: d.variante || '', cilindrada: d.cilindrada || '',
+            plazas: d.plazas || '', puertas: d.puertas || '', tn: d.tn || '',
+            sd_plantilla: d.sd_plantilla, sd_mantener: d.sd_mantener,
             cif_nif: row['cif_nif'] || '',
             tomador: row['tomador'] || '',
             fecha_vencimiento: row['fecha_vencimiento'] || '',
@@ -589,7 +634,7 @@ export default function HojaAutomatico({ header, carpetaActiva, onComplete, onVe
             frq: row['frq'] || '',
             asistencia: row['asistencia'] || 'no',
             prima_referencia: row['prima_referencia'] || row['prima referencia'] || '',
-            vin: sd?.vin || '',
+            vin: d.vin || '',
             etiqueta_dgt: sd?.etiqueta_dgt || '',
             euro: sd?.euro || '',
             co2: sd?.co2 != null ? String(sd.co2) : '',
@@ -604,6 +649,7 @@ export default function HojaAutomatico({ header, carpetaActiva, onComplete, onVe
         abortRef.current = false;
         setSdError('');
         setSdFinished(false);
+        if (!mergeWith) discrepanciasRef.current.clear();
 
         // Dedup: same plate only queried once even if duplicated in input
         const seenMats = new Set<string>();
@@ -715,11 +761,30 @@ export default function HojaAutomatico({ header, carpetaActiva, onComplete, onVe
         runProcess(failed, allProcessedRef.current);
     };
 
-    const handleConfirmProcessed = () => {
-        const all = allProcessedRef.current;
+    const [sdDiscrepancias, setSdDiscrepancias] = useState<Discrepancia[] | null>(null);
+    const continuarProcesados = (all: ProcessedVehicle[]) => {
         setProcessedVehicles(all);
         onVehiclesProcessed?.(all);
         setPhase('confirm');
+    };
+    const handleConfirmProcessed = () => {
+        // Si Silverdat no coincide con la plantilla en algún vehículo, primero la alerta
+        const lista = Array.from(discrepanciasRef.current.values()).flatMap(x => x.lista);
+        if (lista.length > 0) setSdDiscrepancias(lista);
+        else continuarProcesados(allProcessedRef.current);
+    };
+    const aplicarDecisiones = (mantener: MantenerPorMatricula) => {
+        setSdDiscrepancias(null);
+        let all = allProcessedRef.current;
+        if (Object.keys(mantener).length > 0) {
+            all = all.map(v => {
+                const campos = mantener[v.matricula], x = discrepanciasRef.current.get(v.matricula);
+                return campos && x ? buildVehicle(x.row, x.sd, x.id_veh, campos) : v;
+            });
+            allProcessedRef.current = all;
+        }
+        discrepanciasRef.current.clear();
+        continuarProcesados(all);
     };
 
     // ── Derived ────────────────────────────────────────────────────────────────
@@ -730,6 +795,7 @@ export default function HojaAutomatico({ header, carpetaActiva, onComplete, onVe
     // ── Render ─────────────────────────────────────────────────────────────────
     return (
         <div className="flex flex-col h-full min-h-0">
+            <SilverdatDiscrepancias abierto={!!sdDiscrepancias} discrepancias={sdDiscrepancias ?? []} onAplicar={aplicarDecisiones} />
             {showSdModal && (
                 <SilverdatModal
                     onClose={() => setShowSdModal(false)}

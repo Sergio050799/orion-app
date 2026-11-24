@@ -36,6 +36,11 @@ export interface VehiculoAIdentificar {
     combustible?: string;
     /** kg */
     tara?: number | null;
+    /** acabado que da Silverdat (versión + variante): «1.6 CRDI 136 STYLE» */
+    acabado?: string;
+    /** cc */
+    cilindrada?: number | null;
+    puertas?: number | null;
 }
 
 export type NivelIdentificacion =
@@ -462,6 +467,12 @@ export function identificar(idx: IndiceCatalogo, d: VehiculoAIdentificar, ventan
     const comb = grupoCombustible(d.combustible);
     const tara = d.tara && d.tara > 0 ? d.tara : null;
     const maxCod = dec.codigos.length, maxPal = dec.palabras.length;
+    // Acabado de Silverdat: sus códigos y palabras que el modelo no traía ya
+    const ac = (d.acabado ?? '').trim() ? prepararDeclarado(d.acabado!, '', clave) : null;
+    const acCod = ac ? ac.codigos.filter(c => !dec.codigos.includes(c)) : [];
+    const acPal = ac ? ac.palabras.filter(w => !dec.palabras.includes(w) && !dec.tok.includes(w)) : [];
+    const cc = d.cilindrada && d.cilindrada > 0 ? d.cilindrada : null;
+    const puertas = d.puertas && d.puertas > 0 ? d.puertas : null;
 
     type ConAnio = (typeof conAnio)[number];
     const puntuar = (p: ConAnio) => {
@@ -473,6 +484,21 @@ export function identificar(idx: IndiceCatalogo, d: VehiculoAIdentificar, ventan
         for (const w of dec.palabras) if (!f.modTok.includes(w) && (f.verTok.includes(w) || (w.length >= 4 && f.ver.includes(w)))) pal++;
         const palPosibles = dec.palabras.filter(w => !f.modTok.includes(w)).length;
         s += pal * 25; max += Math.min(maxPal, palPosibles) * 25;
+        // acabado, cilindrada y puertas de Silverdat
+        let acab = 0;
+        if (ac) {
+            const c = acCod.length > 0 ? aciertosCodigo(f, acCod) : 0;
+            let w = 0;
+            for (const x of acPal) if (!f.modTok.includes(x) && (f.verTok.includes(x) || (x.length >= 4 && f.ver.includes(x)))) w++;
+            acab = c + w;
+            s += c * 60 + w * 20; max += acCod.length * 60 + acPal.length * 20;
+        }
+        if (cc && f.v.cilindrada > 0) {
+            max += 40;
+            const dif = Math.abs(cc - f.v.cilindrada) / f.v.cilindrada;
+            if (dif <= 0.03) s += 40; else if (dif <= 0.08) s += 15; else if (dif > 0.15) s -= 25;
+        }
+        if (puertas && f.v.num_puertas > 0) { max += 10; s += f.v.num_puertas === puertas ? 10 : -5; }
         // potencia
         let kwFuerte = false, sinConfirmar = false;
         if (kw && f.v.kw > 0) {
@@ -506,7 +532,7 @@ export function identificar(idx: IndiceCatalogo, d: VehiculoAIdentificar, ventan
                 else s += Math.max(4, 16 - Math.max(0, anyo - f.ini));
             } else if (p.a.cubre === false) s -= 20 * Math.min(5, distanciaAnio(f, anyo, ventanas));
         }
-        return { p, s, max, kwFuerte, sinConfirmar };
+        return { p, s, max, kwFuerte, sinConfirmar, acab };
     };
     let puntuados = vivos.map(puntuar);
 
@@ -556,7 +582,7 @@ export function identificar(idx: IndiceCatalogo, d: VehiculoAIdentificar, ventan
         const plazasOk = plazas === null || enPlazas(a.p.f);
         if (a.sinConfirmar || a.p.nivel < 80 || porPotencia || alternativas) auto = null;
         else if (!b) auto = a.p.f.v.id_veh;
-        else if (plazasOk && a.s - b.s >= 55 && (a.kwFuerte || a.p.cod > 0)) auto = a.p.f.v.id_veh;
+        else if (plazasOk && a.s - b.s >= 55 && (a.kwFuerte || a.p.cod > 0 || a.acab >= 2)) auto = a.p.f.v.id_veh;
     }
 
     return {
